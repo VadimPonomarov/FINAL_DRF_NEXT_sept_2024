@@ -26,7 +26,7 @@
 #### `.env.base` - Публичные переменные
 ```bash
 # Google OAuth (публичные)
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=317007351021-lhq7qt2ppsnihugttrs2f81nmvjbi0vr.apps.googleusercontent.com
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id_here
 
 # NextAuth базовые настройки
 NEXTAUTH_URL=http://localhost:3000
@@ -36,11 +36,11 @@ NEXTAUTH_URL_INTERNAL=http://localhost:3000
 #### `.env.secrets` - Секретные ключи
 ```bash
 # NextAuth секрет
-NEXTAUTH_SECRET=bXL+w0/zn9FX477unDrwiDMw4kUDoli6AG6bR6h876E=
+NEXTAUTH_SECRET=your_nextauth_secret_here
 
 # Google OAuth секреты (незашифрованные для разработки)
-GOOGLE_CLIENT_ID=317007351021-lhq7qt2ppsnihugttrs2f81nmvjbi0vr.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 GOOGLE_API_KEY=test_google_api_key_for_development
 
 # Google OAuth секреты (зашифрованные для продакшена)
@@ -188,8 +188,8 @@ export const authConfig: AuthOptions = {
    ```
 
 6. **Получить ключи**:
-   - **Client ID**: `317007351021-lhq7qt2ppsnihugttrs2f81nmvjbi0vr.apps.googleusercontent.com`
-   - **Client Secret**: `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`
+   - **Client ID**: `your_google_client_id_here`
+   - **Client Secret**: `your_google_client_secret_here`
 
 ### ⚠️ Частые ошибки:
 
@@ -270,10 +270,10 @@ cd env-config && python load-env.py
 При правильной настройке в логах должно быть:
 ```
 [NextAuth Debug] GET_AUTHORIZATION_URL {
-  url: 'https://accounts.google.com/o/oauth2/v2/auth?client_id=317007351021-...&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback%2Fgoogle...',
+  url: 'https://accounts.google.com/o/oauth2/v2/auth?client_id=your_client_id...&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback%2Fgoogle...',
   provider: {
-    clientId: '317007351021-lhq7qt2ppsnihugttrs2f81nmvjbi0vr.apps.googleusercontent.com',
-    clientSecret: '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',
+    clientId: 'your_google_client_id_here',
+    clientSecret: 'your_google_client_secret_here',
     callbackUrl: 'http://localhost:3000/api/auth/callback/google'
   }
 }

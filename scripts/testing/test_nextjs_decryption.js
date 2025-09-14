@@ -83,9 +83,9 @@ try {
   console.log(`GOOGLE_CLIENT_SECRET: ${config.GOOGLE_CLIENT_SECRET ? '[DECRYPTED]' : '[FAILED]'}`);
   
   // Validate decrypted values
-  const expectedClientId = '317007351021-lhq7qt2ppsnihugttrs2f81nmvjbi0vr.apps.googleusercontent.com';
-  const expectedClientSecret = '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';
-  const expectedNextAuthSecret = 'bXL+w0/zn9FX477unDrwiDMw4kUDoli6AG6bR6h876E=';
+  const expectedClientId = 'your_google_client_id_here';
+  const expectedClientSecret = 'your_google_client_secret_here';
+  const expectedNextAuthSecret = 'your_nextauth_secret_here';
   
   console.log('\n🔍 Validation:');
   console.log(`GOOGLE_CLIENT_ID matches: ${config.GOOGLE_CLIENT_ID === expectedClientId ? '✅' : '❌'}`);
