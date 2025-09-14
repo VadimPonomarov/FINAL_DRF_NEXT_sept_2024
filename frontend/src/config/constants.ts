@@ -60,17 +60,15 @@ export const SERVER_CONFIG = {
 } as const;
 
 // =============================================================================
-// НАСТРОЙКИ АУТЕНТИФИКАЦІЇ (з автоматичним дешифруванням)
+// НАСТРОЙКИ АУТЕНТИФИКАЦІЇ (з простим дешифруванням)
 // =============================================================================
-import { getDecryptedOAuthConfig } from '@/lib/crypto-utils';
+import { getDecryptedOAuthConfig, safeLogValue } from '@/lib/simple-crypto';
 
 // Логируем переменные для диагностики
 console.log('[Constants] Raw environment variables:');
-console.log(`  NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '[SET]' : '[EMPTY]'}`);
-console.log(`  GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? '[SET]' : '[EMPTY]'}`);
-console.log(`  NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? '[SET]' : '[EMPTY]'}`);
-console.log(`  GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? '[SET]' : '[EMPTY]'}`);
-console.log(`  GOOGLE_API_KEY: ${process.env.GOOGLE_API_KEY ? '[SET]' : '[EMPTY]'}`);
+console.log(`  ${safeLogValue('NEXTAUTH_SECRET', process.env.NEXTAUTH_SECRET || '')}`);
+console.log(`  ${safeLogValue('GOOGLE_CLIENT_ID', process.env.GOOGLE_CLIENT_ID || '')}`);
+console.log(`  ${safeLogValue('GOOGLE_CLIENT_SECRET', process.env.GOOGLE_CLIENT_SECRET || '')}`);
 
 // Получаем дешифрованную конфигурацию
 const decryptedConfig = getDecryptedOAuthConfig();
@@ -79,21 +77,21 @@ export const AUTH_CONFIG = {
   NEXTAUTH_SECRET: decryptedConfig.NEXTAUTH_SECRET,
   GOOGLE_CLIENT_ID: decryptedConfig.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: decryptedConfig.GOOGLE_CLIENT_SECRET,
-  GOOGLE_API_KEY: decryptedConfig.GOOGLE_API_KEY,
 } as const;
 
 // Логируем финальную конфигурацию
 console.log('[Constants] Final AUTH_CONFIG:');
-console.log(`  NEXTAUTH_SECRET: ${AUTH_CONFIG.NEXTAUTH_SECRET ? '[SET]' : '[EMPTY]'}`);
-console.log(`  GOOGLE_CLIENT_ID: ${AUTH_CONFIG.GOOGLE_CLIENT_ID ? '[SET]' : '[EMPTY]'}`);
-console.log(`  GOOGLE_CLIENT_SECRET: ${AUTH_CONFIG.GOOGLE_CLIENT_SECRET ? '[SET]' : '[EMPTY]'}`);
-console.log(`  GOOGLE_API_KEY: ${AUTH_CONFIG.GOOGLE_API_KEY ? '[SET]' : '[EMPTY]'}`);
+console.log(`  NEXTAUTH_SECRET: ${AUTH_CONFIG.NEXTAUTH_SECRET ? '[DECRYPTED]' : '[EMPTY]'}`);
+console.log(`  GOOGLE_CLIENT_ID: ${AUTH_CONFIG.GOOGLE_CLIENT_ID ? '[DECRYPTED]' : '[EMPTY]'}`);
+console.log(`  GOOGLE_CLIENT_SECRET: ${AUTH_CONFIG.GOOGLE_CLIENT_SECRET ? '[DECRYPTED]' : '[EMPTY]'}`);
 
 // Логируем первые символы для проверки
-console.log('[Constants] Values preview:');
-console.log(`  GOOGLE_CLIENT_ID starts with: ${AUTH_CONFIG.GOOGLE_CLIENT_ID.substring(0, 20)}...`);
-console.log(`  GOOGLE_CLIENT_SECRET starts with: ${AUTH_CONFIG.GOOGLE_CLIENT_SECRET.substring(0, 15)}...`);
-console.log(`  GOOGLE_CLIENT_SECRET length: ${AUTH_CONFIG.GOOGLE_CLIENT_SECRET.length}`);
+if (AUTH_CONFIG.GOOGLE_CLIENT_ID) {
+  console.log(`  GOOGLE_CLIENT_ID preview: ${AUTH_CONFIG.GOOGLE_CLIENT_ID.substring(0, 20)}...`);
+}
+if (AUTH_CONFIG.GOOGLE_CLIENT_SECRET) {
+  console.log(`  GOOGLE_CLIENT_SECRET length: ${AUTH_CONFIG.GOOGLE_CLIENT_SECRET.length}`);
+}
 
 // =============================================================================
 // НАСТРОЙКИ ТАЙМАУТОВ И ЛИМИТОВ (всегда одинаковые)
