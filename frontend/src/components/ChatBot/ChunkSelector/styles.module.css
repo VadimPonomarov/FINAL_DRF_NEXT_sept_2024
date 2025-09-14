@@ -1,0 +1,159 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.5rem 0.625rem;
+  margin: 0 -0.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.chunkList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0.25rem 0.75rem 0;
+  margin: 0 -0.25rem 0 0;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 0.8125rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.chunkItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  margin: 0.125rem 0;
+  font-size: 0.8125rem;
+  transition: all 0.15s ease;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+}
+
+.chunkItemActive {
+  background: rgba(0, 0, 0, 0.03);
+  color: #000;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.chunkItemInactive {
+  background: transparent;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.chunkItemInactive:hover {
+  background: rgba(0, 0, 0, 0.02);
+  color: #000;
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+.chunkButton {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.125rem 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  line-height: 1.25;
+  margin-right: 0.5rem;
+}
+
+.chunkContent {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.chunkTitle {
+  font-weight: 400;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+  padding: 0.125rem 0.25rem;
+  display: block;
+  margin: -0.125rem 0;
+}
+
+.deleteButton {
+  opacity: 0;
+  height: 1.75rem;
+  width: 1.75rem;
+  min-width: 1.75rem;
+  color: rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin: -0.25rem 0 -0.25rem 0.25rem;
+}
+
+.deleteButton:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #000;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.chunkItem:hover .deleteButton {
+  opacity: 1;
+}
+
+/* Scrollbar styling */
+.chunkList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chunkList::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 3px;
+}
+
+.chunkList::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.chunkList::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
+}

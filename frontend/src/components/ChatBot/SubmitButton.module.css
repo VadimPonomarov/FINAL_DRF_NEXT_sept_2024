@@ -1,0 +1,41 @@
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 0.5rem;
+  background-color: var(--primary);
+  color: white !important;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.button:hover {
+  background-color: var(--primary-hover);
+  color: white !important;
+}
+
+.button:disabled {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.5) !important;
+  cursor: not-allowed;
+}
+
+.button:disabled:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.button svg {
+  color: white !important;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.button:disabled svg {
+  color: rgba(0, 0, 0, 0.5) !important;
+}

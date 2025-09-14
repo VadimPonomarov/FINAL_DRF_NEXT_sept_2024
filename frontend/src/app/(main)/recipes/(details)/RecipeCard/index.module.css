@@ -1,0 +1,45 @@
+.card {
+    @apply relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 
+           border border-gray-100 overflow-hidden w-[300px];
+}
+
+.cardHeader {
+    @apply border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white;
+}
+
+.cardTitle {
+    @apply flex items-center gap-2 text-lg font-semibold text-gray-800;
+}
+
+.recipeId {
+    @apply text-sm font-normal text-gray-500;
+}
+
+.cardContent {
+    @apply p-4 space-y-3;
+}
+
+.tags {
+    @apply flex flex-wrap gap-2 mt-2;
+}
+
+.tag {
+    @apply px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 
+           rounded-full hover:bg-gray-200 transition-colors cursor-pointer;
+}
+
+.authorInfo {
+    @apply flex items-center gap-2 text-sm text-gray-600;
+}
+
+.cardFooter {
+    @apply border-t border-gray-100 bg-gray-50 px-4 py-3;
+}
+
+.stats {
+    @apply flex items-center gap-4 text-sm text-gray-600;
+}
+
+.statItem {
+    @apply flex items-center gap-1;
+}

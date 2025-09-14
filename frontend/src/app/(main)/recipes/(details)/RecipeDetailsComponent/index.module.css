@@ -1,0 +1,43 @@
+.card {
+    @apply bg-white shadow-lg transition-all duration-300 hover:shadow-xl;
+}
+
+.cardHeader {
+    @apply border-b pb-4;
+}
+
+.title {
+    @apply text-2xl font-bold text-gray-800 mb-2;
+}
+
+.description {
+    @apply text-gray-600 flex items-center gap-2;
+}
+
+.content {
+    @apply py-4 space-y-4;
+}
+
+.cuisine {
+    @apply text-lg text-gray-700 font-medium;
+}
+
+.footer {
+    @apply border-t pt-4 flex flex-col gap-3;
+}
+
+.instructions {
+    @apply text-sm text-gray-600;
+}
+
+.tags {
+    @apply flex flex-wrap gap-2 mt-2;
+}
+
+.tag {
+    @apply bg-gray-100 px-2 py-1 rounded-full text-sm text-gray-600 hover:bg-gray-200 transition-colors;
+}
+
+.authorLink {
+    @apply text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-2 mt-4;
+}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оголошення помічено для перевірки</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #ffc107;
+            color: #212529;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .ad-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .button {
+            display: inline-block;
+            background-color: #ffc107;
+            color: #212529;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .reason {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>⚠️ Оголошення помічено для перевірки</h2>
+        </div>
+
+        <div class="warning">
+            <strong>Увага!</strong> Система автоматичної модерації помітила потенційні проблеми в оголошенні.
+        </div>
+
+        <div class="ad-details">
+            <h3>Деталі оголошення:</h3>
+            <p><strong>ID оголошення:</strong> #{{ ad_id }}</p>
+            <p><strong>ID користувача:</strong> {{ user_id }}</p>
+            <p><strong>Дія:</strong> {{ action }}</p>
+            <p><strong>Час:</strong> {{ timestamp }}</p>
+        </div>
+
+        {% if reason %}
+        <div class="reason">
+            <h4>🔍 Причина позначення:</h4>
+            <p>{{ reason }}</p>
+        </div>
+        {% endif %}
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ admin_url }}" class="button">
+                🔍 Переглянути в адмін-панелі
+            </a>
+        </div>
+
+        <div style="background-color: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h4>💡 Рекомендовані дії:</h4>
+            <ul>
+                <li>Перевірте контент оголошення</li>
+                <li>Оцініть відповідність правилам платформи</li>
+                <li>При необхідності зв'яжіться з користувачем</li>
+                <li>Схваліть або відхиліть оголошення</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Це автоматичне повідомлення від системи модерації {{ site_name }}.</p>
+            <p>Будь ласка, не відповідайте на цей email.</p>
+            <p><a href="{{ site_url }}">{{ site_name }}</a></p>
+        </div>
+    </div>
+</body>
+</html>

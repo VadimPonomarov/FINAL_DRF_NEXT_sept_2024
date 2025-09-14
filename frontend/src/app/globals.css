@@ -1,0 +1,1118 @@
+/* Импорт стилей для полей форм */
+@import '../components/ui/form-fields.css';
+
+/* Импорт глобальных стилей чатбота */
+@import '../components/ChatBot/styles/global-chatbot.css';
+
+/* Стили для моноширинных шрифтов */
+code, pre, .font-mono {
+  font-family: Consolas, Menlo, Monaco, 'Courier New', monospace;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @keyframes progress {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+
+  .animate-progress {
+    animation-name: progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+
+  :root {
+    --background: 0 0% 100%;
+    --foreground: var(--text);
+    --card: 0 0% 100%;
+    --card-foreground: var(--surface-text);
+    --popover: 0 0% 100%;
+    --popover-foreground: var(--surface-text);
+    --primary: var(--text);
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: var(--text);
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: var(--text);
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: var(--text);
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: var(--text);
+    --text: 240 10% 3.9%;
+    --surface-text: var(--text);
+    --form-text: 0 0% 0%;
+    --dropdown: 0 0% 100%;
+    --dropdown-bg: gray;
+    --dropdown-text: black;
+    --dropdown-hover: #f0f0f0;
+    --radius: 0.5rem;
+
+    /* Z-index values */
+    --z-index-header: 1000;
+    --z-index-toast: 1050;
+    --z-index-modal: 1100;
+    --z-index-badge: 99999;
+  }
+
+  .dark {
+    /* Dark page background but keep surfaces (cards, forms, popovers) white */
+    --background: 220 15% 12%;
+    --foreground: var(--text); /* tie text color to selected palette */
+
+    /* Surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: var(--surface-text); /* text color on white surfaces */
+    --popover: 0 0% 100%;
+    --popover-foreground: var(--surface-text);
+
+    /* Accents & states */
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 10% 3.9%;
+    --secondary: 220 10% 22%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 220 10% 22%;
+    --muted-foreground: 220 6% 72%;
+    --accent: 220 10% 24%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Borders & inputs — forms stay white in dark theme */
+    --border: 220 10% 26%;
+    --input: 0 0% 100%;
+    --ring: 0 0% 96%;
+
+    /* Semantic text tokens */
+    --text: 0 0% 96%; /* text on dark background */
+    --form-text: 240 10% 3.9%; /* text inside white form controls */
+
+    /* Dropdowns */
+    --dropdown: 0 0% 100%;
+    --dropdown-bg: 0 0% 100%;
+    --dropdown-text: 240 10% 3.9%;
+    --dropdown-hover: 210 20% 96%;
+  }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+
+        .theme-switch {
+            @apply fixed right-2 top-[2px] m-2 h-6 w-6 rounded-full p-2;
+        }
+    }
+}
+
+@layer components {
+    .not-found-container {
+        @apply flex items-center justify-center h-screen bg-gray-100;
+    }
+
+    .not-found-text {
+        @apply text-center;
+    }
+
+    .not-found-title {
+        @apply text-6xl font-bold text-gray-800;
+    }
+
+    .not-found-description {
+
+/* Palette scoped text colors: use --text from selector */
+.palette-scope, .palette-scope *:not(.text-inherit) {
+  color: hsl(var(--text));
+}
+
+/* Ensure form controls use form-text token even in dark */
+input, textarea, select { color: hsl(var(--form-text)); }
+
+        @apply text-xl text-gray-600 mt-4;
+    }
+
+    .not-found-button {
+        @apply mt-6;
+    }
+
+    .menu-link {
+        @apply text-foreground hover:text-accent-foreground
+               hover:bg-accent
+               transition-colors duration-200;
+    }
+
+    .menu-icon {
+        @apply text-foreground group-hover:text-accent-foreground
+               transition-colors duration-200;
+    }
+
+    /* Обновляем стили для тоглеров и баджа с максимальными z-index */
+    .toggle-wrapper {
+        @apply absolute right-4 top-1/2 -translate-y-1/2
+               flex items-center gap-4 z-[99999];
+        position: relative !important;
+    }
+
+    /* Максимальный z-index для всех бейджей */
+    .badge-max-z {
+        z-index: 999999 !important;
+        position: absolute !important;
+        top: -2px !important;
+        right: -8px !important;
+    }
+
+    /* Специальный класс для Premium бейджа */
+    .premium-badge {
+        z-index: 999999 !important;
+        position: relative !important;
+        top: 0 !important;
+        right: 0 !important;
+        margin-left: 4px !important;
+        pointer-events: auto !important;
+        display: inline-flex !important;
+    }
+
+    .badge {
+        @apply absolute -bottom-[25px] right-[5px]
+               bg-transparent border-none
+               text-foreground hover:text-accent-foreground
+               transition-colors duration-200 z-[102];
+    }
+
+    .theme-toggle {
+        @apply p-2 rounded-full hover:bg-accent
+               transition-colors duration-200;
+    }
+
+    .toast-container {
+        @apply fixed top-0 right-0 z-[var(--z-index-toast)];
+    }
+
+    /* Адаптивные стили для аналитики */
+    .analytics-container {
+        @apply min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100;
+    }
+
+    .analytics-header {
+        @apply flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4;
+    }
+
+    .analytics-title {
+        @apply text-2xl sm:text-3xl font-bold text-gray-900;
+    }
+
+    .analytics-badge {
+        @apply px-3 py-1 rounded-full text-xs font-medium shadow-sm;
+    }
+
+    .kpi-card {
+        @apply bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl
+               transition-all duration-300 hover:scale-105 border-0 rounded-xl;
+    }
+
+    .kpi-icon {
+        @apply p-2 rounded-full;
+    }
+
+    .kpi-value {
+        @apply text-2xl lg:text-3xl font-bold mb-2;
+    }
+
+    .kpi-trend {
+        @apply flex items-center text-xs font-medium;
+    }
+
+    .chart-placeholder {
+        @apply flex items-center justify-center rounded-xl border;
+    }
+
+    .chart-icon-container {
+        @apply p-4 rounded-full w-fit mx-auto mb-4;
+    }
+
+    .chart-title {
+        @apply text-base sm:text-lg font-semibold mb-2;
+    }
+
+    .chart-description {
+        @apply text-xs sm:text-sm max-w-xs mx-auto;
+    }
+
+    /* Адаптивные табы */
+    .analytics-tabs {
+        @apply grid w-full h-auto p-1 bg-white/80 backdrop-blur-sm shadow-sm;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 1024px) {
+        .analytics-tabs {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    .analytics-tab-trigger {
+        @apply text-xs sm:text-sm py-2 px-3 transition-all duration-200;
+    }
+
+    /* Улучшенная адаптивность для мобильных устройств */
+    @media (max-width: 640px) {
+        .analytics-container {
+            @apply px-3 py-4;
+        }
+
+        .kpi-card {
+            @apply hover:scale-100;
+        }
+
+        .chart-placeholder {
+            @apply h-56;
+        }
+    }
+
+    /* Планшеты */
+    @media (min-width: 641px) and (max-width: 1024px) {
+        .chart-placeholder {
+            @apply h-72;
+        }
+    }
+
+    /* Десктоп */
+    @media (min-width: 1025px) {
+        .chart-placeholder {
+            @apply h-80;
+        }
+    }
+
+    .modal-container {
+        @apply fixed z-[var(--z-index-modal)];
+    }
+
+    /* Адаптивные стили для модальных окон */
+    @media (max-width: 768px) {
+        [data-radix-dialog-content] {
+            @apply w-[95vw] max-w-none mx-2;
+        }
+
+        .modal-container {
+            @apply px-2;
+        }
+
+        /* Адаптивные формы на мобильных */
+        .form {
+            @apply p-4;
+        }
+
+        .formHeader {
+            @apply -mx-4 -mt-4 mb-4 px-4 py-3;
+        }
+
+        /* Адаптивные фильтры на мобильных */
+        .flex.gap-6 {
+            @apply flex-col gap-4;
+        }
+
+        /* Фиксированная ширина фильтров становится полной шириной */
+        .w-80 {
+            @apply w-full;
+        }
+
+        /* Карточки фильтров */
+        .sticky.top-6 {
+            @apply static;
+        }
+
+        /* Адаптивный селектор языков на мобильных */
+        .fixed.top-20.right-2 {
+            @apply top-2 right-1 scale-75;
+        }
+
+        /* Скрываем селектор языков на очень маленьких экранах */
+        @media (max-width: 480px) {
+            .fixed.top-20.right-2 {
+                @apply hidden;
+            }
+        }
+    }
+
+    .header-container {
+        @apply fixed top-0 left-0 right-0 z-[var(--z-index-header)] bg-background dark:bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur;
+    }
+
+    /* Обновляем стили для алертов */
+    .notification-alert {
+        @apply fixed top-[60px] left-4 z-[1050];
+        max-width: 400px !important;
+        width: auto !important;
+    }
+
+    /* Стили для ошибок */
+    .notification-alert [role="alert"][data-variant="destructive"] {
+        @apply max-w-md w-auto bg-red-50 border-red-500 text-red-800;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15) !important;
+    }
+
+    /* Глобальные ограничения для всех алертов */
+    [role="alert"] {
+        max-width: 400px !important;
+        width: auto !important;
+        min-width: 200px !important;
+        position: relative !important;
+    }
+
+    /* Специальные стили для destructive алертов */
+    [role="alert"][data-variant="destructive"],
+    .alert-destructive {
+        max-width: 400px !important;
+        width: auto !important;
+        background-color: #fef2f2 !important;
+        border-color: #ef4444 !important;
+        color: #dc2626 !important;
+        position: relative !important;
+    }
+
+    /* Принудительные ограничения для всех элементов с классом alert */
+    .alert,
+    [class*="alert"] {
+        max-width: 400px !important;
+        width: auto !important;
+        min-width: 200px !important;
+    }
+
+    /* Ограничения для toast уведомлений */
+    [data-radix-toast-viewport] {
+        max-width: 420px !important;
+        width: auto !important;
+    }
+
+    [data-radix-toast-root] {
+        max-width: 400px !important;
+        width: auto !important;
+        min-width: 200px !important;
+    }
+
+    /* Добавляем анимацию для алертов */
+    @keyframes slideIn {
+        from {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+    }
+}
+
+/* Remove global centering and fixed height to avoid layout overlap */
+.container {
+    @apply block h-auto min-h-0;
+}
+
+@screen sm {
+    .resizableWrapper {
+        @apply max-w-sm;
+    }
+}
+
+@screen md {
+    .resizableWrapper {
+        @apply max-w-md;
+    }
+}
+
+@screen lg {
+    .resizableWrapper {
+        @apply max-w-lg;
+    }
+}
+
+@screen xl {
+    .resizableWrapper {
+        @apply max-w-xl;
+    }
+}
+
+.resizer {
+    @apply absolute bottom-0 right-0 w-2.5 h-2.5 cursor-nwse-resize bg-gray-300;
+}
+
+/* Унифицированные стили для форм и выпадающих списков */
+.form {
+    @apply flex flex-col gap-2.5 w-full box-border
+           bg-card text-card-foreground
+           rounded-md shadow-md p-6;
+    border: 1px solid hsl(var(--border));
+}
+
+.formGroup {
+    @apply flex flex-col gap-1;
+}
+
+.formHeader {
+    @apply -mx-6 -mt-6 mb-6 px-6 py-4
+           bg-muted text-muted-foreground
+           rounded-t-md;
+    border-bottom: 1px solid hsl(var(--border));
+}
+
+.formLabel {
+    @apply text-sm font-medium text-foreground;
+}
+
+.formInput {
+    @apply w-full rounded-md bg-white text-black
+           border border-input px-3 py-2;
+}
+
+/* Добавляем глобальные стили для полей ввода в формах */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+    @apply bg-white text-black border-input;
+}
+
+/* Стили для плейсхолдеров */
+input::placeholder,
+textarea::placeholder {
+    @apply text-gray-500;
+}
+
+.error {
+    @apply text-destructive text-xs mt-1;
+}
+
+.buttonGroup {
+    @apply flex justify-end gap-2 mt-6 pt-4
+           border-t border-border;
+}
+
+/* ===== SWAGGER UI ТЕМНАЯ ТЕМА ===== */
+
+/* Высококонтрастные стили для Swagger UI в темной теме */
+.dark #swagger-ui-container .swagger-ui {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+/* Основная информация */
+.dark #swagger-ui-container .swagger-ui .info {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+  border: 1px solid #404040 !important;
+  padding: 20px !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .info .title {
+  color: #ffffff !important;
+  font-weight: bold !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .info .description {
+  color: #e0e0e0 !important;
+}
+
+/* Схема и авторизация */
+.dark #swagger-ui-container .swagger-ui .scheme-container {
+  background-color: #2d2d2d !important;
+  border: 1px solid #404040 !important;
+  padding: 15px !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .auth-wrapper {
+  background-color: #2d2d2d !important;
+  border: 1px solid #404040 !important;
+}
+
+/* Блоки операций */
+.dark #swagger-ui-container .swagger-ui .opblock {
+  background-color: #2d2d2d !important;
+  border: 1px solid #404040 !important;
+  margin-bottom: 15px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .opblock .opblock-summary {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #404040 !important;
+  padding: 15px !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .opblock .opblock-summary .opblock-summary-method {
+  color: #ffffff !important;
+  font-weight: bold !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .opblock .opblock-summary .opblock-summary-path {
+  color: #ffffff !important;
+}
+
+/* Описания и параметры - МАКСИМАЛЬНЫЙ КОНТРАСТ */
+.dark #swagger-ui-container .swagger-ui .opblock-description-wrapper,
+.dark #swagger-ui-container .swagger-ui .opblock-description-wrapper p,
+.dark #swagger-ui-container .swagger-ui .opblock-description-wrapper div,
+.dark #swagger-ui-container .swagger-ui .opblock-external-docs-wrapper,
+.dark #swagger-ui-container .swagger-ui .opblock-title_normal,
+.dark #swagger-ui-container .swagger-ui .parameter__name,
+.dark #swagger-ui-container .swagger-ui .parameter__type,
+.dark #swagger-ui-container .swagger-ui .response-col_status,
+.dark #swagger-ui-container .swagger-ui .opblock-section-header,
+.dark #swagger-ui-container .swagger-ui .opblock-section-header h4,
+.dark #swagger-ui-container .swagger-ui .opblock-tag,
+.dark #swagger-ui-container .swagger-ui .opblock-tag small,
+.dark #swagger-ui-container .swagger-ui .markdown p,
+.dark #swagger-ui-container .swagger-ui .markdown div,
+.dark #swagger-ui-container .swagger-ui .markdown span,
+.dark #swagger-ui-container .swagger-ui .renderedMarkdown p,
+.dark #swagger-ui-container .swagger-ui .renderedMarkdown div,
+.dark #swagger-ui-container .swagger-ui p,
+.dark #swagger-ui-container .swagger-ui div,
+.dark #swagger-ui-container .swagger-ui span,
+.dark #swagger-ui-container .swagger-ui td,
+.dark #swagger-ui-container .swagger-ui th,
+.dark #swagger-ui-container .swagger-ui li,
+.dark #swagger-ui-container .swagger-ui label {
+  color: #ffffff !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .parameter__name {
+  font-weight: bold !important;
+}
+
+/* Модели */
+.dark #swagger-ui-container .swagger-ui .model-box {
+  background-color: #2d2d2d !important;
+  border: 1px solid #404040 !important;
+  color: #ffffff !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .model .property {
+  color: #ffffff !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .model .property-type {
+  color: #90caf9 !important;
+}
+
+/* Формы и инпуты */
+.dark #swagger-ui-container .swagger-ui textarea,
+.dark #swagger-ui-container .swagger-ui input[type="text"],
+.dark #swagger-ui-container .swagger-ui input[type="password"],
+.dark #swagger-ui-container .swagger-ui select {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+  border: 1px solid #555555 !important;
+  padding: 8px !important;
+}
+
+.dark #swagger-ui-container .swagger-ui textarea:focus,
+.dark #swagger-ui-container .swagger-ui input:focus,
+.dark #swagger-ui-container .swagger-ui select:focus {
+  border-color: #90caf9 !important;
+  outline: none !important;
+}
+
+/* Кнопки */
+.dark #swagger-ui-container .swagger-ui .btn {
+  background-color: #404040 !important;
+  color: #ffffff !important;
+  border: 1px solid #555555 !important;
+  padding: 8px 16px !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .btn:hover {
+  background-color: #505050 !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .btn.execute {
+  background-color: #1976d2 !important;
+  color: #ffffff !important;
+  border: 1px solid #1976d2 !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .btn.execute:hover {
+  background-color: #1565c0 !important;
+}
+
+/* Ответы */
+.dark #swagger-ui-container .swagger-ui .response-content-type,
+.dark #swagger-ui-container .swagger-ui .responses-inner h4,
+.dark #swagger-ui-container .swagger-ui .responses-inner h5 {
+  color: #ffffff !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .responses-table {
+  background-color: #2d2d2d !important;
+  border: 1px solid #404040 !important;
+}
+
+/* Код */
+.dark #swagger-ui-container .swagger-ui .highlight-code {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+  border: 1px solid #404040 !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .microlight {
+  color: #ffffff !important;
+}
+
+/* Топбар */
+.dark #swagger-ui-container .swagger-ui .topbar {
+  background-color: #2d2d2d !important;
+  border-bottom: 1px solid #404040 !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .topbar .download-url-wrapper {
+  background-color: #333333 !important;
+}
+
+/* Ссылки */
+.dark #swagger-ui-container .swagger-ui a {
+  color: #90caf9 !important;
+}
+
+.dark #swagger-ui-container .swagger-ui a:hover {
+  color: #bbdefb !important;
+}
+
+/* ГЛОБАЛЬНОЕ ПРИНУДИТЕЛЬНОЕ ИСПРАВЛЕНИЕ КОНТРАСТА */
+.dark #swagger-ui-container .swagger-ui * {
+  color: #ffffff !important;
+}
+
+/* Исключения для элементов, которые должны иметь другие цвета */
+.dark #swagger-ui-container .swagger-ui a,
+.dark #swagger-ui-container .swagger-ui .btn.execute,
+.dark #swagger-ui-container .swagger-ui .property-type,
+.dark #swagger-ui-container .swagger-ui .opblock-summary-method {
+  /* Эти элементы сохраняют свои специальные цвета */
+}
+
+/* Дополнительные исправления для конкретных элементов */
+.dark #swagger-ui-container .swagger-ui .info .title,
+.dark #swagger-ui-container .swagger-ui .info .description,
+.dark #swagger-ui-container .swagger-ui .info .description p,
+.dark #swagger-ui-container .swagger-ui .info .description div,
+.dark #swagger-ui-container .swagger-ui .info .description span,
+.dark #swagger-ui-container .swagger-ui .info .description li,
+.dark #swagger-ui-container .swagger-ui .info .description ul,
+.dark #swagger-ui-container .swagger-ui .info .description ol {
+  color: #ffffff !important;
+}
+
+/* Исправления для таблиц и списков */
+.dark #swagger-ui-container .swagger-ui table,
+.dark #swagger-ui-container .swagger-ui table td,
+.dark #swagger-ui-container .swagger-ui table th,
+.dark #swagger-ui-container .swagger-ui table tr,
+.dark #swagger-ui-container .swagger-ui ul,
+.dark #swagger-ui-container .swagger-ui ol,
+.dark #swagger-ui-container .swagger-ui li {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+/* Исправления для заголовков */
+.dark #swagger-ui-container .swagger-ui h1,
+.dark #swagger-ui-container .swagger-ui h2,
+.dark #swagger-ui-container .swagger-ui h3,
+.dark #swagger-ui-container .swagger-ui h4,
+.dark #swagger-ui-container .swagger-ui h5,
+.dark #swagger-ui-container .swagger-ui h6 {
+  color: #ffffff !important;
+}
+
+/* ИСПРАВЛЕНИЯ ДЛЯ ИКОНОК И ПИКТОГРАММ */
+.dark #swagger-ui-container .swagger-ui svg,
+.dark #swagger-ui-container .swagger-ui svg path,
+.dark #swagger-ui-container .swagger-ui svg g,
+.dark #swagger-ui-container .swagger-ui svg circle,
+.dark #swagger-ui-container .swagger-ui svg rect,
+.dark #swagger-ui-container .swagger-ui svg polygon,
+.dark #swagger-ui-container .swagger-ui .opblock-summary-control svg,
+.dark #swagger-ui-container .swagger-ui .expand-operation svg,
+.dark #swagger-ui-container .swagger-ui .opblock-control-arrow svg {
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* Исправления для стрелок и контролов */
+.dark #swagger-ui-container .swagger-ui .opblock-summary-control,
+.dark #swagger-ui-container .swagger-ui .expand-operation,
+.dark #swagger-ui-container .swagger-ui .opblock-control-arrow {
+  color: #ffffff !important;
+}
+
+/* Исправления для подзаголовков и описаний */
+.dark #swagger-ui-container .swagger-ui .info .title,
+.dark #swagger-ui-container .swagger-ui .info .description,
+.dark #swagger-ui-container .swagger-ui .info .description *,
+.dark #swagger-ui-container .swagger-ui .info h1,
+.dark #swagger-ui-container .swagger-ui .info h2,
+.dark #swagger-ui-container .swagger-ui .info h3,
+.dark #swagger-ui-container .swagger-ui .info h4,
+.dark #swagger-ui-container .swagger-ui .info h5,
+.dark #swagger-ui-container .swagger-ui .info h6 {
+  color: #ffffff !important;
+}
+
+/* Исправления для заголовков секций */
+.dark #swagger-ui-container .swagger-ui .opblock-tag,
+.dark #swagger-ui-container .swagger-ui .opblock-tag small,
+.dark #swagger-ui-container .swagger-ui .opblock-tag-section,
+.dark #swagger-ui-container .swagger-ui .opblock-tag-section h3,
+.dark #swagger-ui-container .swagger-ui .opblock-tag-section h4 {
+  color: #ffffff !important;
+}
+
+/* ДОПОЛНИТЕЛЬНЫЕ ИСПРАВЛЕНИЯ ДЛЯ ВСЕХ ВОЗМОЖНЫХ ЭЛЕМЕНТОВ */
+.dark #swagger-ui-container .swagger-ui .opblock-summary-path,
+.dark #swagger-ui-container .swagger-ui .opblock-summary-description,
+.dark #swagger-ui-container .swagger-ui .opblock-summary-operation-id,
+.dark #swagger-ui-container .swagger-ui .tab,
+.dark #swagger-ui-container .swagger-ui .tab li,
+.dark #swagger-ui-container .swagger-ui .tab-header,
+.dark #swagger-ui-container .swagger-ui .tab-content,
+.dark #swagger-ui-container .swagger-ui .parameter-item,
+.dark #swagger-ui-container .swagger-ui .parameter-item-wrap,
+.dark #swagger-ui-container .swagger-ui .table-container,
+.dark #swagger-ui-container .swagger-ui .response,
+.dark #swagger-ui-container .swagger-ui .response-col_description,
+.dark #swagger-ui-container .swagger-ui .response-col_links {
+  color: #ffffff !important;
+}
+
+/* Исправления для любых псевдо-элементов */
+.dark #swagger-ui-container .swagger-ui *::before,
+.dark #swagger-ui-container .swagger-ui *::after {
+  color: #ffffff !important;
+}
+
+/* Принудительное исправление для всех текстовых узлов */
+.dark #swagger-ui-container .swagger-ui .wrapper {
+  color: #ffffff !important;
+}
+
+.dark #swagger-ui-container .swagger-ui .wrapper * {
+  color: #ffffff !important;
+}
+
+/* Исправления для специфичных элементов Swagger UI */
+.dark #swagger-ui-container .swagger-ui .scheme-container .schemes > label,
+.dark #swagger-ui-container .swagger-ui .scheme-container select,
+.dark #swagger-ui-container .swagger-ui .auth-container,
+.dark #swagger-ui-container .swagger-ui .auth-container *,
+.dark #swagger-ui-container .swagger-ui .global-server-container,
+.dark #swagger-ui-container .swagger-ui .global-server-container * {
+  color: #ffffff !important;
+}
+
+/* Исправления для секций и контейнеров */
+.dark #swagger-ui-container .swagger-ui .wrapper,
+.dark #swagger-ui-container .swagger-ui .opblock-body,
+.dark #swagger-ui-container .swagger-ui .opblock-section,
+.dark #swagger-ui-container .swagger-ui .parameters-container,
+.dark #swagger-ui-container .swagger-ui .responses-wrapper,
+.dark #swagger-ui-container .swagger-ui .response-content-type {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+}
+
+/* Исправления для параметров */
+.dark #swagger-ui-container .swagger-ui .parameter,
+.dark #swagger-ui-container .swagger-ui .parameter .parameter__name,
+.dark #swagger-ui-container .swagger-ui .parameter .parameter__type,
+.dark #swagger-ui-container .swagger-ui .parameter .parameter__deprecated,
+.dark #swagger-ui-container .swagger-ui .parameter .parameter__in {
+  color: #ffffff !important;
+}
+
+/* Исправления для схем и моделей */
+.dark #swagger-ui-container .swagger-ui .model,
+.dark #swagger-ui-container .swagger-ui .model-title,
+.dark #swagger-ui-container .swagger-ui .property-row,
+.dark #swagger-ui-container .swagger-ui .property,
+.dark #swagger-ui-container .swagger-ui .property .prop-name,
+.dark #swagger-ui-container .swagger-ui .property .prop-type,
+.dark #swagger-ui-container .swagger-ui .property .prop-format {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+/* ===== АДАПТИВНЫЕ СТИЛИ ДЛЯ ВСЕХ СТРАНИЦ AUTORIA ===== */
+
+/* Базовые адаптивные стили для планшетов */
+@media (max-width: 1024px) {
+    /* Уменьшаем отступы контейнеров */
+    .max-w-6xl, .max-w-7xl {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Адаптивные карточки */
+    .grid-cols-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-cols-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Адаптивное меню для планшетов */
+    .menu {
+        gap: 0.75rem;
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Адаптивные стили для мобильных устройств */
+@media (max-width: 768px) {
+    /* Контейнеры и отступы */
+    .max-w-6xl, .max-w-7xl {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .p-6 {
+        padding: 1rem;
+    }
+
+    .p-8 {
+        padding: 1rem;
+    }
+
+    /* Заголовки */
+    .text-3xl {
+        font-size: 1.5rem;
+        line-height: 2rem;
+    }
+
+    .text-4xl {
+        font-size: 1.875rem;
+        line-height: 2.25rem;
+    }
+
+    /* Сетки */
+    .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+
+    /* Флекс контейнеры */
+    .flex-row {
+        flex-direction: column;
+    }
+
+    /* Кнопки */
+    .gap-4 {
+        gap: 0.5rem;
+    }
+
+    /* Карточки */
+    .space-y-6 > * + * {
+        margin-top: 1rem;
+    }
+
+    /* Табы */
+    .tabs-list {
+        flex-wrap: wrap;
+    }
+
+    /* Скрываем некоторые элементы на мобильных */
+    .hidden-mobile {
+        display: none;
+    }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 480px) {
+    .text-2xl {
+        @apply text-xl;
+    }
+
+    .text-xl {
+        @apply text-lg;
+    }
+
+    .p-4 {
+        @apply p-3;
+    }
+
+    .gap-2 {
+        @apply gap-1;
+    }
+
+    /* Компактные кнопки */
+    button {
+        @apply text-sm py-2 px-3;
+    }
+
+    /* Компактные карточки */
+    .card {
+        @apply p-3;
+    }
+}
+
+/* Дополнительные адаптивные стили для мобильных */
+@media (max-width: 640px) {
+    /* Адаптивные кнопки */
+    .buttonGroup {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    /* Адаптивные карточки */
+    .card {
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
+
+    /* Адаптивная навигация */
+    .header-container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    /* Адаптивное главное меню */
+    .menu {
+        gap: 0.5rem !important;
+        padding: 0.5rem !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        overflow: visible !important;
+        overflow-x: visible !important;
+    }
+
+    .menuTrigger {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+        white-space: nowrap;
+    }
+
+    /* Адаптивные поля ввода */
+    input, select, textarea {
+        font-size: 1rem; /* Предотвращает зум на iOS */
+    }
+
+    /* Адаптивные контейнеры */
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Адаптивные алерты */
+    .notification-alert {
+        left: 0.5rem;
+        right: 0.5rem;
+        max-width: none;
+    }
+
+    /* Убраны глобальные переопределения .flex.flex-wrap; теперь используется нормальный флоу */
+}
+
+@media (max-width: 480px) {
+    /* Очень маленькие экраны */
+    .form {
+        padding: 0.75rem;
+    }
+
+    .formHeader {
+        margin-left: -0.75rem;
+        margin-right: -0.75rem;
+        margin-top: -0.75rem;
+        margin-bottom: 0.75rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    /* Компактные кнопки */
+    button {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    /* Дополнительные отступы для контента */
+    .space-y-6 > * + * {
+        margin-top: 1rem;
+    }
+}
+
+/* Дополнительные адаптивные стили */
+@media (max-width: 640px) {
+    /* Адаптивные кнопки */
+    .buttonGroup {
+        @apply flex-col gap-3;
+    }
+
+    /* Адаптивные карточки */
+    .card {
+        @apply mx-2;
+    }
+
+    /* Адаптивная навигация */
+    .header-container {
+        @apply px-2;
+    }
+
+    /* Адаптивные поля ввода */
+    input, select, textarea {
+        @apply text-base; /* Предотвращает зум на iOS */
+    }
+
+    /* Адаптивные контейнеры */
+    .container {
+        @apply px-4;
+    }
+
+    /* Адаптивные алерты */
+    .notification-alert {
+        @apply left-2 right-2 max-w-none;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Очень маленькие экраны */
+    .form {
+        @apply p-3;
+    }
+
+    .formHeader {
+        @apply -mx-3 -mt-3 mb-3 px-3 py-2;
+    }
+
+    /* Компактные кнопки */
+    button {
+        @apply py-3 px-4 text-sm;
+    }
+}

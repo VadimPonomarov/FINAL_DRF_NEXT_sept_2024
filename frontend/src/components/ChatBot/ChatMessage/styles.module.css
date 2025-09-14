@@ -1,0 +1,237 @@
+.messageContainer {
+  display: flex;
+  gap: 0.5rem;
+  position: relative;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+.userMessage {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.assistantMessage {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.messageContent {
+  max-width: 80%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  position: relative;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.userMessageContent {
+  background-color: var(--primary); /* Используем основной цвет */
+  color: white;
+  border-top-right-radius: 0;
+}
+
+.assistantMessageContent {
+  background-color: var(--muted);
+  color: black !important; /* Черный цвет текста для лучшей контрастности */
+  border-top-left-radius: 0;
+}
+
+/* Обеспечиваем черный цвет для всех текстовых элементов в сообщениях ассистента */
+.assistantMessageContent * {
+  color: black !important;
+}
+
+.assistantMessageContent a {
+  color: #3b82f6 !important; /* Синий для ссылок */
+  text-decoration: underline;
+}
+
+.assistantMessageContent a:hover {
+  color: #1d4ed8 !important; /* Темно-синий при наведении */
+}
+
+.deleteButton {
+  opacity: 0;
+  height: 1.5rem;
+  width: 1.5rem;
+  position: absolute;
+  top: 0;
+  right: 0; /* Всегда справа, прижата к краю */
+  transition: opacity 0.2s;
+  color: black !important; /* Черный цвет для кнопки удаления */
+}
+
+/* Удаляем классы, которые изменяли позицию кнопки в зависимости от роли */
+/* .userDeleteButton {
+  left: 0;
+}
+
+.assistantDeleteButton {
+  right: 0;
+} */
+
+.messageContainer:hover .deleteButton {
+  opacity: 1;
+}
+
+.imageContainer {
+  margin-top: 0.5rem;
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.imageControls {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+  position: relative;
+  z-index: 30;
+  margin-top: 8px;
+  padding: 6px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.imageControls button {
+  color: black !important; /* Черный цвет для кнопок управления изображениями */
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.imageControls button:hover {
+  background-color: rgba(255, 255, 255, 1);
+  color: black !important;
+}
+
+.fullscreenContainer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.fullscreenContainer .imageControls {
+  position: absolute;
+  bottom: 20px;
+  z-index: 1010;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  border-radius: 8px;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fullscreenContainer .imageControls button {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+}
+
+.fullscreenContainer .imageControls button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Styles for file attachments */
+.fileAttachmentsContainer {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.resultFileContainer {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.resultFileHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: black !important; /* Черный цвет для заголовков файлов */
+}
+
+.downloadButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  color: black !important; /* Черный цвет для кнопок скачивания */
+}
+
+.filesContainer {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filesHeader {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: black !important; /* Черный цвет для заголовков */
+}
+
+.filesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  flex: 1;
+}
+
+.fileName {
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  color: black !important; /* Черный цвет для имен файлов */
+}
+
+.fileSize {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.6) !important; /* Темно-серый для размера файлов */
+}
+
+.fileActionButton {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  color: black !important; /* Черный цвет для кнопок действий с файлами */
+}

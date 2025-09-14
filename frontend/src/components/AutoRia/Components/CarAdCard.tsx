@@ -1,0 +1,292 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Heart,
+  Eye,
+  Phone,
+  MapPin,
+  Calendar,
+  Fuel,
+  Star
+} from 'lucide-react';
+import { CarAd } from '@/types/autoria';
+import { FavoritesService } from '@/services/autoria/favorites.service';
+import { useI18n } from '@/contexts/I18nContext';
+
+interface CarAdCardProps {
+  ad: CarAd;
+  onCountersUpdate?: (adId: number, counters: { favorites_count: number; phone_views_count: number }) => void;
+}
+
+const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
+  const { t, locale } = useI18n();
+  const [isFavorite, setIsFavorite] = useState(ad.is_favorite || false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [favoritesCount, setFavoritesCount] = useState(ad.favorites_count || 0);
+  const [phoneViewsCount, setPhoneViewsCount] = useState(ad.phone_views_count || 0);
+
+  // Инициализируем состояние при смене объявления
+  useEffect(() => {
+    console.log(`🔄 [CarAdCard] Initializing ad ${ad.id}:`, {
+      is_favorite: ad.is_favorite,
+      favorites_count: ad.favorites_count,
+      phone_views_count: ad.phone_views_count
+    });
+
+    setIsFavorite(ad.is_favorite || false);
+    // Если сердечко активно – минимум 1
+    const initialFavCount = Math.max(ad.favorites_count || 0, (ad.is_favorite ? 1 : 0));
+    setFavoritesCount(initialFavCount);
+    setPhoneViewsCount(ad.phone_views_count || 0);
+
+    console.log(`✅ [CarAdCard] Initialized ad ${ad.id} with:`, {
+      isFavorite: ad.is_favorite || false,
+      favoritesCount: initialFavCount,
+      phoneViewsCount: ad.phone_views_count || 0
+    });
+  }, [ad.id]);
+
+  const formatPrice = (price: number, currency: string) => {
+    const symbols = { USD: '$', EUR: '€', UAH: '₴' };
+    return `${symbols[currency as keyof typeof symbols] || '$'}${price.toLocaleString()}`;
+  };
+
+  const refreshCountersFromServer = async () => {
+    try {
+      const r = await fetch(`/api/autoria/cars/${ad.id}`);
+      if (r.ok) {
+        const d = await r.json();
+        const fav = d.favorites_count || 0;
+        const phone = d.phone_views_count || 0;
+        // Если текущий пользователь добавил в избранное – минимум 1
+        const adjustedFavCount = Math.max(fav, (isFavorite ? 1 : 0));
+        setFavoritesCount(adjustedFavCount);
+        setPhoneViewsCount(phone);
+        onCountersUpdate?.(ad.id, { favorites_count: adjustedFavCount, phone_views_count: phone });
+      }
+    } catch (err) {
+      console.warn('[CarAdCard] Failed to refresh counters:', err);
+    }
+  };
+
+  const handleFavoriteToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log(`🔄 [CarAdCard] Toggling favorite for ad ${ad.id}, current state: ${isFavorite}`);
+
+    if (isTogglingFavorite) {
+      console.log(`⏳ [CarAdCard] Already toggling favorite for ad ${ad.id}, skipping`);
+      return;
+    }
+
+    try {
+      setIsTogglingFavorite(true);
+
+      // Используем существующий FavoritesService
+      console.log(`📡 [CarAdCard] Calling FavoritesService.toggleFavorite for ad ${ad.id}`);
+      const response = await FavoritesService.toggleFavorite(ad.id);
+      console.log(`✅ [CarAdCard] FavoritesService response:`, response);
+
+      // Обновляем состояние с данными от сервера
+      setIsFavorite(response.is_favorite);
+
+      // Обновляем счетчик: если добавили в избранное - минимум 1, если убрали - 0
+      const newFavoritesCount = response.is_favorite ? 1 : 0;
+      setFavoritesCount(newFavoritesCount);
+      onCountersUpdate?.(ad.id, { favorites_count: newFavoritesCount, phone_views_count: phoneViewsCount });
+
+      // Отправляем трекинг события
+      try {
+        await fetch('/api/tracking/ad-interaction/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ad_id: ad.id,
+            interaction_type: response.is_favorite ? 'favorite_add' : 'favorite_remove',
+            source_page: 'search',
+            metadata: {
+              timestamp: new Date().toISOString()
+            }
+          })
+        });
+      } catch (trackingError) {
+        console.warn('⚠️ [CarAdCard] Tracking failed, but favorite toggle succeeded:', trackingError);
+      }
+
+      // Затем синхронизируем с сервером для一致ности с шоурумом
+      setTimeout(() => { void refreshCountersFromServer(); }, 400);
+
+      console.log(`✅ [CarAdCard] Favorite ${response.is_favorite ? 'added' : 'removed'} for ad ${ad.id}, new count: ${newFavoritesCount}`);
+    } catch (error) {
+      console.error(`❌ [CarAdCard] Error toggling favorite for ad ${ad.id}:`, error);
+
+      // Показываем пользователю сообщение об ошибке
+      if (error.message?.includes('401') || error.message?.includes('403')) {
+        alert('Необходимо войти в систему для добавления в избранное');
+      } else {
+        alert(`Ошибка при обновлении избранного: ${error.message || 'Попробуйте еще раз'}`);
+      }
+
+      // НЕ откатываем изменения, так как состояние еще не изменилось
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
+
+  const handlePhoneClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      // Отправляем трекинг события
+      await fetch('/api/ads/analytics/track/phone-view/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ad_id: ad.id,
+          interaction_type: 'phone_view',
+          source_page: 'search',
+          metadata: {
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+      
+      // Обновляем локально (оптимистично)
+      const newPhoneViewsCount = phoneViewsCount + 1;
+      setPhoneViewsCount(newPhoneViewsCount);
+      onCountersUpdate?.(ad.id, { favorites_count: favoritesCount, phone_views_count: newPhoneViewsCount });
+
+      // Затем синхронизируем с сервером для一致ности с шоурумом
+      setTimeout(() => { void refreshCountersFromServer(); }, 400);
+
+      console.log(`✅ Phone view tracked for ad ${ad.id}, total phone views: ${newPhoneViewsCount}`);
+      
+      // Показываем телефон
+      alert(`Телефон: ${ad.seller?.phone || '+380 XX XXX XX XX'}`);
+    } catch (error) {
+      console.error('❌ Error tracking phone view:', error);
+    }
+  };
+
+  return (
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+      {/* 🖼️ Изображение */}
+      <div className="relative">
+        <img
+          src={(Array.isArray(ad.images) ? (ad.images[0]?.image_display_url || ad.images[0]?.url || ad.images[0]?.image) : ad.images) || '/api/placeholder/400/300'}
+          alt={ad.title}
+          className="w-full h-48 object-cover"
+        />
+        
+        {/* 🏷️ Бейджи */}
+        <div className="absolute top-2 left-2 flex gap-2">
+          {ad.isUrgent && (
+            <Badge className="bg-red-500 text-white">🔥 Срочно</Badge>
+          )}
+          {ad.isPremium && (
+            <Badge className="bg-gold-500 text-white">💎 Премиум</Badge>
+          )}
+        </div>
+        
+        {/* ❤️ Избранное */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+          onClick={handleFavoriteToggle}
+          disabled={isTogglingFavorite}
+        >
+          <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
+        </Button>
+        
+        {/* 👁️ Просмотры */}
+        <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+          <Eye className="h-3 w-3" />
+          {ad.view_count || 0}
+        </div>
+      </div>
+
+      <CardContent className="p-4">
+        {/* 📝 Заголовок */}
+        <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+          {ad.title}
+        </h3>
+        
+        {/* 💰 Цена */}
+        <div className="text-2xl font-bold text-green-600 mb-3">
+          {formatPrice(ad.price || 0, ad.currency || 'USD')}
+        </div>
+        
+        {/* 📊 Характеристики */}
+        <div className="space-y-2 text-sm text-gray-600 mb-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span>{ad.year || ad.dynamic_fields?.year || (ad as any).year_sort || '—'}</span>
+            <span>•</span>
+            <span>{(ad.mileage || ad.mileage_km || ad.dynamic_fields?.mileage || ad.dynamic_fields?.mileage_km || 0).toLocaleString()} км</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Fuel className="h-4 w-4" />
+            <span>{ad.dynamic_fields?.fuel_type || 'N/A'}</span>
+            <span>•</span>
+            <span>{ad.dynamic_fields?.transmission || 'N/A'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            <span>{(ad.city_name || (ad.city as any)?.name || (typeof ad.city === 'string' ? ad.city : '') || '—')}, {(ad.region_name || (ad.region as any)?.name || (typeof ad.region === 'string' ? ad.region : '') || '')}</span>
+          </div>
+        </div>
+        
+        {/* 📊 Счетчики */}
+        <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+          <div className="flex items-center gap-1">
+            <Star className="h-3 w-3" />
+            <span>{Math.max(favoritesCount, (isFavorite ? 1 : 0))} ({isFavorite ? '❤️' : '🤍'})</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Phone className="h-3 w-3" />
+            <span>{phoneViewsCount}</span>
+          </div>
+        </div>
+        
+        {/* 🔗 Действия */}
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={handlePhoneClick}
+          >
+            <Phone className="h-4 w-4 mr-1" />
+            {t('phone')}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={() => window.location.href = `/autoria/ad/${ad.id}`}
+          >
+            {t('common.open')}
+          </Button>
+        </div>
+        
+        {/* 📅 Дата создания */}
+        <div className="text-xs text-gray-400 mt-3 text-center">
+          {new Date(ad.created_at).toLocaleDateString(locale)}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default CarAdCard;

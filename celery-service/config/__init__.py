@@ -1,0 +1,1 @@
+# Celery microservice configuration package

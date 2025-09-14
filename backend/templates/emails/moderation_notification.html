@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Потрібна дія: {{ message }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; text-align: center; border-bottom: 1px solid #e9ecef; }
+        .content { padding: 20px; }
+        .footer { margin-top: 20px; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #e9ecef; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 10px 0; }
+        .details { background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>🚨 Потрібна дія: {{ message }}</h2>
+        </div>
+        
+        <div class="content">
+            <p>ID оголошення: <strong>#{{ ad.id }}</strong></p>
+            <p>Назва: <strong>{{ ad.title }}</strong></p>
+            <p>Користувач: <strong>{{ ad.account.user.get_full_name|default:ad.account.user.email }}</strong></p>
+            <p>Email: <strong>{{ ad.account.user.email }}</strong></p>
+            
+            {% if details.reason %}
+            <div class="details">
+                <h4>Причина:</h4>
+                <p>{{ details.reason }}</p>
+            </div>
+            {% endif %}
+            
+            {% if details.categories %}
+            <div class="details">
+                <h4>Categories:</h4>
+                <ul>
+                    {% for category in details.categories %}
+                    <li>{{ category }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% if details.suggestions %}
+            <div class="details">
+                <h4>Рекомендовані дії:</h4>
+                <ul>
+                    {% for suggestion in details.suggestions %}
+                    <li>{{ suggestion }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="{{ admin_url }}" class="button">🔍 Переглянути в адмін-панелі</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Це автоматичне повідомлення від {{ site_name }}. Будь ласка, не відповідайте на цей email.</p>
+        </div>
+    </div>
+</body>
+</html>

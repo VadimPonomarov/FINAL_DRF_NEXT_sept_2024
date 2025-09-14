@@ -1,0 +1,11 @@
+.container {
+    @apply relative mt-[40px] flex flex-wrap justify-evenly gap-2;
+}
+
+.fixedContainer {
+    @apply fixed z-40 w-full;
+}
+
+.absoluteContainer {
+    @apply absolute top-[120px] flex w-full flex-wrap justify-center p-2 gap-8 ;
+}

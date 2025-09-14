@@ -1,0 +1,543 @@
+{
+  "info": {
+    "name": "AutoRia Clone API",
+    "description": "Complete API collection for AutoRia clone with authentication, car ads, moderation, and analytics",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "frontend_url", 
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ad_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@autoria.com\",\n  \"password\": \"testpass123\",\n  \"password_confirm\": \"testpass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.access);",
+                  "    pm.collectionVariables.set('refresh_token', response.refresh);",
+                  "    pm.collectionVariables.set('user_id', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mock.premium1@autoria.com\",\n  \"password\": \"mockpass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🚗 Car Advertisements",
+      "item": [
+        {
+          "name": "Get All Ads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars?page=1&page_size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Ads with Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars?search=BMW&mark=BMW&price_min=20000&price_max=50000&year_min=2018",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "BMW"
+                },
+                {
+                  "key": "mark",
+                  "value": "BMW"
+                },
+                {
+                  "key": "price_min",
+                  "value": "20000"
+                },
+                {
+                  "key": "price_max",
+                  "value": "50000"
+                },
+                {
+                  "key": "year_min",
+                  "value": "2018"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ad Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/{{ad_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "{{ad_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Ad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('ad_id', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"BMW X5 2020 - тестовое объявление\",\n  \"description\": \"Отличный автомобіль в ідеальному стані. Повна комплектація, один власник.\",\n  \"mark\": \"BMW\",\n  \"model\": \"X5\",\n  \"price\": 45000,\n  \"currency\": \"USD\",\n  \"region\": \"Київська область\",\n  \"city\": \"Київ\",\n  \"dynamic_fields\": {\n    \"year\": 2020,\n    \"mileage\": 35000,\n    \"engine_volume\": 3.0,\n    \"fuel_type\": \"petrol\",\n    \"transmission\": \"automatic\",\n    \"body_type\": \"suv\",\n    \"color\": \"black\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Ad",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"BMW X5 2020 - обновленное объявление\",\n  \"description\": \"Обновленное описание автомобіля.\",\n  \"price\": 44000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/{{ad_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "{{ad_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Ad",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/{{ad_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "{{ad_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Ads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/my",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "my"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📊 Analytics & Statistics",
+      "item": [
+        {
+          "name": "Get Ad Analytics (Premium)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/{{ad_id}}/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "{{ad_id}}", "analytics"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get General Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "statistics"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🛡️ Moderation (Staff Only)",
+      "item": [
+        {
+          "name": "Get Moderation Queue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/moderation/queue?status=pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "moderation", "queue"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Ad",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Объявление соответствует требованиям\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/moderation/{{ad_id}}/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "moderation", "{{ad_id}}", "approve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Ad",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Нарушение правил платформы\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/moderation/{{ad_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "moderation", "{{ad_id}}", "reject"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Требует дополнительной проверки\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/moderation/{{ad_id}}/review",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "moderation", "{{ad_id}}", "review"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Moderation Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ads/cars/moderation/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads", "cars", "moderation", "statistics"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔧 Reference Data",
+      "item": [
+        {
+          "name": "Get Car Marks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reference/car-marks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference", "car-marks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Car Models by Mark",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reference/car-models?mark=BMW",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference", "car-models"],
+              "query": [
+                {
+                  "key": "mark",
+                  "value": "BMW"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🌐 Frontend API (Next.js)",
+      "item": [
+        {
+          "name": "Frontend - Get Ads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontend_url}}/api/ads/my-ads?page=1",
+              "host": ["{{frontend_url}}"],
+              "path": ["api", "ads", "my-ads"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Frontend - Get Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontend_url}}/api/ads/analytics?ad_id={{ad_id}}",
+              "host": ["{{frontend_url}}"],
+              "path": ["api", "ads", "analytics"],
+              "query": [
+                {
+                  "key": "ad_id",
+                  "value": "{{ad_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Frontend - Moderation Queue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontend_url}}/api/ads/moderation/queue?status=pending",
+              "host": ["{{frontend_url}}"],
+              "path": ["api", "ads", "moderation", "queue"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,411 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  CheckCircle,
+  AlertCircle,
+  MapPin,
+  Globe,
+  Map,
+  ExternalLink,
+  Copy,
+  Eye,
+  EyeOff,
+  Navigation
+} from 'lucide-react';
+import { useI18n } from '@/contexts/I18nContext';
+import { RawAccountAddress } from '@/types/backend-user';
+
+interface FormattedAddressTableProps {
+  addresses: RawAccountAddress[];
+  loading?: boolean;
+  onRefresh?: () => void;
+}
+
+interface GeocodedData {
+  place_id: string;
+  formatted_address: string;
+  coordinates: {
+    latitude: number;
+    longitude: number;
+  };
+  components_latin: {
+    country: string;
+    region: string;
+    locality: string;
+    street: string;
+    building: string;
+  };
+  components_ukrainian: {
+    country: string;
+    region: string;
+    locality: string;
+    street: string;
+    building: string;
+  };
+  address_hash: string;
+}
+
+interface MapsData {
+  embed_url: string | null;
+  direct_url: string;
+}
+
+const FormattedAddressTable: React.FC<FormattedAddressTableProps> = ({
+  addresses,
+  loading = false,
+  onRefresh
+}) => {
+  const { t } = useI18n();
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [geocodedData, setGeocodedData] = useState<Map<number, { geocoded_data: GeocodedData; maps_data: MapsData }>>(new Map());
+  const [loadingGeocoding, setLoadingGeocoding] = useState<Set<number>>(new Set());
+
+  // Filter only geocoded addresses
+  const geocodedAddresses = addresses.filter(addr => addr.is_geocoded);
+
+  const toggleRowExpansion = (addressId: number) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(addressId)) {
+      newExpanded.delete(addressId);
+    } else {
+      newExpanded.add(addressId);
+      // Load detailed geocoding data when expanding
+      loadDetailedGeocodingData(addressId);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const loadDetailedGeocodingData = async (addressId: number) => {
+    if (geocodedData.has(addressId) || loadingGeocoding.has(addressId)) {
+      return; // Already loaded or loading
+    }
+
+    setLoadingGeocoding(prev => new Set(prev).add(addressId));
+
+    try {
+      const response = await fetch(`/api/accounts/geocoding/formatted/${addressId}/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.geocoded_data) {
+        setGeocodedData(prev => new Map(prev).set(addressId, {
+          geocoded_data: data.geocoded_data,
+          maps_data: data.maps_data
+        }));
+      }
+    } catch (err) {
+      console.error('Error loading detailed geocoding data:', err);
+    } finally {
+      setLoadingGeocoding(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(addressId);
+        return newSet;
+      });
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+        <span className="ml-2">{t('profile.address.syncing')}</span>
+      </div>
+    );
+  }
+
+  if (geocodedAddresses.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Globe className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">{t('profile.address.pending')}</h3>
+        <p className="text-gray-600 mb-4">
+          {t('profile.address.helpText.autoGeocode')}
+        </p>
+        {onRefresh && (
+          <Button onClick={onRefresh} variant="outline">
+            <Navigation className="h-4 w-4 mr-2" />
+            {t('common.refresh')}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          {t('profile.address.geocoded')}: {geocodedAddresses.length} {t('profile.address.addresses')}
+        </div>
+        <Badge variant="outline" className="text-green-600 border-green-600">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          {t('profile.address.autoGenerated')}
+        </Badge>
+      </div>
+
+      {/* Table */}
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('profile.address.input')}</TableHead>
+              <TableHead>{t('profile.address.standardized')}</TableHead>
+              <TableHead>{t('profile.address.coordinates')}</TableHead>
+              <TableHead>{t('profile.address.placeId')}</TableHead>
+              <TableHead className="text-right">{t('common.actions')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {geocodedAddresses.map((address) => {
+              const isExpanded = expandedRows.has(address.id);
+              const detailedData = geocodedData.get(address.id);
+              const isLoadingDetails = loadingGeocoding.has(address.id);
+
+              return (
+                <React.Fragment key={address.id}>
+                  {/* Main Row */}
+                  <TableRow>
+                    {/* Input Data */}
+                    <TableCell>
+                      <div>
+                        <div className="font-medium text-sm">{address.input_locality}</div>
+                        <div className="text-xs text-muted-foreground">{address.input_region}</div>
+                      </div>
+                    </TableCell>
+
+                    {/* Standardized Data */}
+                    <TableCell>
+                      <div>
+                        <div className="font-medium text-sm">{address.locality || address.input_locality}</div>
+                        <div className="text-xs text-muted-foreground">{address.region || address.input_region}</div>
+                      </div>
+                    </TableCell>
+
+                    {/* Coordinates */}
+                    <TableCell>
+                      {address.latitude && address.longitude ? (
+                        <div className="text-xs">
+                          <div>{address.latitude.toFixed(6)}</div>
+                          <div>{address.longitude.toFixed(6)}</div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">N/A</span>
+                      )}
+                    </TableCell>
+
+                    {/* Place ID */}
+                    <TableCell>
+                      {address.geo_code && address.geo_code !== 'unknown' ? (
+                        <div className="flex items-center gap-1">
+                          <code className="text-xs bg-gray-100 px-1 rounded">
+                            {address.geo_code.substring(0, 15)}...
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(address.geo_code)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">N/A</span>
+                      )}
+                    </TableCell>
+
+                    {/* Actions */}
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleRowExpansion(address.id)}
+                        disabled={isLoadingDetails}
+                      >
+                        {isLoadingDetails ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        ) : isExpanded ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Expanded Row with Detailed Data */}
+                  {isExpanded && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="p-0">
+                        <div className="p-6 bg-gray-50 border-t">
+                          {detailedData ? (
+                            <div className="space-y-6">
+                              {/* Formatted Address */}
+                              <div>
+                                <h4 className="font-medium text-sm text-gray-700 mb-2">
+                                  {t('profile.address.formattedAddress')}
+                                </h4>
+                                <div className="bg-green-50 p-3 rounded-md">
+                                  <p className="text-sm">{detailedData.geocoded_data.formatted_address}</p>
+                                </div>
+                              </div>
+
+                              {/* Address Components */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Ukrainian Components */}
+                                <div>
+                                  <h5 className="font-medium text-sm text-gray-700 mb-2">
+                                    {t('profile.address.ukrainian')}
+                                  </h5>
+                                  <div className="bg-yellow-50 p-3 rounded-md space-y-1">
+                                    <div className="text-xs">
+                                      <span className="font-medium">{t('profile.address.region')}:</span> {detailedData.geocoded_data.components_ukrainian.region}
+                                    </div>
+                                    <div className="text-xs">
+                                      <span className="font-medium">{t('profile.address.locality')}:</span> {detailedData.geocoded_data.components_ukrainian.locality}
+                                    </div>
+                                    {detailedData.geocoded_data.components_ukrainian.street && (
+                                      <div className="text-xs">
+                                        <span className="font-medium">Street:</span> {detailedData.geocoded_data.components_ukrainian.street}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Latin Components */}
+                                <div>
+                                  <h5 className="font-medium text-sm text-gray-700 mb-2">
+                                    {t('profile.address.latin')}
+                                  </h5>
+                                  <div className="bg-orange-50 p-3 rounded-md space-y-1">
+                                    <div className="text-xs">
+                                      <span className="font-medium">{t('profile.address.region')}:</span> {detailedData.geocoded_data.components_latin.region}
+                                    </div>
+                                    <div className="text-xs">
+                                      <span className="font-medium">{t('profile.address.locality')}:</span> {detailedData.geocoded_data.components_latin.locality}
+                                    </div>
+                                    {detailedData.geocoded_data.components_latin.street && (
+                                      <div className="text-xs">
+                                        <span className="font-medium">Street:</span> {detailedData.geocoded_data.components_latin.street}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Google Maps */}
+                              {detailedData.maps_data && (
+                                <div>
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h4 className="font-medium text-sm text-gray-700">
+                                      Google Maps
+                                    </h4>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => window.open(detailedData.maps_data.direct_url, '_blank')}
+                                    >
+                                      <ExternalLink className="h-4 w-4 mr-1" />
+                                      {t('common.open')}
+                                    </Button>
+                                  </div>
+                                  <div className="w-full h-64 rounded-md overflow-hidden border">
+                                    {detailedData.maps_data.embed_url ? (
+                                      <iframe
+                                        src={detailedData.maps_data.embed_url}
+                                        width="100%"
+                                        height="100%"
+                                        style={{ border: 0 }}
+                                        allowFullScreen
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        title={`Map for ${detailedData.geocoded_data.components_ukrainian.locality}`}
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                        <div className="text-center text-gray-500">
+                                          <Map className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                          <p className="text-sm font-medium">Google Maps API Key Required</p>
+                                          <Button
+                                            variant="link"
+                                            size="sm"
+                                            onClick={() => window.open(detailedData.maps_data.direct_url, '_blank')}
+                                            className="mt-2"
+                                          >
+                                            <ExternalLink className="h-3 w-3 mr-1" />
+                                            Open in Google Maps
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-center py-4">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                              <p className="text-sm text-muted-foreground">Loading detailed data...</p>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Help Text */}
+      <div className="bg-green-50 p-4 rounded-md">
+        <h4 className="font-medium text-sm text-green-900 mb-2">{t('profile.address.aboutRaw')}</h4>
+        <ul className="text-xs text-green-800 space-y-1">
+          <li>• {t('profile.address.aboutRawDesc.geocoding')}</li>
+          <li>• {t('profile.address.aboutRawDesc.placeId')}</li>
+          <li>• {t('profile.address.aboutRawDesc.coordinates')}</li>
+          <li>• Click the eye icon to view detailed geocoding data and Google Maps</li>
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+export default FormattedAddressTable;

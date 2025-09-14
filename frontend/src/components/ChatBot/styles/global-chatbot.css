@@ -1,0 +1,240 @@
+/* Глобальные стили для чатбота - обеспечение черного цвета текста */
+
+/* Основной контейнер чатбота */
+.chatbot-container,
+.chatbot-container * {
+  color: black !important;
+}
+
+/* Исключения для специальных элементов */
+.chatbot-container a {
+  color: #3b82f6 !important; /* Синий для ссылок */
+  text-decoration: underline;
+}
+
+.chatbot-container a:hover {
+  color: #1d4ed8 !important; /* Темно-синий при наведении */
+}
+
+/* Стили для кнопок в чатботе */
+.chatbot-container button {
+  color: black !important; /* Черный цвет для всех кнопок */
+}
+
+.chatbot-container button:hover {
+  color: black !important; /* Черный цвет при наведении */
+}
+
+/* Стили для иконок в чатботе */
+.chatbot-container svg {
+  color: black !important; /* Черный цвет для всех иконок */
+}
+
+/* Специальные стили для иконок статуса */
+.chatbot-container .iconGreen {
+  color: rgb(34, 197, 94) !important; /* Зеленый для подключенного состояния */
+}
+
+.chatbot-container .iconRed {
+  color: rgb(239, 68, 68) !important; /* Красный для отключенного состояния */
+}
+
+/* Стили для отключенных элементов */
+.chatbot-container button:disabled {
+  color: rgba(0, 0, 0, 0.5) !important; /* Полупрозрачный черный для отключенного состояния */
+}
+
+/* Стили для placeholder текста */
+.chatbot-container input::placeholder,
+.chatbot-container textarea::placeholder {
+  color: rgba(0, 0, 0, 0.6) !important; /* Темно-серый для placeholder */
+}
+
+/* Стили для текста в сообщениях */
+.chatbot-container .message-content,
+.chatbot-container .message-content * {
+  color: black !important;
+}
+
+/* Стили для заголовков */
+.chatbot-container h1,
+.chatbot-container h2,
+.chatbot-container h3,
+.chatbot-container h4,
+.chatbot-container h5,
+.chatbot-container h6 {
+  color: black !important;
+}
+
+/* Стили для параграфов */
+.chatbot-container p {
+  color: black !important;
+}
+
+/* Стили для списков */
+.chatbot-container ul,
+.chatbot-container ol,
+.chatbot-container li {
+  color: black !important;
+}
+
+/* Стили для блоков кода */
+.chatbot-container code {
+  color: black !important;
+}
+
+/* Стили для выделенного текста */
+.chatbot-container strong,
+.chatbot-container b {
+  color: black !important;
+}
+
+.chatbot-container em,
+.chatbot-container i {
+  color: black !important;
+}
+
+/* Стили для цитат */
+.chatbot-container blockquote {
+  color: black !important;
+}
+
+/* Стили для полей ввода */
+.chatbot-container input,
+.chatbot-container textarea {
+  color: black !important;
+}
+
+/* Стили для меток */
+.chatbot-container label {
+  color: black !important;
+}
+
+/* Стили для спанов */
+.chatbot-container span {
+  color: black !important;
+}
+
+/* Стили для дивов */
+.chatbot-container div {
+  color: black !important;
+}
+
+/* Специальные стили для кнопки отправки */
+.chatbot-container .send-button {
+  background-color: var(--primary);
+  color: white !important; /* Белый цвет для иконки на цветном фоне */
+}
+
+.chatbot-container .send-button:hover {
+  background-color: var(--primary-hover);
+  color: white !important;
+}
+
+.chatbot-container .send-button:disabled {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Стили для скроллбара */
+.chatbot-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chatbot-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chatbot-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.chatbot-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* КОНТРАСТНЫЕ КНОПКИ ДЛЯ СВЕТЛОЙ ТЕМЫ */
+.chatbot-container button.bg-white,
+.chatbot-container button.bg-background,
+.chatbot-container button.variant-ghost,
+.chatbot-container button.variant-outline {
+  color: #111 !important;
+  border: 1px solid #222 !important;
+  background: #fff !important;
+}
+
+.chatbot-container button.bg-white:hover,
+.chatbot-container button.bg-background:hover,
+.chatbot-container button.variant-ghost:hover,
+.chatbot-container button.variant-outline:hover {
+  background: #f3f3f3 !important;
+  color: #111 !important;
+  border: 1px solid #111 !important;
+}
+
+/* Для темных/черных/primary кнопок — белый текст */
+.chatbot-container button.bg-black,
+.chatbot-container button.bg-primary,
+.chatbot-container button.bg-dark {
+  color: #fff !important;
+  border: none !important;
+}
+
+/* Для иконок внутри кнопок — наследуем цвет */
+.chatbot-container button svg {
+  color: inherit !important;
+}
+
+/* МОНОХРОМНЫЙ РЕЖИМ: только белый фон и чёрный текст/иконки */
+[data-theme="monochrome"] .chatbot-container,
+[data-theme="monochrome"] .chatbot-container * {
+  color: black !important;
+  background: #fff !important;
+  border-color: #111 !important;
+}
+
+[data-theme="monochrome"] .chatbot-container button,
+[data-theme="monochrome"] .chatbot-container input,
+[data-theme="monochrome"] .chatbot-container textarea,
+[data-theme="monochrome"] .chatbot-container select {
+  color: black !important;
+  background: #fff !important;
+  border: 1px solid #111 !important;
+}
+
+[data-theme="monochrome"] .chatbot-container svg {
+  color: black !important;
+}
+
+[data-theme="monochrome"] .chatbot-container a {
+  color: black !important;
+  text-decoration: underline;
+}
+
+[data-theme="monochrome"] .chatbot-container .bg-black,
+[data-theme="monochrome"] .chatbot-container .bg-primary,
+[data-theme="monochrome"] .chatbot-container .bg-muted,
+[data-theme="monochrome"] .chatbot-container .bg-accent,
+[data-theme="monochrome"] .chatbot-container .bg-secondary {
+  background: #fff !important;
+  color: black !important;
+}
+
+[data-theme="monochrome"] .chatbot-container .text-white,
+[data-theme="monochrome"] .chatbot-container .text-primary,
+[data-theme="monochrome"] .chatbot-container .text-muted,
+[data-theme="monochrome"] .chatbot-container .text-accent {
+  color: black !important;
+}
+
+[data-theme="monochrome"] .chatbot-container .border,
+[data-theme="monochrome"] .chatbot-container .border-muted,
+[data-theme="monochrome"] .chatbot-container .border-primary {
+  border-color: #111 !important;
+}
+
+[data-theme="monochrome"] .chatbot-container ::placeholder {
+  color: #222 !important;
+  opacity: 1;
+} 

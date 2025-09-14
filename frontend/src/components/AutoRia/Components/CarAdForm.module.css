@@ -1,0 +1,225 @@
+/* CarAdForm CSS Module */
+
+.container {
+  @apply min-h-screen bg-slate-50 p-6;
+}
+
+.wrapper {
+  @apply max-w-6xl mx-auto;
+}
+
+/* Header Styles */
+.header {
+  @apply flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8;
+}
+
+.headerContent {
+  @apply flex flex-col;
+}
+
+.title {
+  @apply text-3xl font-bold text-slate-900 mb-2;
+}
+
+.description {
+  @apply text-slate-600;
+}
+
+.headerActions {
+  @apply flex gap-2;
+}
+
+/* Progress Card */
+.progressCard {
+  @apply mb-6;
+}
+
+.progressContent {
+  @apply pt-6;
+}
+
+.progressHeader {
+  @apply flex items-center justify-between mb-4;
+}
+
+.progressLabel {
+  @apply text-sm font-medium;
+}
+
+.progressSubtext {
+  @apply text-xs text-slate-500 mt-1;
+}
+
+.progressRight {
+  @apply text-right;
+}
+
+.progressPercentage {
+  @apply text-sm text-slate-600;
+}
+
+.progressReady {
+  @apply text-xs text-green-600 mt-1;
+}
+
+.progressBar {
+  @apply h-2;
+}
+
+/* AutoFill Button */
+.autoFillWrapper {
+  @apply mb-6;
+}
+
+/* Main Form Card */
+.formCard {
+  @apply bg-white rounded-lg shadow-sm border;
+}
+
+.formContent {
+  @apply p-0;
+}
+
+/* Tabs Navigation */
+.tabsNavigation {
+  @apply border-b bg-slate-50 p-4;
+}
+
+.tabsGrid {
+  @apply flex flex-wrap gap-3 justify-center;
+}
+
+.tabButton {
+  @apply relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 min-w-[100px] max-w-[120px];
+}
+
+.tabButtonActive {
+  @apply bg-white text-blue-600 shadow-lg scale-105 border-blue-500;
+}
+
+.tabButtonInactive {
+  @apply bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-105 border-slate-300;
+}
+
+.tabIcon {
+  @apply relative;
+}
+
+.tabLabel {
+  @apply text-xs font-medium text-center leading-tight;
+}
+
+.tabRequired {
+  @apply absolute top-1 left-1 text-xs text-red-500 font-bold;
+}
+
+/* Preview Button */
+.previewSection {
+  @apply mt-4 pt-3 border-t border-slate-200;
+}
+
+.previewButton {
+  @apply w-full py-2 px-4 rounded-lg border transition-all duration-200 flex items-center justify-center gap-2;
+}
+
+.previewButtonActive {
+  @apply bg-blue-600 border-blue-600 text-white shadow-md;
+}
+
+.previewButtonInactive {
+  @apply bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200;
+}
+
+/* Tab Content */
+.tabContent {
+  @apply p-6;
+}
+
+/* Validation Status Indicators */
+.validationValid {
+  @apply absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full flex items-center justify-center;
+}
+
+.validationInvalid {
+  @apply absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center;
+}
+
+.validationEmpty {
+  @apply absolute -top-1 -right-1 h-3 w-3 bg-orange-500 rounded-full;
+}
+
+.validationIcon {
+  @apply h-2 w-2 text-white;
+}
+
+/* Border Colors for Validation */
+.borderValid {
+  @apply border-green-500;
+}
+
+.borderInvalid {
+  @apply border-red-500;
+}
+
+.borderEmpty {
+  @apply border-orange-500;
+}
+
+.borderValidInactive {
+  @apply border-green-300;
+}
+
+.borderInvalidInactive {
+  @apply border-red-300;
+}
+
+.borderEmptyInactive {
+  @apply border-orange-300;
+}
+
+.borderOptional {
+  @apply border-slate-300;
+}
+
+/* Navigation Buttons */
+.navigationButtons {
+  @apply flex justify-between mt-8 pt-6 border-t;
+}
+
+/* Loading States */
+.loadingSpinner {
+  @apply animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+  .tabsGrid {
+    @apply grid grid-cols-3 gap-2;
+  }
+  
+  .tabButton {
+    @apply min-w-[80px] max-w-[90px] p-2;
+  }
+  
+  .tabLabel {
+    @apply text-[10px];
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    @apply p-4;
+  }
+  
+  .title {
+    @apply text-2xl;
+  }
+  
+  .headerActions {
+    @apply flex-col w-full;
+  }
+  
+  .tabsGrid {
+    @apply grid-cols-2;
+  }
+}

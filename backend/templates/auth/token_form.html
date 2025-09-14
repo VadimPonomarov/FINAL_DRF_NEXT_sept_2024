@@ -1,0 +1,105 @@
+{% extends "auth/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ title }}</h3>
+                    <p class="text-muted">{{ description }}</p>
+                </div>
+                <div class="card-body">
+                    <!-- Token Testing Form -->
+                    <form id="tokenForm" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="token" class="form-label">JWT Token</label>
+                            <textarea class="form-control" id="token" name="token" rows="3" 
+                                placeholder="Paste your JWT token here..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="action" class="form-label">Action</label>
+                            <select class="form-select" id="action" name="action">
+                                <option value="test_token">Test Token</option>
+                                <option value="validate">Validate Token</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Test Token</button>
+                    </form>
+                    
+                    <!-- API Endpoints Info -->
+                    <div class="mt-4">
+                        <h5>Available Endpoints:</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <strong>Login:</strong> 
+                                <code>POST {{ login_url }}</code>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Refresh:</strong> 
+                                <code>POST {{ refresh_url }}</code>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Logout:</strong> 
+                                <code>POST {{ logout_url }}</code>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Results -->
+                    <div id="results" class="mt-4" style="display: none;">
+                        <h5>Results:</h5>
+                        <div id="resultContent" class="alert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('tokenForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const token = formData.get('token');
+    const action = formData.get('action');
+    
+    // Show loading
+    const resultsDiv = document.getElementById('results');
+    const resultContent = document.getElementById('resultContent');
+    resultsDiv.style.display = 'block';
+    resultContent.className = 'alert alert-info';
+    resultContent.textContent = 'Testing token...';
+    
+    // Make request
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        resultContent.className = data.status === 'success' ? 'alert alert-success' : 'alert alert-danger';
+        resultContent.innerHTML = `
+            <strong>Status:</strong> ${data.status}<br>
+            <strong>Message:</strong> ${data.message}<br>
+            ${data.token_present !== undefined ? `<strong>Token Present:</strong> ${data.token_present}` : ''}
+        `;
+    })
+    .catch(error => {
+        resultContent.className = 'alert alert-danger';
+        resultContent.textContent = 'Error: ' + error.message;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{
+  "version": "1.0.0",
+  "created_at": "2025-08-08T12:38:32.130043",
+  "seeding_operations": {
+    "reference_data": {
+      "seed_name": "reference_data",
+      "seed_version": "1.0.0",
+      "status": "failed",
+      "started_at": "2025-08-17T23:04:39.791343",
+      "completed_at": "2025-08-17T23:05:24.714824",
+      "environment": "docker",
+      "forced": true,
+      "records_created": 0,
+      "records_updated": 0,
+      "execution_time": null,
+      "error_message": "cannot import name 'CarModelModel' from 'apps.ads.models.reference' (/app/apps/ads/models/reference/__init__.py)"
+    },
+    "test_users": {
+      "seed_name": "test_users",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-08-17T23:07:16.044594",
+      "completed_at": "2025-08-17T23:07:16.932789",
+      "environment": "docker",
+      "forced": false,
+      "records_created": 0,
+      "records_updated": 0,
+      "execution_time": 0.8876700401306152,
+      "error_message": ""
+    },
+    "formatted_addresses": {
+      "seed_name": "formatted_addresses",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-08-17T23:07:16.942180",
+      "completed_at": "2025-08-17T23:07:16.954016",
+      "environment": "docker",
+      "forced": false,
+      "records_created": 0,
+      "records_updated": 0,
+      "execution_time": 0.008898735046386719,
+      "error_message": ""
+    },
+    "car_ads": {
+      "seed_name": "car_ads",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-08-17T23:07:16.961537",
+      "completed_at": "2025-08-17T23:07:17.226810",
+      "environment": "docker",
+      "forced": false,
+      "records_created": 0,
+      "records_updated": 0,
+      "execution_time": 0.2626619338989258,
+      "error_message": ""
+    },
+    "car_images": {
+      "seed_name": "car_images",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-08-17T23:07:17.236093",
+      "completed_at": "2025-08-17T23:08:52.727716",
+      "environment": "docker",
+      "forced": false,
+      "records_created": 0,
+      "records_updated": 0,
+      "execution_time": 95.4879584312439,
+      "error_message": ""
+    }
+  }
+}

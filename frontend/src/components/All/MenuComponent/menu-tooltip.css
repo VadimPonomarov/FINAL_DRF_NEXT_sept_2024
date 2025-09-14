@@ -1,0 +1,24 @@
+/* Стили для всплывающих подсказок в меню */
+.menuTooltip {
+  z-index: 9999 !important;
+  background-color: white !important;
+  color: #333 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 4px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+  margin-top: 5px !important;
+}
+
+/* Стили для стрелки всплывающей подсказки */
+.menuTooltip[data-side="bottom"]::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 5px 5px 5px;
+  border-style: solid;
+  border-color: transparent transparent white transparent;
+}

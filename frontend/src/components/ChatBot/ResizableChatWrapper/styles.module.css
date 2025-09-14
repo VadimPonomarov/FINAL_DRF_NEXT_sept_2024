@@ -1,0 +1,58 @@
+.resizableChatWrapper {
+  width: 800px; /* Фиксированная ширина */
+  height: 600px; /* Фиксированная высота */
+  max-width: calc(90vw - 40px); /* Максимальная ширина */
+  max-height: calc(90vh - 40px); /* Максимальная высота */
+  min-width: 300px;
+  min-height: 400px;
+  background-color: var(--background);
+  border-radius: 12px; /* Скругление всех углов */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  resize: both;
+  display: flex;
+  flex-direction: column;
+  z-index: 9999; /* Очень высокий z-index для обертки чата, чтобы она была поверх всех элементов */
+  padding: 5px; /* Внутренний отступ */
+  position: relative; /* Относительное позиционирование для работы с flex центрированием */
+  flex-shrink: 0; /* Предотвращаем сжатие */
+}
+
+.resizer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  background-color: rgba(255, 165, 0, 0.3);
+  cursor: nwse-resize;
+  border-radius: 0 0 12px 0;
+  z-index: 10000; /* Должен быть выше, чем у обертки */
+  transition: background-color 0.2s ease;
+  margin: 2px; /* Добавляем отступ для ручки */
+}
+
+.resizer:hover {
+  background-color: rgba(255, 165, 0, 0.6);
+}
+
+.resizer.active {
+  background-color: rgba(255, 165, 0, 0.8);
+}
+
+/* Стили для заголовка перетаскивания */
+.dragHandle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  cursor: move;
+  z-index: 10000; /* Должен быть выше, чем у обертки */
+  background-color: transparent;
+  border-radius: 12px 12px 0 0;
+}
+
+.dragHandle:hover {
+  background-color: rgba(255, 165, 0, 0.1);
+}

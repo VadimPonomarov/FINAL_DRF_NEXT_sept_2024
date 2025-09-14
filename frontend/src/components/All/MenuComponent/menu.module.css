@@ -1,0 +1,42 @@
+.menu {
+    @apply min-h-[60px] relative z-[200] mb-2 flex w-full justify-center gap-4 flex-wrap
+    bg-background dark:bg-zinc-900
+    text-foreground dark:text-zinc-100
+    shadow-md border-b border-border;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    padding: 0.75rem 1rem;
+}
+
+.menuItem {
+    @apply flex items-center px-3 rounded-md;
+}
+
+.menuTrigger {
+    @apply py-0 outline-none focus:outline-none focus-visible:outline-none hover:outline-none -mt-[5px] cursor-pointer;
+    pointer-events: auto !important; /* Убедимся, что элемент получает события */
+}
+
+.active {
+    @apply text-primary font-bold border-b-2;
+    border-color: hsl(var(--text));
+}
+
+.group {
+    @apply transition-all duration-200 hover:scale-105;
+}
+
+.disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+/* Добавляем стили для отключения outline у всех элементов меню */
+.menubarTrigger {
+    @apply outline-none focus:outline-none focus-visible:outline-none hover:outline-none ring-0 focus:ring-0 cursor-pointer;
+    pointer-events: auto !important; /* Убедимся, что элемент получает события */
+}
+
+.menubar {
+    @apply outline-none focus:outline-none focus-visible:outline-none hover:outline-none ring-0 focus:ring-0;
+    pointer-events: auto !important; /* Убедимся, что элемент получает события */
+}

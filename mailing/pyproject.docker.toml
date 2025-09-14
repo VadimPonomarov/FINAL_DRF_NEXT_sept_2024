@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "mailing"
+version = "1.0.0"
+description = "Simple email service with RabbitMQ and Celery - Docker optimized"
+authors = ["ME <pvs.versia@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+# =============================================================================
+# CORE RUNTIME DEPENDENCIES (только необходимые для Docker)
+# =============================================================================
+python = "^3.11"
+
+# FastAPI Core
+fastapi = "^0.115.5"
+uvicorn = {extras = ["standard"], version = "^0.32.1"}
+
+# Validation & Settings
+pydantic = {extras = ["email"], version = "^2.10.5"}
+pydantic-settings = "^2.6.1"
+
+# Task Queue & Message Broker
+celery = "^5.3.6"
+pika = "^1.3.2"
+
+# Templates
+jinja2 = "^3.1.3"
+
+# Configuration
+python-dotenv = "^1.0.0"
+
+# Security
+cryptography = "^42.0.0"
+
+[[tool.poetry.source]]
+name = "tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+priority = "primary"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

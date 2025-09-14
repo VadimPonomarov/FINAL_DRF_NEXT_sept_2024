@@ -1,0 +1,74 @@
+.resizableWrapper {
+    width: 600px;
+    max-width: 90vw;
+    min-width: 300px;
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    overflow: auto;
+    resize: both;
+    display: flex;
+    flex-direction: column;
+    z-index: 9200;
+    padding: 5px;
+    position: relative;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    /* Ensure height is determined by content */
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+}
+
+/* Для мобильных устройств */
+@media (max-width: 767px) {
+    .resizableWrapper {
+        width: calc(100% - 20px);
+    }
+}
+
+/* Для других экранов */
+@media (min-width: 768px) {
+    .resizableWrapper {
+        width: auto;
+        max-width: none;
+    }
+}
+
+.resizer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    cursor: nwse-resize;
+    border-radius: 0 0 12px 0;
+    z-index: 9300;
+    transition: background-color 0.2s ease;
+    margin: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 20px;
+    height: 20px;
+}
+
+.resizer:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.resizer.active {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+/* Prevent text selection during resize */
+body.resizing {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Ensure the wrapper maintains its size when resizing */
+.resizableWrapper:active,
+.resizableWrapper:focus {
+    outline: none;
+}

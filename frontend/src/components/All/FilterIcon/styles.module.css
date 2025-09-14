@@ -1,0 +1,47 @@
+.filterButton {
+  height: 3.5rem;
+  width: 3.5rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+  position: fixed;
+  top: 60px;
+  left: 1rem;
+  z-index: 50;
+}
+
+.filterButton:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.filterButtonHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filterButtonVisible {
+  opacity: 100;
+}
+
+.filterOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 101;
+  pointer-events: auto;
+}

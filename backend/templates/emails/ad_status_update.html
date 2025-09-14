@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% if action == 'approved' %}Your Ad Has Been Approved!{% else %}Ad Status Update{% endif %}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; text-align: center; border-bottom: 1px solid #e9ecef; }
+        .content { padding: 20px; }
+        .footer { margin-top: 20px; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #e9ecef; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 10px 0; }
+        .details { background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0; }
+        .success { color: #28a745; }
+        .warning { color: #ffc107; }
+        .danger { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            {% if action == 'approved' %}
+                <h2 class="success">🎉 Your Ad Has Been Approved!</h2>
+            {% elif action == 'rejected' %}
+                <h2 class="danger">⚠️ Your Ad Requires Attention</h2>
+            {% else %}
+                <h2>Ad Status Update</h2>
+            {% endif %}
+        </div>
+        
+        <div class="content">
+            {% if action == 'approved' %}
+                <p>Great news! Your ad <strong>"{{ ad.title }}"</strong> has been approved and is now live on {{ site_name }}.</p>
+                <div style="text-align: center; margin: 25px 0;">
+                    <a href="{{ ad_url }}" class="button">View Your Ad</a>
+                </div>
+                
+            {% elif action == 'rejected' %}
+                <p>Your ad <strong>"{{ ad.title }}"</strong> has been reviewed and requires some changes before it can be published.</p>
+                
+                {% if details.reason %}
+                <div class="details">
+                    <h4>Reason for Rejection:</h4>
+                    <p>{{ details.reason }}</p>
+                </div>
+                {% endif %}
+                
+                {% if details.suggestions %}
+                <div class="details">
+                    <h4>Suggested Changes:</h4>
+                    <ul>
+                        {% for suggestion in details.suggestions %}
+                        <li>{{ suggestion }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <div style="text-align: center; margin: 25px 0;">
+                    <a href="{{ ad_url }}" class="button">Edit Your Ad</a>
+                </div>
+                
+            {% else %}
+                <p>The status of your ad <strong>"{{ ad.title }}"</strong> has been updated to: 
+                <strong>{{ action|title }}</strong></p>
+                
+                {% if details.reason %}
+                <div class="details">
+                    <p><strong>Note:</strong> {{ details.reason }}</p>
+                </div>
+                {% endif %}
+                
+                <div style="text-align: center; margin: 25px 0;">
+                    <a href="{{ ad_url }}" class="button">View Ad Status</a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from {{ site_name }}. Please do not reply to this email.</p>
+            <p>If you have any questions, please contact our support team.</p>
+        </div>
+    </div>
+</body>
+</html>

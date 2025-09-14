@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Потрібна ручна перевірка оголошення</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #dc3545;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .alert {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .ad-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+        .button {
+            display: inline-block;
+            background-color: #dc3545;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .stats {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>🚨 Потрібна ручна перевірка оголошення</h2>
+        </div>
+
+        <div class="alert">
+            <strong>Увага!</strong> Оголошення досягло максимальної кількості спроб автоматичного редагування та потребує ручної перевірки модератора.
+        </div>
+
+        <div class="ad-details">
+            <h3>Деталі оголошення:</h3>
+            <p><strong>ID оголошення:</strong> #{{ ad_id }}</p>
+            <p><strong>ID користувача:</strong> {{ user_id }}</p>
+            {% if reason %}
+            <p><strong>Остання причина відхилення:</strong> {{ reason }}</p>
+            {% endif %}
+        </div>
+
+        <div class="stats">
+            <h4>📊 Статистика спроб:</h4>
+            <p><strong>Кількість спроб:</strong> {{ attempts_count }}/3</p>
+            <p><strong>Статус:</strong> Потребує ручної перевірки</p>
+            <p><strong>Час:</strong> {{ timestamp }}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ admin_url }}" class="button">
+                🔍 Переглянути в адмін-панелі
+            </a>
+        </div>
+
+        <div style="background-color: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h4>💡 Рекомендовані дії:</h4>
+            <ul>
+                <li>Перевірте контент оголошення на відповідність правилам платформи</li>
+                <li>Зв'яжіться з користувачем для роз'яснення, якщо необхідно</li>
+                <li>Схваліть оголошення або остаточно відхиліть його</li>
+                <li>Розгляньте можливість навчання користувача правилам платформи</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Це автоматичне повідомлення від системи модерації {{ site_name }}.</p>
+            <p>Будь ласка, не відповідайте на цей email.</p>
+            <p><a href="{{ site_url }}">{{ site_name }}</a></p>
+        </div>
+    </div>
+</body>
+</html>

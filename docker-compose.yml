@@ -1,0 +1,346 @@
+services:
+
+  app:
+    build:
+      context: ./backend
+    volumes:
+      # Включаем volume mount для разработки - синхронизация кода
+      - ./backend:/app  # ВКЛЮЧЕНО: для синхронизации изменений кода
+      - backend-static:/app/static
+      - backend-temp:/app/temp
+      - backend-staticfiles:/app/staticfiles
+      - ./media:/app/media  # Только медиа файлы
+    environment:
+      IS_DOCKER: true
+      DISABLE_RATELIMIT: true
+      DEBUG: true
+    env_file:
+      - ./env-config/.env.base       # Base configuration
+      - ./env-config/.env.secrets    # Secrets
+      - ./env-config/.env.docker     # Docker overrides
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    depends_on:
+      pg:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+    command: >
+      sh -c "
+        echo '🚀 Starting Django with seeding...' &&
+        python manage.py wait_db --timeout=60 &&
+        python manage.py wait_redis --timeout=60 &&
+        python manage.py wait_rabbitmq --timeout=60 &&
+        echo '🔄 Running migrations...' &&
+        python manage.py migrate --noinput &&
+        echo '🌱 Seeding database...' &&
+        python manage.py init_project_data &&
+        echo '📁 Collecting static files...' &&
+        python manage.py collectstatic --noinput --clear &&
+        echo '✅ Setup complete! Starting server...' &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+
+  pg:
+    image: postgres:17-alpine
+    container_name: pg
+    env_file:
+      - ./env-config/.env.base       # Base configuration
+      - ./env-config/.env.secrets    # Secrets
+      - ./env-config/.env.docker     # Docker overrides
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pg/data:/var/lib/postgresql/data  # Local data directory
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+  #   frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   env_file:
+  #     - ./env-config/.env.base
+  #     - ./env-config/.env.secrets
+  #     - ./env-config/.env.docker
+  #   environment:
+  #     IS_DOCKER: true
+  #     NEXT_PUBLIC_IS_DOCKER: true
+  #     REDIS_HOST: redis
+  #     BACKEND_URL: http://app:8000
+  #     NEXTAUTH_URL_INTERNAL: http://frontend:3000
+  #   ports:
+  #     - "3000:3000"
+    # volumes:
+      # Для разработки можно включить volume mount, но для продакшена лучше отключить
+      # Временно отключаем volume mount для исправления проблемы с node_modules
+      # - ./frontend:/app
+      # - /app/node_modules
+      # - /app/.next
+  #   depends_on:
+  #     - redis
+  #     - app
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 60s
+
+
+  # =============================================================================
+  # CELERY MICROSERVICE - Autonomous Queue Management
+  # =============================================================================
+
+  celery-worker:
+    build:
+      context: ./celery-service
+      dockerfile: Dockerfile
+    container_name: celery-worker
+    restart: unless-stopped
+    environment:
+      # Broker and Backend
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      # Backend API integration
+      BACKEND_API_URL: http://app:8000
+      BACKEND_API_KEY: ${BACKEND_API_KEY:-celery-microservice-key}
+      # Email configuration
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      FROM_EMAIL: ${FROM_EMAIL:-noreply@example.com}
+      # Push notifications
+      FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
+      # SMS configuration
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+    env_file:
+      - ./env-config/.env.base       # Base configuration
+      - ./env-config/.env.secrets    # Secrets
+      - ./env-config/.env.docker     # Docker overrides
+    volumes:
+      - celery-logs:/app/logs
+      - celery-temp:/app/temp
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A config.celery_app worker
+      --loglevel=info
+      --pool=solo
+      --concurrency=2
+      --queues=email,notifications,data_processing,cleanup
+    healthcheck:
+      test: ["CMD", "celery", "-A", "config.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - default
+
+  celery-beat:
+    build:
+      context: ./celery-service
+      dockerfile: Dockerfile
+    container_name: celery-beat
+    restart: unless-stopped
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+    env_file:
+      - ./env-config/.env.base       # Base configuration
+      - ./env-config/.env.secrets    # Secrets
+      - ./env-config/.env.docker     # Docker overrides
+    volumes:
+      - celery-logs:/app/logs
+      - celery-beat-schedule:/app/celerybeat-schedule
+    depends_on:
+      - rabbitmq
+      - redis
+    command: >
+      celery -A config.celery_app beat
+      --loglevel=info
+      --schedule=/app/celerybeat-schedule/celerybeat-schedule
+    networks:
+      - default
+
+  flower:
+    build:
+      context: ./celery-service
+      dockerfile: Dockerfile
+    container_name: celery-flower
+    restart: unless-stopped
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    env_file:
+      - ./env-config/.env.base       # Base configuration
+      - ./env-config/.env.secrets    # Secrets
+      - ./env-config/.env.docker     # Docker overrides
+    ports:
+      - "5555:5555"
+    volumes:
+      - celery-logs:/app/logs
+    depends_on:
+      - rabbitmq
+      - redis
+    command: >
+      celery -A config.celery_app flower
+      --port=5555
+      --broker_api=http://guest:guest@rabbitmq:15672/api/
+    networks:
+      - default
+
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    env_file:
+      - ./env-config/.env.base       # Base configuration
+      - ./env-config/.env.secrets    # Secrets
+      - ./env-config/.env.docker     # Docker overrides
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis-data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    container_name: redis-insight
+    ports:
+      - "5540:5540"
+    env_file:
+      - ./env-config/.env.base       # Base configuration
+      - ./env-config/.env.secrets    # Secrets
+      - ./env-config/.env.docker     # Docker overrides
+    volumes:
+      - redis-insight:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      # Временно отключаем кастомный конфиг для диагностики
+      # - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    restart: unless-stopped
+
+  mailing:
+    build:
+      context: ./mailing
+    container_name: mailing
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./env-config/.env.base       # Base configuration
+      - ./env-config/.env.secrets    # Secrets
+      - ./env-config/.env.docker     # Docker overrides
+    environment:
+      IS_DOCKER: true
+      RABBITMQ_HOST: rabbitmq
+    volumes:
+      - ./mailing:/app
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+
+
+
+
+  nginx:
+    build:
+      context: ./nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+    env_file:
+      - ./env-config/.env.base       # Base configuration
+      - ./env-config/.env.secrets    # Secrets
+      - ./env-config/.env.docker     # Docker overrides
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - backend-static:/var/www/static:ro
+    depends_on:
+      app:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+
+volumes:
+  # postgres-data: removed - using local directory ./pg/data
+  redis-data:
+  rabbitmq-data:
+  redis-insight:
+  backend-static:
+  backend-temp:
+  backend-staticfiles:
+  backend-media:
+  # Celery microservice volumes
+  celery-logs:
+  celery-temp:
+  celery-beat-schedule:

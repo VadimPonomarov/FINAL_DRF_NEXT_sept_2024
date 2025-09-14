@@ -1,0 +1,68 @@
+.paginationWrapper {
+    @apply relative z-[200];
+}
+
+.pagination {
+    @apply bg-background rounded-md shadow-sm;
+}
+
+:global(.dark) .pagination {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    color: var(--dropdown-text) !important;
+}
+
+.paginationItem {
+    @apply cursor-pointer hover:bg-accent hover:text-accent-foreground
+           transition-colors duration-200 z-[201];
+}
+
+:global(.dark) .paginationItem {
+    color: var(--dropdown-text) !important;
+}
+
+:global(.dark) .paginationItem:hover {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    color: var(--dropdown-text) !important;
+}
+
+:global(.dark) .paginationItem:hover * {
+    color: var(--dropdown-text) !important;
+}
+
+:global(.dark) .paginationItem svg {
+    color: var(--dropdown-text) !important;
+    stroke: var(--dropdown-text) !important;
+}
+
+.selector {
+    @apply z-[201] hover:bg-accent hover:text-accent-foreground
+           rounded-md transition-colors duration-200;
+    position: relative; /* Добавляем позиционирование */
+}
+
+:global(.dark) .selector {
+    color: var(--dropdown-text) !important;
+}
+
+:global(.dark) .selector:hover {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    color: var(--dropdown-text) !important;
+}
+
+:global(.dark) .selector:hover * {
+    color: var(--dropdown-text) !important;
+}
+
+.tooltipContent {
+    @apply z-[202] bg-background text-foreground
+           border border-border rounded-md px-3 py-1.5;
+    transform: translateY(-15px); /* Добавляем смещение вверх на 15px */
+}
+
+:global(.dark) .tooltipContent {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+    color: var(--dropdown-text) !important;
+    border-color: var(--dropdown-text) !important;
+    transform: translateY(-15px); /* Добавляем смещение вверх на 15px для темной темы */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Добавляем тень для лучшего визуального разделения */
+}

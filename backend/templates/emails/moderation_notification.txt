@@ -1,0 +1,25 @@
+Action Required: {{ message }}
+
+Ad ID: {{ ad.id }}
+Title: {{ ad.title }}
+User: {{ ad.account.user.get_full_name|default:ad.account.user.username }}
+
+{% if details.reason %}Reason: {{ details.reason }}
+{% endif %}
+
+{% if details.categories %}
+Categories:
+{% for category in details.categories %}- {{ category }}
+{% endfor %}
+{% endif %}
+
+{% if details.suggestions %}
+Suggested Actions:
+{% for suggestion in details.suggestions %}- {{ suggestion }}
+{% endfor %}
+{% endif %}
+
+View ad in admin: {{ admin_url }}
+
+---
+{{ site_name }}

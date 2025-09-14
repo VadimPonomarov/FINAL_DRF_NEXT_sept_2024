@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "celery-microservice"
+version = "1.0.0"
+description = "Autonomous Celery microservice for queue management"
+authors = ["Your Team <team@example.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+# Core Celery and message broker
+celery = "^5.4.0"
+redis = "^5.2.0"
+pika = "^1.3.2"
+
+# Database (for task results and shared models)
+psycopg2 = "^2.9.10"
+
+# Environment and configuration
+python-dotenv = "^1.1.1"
+loguru = "^0.7.2"
+
+# HTTP client for API calls
+httpx = "^0.28.1"
+requests = "^2.32.3"
+
+# Monitoring (optional)
+flower = "^2.0.1"
+
+# Serialization
+orjson = "^3.10.12"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-asyncio = "^0.25.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

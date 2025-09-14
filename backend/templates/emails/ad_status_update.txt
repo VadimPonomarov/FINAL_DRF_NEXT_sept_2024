@@ -1,0 +1,37 @@
+{% if action == 'approved' %}
+Your Ad Has Been Approved!
+
+Great news! Your ad "{{ ad.title }}" has been approved and is now live on {{ site_name }}.
+
+View your ad: {{ ad_url }}
+
+{% elif action == 'rejected' %}
+Your Ad Requires Attention
+
+Your ad "{{ ad.title }}" has been reviewed and requires some changes before it can be published.
+
+{% if details.reason %}
+Reason: {{ details.reason }}
+{% endif %}
+
+{% if details.suggestions %}
+Suggested Changes:
+{% for suggestion in details.suggestions %}- {{ suggestion }}
+{% endfor %}
+{% endif %}
+
+Please log in to your account to make the necessary changes and resubmit your ad for review.
+
+{% else %}
+Your Ad Status Update
+
+The status of your ad "{{ ad.title }}" has been updated to: {{ action }}
+
+{% if details.reason %}
+Reason: {{ details.reason }}
+{% endif %}
+
+{% endif %}
+
+---
+{{ site_name }}

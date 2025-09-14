@@ -1,0 +1,59 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  color: black !important; /* Черный цвет для всего текста в чатботе */
+}
+
+/* Обеспечиваем черный цвет для всех текстовых элементов в чатботе */
+.container * {
+  color: black !important;
+}
+
+/* Исключения для специальных элементов */
+.container a {
+  color: #3b82f6 !important; /* Синий для ссылок */
+  text-decoration: underline;
+}
+
+.container a:hover {
+  color: #1d4ed8 !important; /* Темно-синий при наведении */
+}
+
+/* Стили для кнопок в чатботе */
+.container button {
+  color: black !important; /* Черный цвет для всех кнопок */
+}
+
+.container button:hover {
+  color: black !important; /* Черный цвет при наведении */
+}
+
+/* Стили для иконок в чатботе */
+.container svg {
+  color: black !important; /* Черный цвет для всех иконок */
+}
+
+/* Специальные стили для иконок статуса */
+.container .iconGreen {
+  color: rgb(34, 197, 94) !important; /* Зеленый для подключенного состояния */
+}
+
+.container .iconRed {
+  color: rgb(239, 68, 68) !important; /* Красный для отключенного состояния */
+}
+
+/* Стили для отключенных элементов */
+.container button:disabled {
+  color: rgba(0, 0, 0, 0.5) !important; /* Полупрозрачный черный для отключенного состояния */
+}
+
+/* Стили для placeholder текста */
+.container input::placeholder,
+.container textarea::placeholder {
+  color: rgba(0, 0, 0, 0.6) !important; /* Темно-серый для placeholder */
+} 

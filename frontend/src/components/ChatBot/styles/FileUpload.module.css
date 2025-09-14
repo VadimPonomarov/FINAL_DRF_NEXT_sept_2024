@@ -1,0 +1,142 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  color: black !important;
+}
+
+.attachButton {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: black !important;
+}
+
+.attachButton:hover {
+  background-color: hsl(var(--muted));
+  color: black !important;
+}
+
+.attachButton.active {
+  color: hsl(var(--primary));
+}
+
+.fileList {
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  width: 300px;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: black !important;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background-color: hsl(var(--muted));
+  color: black !important;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  flex: 1;
+  color: black !important;
+}
+
+.fileName {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  color: black !important;
+}
+
+.fileSize {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.removeButton {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: black !important;
+}
+
+.removeButton:hover {
+  color: black !important;
+}
+
+.messageInput {
+  margin-top: 8px;
+  color: black !important;
+}
+
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--background));
+  font-size: 14px;
+  color: black !important;
+}
+
+.input::placeholder {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  color: black !important;
+}
+
+.sendButton, .cancelButton {
+  flex: 1;
+  color: black !important;
+}
+
+.sendButton {
+  margin-right: 8px;
+}
+
+.sendButton:hover, .cancelButton:hover {
+  color: black !important;
+}
+
+/* Стили для иконок в FileUpload */
+.container svg {
+  color: black !important;
+}
+
+/* Стили для кнопок в FileUpload */
+.container button {
+  color: black !important;
+}
+
+.container button:hover {
+  color: black !important;
+}
