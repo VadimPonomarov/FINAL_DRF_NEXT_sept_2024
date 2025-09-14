@@ -8,7 +8,7 @@
 
 ### 1. Клонування репозиторію
 ```bash
-git clone https://github.com/YOUR_USERNAME/DRF_NEXT_FULLSTACK_FINAL.git
+git clone https://github.com/VadimPonomarov/FINAL_DRF_NEXT_sept_2024.git
 cd DRF_NEXT_FULLSTACK_FINAL
 ```
 
