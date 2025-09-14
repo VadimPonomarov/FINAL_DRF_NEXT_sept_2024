@@ -1,49 +1,49 @@
-# Mailing Service
+# Сервіс розсилки
 
-Simple, clean email service built with FastAPI, Celery, and RabbitMQ.
+Простий, чистий email сервіс побудований на FastAPI, Celery та RabbitMQ.
 
-## 🚀 Features
+## 🚀 Функції
 
-- **Email Processing**: Celery with RabbitMQ for reliable message queuing
-- **Template Support**: Jinja2 HTML email templates
-- **Security**: Encrypted credentials storage
-- **Health Monitoring**: Built-in health checks
-- **Docker Support**: Full containerization
-- **Clean Architecture**: Minimal, focused codebase
+- **Обробка Email**: Celery з RabbitMQ для надійної черги повідомлень
+- **Підтримка шаблонів**: Jinja2 HTML email шаблони
+- **Безпека**: Зашифроване зберігання облікових даних
+- **Моніторинг здоров'я**: Вбудовані перевірки здоров'я
+- **Підтримка Docker**: Повна контейнеризація
+- **Чиста архітектура**: Мінімальна, сфокусована кодова база
 
-## 📁 Project Structure
+## 📁 Структура проекту
 
 ```
 mailing/
-├── .env                    # All environment variables
-├── Dockerfile             # Container configuration
-├── pyproject.toml         # Dependencies and project config
+├── .env                    # Всі змінні оточення
+├── Dockerfile             # Конфігурація контейнера
+├── pyproject.toml         # Залежності та конфігурація проекту
 └── src/
-    ├── app.py             # FastAPI application
-    ├── config.py          # Unified configuration
+    ├── app.py             # FastAPI додаток
+    ├── config.py          # Уніфікована конфігурація
     ├── services/
-    │   ├── mail_services.py    # Email sending logic
-    │   ├── rabbitmq.py         # RabbitMQ helper
-    │   └── encription_service/ # Credential encryption
+    │   ├── mail_services.py    # Логіка відправки email
+    │   ├── rabbitmq.py         # RabbitMQ помічник
+    │   └── encription_service/ # Шифрування облікових даних
     ├── templates/
-    │   └── email_template.html # Email template
-    └── media/             # Static files (logos, etc.)
+    │   └── email_template.html # Email шаблон
+    └── media/             # Статичні файли (логотипи, тощо)
 ```
 
-## 🛠️ Installation
+## 🛠️ Встановлення
 
-### Local Development
+### Локальна розробка
 ```bash
-# Install dependencies
+# Встановити залежності
 poetry install
 
-# Run application
+# Запустити додаток
 poetry run python src/app.py
 ```
 
 ### Docker
 ```bash
-# Build and run
+# Збірка та запуск
 docker build -t mailing .
 docker run -p 8000:8000 mailing
 ```

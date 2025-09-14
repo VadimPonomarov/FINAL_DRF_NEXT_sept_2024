@@ -1,30 +1,30 @@
-# Google Maps API Setup
+# Налаштування Google Maps API
 
-## Настройка Google Maps API для отображения карт в профиле
+## Налаштування Google Maps API для відображення карт у профілі
 
-### 1. Получение API ключа
+### 1. Отримання API ключа
 
-1. Перейдите в [Google Cloud Console](https://console.cloud.google.com/)
-2. Создайте новый проект или выберите существующий
-3. Включите следующие API:
+1. Перейдіть до [Google Cloud Console](https://console.cloud.google.com/)
+2. Створіть новий проект або виберіть існуючий
+3. Увімкніть наступні API:
    - **Google Maps JavaScript API**
    - **Google Maps Embed API**
-   - **Google Maps Geocoding API** (уже используется в backend)
+   - **Google Maps Geocoding API** (вже використовується в backend)
 
-### 2. Создание API ключа
+### 2. Створення API ключа
 
-1. Перейдите в раздел "APIs & Services" > "Credentials"
-2. Нажмите "Create Credentials" > "API Key"
-3. Скопируйте созданный ключ
+1. Перейдіть до розділу "APIs & Services" > "Credentials"
+2. Натисніть "Create Credentials" > "API Key"
+3. Скопіюйте створений ключ
 
-### 3. Настройка ограничений (рекомендуется)
+### 3. Налаштування обмежень (рекомендується)
 
-1. Нажмите на созданный API ключ
-2. В разделе "Application restrictions" выберите "HTTP referrers"
-3. Добавьте домены:
-   - `localhost:3000/*` (для разработки)
-   - `yourdomain.com/*` (для продакшена)
-4. В разделе "API restrictions" выберите "Restrict key" и выберите:
+1. Натисніть на створений API ключ
+2. У розділі "Application restrictions" виберіть "HTTP referrers"
+3. Додайте домени:
+   - `localhost:3000/*` (для розробки)
+   - `yourdomain.com/*` (для продакшену)
+4. У розділі "API restrictions" виберіть "Restrict key" та виберіть:
    - Google Maps JavaScript API
    - Google Maps Embed API
 

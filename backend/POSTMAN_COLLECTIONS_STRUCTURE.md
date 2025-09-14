@@ -1,32 +1,32 @@
-# 📁 ФИНАЛЬНАЯ СТРУКТУРА POSTMAN КОЛЛЕКЦИЙ
+# 📁 ФІНАЛЬНА СТРУКТУРА POSTMAN КОЛЕКЦІЙ
 
-Дата создания: 2025-09-14 12:42:40
+Дата створення: 2025-09-14 12:42:40
 
-## 🎯 КАНОНИЧЕСКИЕ ФАЙЛЫ (ОСНОВНЫЕ):
+## 🎯 КАНОНІЧНІ ФАЙЛИ (ОСНОВНІ):
 
-### 📋 Главная коллекция:
-- **AutoRia_API_Complete_Test_Suite.postman_collection.json** - Объединенная коллекция всех тестов (92 запроса)
+### 📋 Головна колекція:
+- **AutoRia_API_Complete_Test_Suite.postman_collection.json** - Об'єднана колекція всіх тестів (92 запити)
 
 ### ⚙️ Environment:
-- **AutoRia_API_Complete_Test_Suite.postman_environment.json** - Переменные окружения для всех тестов
+- **AutoRia_API_Complete_Test_Suite.postman_environment.json** - Змінні оточення для всіх тестів
 
-## 📚 ДОПОЛНИТЕЛЬНЫЕ КОЛЛЕКЦИИ:
+## 📚 ДОДАТКОВІ КОЛЕКЦІЇ:
 
-### 🔥 Специализированные коллекции:
-- **AutoRia_API_Core.postman_collection.json** - Основные API эндпоинты
-- **AutoRia_API_Currency.postman_collection.json** - Валютные операции
-- **AutoRia_API_Moderation.postman_collection.json** - Процессы модерации
+### 🔥 Спеціалізовані колекції:
+- **AutoRia_API_Core.postman_collection.json** - Основні API ендпоінти
+- **AutoRia_API_Currency.postman_collection.json** - Валютні операції
+- **AutoRia_API_Moderation.postman_collection.json** - Процеси модерації
 
-## 📦 АРХИВНЫЕ ФАЙЛЫ:
+## 📦 АРХІВНІ ФАЙЛИ:
 
-Старые файлы перемещены в папку `archive_old_collections/`:
+Старі файли переміщені до папки `archive_old_collections/`:
 - AutoRia_ADMIN_ENDPOINTS.postman_collection.json
 - AutoRia_AI_ENDPOINTS.postman_collection.json
 - AutoRia_ANALYTICS_ENDPOINTS.postman_collection.json
 - AutoRia_MISSING_ENDPOINTS.postman_collection.json
 - AutoRia_Complete_197_Endpoints_FULL_SWAGGER.postman_collection.json
 
-## 🚀 РЕКОМЕНДУЕМОЕ ИСПОЛЬЗОВАНИЕ:
+## 🚀 РЕКОМЕНДОВАНЕ ВИКОРИСТАННЯ:
 
 ### Для ежедневного тестирования:
 ```bash

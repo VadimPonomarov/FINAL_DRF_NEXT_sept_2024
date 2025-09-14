@@ -1,33 +1,33 @@
-# 🌍 AutoRia Internationalization (i18n) System Guide
+# 🌍 Посібник з системи інтернаціоналізації (i18n) AutoRia
 
-## 📋 Table of Contents
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [File Structure](#file-structure)
-- [Translation Keys Structure](#translation-keys-structure)
-- [Usage in Components](#usage-in-components)
-- [Adding New Translations](#adding-new-translations)
-- [Translation Validation](#translation-validation)
-- [Validation with i18n](#validation-with-i18n)
-- [Modular Utils Structure](#modular-utils-structure)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
-- [Recent Updates](#recent-updates)
-- [Migration Guide](#migration-guide)
+## 📋 Зміст
+- [Огляд](#огляд)
+- [Архітектура](#архітектура)
+- [Структура файлів](#структура-файлів)
+- [Структура ключів перекладу](#структура-ключів-перекладу)
+- [Використання в компонентах](#використання-в-компонентах)
+- [Додавання нових перекладів](#додавання-нових-перекладів)
+- [Валідація перекладів](#валідація-перекладів)
+- [Валідація з i18n](#валідація-з-i18n)
+- [Модульна структура утиліт](#модульна-структура-утиліт)
+- [Найкращі практики](#найкращі-практики)
+- [Усунення неполадок](#усунення-неполадок)
+- [Останні оновлення](#останні-оновлення)
+- [Посібник з міграції](#посібник-з-міграції)
 
-## 🎯 Overview
+## 🎯 Огляд
 
-AutoRia uses a custom i18n system built on React Context API with TypeScript support. The system supports three languages:
-- **English (en)** - Base language
-- **Russian (ru)** - Primary language (default)
-- **Ukrainian (uk)** - Secondary language
+AutoRia використовує кастомну i18n систему побудовану на React Context API з підтримкою TypeScript. Система підтримує три мови:
+- **Англійська (en)** - Базова мова
+- **Російська (ru)** - Основна мова (за замовчуванням)
+- **Українська (uk)** - Вторинна мова
 
-**Current Status (Updated 2024):**
-✅ **Fully Functional** - System is working correctly with comprehensive translation coverage
-✅ **Profile Page** - Complete translation support for user profile management
-✅ **Avatar Generation** - Multi-language support for AI avatar generation features
-✅ **Address Management** - Localized address forms with region/city selection
-✅ **Account Settings** - Translated account type, role, and moderation level options
+**Поточний статус (Оновлено 2024):**
+✅ **Повністю функціональна** - Система працює правильно з комплексним покриттям перекладів
+✅ **Сторінка профілю** - Повна підтримка перекладу для управління профілем користувача
+✅ **Генерація аватарів** - Багатомовна підтримка для функцій генерації AI аватарів
+✅ **Управління адресами** - Локалізовані форми адрес з вибором регіону/міста
+✅ **Налаштування акаунту** - Перекладені опції типу акаунту, ролі та рівня модерації
 
 ## 🏗️ Architecture
 

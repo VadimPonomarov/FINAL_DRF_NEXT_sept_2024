@@ -1,8 +1,8 @@
-# 🚗 AutoRia Frontend Project
+# 🚗 AutoRia Frontend Проект
 
-A modern Next.js 15 application with **dual-provider authentication architecture**, featuring AutoRia car marketplace functionality, external API integrations, and AI chat system.
+Сучасний Next.js 15 додаток з **архітектурою подвійного провайдера автентифікації**, що включає функціонал AutoRia автомобільного маркетплейсу, інтеграції зовнішніх API та AI чат-систему.
 
-## 🚀 Quick Start
+## 🚀 Швидкий старт
 
 ```sh
 git clone <repository URL>
@@ -12,42 +12,42 @@ npm install --legacy-peer-deps
 npm run dev
 ```
 
-## 🛠️ Technologies
-- **React 19.1.0** - Latest React with concurrent features
-- **Next.js 15.4.1** - App Router with server components
-- **TypeScript 5.8.3** - Type-safe development
-- **TanStack Query** - Server state management
-- **Tailwind CSS** - Utility-first CSS framework
-- **Shadcn/UI** - Modern component library
-- **Framer Motion** - Animation library
-- **NextAuth.js** - Authentication solution
-- **Redis** - Caching and session storage
-- **i18n** - Internationalization (EN, RU, UK)
+## 🛠️ Технології
+- **React 19.1.0** - Останній React з concurrent функціями
+- **Next.js 15.4.1** - App Router з серверними компонентами
+- **TypeScript 5.8.3** - Типобезпечна розробка
+- **TanStack Query** - Управління серверним станом
+- **Tailwind CSS** - Utility-first CSS фреймворк
+- **Shadcn/UI** - Сучасна бібліотека компонентів
+- **Framer Motion** - Бібліотека анімацій
+- **NextAuth.js** - Рішення для автентифікації
+- **Redis** - Кешування та зберігання сесій
+- **i18n** - Інтернаціоналізація (EN, RU, UK)
 
-## 🏗️ Project Architecture
+## 🏗️ Архітектура проекту
 
-### 🔐 Dual-Provider Authentication System
+### 🔐 Система подвійного провайдера автентифікації
 
-The project implements a **sophisticated dual-provider authentication architecture** that allows switching between different data sources and functionalities:
+Проект реалізує **складну архітектуру подвійного провайдера автентифікації**, що дозволяє перемикатися між різними джерелами даних та функціоналом:
 
 #### 1. **Backend Provider** (`AuthProvider.MyBackendDocs`)
-- **Purpose**: Main AutoRia functionality with Django backend
-- **Endpoint**: `http://localhost:8000` (local) / `http://app:8000` (Docker)
-- **Features**:
-  - 🚗 **AutoRia Marketplace** - Car advertisements and management
-  - 👤 **User Profiles** - Comprehensive user management
-  - 📊 **Analytics Dashboard** - Premium user statistics
-  - 💬 **AI Chat System** - Real-time WebSocket chat with AI
-  - 🛡️ **Content Moderation** - Automated profanity detection
-  - 💰 **Currency System** - Multi-currency support (USD, EUR, UAH)
+- **Призначення**: Основний функціонал AutoRia з Django backend
+- **Endpoint**: `http://localhost:8000` (локально) / `http://app:8000` (Docker)
+- **Функції**:
+  - 🚗 **AutoRia Маркетплейс** - Автомобільні оголошення та управління
+  - 👤 **Профілі користувачів** - Комплексне управління користувачами
+  - 📊 **Панель аналітики** - Статистика для преміум користувачів
+  - 💬 **AI Чат-система** - Реальний час WebSocket чат з AI
+  - 🛡️ **Модерація контенту** - Автоматичне виявлення нецензурної лексики
+  - 💰 **Валютна система** - Підтримка багатьох валют (USD, EUR, UAH)
 
 #### 2. **Dummy Provider** (`AuthProvider.Dummy`)
-- **Purpose**: External API integration demonstration
+- **Призначення**: Демонстрація інтеграції зовнішніх API
 - **Endpoint**: `https://dummyjson.com`
-- **Features**:
-  - 🍳 **Recipes System** - External recipe data integration
-  - 👥 **Users Management** - External user profiles
-  - 🔍 **Search & Filtering** - Advanced filtering capabilities
+- **Функції**:
+  - 🍳 **Система рецептів** - Інтеграція зовнішніх даних рецептів
+  - 👥 **Управління користувачами** - Зовнішні профілі користувачів
+  - 🔍 **Пошук та фільтрація** - Розширені можливості фільтрації
   - 📱 **Pagination** - Infinite scroll and pagination
 
 ### Modular Structure

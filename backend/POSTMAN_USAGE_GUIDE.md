@@ -1,32 +1,32 @@
-# 🚀 РУКОВОДСТВО ПО ИСПОЛЬЗОВАНИЮ POSTMAN КОЛЛЕКЦИЙ AUTORIA
+# 🚀 ПОСІБНИК З ВИКОРИСТАННЯ POSTMAN КОЛЕКЦІЙ AUTORIA
 
-## 📋 КАНОНИЧЕСКИЕ ФАЙЛЫ
+## 📋 КАНОНІЧНІ ФАЙЛИ
 
-### 🎯 Главная коллекция (рекомендуется):
+### 🎯 Головна колекція (рекомендується):
 ```bash
 newman run AutoRia_API_Complete_Test_Suite.postman_collection.json -e AutoRia_API_Complete_Test_Suite.postman_environment.json
 ```
 
-### 📚 Специализированные коллекции:
+### 📚 Спеціалізовані колекції:
 ```bash
-# Основные API эндпоинты
+# Основні API ендпоінти
 newman run AutoRia_API_Core.postman_collection.json -e AutoRia_API_Complete_Test_Suite.postman_environment.json
 
-# Валютные операции
+# Валютні операції
 newman run AutoRia_API_Currency.postman_collection.json -e AutoRia_API_Complete_Test_Suite.postman_environment.json
 
-# Процессы модерации
+# Процеси модерації
 newman run AutoRia_API_Moderation.postman_collection.json -e AutoRia_API_Complete_Test_Suite.postman_environment.json
 ```
 
-## 🎯 ТЕСТИРОВАНИЕ КОНКРЕТНЫХ ГРУПП
+## 🎯 ТЕСТУВАННЯ КОНКРЕТНИХ ГРУП
 
-### Критические эндпоинты:
+### Критичні ендпоінти:
 ```bash
 newman run AutoRia_API_Complete_Test_Suite.postman_collection.json -e AutoRia_API_Complete_Test_Suite.postman_environment.json --folder "📁 Essential Endpoints (11 requests)"
 ```
 
-### Основные API:
+### Основні API:
 ```bash
 newman run AutoRia_API_Complete_Test_Suite.postman_collection.json -e AutoRia_API_Complete_Test_Suite.postman_environment.json --folder "📁 Core API (32 requests)"
 ```

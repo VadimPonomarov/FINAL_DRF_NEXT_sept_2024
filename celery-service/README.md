@@ -1,51 +1,51 @@
-# 🚀 Autonomous Celery Microservice
+# 🚀 Автономний Celery Мікросервіс
 
-Independent queue management service for background task processing.
+Незалежний сервіс управління чергами для обробки фонових завдань.
 
-## 📋 Overview
+## 📋 Огляд
 
-This is a completely autonomous Celery microservice that handles:
-- ✉️ Email sending and bulk email operations
-- 📱 Push notifications and SMS
-- 🔄 Data processing and report generation
-- 🧹 System cleanup and maintenance tasks
+Це повністю автономний Celery мікросервіс, який обробляє:
+- ✉️ Відправка email та масові email операції
+- 📱 Push сповіщення та SMS
+- 🔄 Обробка даних та генерація звітів
+- 🧹 Очищення системи та завдання обслуговування
 
-## 🏗️ Architecture
+## 🏗️ Архітектура
 
 ```
 celery-service/
 ├── config/
 │   ├── __init__.py
-│   └── celery_app.py          # Celery application configuration
+│   └── celery_app.py          # Конфігурація Celery додатку
 ├── tasks/
 │   ├── __init__.py
-│   ├── email_tasks.py         # Email-related tasks
-│   ├── notification_tasks.py  # Push notifications, SMS
-│   ├── data_processing_tasks.py # Data processing, reports
-│   └── cleanup_tasks.py       # System maintenance
-├── core/                      # Shared utilities (if needed)
-├── logs/                      # Log files
-├── Dockerfile                 # Container definition
-├── docker-compose.yml         # Service orchestration
-├── pyproject.toml            # Dependencies
-├── .env.example              # Environment template
-├── main.py                   # Entry point
-└── README.md                 # This file
+│   ├── email_tasks.py         # Завдання пов'язані з email
+│   ├── notification_tasks.py  # Push сповіщення, SMS
+│   ├── data_processing_tasks.py # Обробка даних, звіти
+│   └── cleanup_tasks.py       # Обслуговування системи
+├── core/                      # Спільні утиліти (за потреби)
+├── logs/                      # Файли логів
+├── Dockerfile                 # Визначення контейнера
+├── docker-compose.yml         # Оркестрація сервісів
+├── pyproject.toml            # Залежності
+├── .env.example              # Шаблон оточення
+├── main.py                   # Точка входу
+└── README.md                 # Цей файл
 ```
 
-## 🚀 Quick Start
+## 🚀 Швидкий старт
 
-### 1. Setup Environment
+### 1. Налаштування оточення
 
 ```bash
-# Copy environment template
+# Копіювати шаблон оточення
 cp .env.example .env
 
-# Edit environment variables
+# Редагувати змінні оточення
 nano .env
 ```
 
-### 2. Start Services
+### 2. Запуск сервісів
 
 ```bash
 # Start all services (Redis, RabbitMQ, Celery workers, Flower)
