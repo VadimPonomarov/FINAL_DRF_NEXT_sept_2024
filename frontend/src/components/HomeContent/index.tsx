@@ -17,13 +17,16 @@ import {
   TrendingUp,
   Shield,
   Zap,
-  Terminal
+  Terminal,
+  Lock,
+  LogIn
 } from 'lucide-react';
 import NewResizableWrapper from '@/components/All/ResizableWrapper/NewResizableWrapper';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut, getSession } from 'next-auth/react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/common/constants/constants';
 import { useI18n } from '@/contexts/I18nContext';
+import { useAuth } from '@/contexts/AuthProviderContext';
 import AnimatedPlatformStatsWidget from '@/components/AutoRia/Statistics/AnimatedPlatformStatsWidget';
 
 // 🎭 LIGHTWEIGHT ANIMATION SYSTEM (dev-optimized) 🎭
@@ -190,7 +193,7 @@ const dummyProviderContent = `
 ---
 
 > **📝 Завдання:**
-> 
+>
 > Реалізуйте SPA-додаток, який дозволяє:
 > - Авторизуватись через форму логіну (будь-який користувач dummyjson)
 > - Переглядати та шукати користувачів і рецепти
@@ -310,15 +313,54 @@ const backendProviderContent = `
 
 ---
 
-> **🚀 Початок роботи:**  
+> **🚀 Початок роботи:**
 > Для ознайомлення з усіма ендпоінтами перейдіть до **[Swagger документації](/api/doc/)**.
 `;
 
-const HomeContent: React.FC = () => {
-  const { data: session } = useSession();
-  const { provider } = useAuthProvider();
+interface HomeContentProps {
+  serverSession?: any;
+}
+
+const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
+  console.log('🚀 [HomeContent] Component is rendering!');
+  console.log('🚀 [HomeContent] Server session:', serverSession);
+
+  const { data: session, status: sessionStatus } = useSession();
+  const { provider, setProvider } = useAuthProvider();
   const { t, formatNumber, locale, setLocale } = useI18n();
-  const [isProviderLoading, setIsProviderLoading] = useState(true);
+
+  // Дополнительная проверка API сессии
+  useEffect(() => {
+    const checkApiSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        const apiSession = await response.json();
+        console.log('[HomeContent] API Session check:', apiSession);
+      } catch (error) {
+        console.error('[HomeContent] API Session error:', error);
+      }
+    };
+
+    checkApiSession();
+  }, []);
+
+  // Слушаем изменения провайдера для принудительной перерисовки
+  useEffect(() => {
+    const handleAuthProviderChanged = (event: CustomEvent) => {
+      console.log('[HomeContent] Auth provider changed event received:', event.detail.provider);
+      // Принудительная перерисовка произойдет автоматически через useAuthProvider
+    };
+
+    window.addEventListener('authProviderChanged', handleAuthProviderChanged as EventListener);
+
+    return () => {
+      window.removeEventListener('authProviderChanged', handleAuthProviderChanged as EventListener);
+    };
+  }, []);
+
+
+  const [isProviderLoading, setIsProviderLoading] = useState(false); // Изменено на false для предотвращения hydration mismatch
+  const [isMounted, setIsMounted] = useState(false); // Добавляем флаг монтирования
   // 🎭 SPECTACULAR ANIMATION SYSTEM 🎭
   const { showWelcome, animationStage, particles } = useSpectacularAnimation();
 
@@ -373,10 +415,81 @@ const HomeContent: React.FC = () => {
 
   // Effect hooks (always call)
   useEffect(() => {
+    // Устанавливаем флаг монтирования для предотвращения hydration mismatch
+    setIsMounted(true);
+
     if (provider !== AuthProvider.Select) {
       setIsProviderLoading(false);
     }
   }, [provider]);
+
+  // Дополнительный useEffect для обработки клиентского рендера
+  useEffect(() => {
+    // Этот эффект запускается только на клиенте после монтирования
+    if (typeof window !== 'undefined') {
+      setIsMounted(true);
+    }
+  }, []);
+
+  // Состояние для обратного отсчета (должно быть до условных рендеров)
+  const [countdown, setCountdown] = useState(10);
+
+  // Определяем сессию: приоритет серверной сессии, затем клиентской
+  const currentSession = serverSession || session;
+  const isAuthenticated = !!currentSession?.user;
+  const isLoading = sessionStatus === 'loading' || !isMounted;
+
+  console.log('[HomeContent] NextAuth Session Check:', {
+    serverSession: serverSession,
+    clientSession: session,
+    currentSession: currentSession,
+    sessionStatus,
+    isAuthenticated,
+    provider,
+    isMounted,
+    userEmail: currentSession?.user?.email || 'none',
+    'serverSession?.user': serverSession?.user,
+    'session?.user': session?.user
+  });
+
+  // Таймер обратного отсчета - запускается ВСЕГДА когда нет сессии
+  useEffect(() => {
+    console.log('[HomeContent] Timer check:', {
+      isAuthenticated,
+      sessionStatus,
+      isMounted,
+      serverSession: serverSession ? 'exists' : 'null',
+      clientSession: session ? 'exists' : 'null'
+    });
+
+    // Если пользователь не авторизован и компонент смонтирован - запускаем таймер
+    if (!isAuthenticated && isMounted) {
+      console.log('[HomeContent] User not authenticated, starting countdown timer');
+
+      setCountdown(10); // Сбрасываем на 10 секунд
+
+      const interval = setInterval(() => {
+        setCountdown(prev => {
+          const newValue = prev - 1;
+          console.log('[HomeContent] Countdown:', newValue);
+
+          if (newValue <= 0) {
+            console.log('[HomeContent] Redirecting to /login');
+            window.location.href = '/login';
+            return 0;
+          }
+          return newValue;
+        });
+      }, 1000);
+
+      return () => {
+        console.log('[HomeContent] Clearing countdown timer');
+        clearInterval(interval);
+      };
+    }
+  }, [isAuthenticated, isMounted]);
+
+
 
 
 
@@ -404,21 +517,165 @@ const HomeContent: React.FC = () => {
     );
   }
 
+  // Финальная отладочная информация
+  console.log('[HomeContent] Final Render Decision:', {
+    sessionStatus,
+    provider,
+    isLoading,
+    isAuthenticated,
+    isMounted,
+    countdown,
+    'Will show': !isAuthenticated ? 'Auth Block' : (provider === AuthProvider.Dummy ? 'Dummy' : 'AutoRia')
+  });
+
+  // Показываем загрузку, пока состояние не определилось
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Если пользователь не авторизован - показываем форму авторизации
+  if (!isAuthenticated) {
+    console.log('[HomeContent] User not authenticated - showing auth required form, countdown:', countdown);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <Card className="w-full max-w-md shadow-lg">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <Lock className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    Требуется авторизация
+                  </h2>
+                  <p className="text-slate-600 mb-4">
+                    Для доступа к функциям платформы необходимо войти в систему
+                  </p>
+                  <p className="text-sm text-slate-500 mb-6">
+                    Автоматический переход через <span className="font-bold text-blue-600">{countdown}</span> секунд...
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <Link href="/login">
+                      <Button className="w-full">
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Войти в систему
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Если пользователь авторизован, показываем контент в зависимости от провайдера
+  console.log('[HomeContent] User authenticated, checking provider:', {
+    isAuthenticated,
+    provider,
+    'provider === Dummy': provider === AuthProvider.Dummy,
+    'provider === MyBackendDocs': provider === AuthProvider.MyBackendDocs,
+    'AuthProvider.Dummy': AuthProvider.Dummy,
+    'AuthProvider.MyBackendDocs': AuthProvider.MyBackendDocs
+  });
+
+  if (provider === AuthProvider.Dummy) {
+    // Для Dummy провайдера показываем описание проекта
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+        <div className="max-w-6xl mx-auto">
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="text-center pb-8">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600">
+                  <Terminal className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  DummyJSON SPA Project
+                </CardTitle>
+              </div>
+              <CardDescription className="text-xl text-slate-600 max-w-2xl mx-auto">
+                Проект для работы с DummyJSON API - демонстрация возможностей SPA приложения
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="prose prose-lg max-w-none px-8 pb-8">
+              <div
+                className="text-slate-700 leading-relaxed space-y-4"
+                dangerouslySetInnerHTML={{
+                  __html: dummyProviderContent
+                    .replace(/\n/g, '<br/>')
+                    .replace(/#{1,6}\s*([^\n]+)/g, '<h3 class="text-xl font-semibold text-slate-800 mt-6 mb-3">$1</h3>')
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-slate-900">$1</strong>')
+                    .replace(/`([^`]+)`/g, '<code class="bg-slate-100 px-2 py-1 rounded text-sm font-mono">$1</code>')
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Для Backend провайдера показываем домашнюю страницу AutoRia
   // 🎭 ЕДИНАЯ АНИМАЦИОННАЯ ВЕРСИЯ ДЛЯ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ 🎭
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 relative overflow-hidden">
-        {/* Debug button for testing (remove in production) */}
-        <button
-          onClick={() => {
-            localStorage.removeItem('autoria-spectacular-show-seen');
-            window.location.reload();
-          }}
-          className="fixed top-[5px] right-[5px] z-[999999] px-2 py-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pulse"
-          title="Reset the spectacular welcome animation"
-          style={{ zIndex: 999999 }}
-        >
-          🎭 Reset Show
-        </button>
+        {/* Debug button Reset - левый верхний угол */}
+        <div className="fixed top-[5px] left-[5px] z-[999999] p-[1px]">
+          <button
+            onClick={() => {
+              localStorage.removeItem('autoria-spectacular-show-seen');
+              window.location.reload();
+            }}
+            className="px-2 py-0.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[5px] font-bold rounded-full shadow-sm hover:shadow-md transform hover:scale-105 transition-all duration-300 animate-pulse"
+            title="Reset the spectacular welcome animation"
+          >
+            🎭 Reset
+          </button>
+        </div>
+
+        {/* Switch тоглер для переключения Dummy/Backend - правый верхний угол */}
+        <div className="fixed top-[5px] right-[5px] z-[999999]">
+          <button
+            onClick={async () => {
+              const newProvider = provider === AuthProvider.Dummy ? AuthProvider.MyBackendDocs : AuthProvider.Dummy;
+              console.log('[HomeContent] Switching provider from', provider, 'to', newProvider);
+              await setProvider(newProvider);
+              console.log('[HomeContent] Provider switched successfully, components should re-render');
+            }}
+            className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 shadow-sm hover:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/40 transition-all cursor-pointer"
+            title={`Current: ${provider === AuthProvider.Dummy ? 'Dummy' : 'Backend'} | Click to switch to ${provider === AuthProvider.Dummy ? 'Backend' : 'Dummy'}`}
+          >
+            <span className={`text-[8px] font-medium transition-colors ${provider === AuthProvider.Dummy ? 'text-white' : 'text-white/60'}`}>
+              D
+            </span>
+            <div
+              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors ${
+                provider === AuthProvider.MyBackendDocs
+                  ? 'bg-blue-600'
+                  : 'bg-gray-400'
+              }`}
+            >
+              <span
+                className={`inline-block h-1.5 w-1.5 transform rounded-full bg-white transition-transform ${
+                  provider === AuthProvider.MyBackendDocs ? 'translate-x-2' : 'translate-x-0.5'
+                }`}
+              />
+            </div>
+            <span className={`text-[8px] font-medium transition-colors ${provider === AuthProvider.MyBackendDocs ? 'text-white' : 'text-white/60'}`}>
+              B
+            </span>
+          </button>
+        </div>
 
         {/* 🌍 LANGUAGE SELECTOR 🌍 */}
         <div className="absolute top-4 right-4 z-50 md:hidden">

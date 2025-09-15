@@ -64,32 +64,29 @@ const SearchParamSkipSelector = () => {
   };
 
   return (
-      <div className="flex items-center gap-2">
-        <span onClick={handleReset} className="text-xs cursor-pointer paginator-reset">💥</span>
+      <div className="flex items-center gap-3">
+        <span onClick={handleReset} className="text-lg cursor-pointer hover:scale-110 transition-transform duration-200 paginator-reset" title="Reset to 0">💥</span>
         <div className="relative flex items-center">
           <Input
               type="number"
               value={inputValue}
               onChange={handleInputChange}
               onFocus={handleFocus}
-              className="w-[70px] border-none text-xs focus:border-none paginator-input"
+              className="w-[60px] h-8 bg-transparent text-foreground border-none rounded-none text-xs px-2 pr-6 focus:outline-none transition-all duration-200 hover:bg-accent hover:text-accent-foreground paginator-input [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
               placeholder="Skip"
-              style={{ color: 'white' }}
           />
-          <div className="absolute right-0 flex flex-col h-full">
+          <div className="absolute right-0 top-0 h-full flex flex-col">
             <button
               type="button"
               onClick={handleIncrement}
-              className="h-1/2 px-1"
-              style={{ color: 'white' }}
+              className="w-4 h-4 flex items-center justify-center text-xs text-muted-foreground hover:text-foreground bg-transparent hover:bg-accent transition-all duration-150"
             >
               ▲
             </button>
             <button
               type="button"
               onClick={handleDecrement}
-              className="h-1/2 px-1"
-              style={{ color: 'white' }}
+              className="w-4 h-4 flex items-center justify-center text-xs text-muted-foreground hover:text-foreground bg-transparent hover:bg-accent transition-all duration-150"
             >
               ▼
             </button>

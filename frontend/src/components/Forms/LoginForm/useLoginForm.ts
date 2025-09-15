@@ -71,8 +71,11 @@ export const useLoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Функция для правильного декодирования URL
-  const decodeCallbackUrl = (url: string | null): string => {
-    if (!url) return "/autoria";
+  const decodeCallbackUrl = (url: string | null, provider: AuthProvider): string => {
+    // Если нет URL, используем дефолтные значения в зависимости от провайдера
+    if (!url) {
+      return provider === AuthProvider.MyBackendDocs ? "/autoria" : "/users";
+    }
 
     try {
       // Попробуем декодировать URL (может быть закодирован дважды)
@@ -85,7 +88,8 @@ export const useLoginForm = () => {
 
       console.log('[useLoginForm] URL decoding:', {
         original: url,
-        decoded: decoded
+        decoded: decoded,
+        provider: provider
       });
 
       return decoded;
@@ -96,7 +100,7 @@ export const useLoginForm = () => {
   };
 
   const rawCallbackUrl = searchParams.get("callbackUrl") || searchParams.get("returnUrl");
-  const callbackUrl = decodeCallbackUrl(rawCallbackUrl);
+  const callbackUrl = decodeCallbackUrl(rawCallbackUrl, provider);
 
   // Логируем callbackUrl для отладки
   console.log('[useLoginForm] CallbackUrl from searchParams:', {
@@ -338,7 +342,7 @@ export const useLoginForm = () => {
               window.location.href = url.href;
             } catch (error) {
               console.error(`[Auth] Fallback redirect failed:`, error);
-              router.push('/autoria'); // Последний резерв
+              router.push('/'); // Последний резерв - главная страница
             }
           }, 3000); // Больше времени для отображения ошибки
         }

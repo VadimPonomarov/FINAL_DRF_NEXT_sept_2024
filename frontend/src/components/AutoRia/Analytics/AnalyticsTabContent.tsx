@@ -1,7 +1,5 @@
 "use client";
 
-import 'chart.js/auto';
-
 import React, { useMemo } from "react";
 import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,6 +104,9 @@ export default function AnalyticsTabContent({ filters, results, loading }: Analy
   const [series, setSeries] = React.useState<{ x: string[]; y: number[] }>({ x: [], y: [] });
 
   React.useEffect(() => {
+    // Динамический импорт Chart.js для избежания проблем с HMR
+    import('chart.js/auto').catch(console.error);
+
     try {
       const params = new URLSearchParams();
       const add = (k: string, v: any) => { if (v !== undefined && v !== null && String(v) !== '') params.set(k, String(v)); };

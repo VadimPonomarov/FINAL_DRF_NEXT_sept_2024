@@ -1,5 +1,5 @@
 .button {
-    @apply fixed top-[60px] z-50 left-4 w-auto h-auto p-1;
+    @apply fixed top-[140px] z-50 left-4 w-auto h-auto p-1;
 }
 
 .filterOverlay {

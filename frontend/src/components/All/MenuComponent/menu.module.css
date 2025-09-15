@@ -2,10 +2,11 @@
     @apply min-h-[60px] relative z-[200] mb-2 flex w-full justify-center gap-4 flex-wrap
     bg-background dark:bg-zinc-900
     text-foreground dark:text-zinc-100
-    shadow-md border-b border-border;
+    shadow-md;
     overflow: visible !important;
     overflow-x: visible !important;
     padding: 0.75rem 1rem;
+    border: none !important;
 }
 
 .menuItem {
@@ -18,8 +19,8 @@
 }
 
 .active {
-    @apply text-primary font-bold border-b-2;
-    border-color: hsl(var(--text));
+    @apply text-primary font-bold;
+    border: none !important;
 }
 
 .group {

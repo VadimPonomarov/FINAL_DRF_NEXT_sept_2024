@@ -4,12 +4,12 @@
 
 
 .card {
-    @apply relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 
-           border border-gray-100 overflow-hidden w-[350px];
+    @apply relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300
+           overflow-hidden w-[350px];
 }
 
 .cardHeader {
-    @apply border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white;
+    @apply bg-gradient-to-r from-gray-50 to-white;
 }
 
 .cardTitle {
@@ -37,7 +37,7 @@
 }
 
 .cardFooter {
-    @apply border-t border-gray-100 bg-gray-50 px-4 py-3;
+    @apply bg-gray-50 px-4 py-3;
 }
 
 .email {

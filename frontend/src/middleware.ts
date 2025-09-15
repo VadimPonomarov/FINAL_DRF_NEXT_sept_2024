@@ -24,7 +24,7 @@ const PUBLIC_PATHS = [
   '/api/public',
   '/api/user',
   '/register',     // User registration
-  '/autoria/search' // Временно добавляем для тестирования
+  '/auth'          // Auth redirect page
   // NOTE: /login removed - it should require internal session to get external API tokens
 ];
 
@@ -146,6 +146,12 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Check if this is the root path (home page) - always allow access
+  if (pathname === '/') {
+    console.log(`[Middleware] Root path (home page), allowing access without authentication`);
+    return NextResponse.next();
+  }
+
   // Check if this is a public path - allow access without authentication
   const isPublicPath = PUBLIC_PATHS.some(path => pathname.startsWith(path));
   if (isPublicPath) {
@@ -201,9 +207,9 @@ export default async function middleware(req: NextRequest) {
     return intlMiddleware(req);
   }
 
-  // For all other paths, allow access without i18n processing
-  console.log(`[Middleware] Regular path, allowing access without i18n`);
-  return NextResponse.next();
+  // For all other paths, require authentication (NextAuth session)
+  console.log(`[Middleware] Protected path, checking NextAuth session`);
+  return await checkInternalAuth(req);
 }
 
 export const config = {

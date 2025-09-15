@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import ButtonGroup from "@/components/All/ButtonGroup/ButtonGroup";
 import UsersComboBox from "@/app/(main)/users/(details)/UsersComboBox/UsersComboBox";
 import BackendUsersComboBox from "@/app/(main)/users/(details)/BackendUsersComboBox/BackendUsersComboBox";
+import DummyUsersComboBox from "@/app/(main)/users/(details)/DummyUsersComboBox/DummyUsersComboBox";
 import {
     Select,
     SelectContent,
@@ -109,7 +110,7 @@ const LoginForm: FC = () => {
 
                         {provider === AuthProvider.Dummy && (
                             <form key={`dummy-form-${formKey}`} onSubmit={dummyForm.handleSubmit(onSubmit)} className="space-y-4">
-                                <UsersComboBox reset={dummyForm.reset} />
+                                <DummyUsersComboBox reset={dummyForm.reset} />
                                 <FormFieldsRenderer<IDummyAuth>
                                     fields={dummyFormFields}
                                     register={dummyForm.register}

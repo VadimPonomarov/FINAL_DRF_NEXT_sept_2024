@@ -3,66 +3,109 @@
 }
 
 .pagination {
-    @apply bg-background rounded-md shadow-sm;
-}
-
-:global(.dark) .pagination {
-    background-color: rgba(0, 0, 0, 0.3) !important;
-    color: var(--dropdown-text) !important;
+    @apply bg-background/95 backdrop-blur-sm rounded-lg;
+    padding: 6px 10px;
+    border: none !important;
 }
 
 .paginationItem {
-    @apply cursor-pointer hover:bg-accent hover:text-accent-foreground
-           transition-colors duration-200 z-[201];
+    @apply cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground
+           transition-all duration-200 z-[201] rounded-md px-3 py-1.5;
 }
 
-:global(.dark) .paginationItem {
-    color: var(--dropdown-text) !important;
+.paginationItem:hover {
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
 }
 
-:global(.dark) .paginationItem:hover {
-    background-color: rgba(0, 0, 0, 0.3) !important;
-    color: var(--dropdown-text) !important;
+.paginationItem * {
+    color: hsl(var(--foreground)) !important;
 }
 
-:global(.dark) .paginationItem:hover * {
-    color: var(--dropdown-text) !important;
-}
-
-:global(.dark) .paginationItem svg {
-    color: var(--dropdown-text) !important;
-    stroke: var(--dropdown-text) !important;
+.paginationItem svg {
+    color: hsl(var(--foreground)) !important;
+    stroke: hsl(var(--foreground)) !important;
 }
 
 .selector {
-    @apply z-[201] hover:bg-accent hover:text-accent-foreground
-           rounded-md transition-colors duration-200;
-    position: relative; /* Добавляем позиционирование */
+    @apply z-[201] hover:bg-accent rounded-md transition-all duration-200 px-2 py-1;
+    position: relative;
 }
 
-:global(.dark) .selector {
-    color: var(--dropdown-text) !important;
+.selector:hover {
+    background-color: hsl(var(--accent)) !important;
 }
 
-:global(.dark) .selector:hover {
-    background-color: rgba(0, 0, 0, 0.3) !important;
-    color: var(--dropdown-text) !important;
-}
-
-:global(.dark) .selector:hover * {
-    color: var(--dropdown-text) !important;
+.selector * {
+    color: hsl(var(--foreground)) !important;
 }
 
 .tooltipContent {
-    @apply z-[202] bg-background text-foreground
-           border border-border rounded-md px-3 py-1.5;
-    transform: translateY(-15px); /* Добавляем смещение вверх на 15px */
+    @apply z-[202] bg-background text-foreground rounded-lg px-3 py-2 text-sm font-medium;
+    transform: translateY(-15px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    border: none !important;
 }
 
-:global(.dark) .tooltipContent {
-    background-color: rgba(0, 0, 0, 0.7) !important;
-    color: var(--dropdown-text) !important;
-    border-color: var(--dropdown-text) !important;
-    transform: translateY(-15px); /* Добавляем смещение вверх на 15px для темной темы */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Добавляем тень для лучшего визуального разделения */
+/* Переопределяем глобальные стили для элементов пагинации */
+.pagination input,
+.pagination select {
+    background-color: transparent !important;
+    color: hsl(var(--foreground)) !important;
+    border: none !important;
+}
+
+.pagination input:hover,
+.pagination select:hover {
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
+}
+
+.pagination input:focus,
+.pagination select:focus {
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.pagination option {
+    background-color: hsl(var(--background)) !important;
+    color: hsl(var(--foreground)) !important;
+}
+
+/* Убираем все бордеры из элементов пагинации */
+.pagination,
+.pagination *,
+.pagination nav,
+.pagination ul,
+.pagination li,
+.pagination a,
+.pagination span,
+.pagination button {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Специальные стили для селекторов в пагинации */
+.pagination .paginator-select,
+.pagination .paginator-input {
+    background-color: transparent !important;
+    background: transparent !important;
+    color: hsl(var(--foreground)) !important;
+    border: none !important;
+    outline: none !important;
+}
+
+.pagination .paginator-select:hover,
+.pagination .paginator-input:hover {
+    background-color: hsl(var(--accent)) !important;
+    background: hsl(var(--accent)) !important;
+}
+
+.pagination .paginator-select:focus,
+.pagination .paginator-input:focus {
+    background-color: hsl(var(--accent)) !important;
+    background: hsl(var(--accent)) !important;
 }

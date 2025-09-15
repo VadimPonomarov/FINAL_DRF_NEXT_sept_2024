@@ -48,21 +48,20 @@ const SearchParamLimitSelector = () => {
     }, [searchParams]);
 
     return (
-        <div className="flex items-center gap-2">
-            <span onClick={handleReset} className="text-xs cursor-pointer paginator-reset">💥</span>
+        <div className="flex items-center gap-3">
+            <span onClick={handleReset} className="text-lg cursor-pointer hover:scale-110 transition-transform duration-200 paginator-reset" title="Reset to default">💥</span>
             <div className="relative">
                 <select
                     value={inputValue}
                     onChange={handleSelectChange}
-                    className="w-[70px] bg-transparent text-foreground border-none text-xs focus:border-none paginator-input paginator-select"
-                    style={{ color: 'white' }}
+                    className="w-[60px] h-8 bg-transparent text-foreground border-none rounded-none text-xs px-2 focus:outline-none transition-all duration-200 hover:bg-accent hover:text-accent-foreground cursor-pointer paginator-input paginator-select"
                 >
-                    <option value="0">{t('autoria.all') || 'All'}</option>
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="30">30</option>
-                    <option value="40">40</option>
-                    <option value="50">50</option>
+                    <option value="0" className="bg-background text-foreground">{t('autoria.all') || 'All'}</option>
+                    <option value="10" className="bg-background text-foreground">10</option>
+                    <option value="20" className="bg-background text-foreground">20</option>
+                    <option value="30" className="bg-background text-foreground">30</option>
+                    <option value="40" className="bg-background text-foreground">40</option>
+                    <option value="50" className="bg-background text-foreground">50</option>
                 </select>
             </div>
         </div>

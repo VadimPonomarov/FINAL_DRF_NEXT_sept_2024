@@ -35,7 +35,7 @@ const RecipesClient: FC<IProps> = ({ initialData }) => {
 
   return (
     <>
-      <div className={"fixed top-[60px] z-50"}>
+      <div className={"fixed top-[80px] z-50"}>
         <PaginationComponent total={total} baseUrl={baseUrl} />
       </div>
       <div className="w-screen flex justify-center ">

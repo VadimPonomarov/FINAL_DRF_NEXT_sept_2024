@@ -4,12 +4,20 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Globe, ChevronUp, ChevronDown } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
+import { useAuthProvider } from '@/contexts/AuthProviderContext';
+import { AuthProvider } from '@/common/constants/constants';
 
 const FixedLanguageSwitch: React.FC = () => {
   const { locale, setLocale, availableLocales, t } = useI18n();
+  const { provider } = useAuthProvider();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const currentLocale = availableLocales.find(l => l.code === locale);
+
+  // Скрываем переключатель языка для Dummy провайдера
+  if (provider === AuthProvider.Dummy) {
+    return null;
+  }
 
   return (
     <div className="fixed top-[110px] right-2 z-[9999] hidden md:block">

@@ -58,8 +58,8 @@ const nextConfig = {
 
   // Experimental features
   experimental: {
-    // React Compiler: reduces unnecessary re-renders by defaulting components to memoized semantics
-    reactCompiler: true,
+    // React Compiler: отключен из-за отсутствия babel-plugin-react-compiler
+    // reactCompiler: true,
     // Keep typedRoutes off for now
     typedRoutes: false,
     // Package import optimizations for both dev and production
@@ -88,17 +88,27 @@ const nextConfig = {
       'chart.js',
       'recharts'
     ],
-    // Faster builds in development
-    ...(process.env.NODE_ENV === 'development' && {
-      turbo: {
-        rules: {
-          '*.svg': {
-            loaders: ['@svgr/webpack'],
-            as: '*.js',
-          },
-        },
+    // Faster builds in development - moved to turbopack config
+    // ...(process.env.NODE_ENV === 'development' && {
+    //   turbo: {
+    //     rules: {
+    //       '*.svg': {
+    //         loaders: ['@svgr/webpack'],
+    //         as: '*.js',
+    //       },
+    //     },
+    //   },
+    // }),
+  },
+
+  // Turbopack configuration (stable)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
-    }),
+    },
   },
 
   // Production optimizations

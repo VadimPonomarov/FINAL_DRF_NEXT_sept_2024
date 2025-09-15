@@ -100,21 +100,8 @@ const ComboBox: FC<ComboBoxProps> = ({ items = [], onSelect, label = "Select ...
                     <CommandItem
                       key={item.id}
                       value={item.value}
-                      // Используем onPointerDown — отрабатывает раньше всего и надежнее в разных браузерах
-                      onPointerDown={() => {
-                        setValue(item.value);
-                        setOpen(false);
-                        onSelect(item.id);
-                      }}
-                      onClick={() => {
-                        // Доп. резервный путь
-                        setValue(item.value);
-                        setOpen(false);
-                        onSelect(item.id);
-                      }}
                       onSelect={(currentValue) => {
-                        // Fallback для shadcn/Command
-                        setValue(currentValue);
+                        setValue(currentValue === value ? "" : currentValue);
                         setOpen(false);
                         onSelect(item.id);
                       }}
