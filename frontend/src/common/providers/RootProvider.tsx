@@ -1,6 +1,6 @@
 "use client";
 import React, { FC, useEffect } from "react";
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider, signOut } from "next-auth/react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, AuthProviderProvider } from "@/contexts/AuthProviderContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -30,12 +30,61 @@ const queryClient = new QueryClient({
 });
 
 const RootProvider: FC<IProps> = ({ children }) => {
-  // Preload heavy reference lists into browser cache once on mount
+  // Clear session and preload data on app startup
   useEffect(() => {
-    Promise.all([
-      preloadCriticalReferenceData(),
-      fetchBrandsWithCache(),
-    ]).catch(() => {});
+    const initializeApp = async () => {
+      try {
+        // Версия деплоя - измените это значение при каждом деплое
+        const DEPLOY_VERSION = '2024-09-15-v1';
+        const LAST_SIGNOUT_KEY = 'last_signout_version';
+
+        const lastSignoutVersion = localStorage.getItem(LAST_SIGNOUT_KEY);
+
+        // Если версия изменилась или signOut еще не был выполнен
+        if (lastSignoutVersion !== DEPLOY_VERSION) {
+          console.log('[RootProvider] 🧹 New deploy detected, clearing session...');
+
+          // Очищаем NextAuth сессию
+          await signOut({ redirect: false });
+
+          // Очищаем Redis состояние
+          try {
+            await fetch('/api/redis', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: 'backend_auth', value: null })
+            });
+
+            await fetch('/api/redis', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: 'auth_provider', value: 'dummy' })
+            });
+
+            console.log('[RootProvider] ✅ Session and Redis state cleared');
+          } catch (redisError) {
+            console.warn('[RootProvider] ⚠️ Failed to clear Redis state:', redisError);
+          }
+
+          // Сохраняем версию, чтобы не повторять signOut
+          localStorage.setItem(LAST_SIGNOUT_KEY, DEPLOY_VERSION);
+        } else {
+          console.log('[RootProvider] ✅ Session already cleared for this deploy version');
+        }
+
+        // Preload critical data
+        await Promise.all([
+          preloadCriticalReferenceData(),
+          fetchBrandsWithCache(),
+        ]);
+
+        console.log('[RootProvider] ✅ App initialization completed');
+      } catch (error) {
+        console.error('[RootProvider] ❌ App initialization failed:', error);
+      }
+    };
+
+    initializeApp();
   }, []);
 
   return (
