@@ -36,7 +36,7 @@ COPY tasks/ ./tasks/
 
 # Install dependencies with Poetry (default group only) and ensure in-project venv is created
 RUN poetry export -f requirements.txt --without dev --output requirements.txt \
-    && pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location -r requirements.txt \
     && rm -rf $POETRY_CACHE_DIR
 
 # Copy remaining application code

@@ -3,18 +3,28 @@
 АВТОМАТИЧЕСКИЙ ДЕПЛОЙ AutoRia Clone
 ===================================
 
-Оптимизированный скрипт для максимально быстрого деплоя с production фронтендом.
-Автоматически выполняет все необходимые шаги для достижения максимальной скорости.
+Оптимизированный скрипт для максимально быстрого деплоя с различными режимами.
+Поддерживает полную переустановку, быстрый перезапуск и выборочную пересборку.
 
 Использование:
-    python deploy.py --local-frontend
+    python deploy.py                                    # Интерактивный режим
+    python deploy.py --mode restart                     # Быстрый перезапуск
+    python deploy.py --mode full_rebuild                # Полная пересборка
+    python deploy.py --mode selective_rebuild --services app nginx  # Выборочная пересборка
+    python deploy.py --auto                             # Автоматический быстрый перезапуск
+
+Режимы деплоя:
+- restart: Быстрый перезапуск существующих контейнеров (самый быстрый)
+- full_rebuild: Полная пересборка всех образов (как с нуля)
+- selective_rebuild: Пересборка только указанных сервисов
 
 Что делает скрипт:
-- Проверяет наличие Node.js и npm
-- Устанавливает зависимости фронтенда
-- Собирает фронтенд в production режиме
-- Запускает оптимизированный деплой
-- Проверяет готовность всех сервисов
+- Проверяет наличие системных требований
+- Выбирает режим деплоя (интерактивно или через параметры)
+- Развертывает Docker сервисы согласно выбранному режиму
+- Собирает фронтенд в production режиме (если локальный режим)
+- Проверяет готовность ВСЕХ сервисов перед предоставлением ссылки
+- Предоставляет ссылку только когда ВСЕ сервисы healthy
 """
 
 import os
@@ -23,6 +33,7 @@ import subprocess
 import time
 import threading
 import re
+import argparse
 from pathlib import Path
 
 class Colors:
@@ -101,10 +112,14 @@ def show_service_selection_menu():
     print("  2  - тільки frontend в Docker")
     print("  1,3,4 - вибрані сервіси (наприклад: app+pg+redis)")
     print("  0/00 - швидкий вибір всіх режимів")
+    print()
+    print("🎯 За замовчуванням: 0 (Backend в Docker + Frontend локально)")
 
     while True:
         try:
-            choice = input("\nВаш вибір: ").strip()
+            choice = input("\nВаш вибір [0]: ").strip()
+            if not choice:  # Если пользователь просто нажал Enter
+                choice = "0"
 
             if choice == "0":
                 # Backend в Docker + Frontend локально
@@ -239,6 +254,21 @@ def run_docker_build_with_progress(selected_services=None):
     # Флаг для зупинки збірки
     stop_build_flag = threading.Event()
 
+    # Словарь с человекочитаемыми названиями сервисов
+    service_display_names = {
+        "app": "🐍 Django Backend",
+        "frontend": "⚛️ Next.js Frontend",
+        "pg": "🐘 PostgreSQL DB",
+        "redis": "🔴 Redis Cache",
+        "redis-insight": "📊 Redis Insight",
+        "rabbitmq": "🐰 RabbitMQ Broker",
+        "celery-worker": "⚙️ Celery Worker",
+        "celery-beat": "⏰ Celery Beat",
+        "flower": "🌸 Flower Monitor",
+        "mailing": "📧 Mail Service",
+        "nginx": "🌐 Nginx Proxy"
+    }
+
     all_services = {
         "app": {"progress": 0, "status": "⏳ Очікування", "log_msg": "", "lock": threading.Lock(), "error_log": ""},
         "frontend": {"progress": 0, "status": "⏳ Очікування", "log_msg": "", "lock": threading.Lock(), "error_log": ""},
@@ -257,14 +287,11 @@ def run_docker_build_with_progress(selected_services=None):
     if selected_services is None:
         selected_services = list(all_services.keys())
 
-    # Фільтруємо тільки обрані сервіси
-    services = {name: data for name, data in all_services.items() if name in selected_services}
-
-    # Для не обраних сервісів встановлюємо статус "Пропущено"
-    for name, data in all_services.items():
-        if name not in selected_services:
-            data["status"] = "⏭️ Пропущено"
-            data["progress"] = 0
+    # Фільтруємо тільки обрані сервіси - створюємо новий словник тільки з обраними
+    services = {}
+    for name in selected_services:
+        if name in all_services:
+            services[name] = all_services[name]
 
     display_lock = threading.Lock()
 
@@ -298,16 +325,25 @@ def run_docker_build_with_progress(selected_services=None):
                 print(f"\n📦 Збірка Docker образів ({len(selected_services)} сервісів)...")
                 print()
 
-                # Ініціалізуємо початкові рядки для всіх сервісів
+                # Ініціалізуємо початкові рядки тільки для обраних сервісів
                 line_number = 0
-                for service, data in all_services.items():
+                for service, data in services.items():
                     with data["lock"]:
                         progress_bar = "█" * int(data["progress"] / 10) + "░" * (10 - int(data["progress"] / 10))
-                        base_line = f"🔨 {service:15} [{progress_bar}] {data['progress']:3.0f}% {data['status']}"
+                        # Получаем человекочитаемое название сервиса
+                        display_name = service_display_names.get(service, service)
+                        base_line = f"🔨 {display_name:20} [{progress_bar}] {data['progress']:3.0f}% {data['status']}"
 
                         if data["log_msg"]:
-                            color, icon = get_log_color_and_icon(data["log_msg"])
-                            log_part = f" {icon} {color}{data['log_msg'][:50]}\033[0m"
+                            # Фильтруем нежелательные предупреждения
+                            filtered_msg = data["log_msg"]
+                            if "Running pip as the 'root' user" in filtered_msg:
+                                filtered_msg = "Встановлення залежностей..."
+                            elif "WARNING" in filtered_msg and "pip" in filtered_msg:
+                                filtered_msg = "Встановлення залежностей..."
+
+                            color, icon = get_log_color_and_icon(filtered_msg)
+                            log_part = f" {icon} {color}{filtered_msg[:50]}\033[0m"
                             line = base_line + log_part
                         else:
                             line = base_line
@@ -324,8 +360,8 @@ def run_docker_build_with_progress(selected_services=None):
                 progress_header_shown = True
                 return
 
-            # Оновлюємо тільки змінені сервіси
-            for service, data in all_services.items():
+            # Оновлюємо тільки змінені сервіси (тільки обрані)
+            for service, data in services.items():
                 with data["lock"]:
                     current_state = {
                         "progress": data["progress"],
@@ -533,30 +569,28 @@ def run_docker_build_with_progress(selected_services=None):
 
     # Переміщуємося в кінець блоку
     with display_lock:
-        print(f"\033[{len(all_services)}B")
+        print(f"\033[{len(services)}B")
         print("✅ Збірка образів завершена!")
 
     # Перевіряємо чи всі обрані сервіси зібралися успішно
-    success_count = sum(1 for name, data in all_services.items()
-                       if name in selected_services and "✅" in data["status"])
-    selected_count = len(selected_services)
+    success_count = sum(1 for name, data in services.items() if "✅" in data["status"])
+    selected_count = len(services)
 
     print(f"📊 Результат: {success_count}/{selected_count} обраних сервісів зібрано успішно")
 
     # Показуємо помилки якщо є
-    failed_services = [name for name, data in all_services.items()
-                      if name in selected_services and "❌" in data["status"]]
+    failed_services = [name for name, data in services.items() if "❌" in data["status"]]
 
     if failed_services:
         print(f"❌ Сервіси з помилками: {', '.join(failed_services)}")
         for service in failed_services:
-            if all_services[service]["error_log"]:
-                print(f"   {service}: {all_services[service]['error_log'][:100]}...")
+            if services[service]["error_log"]:
+                print(f"   {service}: {services[service]['error_log'][:100]}...")
 
     return success_count == selected_count
 
-def check_services_health():
-    """Перевіряє статус та здоров'я всіх сервісів"""
+def check_services_health(frontend_mode="local"):
+    """Перевіряє статус та здоров'я всіх сервісів включаючи фронтенд"""
     print("\n🔍 Перевірка статусу сервісів...")
 
     # Отримуємо статус контейнерів
@@ -595,12 +629,58 @@ def check_services_health():
             # Fallback до простої перевірки
             pass
 
+    # Перевіряємо фронтенд в залежності від режиму
+    if frontend_mode == "local":
+        print("\n🔍 Перевірка локального фронтенда...")
+        try:
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(3)
+            result = sock.connect_ex(('localhost', 3000))
+            sock.close()
+
+            if result == 0:
+                # Додаткова перевірка HTTP відповіді
+                try:
+                    import urllib.request
+                    response = urllib.request.urlopen('http://localhost:3000', timeout=5)
+                    if response.getcode() == 200:
+                        services_status["frontend"] = "✅ Healthy"
+                    else:
+                        services_status["frontend"] = "❌ HTTP Error"
+                except:
+                    services_status["frontend"] = "⚠️  HTTP Issue"
+            else:
+                services_status["frontend"] = "❌ Not Running"
+        except:
+            services_status["frontend"] = "❌ Connection Failed"
+    elif frontend_mode == "docker":
+        print("\n🔍 Перевірка фронтенда в Docker...")
+        # Фронтенд в Docker буде перевірений разом з іншими контейнерами
+        # Але додатково перевіримо HTTP доступність
+        try:
+            import urllib.request
+            response = urllib.request.urlopen('http://localhost:3000', timeout=10)
+            if response.getcode() == 200:
+                services_status["frontend"] = "✅ Healthy"
+            else:
+                services_status["frontend"] = "❌ HTTP Error"
+        except:
+            services_status["frontend"] = "❌ Not Accessible"
+
     # Виводимо підсумковий статус
     print("\n📊 Підсумковий статус сервісів (Health Check):")
-    print("=" * 50)
+    print("=" * 60)
 
     expected_services = ["app", "pg", "redis", "redis-insight", "rabbitmq",
                         "celery-worker", "celery-beat", "flower", "mailing", "nginx"]
+
+    # Додаємо фронтенд до перевірки
+    if frontend_mode == "local":
+        expected_services.append("frontend")
+
+    all_healthy = True
+    healthy_count = 0
 
     for service in expected_services:
         if service in services_status:
@@ -617,29 +697,44 @@ def check_services_health():
                     status = "✅ Running"
                 else:
                     status = "❌ Stopped"
+                    all_healthy = False
             else:
                 status = "⚠️  Not found"
+                all_healthy = False
 
-        print(f"🔧 {service:15} {status}")
+        # Підраховуємо здорові сервіси
+        if "✅" in status:
+            healthy_count += 1
+        else:
+            all_healthy = False
 
-    print("=" * 50)
+        # Спеціальне форматування для фронтенда
+        if service == "frontend":
+            print(f"⚛️  {service:15} {status} (Local)")
+        else:
+            print(f"🔧 {service:15} {status}")
 
-    # Підраховуємо статистику
-    healthy_count = sum(1 for status in services_status.values() if "✅" in status)
+    print("=" * 60)
+
     total_count = len(expected_services)
 
-    if healthy_count == total_count:
+    if all_healthy and healthy_count == total_count:
         print(f"🎉 Всі сервіси ({healthy_count}/{total_count}) працюють нормально!")
-        print("✅ Система готова до використання!")
+        print("✅ Система повністю готова до використання!")
         print()
         print("🌐 " + "="*50)
         print("🚀 AutoRia Clone готовий до використання!")
-        print("🔗 Перейдіть за посиланням: http://localhost:3000")
+        if frontend_mode == "local":
+            print("🔗 Перейдіть за посиланням: http://localhost:3000")
+        else:
+            print("🔗 Перейдіть за посиланням: http://localhost")
         print("="*53)
         return True
     else:
-        print(f"⚠️  Працює {healthy_count}/{total_count} сервісів. Перевірте проблемні сервіси.")
-        print("🔧 Рекомендується перевірити логи проблемних сервісів")
+        print(f"⚠️  Працює {healthy_count}/{total_count} сервісів. Система НЕ готова!")
+        print("🔧 Рекомендується перевірити логи проблемних сервісів перед використанням.")
+        print()
+        print("❌ ССЫЛКА НЕ ПРЕДОСТАВЛЯЕТСЯ - СЕРВИСЫ НЕ ГОТОВЫ!")
         return False
 
 def run_command(command, cwd=None, check=True, capture_output=False):
@@ -770,50 +865,114 @@ def build_frontend():
         show_progress_bar(3, 4, "🗑️ Видалення старої збірки...")
         run_command("rm -rf .next", cwd=frontend_dir, check=False, capture_output=False)
 
-    # Production збірка
-    show_progress_bar(4, 4, "🔨 Збірка в production режимі...")
+    # Production збірка з детальною індикацією прогресу
     print("⏳ Збірка фронтенда може зайняти 2-3 хвилини...")
+    print("🔄 Відстеження прогресу збірки:")
+
+    # Створюємо структуру для відстеження прогресу
+    build_progress = {
+        "progress": 40,
+        "status": "🔨 Збірка",
+        "log_msg": "Запуск збірки...",
+        "lock": threading.Lock()
+    }
+
+    def update_frontend_progress(progress, status, log_msg=""):
+        with build_progress["lock"]:
+            build_progress["progress"] = progress
+            build_progress["status"] = status
+            build_progress["log_msg"] = log_msg
+
+            progress_bar = "█" * int(progress / 10) + "░" * (10 - int(progress / 10))
+            display_name = "⚛️ Next.js Frontend"
+
+            if log_msg:
+                line = f"🔨 {display_name:20} [{progress_bar}] {progress:3.0f}% {status} 🔄 {log_msg[:50]}"
+            else:
+                line = f"🔨 {display_name:20} [{progress_bar}] {progress:3.0f}% {status}"
+
+            print(f"\r{line}", end="", flush=True)
 
     try:
-        # Запускаємо збірку з повним захопленням виводу та без інтерактивності
+        update_frontend_progress(40, "🔨 Збірка", "Компіляція TypeScript...")
+
+        # Запускаємо збірку з відстеженням прогресу
         process = subprocess.Popen(
             "npm run build",
             shell=True,
             cwd=frontend_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            stdin=subprocess.DEVNULL,  # Блокуємо stdin щоб уникнути інтерактивних запитів
-            text=True
+            stdin=subprocess.DEVNULL,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
         )
 
-        stdout, stderr = process.communicate()
+        # Відстежуємо прогрес збірки в реальному часі
+        current_progress = 40
+        while True:
+            output = process.stdout.readline()
+            if output == '' and process.poll() is not None:
+                break
+            if output:
+                output_lower = output.lower()
 
-        if process.returncode != 0:
-            print_error("Помилка збірки фронтенда!")
-            if stderr:
-                print(f"Помилка: {stderr}")
+                # Оновлюємо прогрес на основі ключових слів
+                if 'compiling' in output_lower:
+                    current_progress = min(60, current_progress + 2)
+                    update_frontend_progress(current_progress, "🔨 Збірка", "Компіляція компонентів...")
+                elif 'compiled successfully' in output_lower or 'compiled' in output_lower:
+                    current_progress = min(75, current_progress + 3)
+                    update_frontend_progress(current_progress, "✅ Компіляція", "Компіляція завершена...")
+                elif 'optimizing' in output_lower:
+                    current_progress = min(85, current_progress + 2)
+                    update_frontend_progress(current_progress, "⚡ Оптимізація", "Оптимізація бандлів...")
+                elif 'creating' in output_lower or 'generating' in output_lower:
+                    current_progress = min(95, current_progress + 2)
+                    update_frontend_progress(current_progress, "📦 Генерація", "Створення статичних файлів...")
+                elif 'route' in output_lower and ('/' in output or 'page' in output_lower):
+                    current_progress = min(98, current_progress + 1)
+                    update_frontend_progress(current_progress, "🛣️ Маршрути", "Генерація сторінок...")
+
+        return_code = process.poll()
+        if return_code != 0:
+            stderr_output = process.stderr.read()
+            update_frontend_progress(0, "❌ Помилка", "Збірка не вдалася")
+            print(f"\nПомилка збірки фронтенда: {stderr_output}")
             return False
         else:
-            print_success("Збірка завершена успішно!")
+            update_frontend_progress(100, "✅ Готово", "Збірка завершена успішно")
+            print()  # Новий рядок після прогрес-бару
 
     except KeyboardInterrupt:
-        print_warning("\n⚠️ Збірка перервана користувачем!")
+        update_frontend_progress(0, "⚠️ Перервано", "Збірка перервана користувачем")
+        print("\n⚠️ Збірка перервана користувачем!")
         if 'process' in locals():
             process.terminate()
         return False
     
     # Перевірка успішності збірки
     if next_dir.exists():
-        print_success("Production збірка завершена успішно!")
+        print_success("✅ Production збірка завершена успішно!")
 
         # Показуємо розмір збірки
         result = run_command("du -sh .next", cwd=frontend_dir, check=False, capture_output=True)
         if result and result.returncode == 0:
-            print_success(f"Розмір збірки: {result.stdout.strip()}")
+            print_success(f"📦 Розмір збірки: {result.stdout.strip()}")
+
+        print()
+        print("🎉 ФРОНТЕНД ГОТОВИЙ ДО ЗАПУСКУ!")
+        print("🌐 Після запуску ви отримаєте:")
+        print("   • Повністю робочий сайт на http://localhost:3000")
+        print("   • Оптимізовану production збірку")
+        print("   • Швидку навігацію та завантаження сторінок")
+        print("   • Готовий до використання інтерфейс")
+        print()
 
         return True
     else:
-        print_error("Збірка не створена! Перевірте помилки вище.")
+        print_error("❌ Збірка не створена! Перевірте помилки вище.")
         return False
 
 def comment_frontend_service(comment=True):
@@ -853,8 +1012,11 @@ def comment_frontend_service(comment=True):
 
     return True
 
-def deploy_docker_services():
-    """Розгортає сервіси в Docker з повною пересборкою"""
+def deploy_docker_services(deploy_mode="full_rebuild", services_to_rebuild=None):
+    """Розгортає сервіси в Docker з різними режимами"""
+
+    if services_to_rebuild is None:
+        services_to_rebuild = []
 
     # Показуємо меню вибору сервісів та режиму frontend
     selected_services, frontend_mode = show_service_selection_menu()
@@ -871,88 +1033,16 @@ def deploy_docker_services():
         print("Розкоментування frontend сервісу в docker-compose.yml...")
         comment_frontend_service(comment=False)
 
-    # Перевіряємо наявність docker-compose.yml
-    if not Path("docker-compose.yml").exists():
-        print_error("Файл docker-compose.yml не знайдено!")
-        return False
-
-    # ПОВНЕ ОЧИЩЕННЯ - емулюємо розгортання з нуля
-    show_progress_bar(1, 6, "🧹 Зупинка та видалення контейнерів...")
-    run_command("docker-compose down --volumes --remove-orphans", check=False, capture_output=False)
-
-    show_progress_bar(2, 6, "🧹 Видалення старих образів...")
-    run_command("docker image prune -f", check=False, capture_output=False)
-
-    show_progress_bar(3, 6, "🧹 Очищення невикористаних томів...")
-    run_command("docker volume prune -f", check=False, capture_output=False)
-
-    # СТВОРЕННЯ ТА ЗБІРКА ВСІХ КОНТЕЙНЕРІВ З НУЛЯ
-    show_progress_bar(4, 6, "🔨 Збірка всіх образів...")
-
-    # Запускаємо збірку з відстеженням прогресу для обраних сервісів
-    if not run_docker_build_with_progress(selected_services):
-        print_error("Не вдалося зібрати деякі Docker образи!")
-
-        # Пропонуємо повторну спробу для проблемних сервісів
-        retry = input("\n🔄 Спробувати пересібрати проблемні сервіси? (y/n): ").strip().lower()
-        if retry in ['y', 'yes', 'так', 'т']:
-            # Тут можна додати логіку повторної збірки тільки проблемних сервісів
-            pass
-        return None
-
-    print_success("Всі обрані образи зібрані успішно!")
-
-    show_progress_bar(5, 6, "🚀 Запуск всіх контейнерів...")
-
-    print("\n🚀 Запуск сервісів...")
-
-    # Запускаємо контейнери з захопленням виводу (без дублювання)
-    result = run_command("docker-compose up -d --force-recreate", capture_output=True)
-    if not result:
-        print_error("Не вдалося запустити Docker сервіси!")
-        return False
-
-    print_success("Всі контейнери запущені!")
-
-    # Чекаємо готовності сервісів
-    show_progress_bar(6, 6, "⏳ Очікування готовності сервісів...")
-
-    print("\n⏳ Очікування готовності сервісів:")
-    wait_time = 20
-    for i in range(wait_time):
-        progress = (i + 1) / wait_time * 100
-        show_progress_bar(i+1, wait_time, f"⏳ Ініціалізація сервісів ({i+1}/{wait_time} сек)")
-        time.sleep(1)
-
-    # Ініціалізуємо проект з тестовими даними (включаючи користувачів)
-    print("\n🌱 Ініціалізація проекту з тестовими даними...")
-    print("📊 Створення тестових користувачів для dropdown...")
-
-    try:
-        result = run_command(
-            "docker-compose exec -T app python manage.py init_project_data --verbosity=2",
-            capture_output=True
-        )
-        if result and result.returncode == 0:
-            print_success("✅ Тестові дані створені успішно!")
-            print("👥 Користувачі доступні для dropdown в frontend")
-        else:
-            print_warning("⚠️ Помилка створення тестових даних")
-            if result and result.stderr:
-                print(f"Помилка: {result.stderr}")
-    except Exception as e:
-        print_warning(f"⚠️ Не вдалося створити тестові дані: {e}")
-        print("💡 Dropdown може бути порожнім")
-
-    # Перевіряємо статус та здоров'я сервісів
-    services_healthy = check_services_health()
-
-    if services_healthy:
-        print_success("Docker сервіси повністю розгорнуті з нуля!")
-    else:
-        print_warning("Docker сервіси розгорнуті, але деякі можуть потребувати додatkової перевірки.")
-
-    return frontend_mode
+    # Выполняем действия в зависимости от режима деплоя
+    if deploy_mode == "restart":
+        print("🔄 Режим: Быстрый перезапуск существующих контейнеров")
+        return restart_existing_containers(selected_services, frontend_mode)
+    elif deploy_mode == "selective_rebuild":
+        print(f"🎯 Режим: Выборочная пересборка сервисов: {', '.join(services_to_rebuild)}")
+        return selective_rebuild_services(selected_services, services_to_rebuild, frontend_mode)
+    else:  # full_rebuild
+        print("🏗️ Режим: Полная пересборка всех сервисов")
+        return full_rebuild_services(selected_services, frontend_mode)
 
 def deploy_full_docker():
     """Полное развертывание в Docker включая фронтенд"""
@@ -994,6 +1084,40 @@ def start_local_frontend():
     
     return True
 
+def start_local_frontend_background():
+    """Запускає локальний фронтенд у фоновому режимі"""
+    frontend_dir = Path("frontend")
+    next_dir = frontend_dir / ".next"
+
+    if not next_dir.exists():
+        print_error("Production збірка не знайдена! Спочатку виконайте npm run build")
+        return None
+
+    # Очищаємо порт 3000 перед запуском
+    print("🧹 Очищення порту 3000...")
+    run_command("npm run kill 3000", cwd=frontend_dir, check=False, capture_output=True)
+
+    print("🚀 Запуск локального фронтенда у фоновому режимі...")
+
+    try:
+        # Запускаємо фронтенд у фоновому режимі
+        process = subprocess.Popen(
+            "npm run start",
+            shell=True,
+            cwd=frontend_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL
+        )
+
+        print(f"✅ Фронтенд запущено (PID: {process.pid})")
+        print("🌐 URL: http://localhost:3000")
+        return process
+
+    except Exception as e:
+        print_error(f"❌ Помилка запуску фронтенда: {e}")
+        return None
+
 def check_services():
     """Перевіряє готовність сервісів"""
     print_step(5, "Перевірка готовності сервісів")
@@ -1006,9 +1130,255 @@ def check_services():
         print_warning("Деякі сервіси можуть бути не готові. Запустіть monitor_services.py для деталей.")
         return False
 
+def choose_deploy_mode():
+    """Выбор режима деплоя"""
+    print("🔧 РЕЖИМ ДЕПЛОЯ")
+    print("=" * 50)
+    print("1. 🔄 Быстрый перезапуск (использовать существующие образы)")
+    print("2. 🏗️  Полная переустановка (пересобрать все образы)")
+    print("3. 🎯 Выборочная переустановка (выбрать сервисы для пересборки)")
+    print("=" * 50)
+
+    while True:
+        try:
+            choice = input("Выберите режим (1-3): ").strip()
+            if choice == "1":
+                return "restart", []
+            elif choice == "2":
+                return "full_rebuild", []
+            elif choice == "3":
+                return "selective_rebuild", choose_services_to_rebuild()
+            else:
+                print("❌ Неверный выбор. Введите 1, 2 или 3.")
+        except KeyboardInterrupt:
+            print("\n❌ Отменено пользователем")
+            sys.exit(1)
+
+def choose_services_to_rebuild():
+    """Выбор сервисов для пересборки"""
+    available_services = ["app", "celery-worker", "celery-beat", "flower", "mailing", "nginx"]
+
+    print("\n🎯 ВЫБОРОЧНАЯ ПЕРЕСБОРКА")
+    print("=" * 40)
+    print("Доступные сервисы для пересборки:")
+    for i, service in enumerate(available_services, 1):
+        print(f"{i}. {service}")
+    print("=" * 40)
+    print("Введите номера сервисов через запятую (например: 1,3,5)")
+    print("Или 'all' для всех сервисов")
+
+    while True:
+        try:
+            choice = input("Ваш выбор: ").strip()
+            if choice.lower() == 'all':
+                return available_services
+
+            # Парсим номера
+            indices = [int(x.strip()) for x in choice.split(',')]
+            selected_services = []
+
+            for idx in indices:
+                if 1 <= idx <= len(available_services):
+                    selected_services.append(available_services[idx - 1])
+                else:
+                    print(f"❌ Неверный номер: {idx}")
+                    break
+            else:
+                if selected_services:
+                    print(f"✅ Выбраны сервисы: {', '.join(selected_services)}")
+                    return selected_services
+                else:
+                    print("❌ Не выбрано ни одного сервиса")
+        except (ValueError, KeyboardInterrupt):
+            print("❌ Неверный формат. Используйте номера через запятую.")
+
+def restart_existing_containers(selected_services, frontend_mode):
+    """Быстрый перезапуск существующих контейнеров"""
+    print("\n🔄 РЕЖИМ: Быстрый перезапуск существующих контейнеров")
+    print("=" * 60)
+    print("💡 Используются существующие образы Docker")
+    print("💡 Время выполнения: ~1-5 минут (в зависимости от системы)")
+    print()
+
+    # Этап 1: Остановка контейнеров
+    show_progress_bar(1, 4, "🛑 Остановка всех контейнеров...")
+    if not run_command("docker-compose down", capture_output=True):
+        print_error("❌ Ошибка при остановке контейнеров")
+        return None
+    print_success("✅ Все контейнеры остановлены")
+
+    # Этап 2: Очистка сети (опционально)
+    show_progress_bar(2, 4, "🧹 Очистка Docker сетей...")
+    run_command("docker network prune -f", capture_output=True, check=False)
+
+    # Этап 3: Запуск backend контейнеров (БЕЗ nginx)
+    show_progress_bar(3, 4, "🚀 Запуск backend контейнеров...")
+
+    # Запускаем сначала все backend сервисы, кроме nginx (nginx запустится ПОСЛЕ фронтенда)
+    backend_services = ["app", "pg", "redis", "redis-insight", "rabbitmq", "celery-worker", "celery-beat", "flower", "mailing"]
+    services_to_start = " ".join(backend_services)
+
+    print(f"🚀 Запуск backend сервисов: {services_to_start}")
+    print("⏳ Это может занять до 3 минут...")
+
+    try:
+        result = subprocess.run(
+            f"docker-compose up -d {services_to_start}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=180  # 3 минуты для backend
+        )
+
+        if result.returncode != 0:
+            print_error("❌ Ошибка при запуске backend контейнеров")
+            if result.stderr:
+                print(f"🔍 Ошибка: {result.stderr}")
+            if result.stdout:
+                print(f"🔍 Вывод: {result.stdout}")
+
+            # Показываем статус для диагностики
+            try:
+                status_result = subprocess.run("docker-compose ps", shell=True, capture_output=True, text=True, timeout=10)
+                if status_result.stdout:
+                    print(f"📊 Статус контейнеров:\n{status_result.stdout}")
+            except:
+                pass
+            return None
+        else:
+            print_success("✅ Backend контейнеры запущены")
+            if result.stdout:
+                print(f"📋 Запущенные сервисы:\n{result.stdout}")
+
+    except subprocess.TimeoutExpired:
+        print_error("❌ Таймаут при запуске backend контейнеров (>3 мин)")
+        print("💡 Возможные причины:")
+        print("   - Медленное интернет-соединение")
+        print("   - Недостаточно ресурсов системы")
+        print("   - Проблемы с Docker Desktop")
+        return None
+    except Exception as e:
+        print_error(f"❌ Неожиданная ошибка: {e}")
+        return None
+
+    # Этап 4: Ожидание готовности
+    show_progress_bar(4, 4, "⏳ Ожидание готовности сервисов...")
+    print("⏳ Ожидание инициализации сервисов...")
+
+    # Показываем прогресс ожидания с проверкой статуса
+    wait_time = 15
+    for i in range(wait_time):
+        progress = (i + 1) / wait_time * 100
+        print(f"\r⏳ Инициализация сервисов: {i+1}/{wait_time} сек ({progress:.0f}%)", end="", flush=True)
+        time.sleep(1)
+
+        # Каждые 5 секунд проверяем статус контейнеров
+        if (i + 1) % 5 == 0:
+            print()  # Новая строка
+            try:
+                result = subprocess.run("docker-compose ps --format table",
+                                      shell=True, capture_output=True, text=True, timeout=10)
+                if result.returncode == 0 and result.stdout:
+                    running_count = result.stdout.count("running")
+                    print(f"📊 Статус: {running_count} сервисов запущено")
+                else:
+                    print("📊 Проверка статуса...")
+            except:
+                print("📊 Проверка статуса...")
+
+    print()  # Новая строка после прогресса
+    print_success("🎉 Быстрый перезапуск завершен!")
+    return frontend_mode
+
+def selective_rebuild_services(selected_services, services_to_rebuild, frontend_mode):
+    """Выборочная пересборка указанных сервисов"""
+    print(f"🎯 Выборочная пересборка сервисов: {', '.join(services_to_rebuild)}")
+
+    # Останавливаем все контейнеры
+    print("🛑 Остановка всех контейнеров...")
+    run_command("docker-compose down", capture_output=True)
+
+    # Удаляем образы только для выбранных сервисов
+    for service in services_to_rebuild:
+        print(f"🗑️ Удаление образа для {service}...")
+        run_command(f"docker rmi final_drf_next_sept_2024-{service} 2>/dev/null || true",
+                   capture_output=True, check=False)
+
+    # Пересобираем только выбранные сервисы
+    services_str = " ".join(services_to_rebuild)
+    print(f"🔨 Пересборка сервисов: {services_str}")
+    if not run_command(f"docker-compose build --no-cache {services_str}", capture_output=True):
+        print_error("❌ Ошибка при пересборке сервисов")
+        return None
+
+    # Запускаем все сервисы
+    print("🚀 Запуск всех сервисов...")
+    if not run_command("docker-compose up -d", capture_output=True):
+        print_error("❌ Ошибка при запуске контейнеров")
+        return None
+
+    print_success("✅ Выборочная пересборка завершена!")
+    return frontend_mode
+
+def full_rebuild_services(selected_services, frontend_mode):
+    """Полная пересборка всех сервисов"""
+    print("🏗️ Полная пересборка всех сервисов...")
+
+    # Останавливаем и удаляем все контейнеры
+    print("🛑 Полная очистка...")
+    run_command("docker-compose down -v --remove-orphans", capture_output=True)
+
+    # Удаляем все образы проекта
+    print("🗑️ Удаление всех образов проекта...")
+    run_command("docker images -q final_drf_next_sept_2024-* | xargs -r docker rmi -f",
+               capture_output=True, check=False)
+
+    # Продолжаем с обычной логикой полной пересборки
+    return continue_full_rebuild(selected_services, frontend_mode)
+
+def continue_full_rebuild(selected_services, frontend_mode):
+    """Продолжение полной пересборки (оригинальная логика)"""
+
+    # СТВОРЕННЯ ТА ЗБІРКА ВСІХ КОНТЕЙНЕРІВ З НУЛЯ
+    show_progress_bar(4, 6, "🔨 Збірка всіх образів...")
+
+    # Запускаємо збірку з відстеженням прогресу для обраних сервісів
+    if not run_docker_build_with_progress(selected_services):
+        print_error("Не вдалося зібрати деякі Docker образи!")
+        return None
+
+    print_success("Всі обрані образи зібрані успішно!")
+
+    show_progress_bar(5, 6, "🚀 Запуск всіх контейнерів...")
+
+    # Запускаємо контейнери з захопленням виводу
+    result = run_command("docker-compose up -d --force-recreate", capture_output=True)
+    if not result:
+        print_error("Не вдалося запустити Docker сервіси!")
+        return None
+
+    print_success("Всі контейнери запущені!")
+
+    # Чекаємо готовності сервісів
+    show_progress_bar(6, 6, "⏳ Очікування готовності сервісів...")
+    time.sleep(10)
+
+    return frontend_mode
+
 def main():
     """Головна функція"""
     try:
+        # Парсим аргументы командной строки
+        parser = argparse.ArgumentParser(description='AutoRia Clone Deploy Script')
+        parser.add_argument('--mode', choices=['restart', 'full_rebuild', 'selective_rebuild'],
+                          help='Режим деплоя')
+        parser.add_argument('--services', nargs='*',
+                          help='Сервисы для выборочной пересборки')
+        parser.add_argument('--auto', action='store_true',
+                          help='Автоматический режим без интерактивных запросов')
+
+        args = parser.parse_args()
+
         # Устанавливаем кодировку для Windows
         if sys.platform == "win32":
             import codecs
@@ -1020,6 +1390,21 @@ def main():
         print("=" * 50)
         print("🚀 ЕМУЛЯЦІЯ РОЗГОРТАННЯ З НУЛЯ (як після git clone)")
         print(f"{Colors.ENDC}")
+
+        # Определяем режим деплоя
+        if args.mode:
+            deploy_mode = args.mode
+            services_to_rebuild = args.services or []
+        elif args.auto:
+            deploy_mode = "restart"
+            services_to_rebuild = []
+        else:
+            deploy_mode, services_to_rebuild = choose_deploy_mode()
+
+        print(f"🔧 Режим деплоя: {deploy_mode}")
+        if services_to_rebuild:
+            print(f"🎯 Сервисы для пересборки: {', '.join(services_to_rebuild)}")
+        print()
 
         print("📋 План розгортання:")
         print("   1️⃣  Перевірка системних вимог")
@@ -1037,49 +1422,172 @@ def main():
         if not check_project_files():
             sys.exit(1)
 
-        # ЭТАП 2: Развертывание сервисов в Docker (ПЕРВЫМ ДЕЛОМ!)
-        # Функция deploy_docker_services() теперь сама определяет режим через меню
-        frontend_mode = deploy_docker_services()
+        # ЭТАП 2: Развертывание сервисов в Docker
+        frontend_mode = deploy_docker_services(deploy_mode, services_to_rebuild)
         if frontend_mode is None:  # Ошибка развертывания
             sys.exit(1)
 
-        # ЭТАП 3: Сборка фронтенда в production режиме (ПОСЛЕ Docker)
+        # ЭТАП 3: Подготовка фронтенда
         if frontend_mode == "local":
+            # Сборка фронтенда в production режиме для локального запуска
             if not build_frontend():
                 sys.exit(1)
+        else:  # frontend_mode == "docker"
+            # Для Docker режима фронтенд уже должен быть собран в контейнере
+            print("🐳 Фронтенд будет запущен в Docker контейнере")
 
-        # ЭТАП 4: Финальный запуск
+        # ЭТАП 4: Финальный запуск фронтенда
+        print("\n" + "="*60)
+        print("🚀 ФИНАЛЬНЫЙ ЭТАП: Запуск фронтенда")
+        print("="*60)
+
         if frontend_mode == "local":
             print()
             print_success("Всі Docker сервіси запущені!")
 
-            # Перевіряємо здоров'я backend сервісів перед запуском фронтенда
-            print("🔍 Перевірка готовності backend сервісів...")
-            services_healthy = check_services_health()
+            # ФІНАЛЬНИЙ ЕТАП: Запуск оптимізованого локального фронтенда
+            print("ФІНАЛЬНИЙ ЕТАП: Запуск оптимізованого локального фронтенда...")
 
-            if services_healthy:
-                print("ФІНАЛЬНИЙ ЕТАП: Запуск оптимізованого локального фронтенда...")
-                start_local_frontend()
+            # Запускаємо фронтенд у фоновому режимі
+            frontend_process = start_local_frontend_background()
+
+            if frontend_process:
+                # Чекаємо трохи щоб фронтенд встиг запуститися
+                print("⏳ Очікування запуску фронтенда...")
+                time.sleep(5)
+
+                # ВАЖЛИВО: Запускаємо nginx ПІСЛЯ готовності фронтенда
+                print("🌐 Запуск Nginx (reverse proxy) ПІСЛЯ готовності фронтенда...")
+                try:
+                    nginx_result = subprocess.run(
+                        "docker-compose up -d nginx",
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        timeout=30
+                    )
+
+                    if nginx_result.returncode == 0:
+                        print_success("✅ Nginx запущен")
+                        time.sleep(3)  # Даем nginx время на инициализацию
+                    else:
+                        print_warning("⚠️ Проблема с запуском Nginx")
+                        if nginx_result.stderr:
+                            print(f"Ошибка Nginx: {nginx_result.stderr}")
+
+                except Exception as e:
+                    print_warning(f"⚠️ Ошибка запуска Nginx: {e}")
+
+                # Теперь проверяем ВСЕ сервисы включая фронтенд И nginx
+                print("🔍 Финальная проверка готовности ВСЕХ сервисов (включая Nginx)...")
+                all_services_healthy = check_services_health("local")
+
+                if all_services_healthy:
+                    print_success("🎉 ВСІ СЕРВІСИ ГОТОВІ! Система повністю функціональна!")
+                    print()
+                    print("🌐 " + "="*60)
+                    print("🚀 AutoRia Clone готовий до використання!")
+                    print("🔗 Головна сторінка (прямо): http://localhost:3000")
+                    print("🔗 Головна сторінка (через Nginx): http://localhost")
+                    print("="*63)
+                    print()
+                    print("📋 Backend сервіси (через Docker + Nginx):")
+                    print("   - http://localhost/api/ - Backend API")
+                    print("   - http://localhost/admin/ - Django Admin")
+                    print("   - http://localhost/rabbitmq/ - RabbitMQ Management")
+                    print("   - http://localhost/flower/ - Celery Flower")
+                    print("   - http://localhost/redis/ - Redis Insight")
+                    print()
+                    print("💡 Фронтенд: локально в production режимі (порт 3000)")
+                    print("💡 Backend: Docker контейнери + Nginx reverse proxy")
+                    print("💡 Nginx: проксирует запросы между фронтендом и бекендом")
+                else:
+                    print_warning("⚠️ Деякі сервіси не готові. Система може працювати некоректно.")
+                    print("❌ ССЫЛКИ НЕ ПРЕДОСТАВЛЯЮТСЯ - НЕ ВСЕ СЕРВИСЫ ГОТОВЫ!")
+                    print("🔧 Рекомендується перевірити логи проблемних сервісів перед використанням.")
             else:
-                print_warning("⚠️ Деякі backend сервіси не готові. Фронтенд може працювати некоректно.")
-                print("🔧 Рекомендується перевірити логи проблемних сервісів перед використанням.")
-                print()
-                print("🌐 " + "="*50)
-                print("🚀 AutoRia Clone запущений (з попередженнями)")
-                print("🔗 Перейдіть за посиланням: http://localhost:3000")
-                print("="*53)
+                print_error("❌ Не вдалося запустити локальний фронтенд!")
+                print("🔧 Перевірте логи та спробуйте запустити вручну: npm run start")
         else:  # frontend_mode == "docker"
-            check_services()
+            print("🐳 Режим: Фронтенд в Docker контейнере")
+
+            # Убеждаемся что фронтенд контейнер запущен
+            print("🚀 Запуск фронтенда в Docker...")
+            try:
+                result = subprocess.run(
+                    "docker-compose up -d frontend",
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=60
+                )
+
+                if result.returncode == 0:
+                    print_success("✅ Фронтенд контейнер запущен")
+                else:
+                    print_warning("⚠️ Проблема с запуском фронтенд контейнера")
+                    if result.stderr:
+                        print(f"Ошибка: {result.stderr}")
+
+            except Exception as e:
+                print_warning(f"⚠️ Ошибка запуска фронтенда: {e}")
+
+            # Ожидание готовности фронтенда в Docker
+            print("⏳ Ожидание готовности фронтенда в Docker...")
+            wait_time = 20
+            for i in range(wait_time):
+                progress = (i + 1) / wait_time * 100
+                print(f"\r⏳ Инициализация фронтенда: {i+1}/{wait_time} сек ({progress:.0f}%)", end="", flush=True)
+                time.sleep(1)
             print()
-            print_success("ПОВНИЙ ДЕПЛОЙ В DOCKER ЗАВЕРШЕНО!")
-            print("Доступні URL:")
-            print("   - http://localhost - Головний UI (через nginx)")
-            print("   - http://localhost:3000 - Frontend (Docker)")
-            print("   - http://localhost/api/ - Backend API")
-            print("   - http://localhost/admin/ - Django Admin")
-            print("   - http://localhost/rabbitmq/ - RabbitMQ Management")
-            print("   - http://localhost/flower/ - Celery Flower")
-            print("   - http://localhost/redis/ - Redis Insight")
+
+            # Запускаем nginx ПОСЛЕ готовности фронтенда
+            print("🌐 Запуск Nginx (reverse proxy) ПОСЛЕ готовности фронтенда...")
+            try:
+                nginx_result = subprocess.run(
+                    "docker-compose up -d nginx",
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+
+                if nginx_result.returncode == 0:
+                    print_success("✅ Nginx запущен")
+                    time.sleep(3)  # Даем nginx время на инициализацию
+                else:
+                    print_warning("⚠️ Проблема с запуском Nginx")
+                    if nginx_result.stderr:
+                        print(f"Ошибка Nginx: {nginx_result.stderr}")
+
+            except Exception as e:
+                print_warning(f"⚠️ Ошибка запуска Nginx: {e}")
+
+            # Финальная проверка готовности ВСЕХ сервисов включая nginx
+            print("🔍 Финальная проверка готовности ВСЕХ сервисов (включая Nginx)...")
+            all_services_healthy = check_services_health("docker")
+
+            if all_services_healthy:
+                print_success("🎉 ВСІ СЕРВІСИ ГОТОВІ! Система повністю функціональна!")
+                print()
+                print("🌐 " + "="*60)
+                print("🚀 AutoRia Clone готовий до використання!")
+                print("🔗 Головна сторінка: http://localhost")
+                print("🔗 Фронтенд (прямо): http://localhost:3000")
+                print("="*63)
+                print()
+                print("📋 Додаткові сервіси:")
+                print("   - http://localhost/api/ - Backend API")
+                print("   - http://localhost/admin/ - Django Admin")
+                print("   - http://localhost/rabbitmq/ - RabbitMQ Management")
+                print("   - http://localhost/flower/ - Celery Flower")
+                print("   - http://localhost/redis/ - Redis Insight")
+                print()
+                print("💡 Всі сервіси працюють в Docker контейнерах")
+            else:
+                print_warning("⚠️ Деякі сервіси не готові. Система може працювати некоректно.")
+                print("❌ ССЫЛКИ НЕ ПРЕДОСТАВЛЯЮТСЯ - НЕ ВСЕ СЕРВИСЫ ГОТОВЫ!")
+                print("🔧 Рекомендується перевірити логи проблемних сервісів перед використанням.")
 
     except KeyboardInterrupt:
         print(f"\n{Colors.WARNING}⚠️  Розгортання перервано користувачем{Colors.ENDC}")

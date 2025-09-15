@@ -52,7 +52,7 @@ COPY pyproject.toml poetry.lock ./
 # Configure Poetry and install ALL dependencies (full installation)
 RUN poetry config repositories.pypi https://pypi.org/simple && \
     poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi
+    poetry install --no-interaction --no-ansi --no-root
 
 # Copy the entire application (this ensures all files are available)
 COPY . .
