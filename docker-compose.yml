@@ -149,14 +149,19 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
-    command: >
-      celery -A config.celery_app worker
-      --loglevel=info
-      --pool=solo
-      --concurrency=2
-      --queues=email,notifications,data_processing,cleanup
+    command:
+      - python
+      - -m
+      - celery
+      - -A
+      - config.celery_app
+      - worker
+      - --loglevel=info
+      - --pool=solo
+      - --concurrency=2
+      - --queues=email,notifications,data_processing,cleanup
     healthcheck:
-      test: ["CMD", "celery", "-A", "config.celery_app", "inspect", "ping"]
+      test: ["CMD", "python", "-m", "celery", "-A", "config.celery_app", "inspect", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -188,10 +193,15 @@ services:
     depends_on:
       - rabbitmq
       - redis
-    command: >
-      celery -A config.celery_app beat
-      --loglevel=info
-      --schedule=/app/celerybeat-schedule/celerybeat-schedule
+    command:
+      - python
+      - -m
+      - celery
+      - -A
+      - config.celery_app
+      - beat
+      - --loglevel=info
+      - --schedule=/app/celerybeat-schedule/celerybeat-schedule
     networks:
       - default
 
@@ -219,10 +229,15 @@ services:
     depends_on:
       - rabbitmq
       - redis
-    command: >
-      celery -A config.celery_app flower
-      --port=5555
-      --broker_api=http://guest:guest@rabbitmq:15672/api/
+    command:
+      - python
+      - -m
+      - celery
+      - -A
+      - config.celery_app
+      - flower
+      - --port=5555
+      - --broker_api=http://guest:guest@rabbitmq:15672/api/
     networks:
       - default
 

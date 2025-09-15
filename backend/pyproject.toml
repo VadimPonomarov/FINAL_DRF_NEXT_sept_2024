@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Django REST Framework lessons project"
 authors = ["Vadim <pvs.versia@gmail.com>"]
 readme = "README.md"
-packages = [{include = "*"}]
+packages = [{include = "apps"}, {include = "config"}, {include = "core"}]
 
 
 [tool.poetry.dependencies]

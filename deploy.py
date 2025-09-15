@@ -234,7 +234,7 @@ def auto_fix_build_errors(service_name, error_log):
     return fixes_applied
 
 def run_docker_build_with_progress(selected_services=None):
-    """Запускає docker-compose build з відстеженням прогресу для кожного сервісу в багатопоточному режимі"""
+    """Запускає docker-compose build з відстеженням прогресу для кожного сервісу (послідовно, без паралелі)"""
 
     # Флаг для зупинки збірки
     stop_build_flag = threading.Event()
@@ -516,31 +516,18 @@ def run_docker_build_with_progress(selected_services=None):
             update_all_services()
             return False
 
-    # Запускаємо збірку тільки обраних сервісів паралельно
-    threads = []
-    for service_name in selected_services:
-        thread = threading.Thread(target=build_single_service, args=(service_name,))
-        thread.daemon = True
-        threads.append(thread)
-        thread.start()
-        time.sleep(0.2)  # Невелика затримка між запусками
-
-    # Чекаємо завершення всіх потоків з обробкою переривання
+    # Послідовна збірка обраних сервісів у фіксованому порядку
     try:
-        for thread in threads:
-            thread.join()
+        for service_name in selected_services:
+            ok = build_single_service(service_name)
+            if not ok:
+                # Продовжуємо будувати інші сервіси, але запам'ятовуємо помилки для підсумку
+                pass
+            time.sleep(0.1)
     except KeyboardInterrupt:
         print(f"\n{Colors.WARNING}⚠️  Переривання користувачем...{Colors.ENDC}")
-        print("🛑 Зупинка всіх процесів збірки...")
-
-        # Встановлюємо флаг зупинки для всіх потоків
+        print("🛑 Зупинка процесу збірки...")
         stop_build_flag.set()
-
-        # Даємо потокам час на завершення
-        for thread in threads:
-            if thread.is_alive():
-                thread.join(timeout=5)
-
         print("❌ Збірка перервана користувачем")
         return False
 

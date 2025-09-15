@@ -3,7 +3,11 @@ FROM python:3.11-slim
 LABEL maintainer="ME <pvs.versia@gmail.com>"
 LABEL description="Simple mailing service"
 
-ENV PYTHONUNBUFFERED=1 \
+# Set environment variables to avoid interactive prompts and locale issues
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     POETRY_VERSION=1.8.2 \
     POETRY_NO_INTERACTION=1 \
