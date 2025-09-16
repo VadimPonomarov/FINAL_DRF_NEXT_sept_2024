@@ -384,7 +384,7 @@ def run_docker_build_with_progress(selected_services=None):
 
                         if data["log_msg"]:
                             color, icon = get_log_color_and_icon(data["log_msg"])
-                            log_part = f" {icon} {color}{data['log_msg'][:50]}\033[0m"
+                            log_part = f" {icon} {color}{data['log_msg'][:100]}\033[0m"
                             line = base_line + log_part
                         else:
                             line = base_line
@@ -548,7 +548,7 @@ def run_docker_build_with_progress(selected_services=None):
         except Exception as e:
             with services[service_name]["lock"]:
                 services[service_name]["status"] = "❌ Помилка"
-                services[service_name]["log_msg"] = f"Exception: {str(e)[:30]}"
+                services[service_name]["log_msg"] = f"Exception: {str(e)[:80]}"
             update_all_services()
             return False
 
@@ -913,7 +913,7 @@ def build_frontend():
         current_progress = 40
         last_progress_time = time.time()
         last_progress_value = current_progress
-        stuck_timeout = 180  # 3 хвилини без прогресу = застій
+        stuck_timeout = 600  # 10 хвилин без прогресу = застій (збільшено для складних проектів)
 
         while True:
             output = process.stdout.readline()
@@ -939,9 +939,12 @@ def build_frontend():
                 elif any(keyword in output_lower for keyword in ['route', 'page', 'маршрут', 'сторінк', '/', 'app/']):
                     current_progress = min(98, current_progress + 1)
                     update_frontend_progress(current_progress, "🛣️ Маршрути", "Генерація сторінок...")
-                elif any(keyword in output_lower for keyword in ['ready', 'готов', 'server', 'сервер', 'localhost']):
+                elif any(keyword in output_lower for keyword in ['ready', 'готов', 'server', 'сервер', 'localhost', 'build completed', 'збірка завершена', 'export success', 'експорт успішний']):
                     current_progress = 100
-                    update_frontend_progress(current_progress, "✅ Готово", "Сервер запущено!")
+                    update_frontend_progress(current_progress, "✅ Готово", "Збірка завершена!")
+                    # Якщо це production збірка (не dev сервер), можемо завершити
+                    if any(keyword in output_lower for keyword in ['build completed', 'export success', 'збірка завершена']):
+                        break
                 else:
                     # Якщо є будь-який вивід, але не розпізнаємо - повільно збільшуємо прогрес
                     if len(output.strip()) > 10:  # Ігноруємо короткі повідомлення
@@ -955,21 +958,41 @@ def build_frontend():
                     last_progress_time = time.time()
                     last_progress_value = current_progress
 
-            # Перевіряємо на застій
+            # Перевіряємо на застій (але не якщо процес завершився)
             current_time = time.time()
-            if current_time - last_progress_time > stuck_timeout:
-                print(f"\n🚨 ЗАСТІЙ ВИЯВЛЕНО: Збірка застрягла на {last_progress_value}% більше ніж {stuck_timeout//60} хвилин")
+            time_without_progress = current_time - last_progress_time
+
+            # Показуємо попередження кожні 2 хвилини
+            if time_without_progress > 120 and time_without_progress % 120 < 1 and process.poll() is None:
+                minutes_stuck = int(time_without_progress // 60)
+                print(f"\n⏳ Збірка триває {minutes_stuck} хвилин без зміни прогресу на {current_progress}%...")
+                print(f"   Максимальний час очікування: {stuck_timeout//60} хвилин")
+                print(f"   Залишилось: {(stuck_timeout - time_without_progress)//60:.0f} хвилин до автоматичного переривання")
+
+            if time_without_progress > stuck_timeout and process.poll() is None:
+                print(f"\n🚨 ЗАСТІЙ ВИЯВЛЕНО: Збірка застрягла на {current_progress}% більше ніж {stuck_timeout//60} хвилин")
                 print("💡 Рекомендації:")
                 print("   - Перервіть збірку (Ctrl+C) та спробуйте знову")
                 print("   - Очистіть кеш: rm -rf frontend/.next frontend/node_modules")
                 print("   - Перевірте доступний простір на диску")
                 print("   - Вимкніть антивірус для папки проекту")
+                print("   - Спробуйте dev режим: npm run dev")
+
+                # Показуємо останній вивід для діагностики
+                print(f"\n🔍 Останній вивід процесу:")
+                print(f"   {output.strip() if 'output' in locals() else 'Немає виводу'}")
 
                 # Автоматично перериваємо процес після попередження
-                print("⚠️ Автоматичне переривання через 30 секунд...")
-                time.sleep(30)
+                print("⚠️ Автоматичне переривання через 60 секунд...")
+                print("   Натисніть Ctrl+C для негайного переривання")
+                time.sleep(60)
                 process.terminate()
                 return False
+
+            # Якщо процес завершився, але ми не отримали 100% - це теж проблема
+            if process.poll() is not None and current_progress < 100:
+                print(f"\n⚠️ Процес завершився на {current_progress}%, але збірка може бути неповною")
+                break
 
         return_code = process.poll()
         if return_code != 0:
@@ -978,8 +1001,11 @@ def build_frontend():
             print(f"\nПомилка збірки фронтенда: {stderr_output}")
             return False
         else:
-            update_frontend_progress(100, "✅ Готово", "Збірка завершена успішно")
+            # Якщо процес завершився успішно, але прогрес менше 100% - встановлюємо 100%
+            if current_progress < 100:
+                update_frontend_progress(100, "✅ Готово", "Збірка завершена успішно")
             print()  # Новий рядок після прогрес-бару
+            print_success("✅ Frontend збірка завершена успішно!")
 
     except KeyboardInterrupt:
         update_frontend_progress(0, "⚠️ Перервано", "Збірка перервана користувачем")
