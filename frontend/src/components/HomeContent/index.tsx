@@ -436,7 +436,8 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
 
   // Определяем сессию: приоритет серверной сессии, затем клиентской
   const currentSession = serverSession || session;
-  const isAuthenticated = !!currentSession?.user;
+  // После восстановления оригинального session callback, сессия имеет кастомную структуру { email, accessToken, expiresOn }
+  const isAuthenticated = !!(currentSession?.email);
   const isLoading = sessionStatus === 'loading' || !isMounted;
 
   console.log('[HomeContent] NextAuth Session Check:', {
@@ -447,9 +448,10 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
     isAuthenticated,
     provider,
     isMounted,
-    userEmail: currentSession?.user?.email || 'none',
-    'serverSession?.user': serverSession?.user,
-    'session?.user': session?.user
+    userEmail: currentSession?.email || 'none',
+    'currentSession structure': currentSession ? Object.keys(currentSession) : 'null',
+    'has email': !!currentSession?.email,
+    'session email': currentSession?.email
   });
 
   // Таймер обратного отсчета - запускается ВСЕГДА когда нет сессии

@@ -79,13 +79,27 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Function to check backend_auth tokens presence in Redis (for Autoria access)
+// Function to check auth tokens presence in Redis (for Autoria access)
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
-    const redisResponse = await fetch(`${req.nextUrl.origin}/api/redis?key=backend_auth`);
+    // Сначала проверяем, какой провайдер используется
+    const providerResponse = await fetch(`${req.nextUrl.origin}/api/redis?key=auth_provider`);
+    let authKey = 'backend_auth'; // по умолчанию
+
+    if (providerResponse.ok) {
+      const providerData = await providerResponse.json();
+      if (providerData.exists && providerData.value === 'dummy') {
+        authKey = 'dummy_auth';
+        console.log(`[Middleware] Using dummy provider, checking key: ${authKey}`);
+      } else {
+        console.log(`[Middleware] Using backend provider, checking key: ${authKey}`);
+      }
+    }
+
+    const redisResponse = await fetch(`${req.nextUrl.origin}/api/redis?key=${authKey}`);
 
     if (!redisResponse.ok) {
-      console.log(`[Middleware] Failed to check Redis for backend_auth tokens`);
+      console.log(`[Middleware] Failed to check Redis for ${authKey} tokens`);
       // Create login URL with callbackUrl parameter
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('callbackUrl', req.url);
@@ -94,7 +108,7 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
 
     const redisData = await redisResponse.json();
     if (!redisData.exists || !redisData.value) {
-      console.log(`[Middleware] No backend_auth tokens found in Redis - redirecting to login with callback`);
+      console.log(`[Middleware] No ${authKey} tokens found in Redis - redirecting to login with callback`);
       // Create login URL with callbackUrl parameter
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('callbackUrl', req.url);
@@ -102,7 +116,8 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
       console.log(`[Middleware] Redirecting to login:`, {
         originalUrl: req.url,
         loginUrl: loginUrl.href,
-        callbackUrl: req.url
+        callbackUrl: req.url,
+        checkedKey: authKey
       });
 
       return NextResponse.redirect(loginUrl);
@@ -110,7 +125,7 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
 
     const authData = JSON.parse(redisData.value);
     if (!authData.access || !authData.refresh) {
-      console.log(`[Middleware] Incomplete backend_auth tokens in Redis - redirecting to login with callback`);
+      console.log(`[Middleware] Incomplete ${authKey} tokens in Redis - redirecting to login with callback`);
       // Create login URL with callbackUrl parameter
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('callbackUrl', req.url);
@@ -118,16 +133,17 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
       console.log(`[Middleware] Redirecting to login (incomplete tokens):`, {
         originalUrl: req.url,
         loginUrl: loginUrl.href,
-        callbackUrl: req.url
+        callbackUrl: req.url,
+        checkedKey: authKey
       });
 
       return NextResponse.redirect(loginUrl);
     }
 
-    console.log(`[Middleware] backend_auth tokens found in Redis - allowing Autoria access`);
+    console.log(`[Middleware] ${authKey} tokens found in Redis - allowing Autoria access`);
     return NextResponse.next();
   } catch (error) {
-    console.error(`[Middleware] Error checking backend_auth tokens:`, error);
+    console.error(`[Middleware] Error checking auth tokens:`, error);
     // Create login URL with callbackUrl parameter
     const loginUrl = new URL('/login', req.url);
     loginUrl.searchParams.set('callbackUrl', req.url);
