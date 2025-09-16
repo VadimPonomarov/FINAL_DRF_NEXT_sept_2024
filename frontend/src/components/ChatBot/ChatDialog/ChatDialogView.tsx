@@ -18,7 +18,7 @@ import { ChatMessages } from "../ChatMessages";
 import { ChatInput } from "../ChatInput";
 import FloatingScrollButtons from "../FloatingScrollButtons";
 import FixedScrollButtons from "../FixedScrollButtons";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ChatDialogViewProps {
   messages: Message[];

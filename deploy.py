@@ -887,7 +887,18 @@ def build_frontend():
             display_name = "⚛️ Next.js Frontend"
 
             if log_msg:
-                line = f"🔨 {display_name:20} [{progress_bar}] {progress:3.0f}% {status} 🔄 {log_msg[:120]}"
+                # Ограничиваем длину с учетом ширины терминала
+                max_log_length = 80  # Безопасная длина для большинства терминалов
+                truncated_log = log_msg[:max_log_length]
+                if len(log_msg) > max_log_length:
+                    truncated_log += "..."
+                line = f"🔨 {display_name:20} [{progress_bar}] {progress:3.0f}% {status} 🔄 {truncated_log}"
+
+                # Если лог очень длинный, показываем его на отдельной строке
+                if len(log_msg) > max_log_length:
+                    print(f"\r{line}")
+                    print(f"   📄 Повний шлях: {log_msg}")
+                    return
             else:
                 line = f"🔨 {display_name:20} [{progress_bar}] {progress:3.0f}% {status}"
 
@@ -914,14 +925,20 @@ def build_frontend():
         last_progress_time = time.time()
         last_progress_value = current_progress
         stuck_timeout = 600  # 10 хвилин без прогресу = застій (збільшено для складних проектів)
+        last_activity_time = time.time()  # Час останньої активності (будь-якого виводу)
+        activity_timeout = 120  # 2 хвилини без будь-якого виводу = показуємо індикатор активності
 
         while True:
             output = process.stdout.readline()
             if output == '' and process.poll() is not None:
                 break
+
+            current_time = time.time()
+
             if output:
                 output_lower = output.lower()
                 old_progress = current_progress
+                last_activity_time = current_time  # Обновляем время активности
 
                 # Оновлюємо прогрес на основі ключових слів (розширена детекція для Next.js 15+ і Turbopack)
                 if any(keyword in output_lower for keyword in ['compiling', 'турбопак', 'turbopack', 'bundling']):
@@ -949,9 +966,19 @@ def build_frontend():
                     # Якщо є будь-який вивід, але не розпізнаємо - повільно збільшуємо прогрес
                     if len(output.strip()) > 10:  # Ігноруємо короткі повідомлення
                         current_progress = min(current_progress + 0.5, 95)
-                        # Очищаємо вивід від зайвих символів та показуємо більше тексту
+                        # Очищаємо вивід від зайвих символів
                         clean_output = output.strip().replace('\n', ' ').replace('\r', ' ')
-                        update_frontend_progress(current_progress, "🔄 Обробка", f"{clean_output[:100]}")
+                        # Обрезаем до безопасной длины
+                        safe_output = clean_output[:60] + ("..." if len(clean_output) > 60 else "")
+                        update_frontend_progress(current_progress, "🔄 Обробка", safe_output)
+            else:
+                # Якщо немає виводу, але процес живий - показуємо індикатор активності
+                if process.poll() is None and time_without_activity > 10:
+                    # Кожні 10 секунд без виводу показуємо анімований індикатор
+                    if int(time_without_activity) % 10 == 0:
+                        spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+                        spinner = spinner_chars[int(time_without_activity // 2) % len(spinner_chars)]
+                        update_frontend_progress(current_progress, f"{spinner} Обробка", f"Тиха обробка файлів... ({int(time_without_activity)}с без виводу)")
 
                 # Перевіряємо чи змінився прогрес
                 if current_progress > old_progress:
@@ -959,8 +986,14 @@ def build_frontend():
                     last_progress_value = current_progress
 
             # Перевіряємо на застій (але не якщо процес завершився)
-            current_time = time.time()
             time_without_progress = current_time - last_progress_time
+            time_without_activity = current_time - last_activity_time
+
+            # Показуємо індикатор активності якщо немає виводу, але процес живий
+            if time_without_activity > activity_timeout and process.poll() is None:
+                if time_without_activity % 30 < 1:  # Кожні 30 секунд
+                    dots = "." * (int(time_without_activity // 30) % 4)
+                    update_frontend_progress(current_progress, "🔄 Обробка", f"Тиха обробка файлів{dots} ({int(time_without_activity//60)} хв без виводу)")
 
             # Показуємо попередження кожні 2 хвилини
             if time_without_progress > 120 and time_without_progress % 120 < 1 and process.poll() is None:
@@ -968,6 +1001,7 @@ def build_frontend():
                 print(f"\n⏳ Збірка триває {minutes_stuck} хвилин без зміни прогресу на {current_progress}%...")
                 print(f"   Максимальний час очікування: {stuck_timeout//60} хвилин")
                 print(f"   Залишилось: {(stuck_timeout - time_without_progress)//60:.0f} хвилин до автоматичного переривання")
+                print(f"   Процес активний: {'Так' if time_without_activity < activity_timeout else 'Тиха обробка'}")
 
             if time_without_progress > stuck_timeout and process.poll() is None:
                 print(f"\n🚨 ЗАСТІЙ ВИЯВЛЕНО: Збірка застрягла на {current_progress}% більше ніж {stuck_timeout//60} хвилин")

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
-import styles from './SubmitButton.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface SubmitButtonProps {
   onClick: () => void;
@@ -21,7 +21,7 @@ const SubmitButton: React.FC<SubmitButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
       variant="default"
-      className={`${styles.submitButton} rounded-full p-2 h-10 w-10`}
+      className={`${unifiedStyles.submitButton} rounded-full p-2 h-10 w-10`}
       title="Send message"
       type="button"
     >

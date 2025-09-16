@@ -5,7 +5,7 @@ import { MessageCircle } from "lucide-react";
 import { ChatDialog } from "../ChatDialog/index";
 import { ResizableChatWrapper } from "../ResizableChatWrapper";
 import SimpleScrollButtons from "../SimpleScrollButtons";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ChatBotIconViewProps {
   isOpen: boolean;

@@ -56,12 +56,18 @@ const nextConfig = {
   // React strict mode off in development to avoid double-invoking effects (faster dev)
   reactStrictMode: process.env.NODE_ENV !== 'development',
 
-  // Experimental features
+  // Experimental features - оптимизировано для ChatBot
   experimental: {
     // React Compiler: отключен из-за отсутствия babel-plugin-react-compiler
     // reactCompiler: true,
     // Keep typedRoutes off for now
     typedRoutes: false,
+    // Отключаем Turbopack для стабильной сборки с множеством CSS модулей
+    turbo: false,
+    // Оптимизируем CSS обработку для ChatBot компонентов
+    optimizeCss: false, // Отключаем для избежания застоев
+    // Ускоряем сборку за счет параллельной обработки
+    workerThreads: false, // Отключаем для стабильности
     // Package import optimizations for both dev and production
     optimizePackageImports: [
       'lucide-react',

@@ -10,7 +10,7 @@ import { FileAttachments } from "./FileAttachments";
 import { TableDisplay } from "./TableDisplay";
 import { MarkdownText } from "../MarkdownText";
 import { FileAttachment } from "@/utils/chat/chatTypes";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ChatMessageViewProps {
   isUser: boolean;

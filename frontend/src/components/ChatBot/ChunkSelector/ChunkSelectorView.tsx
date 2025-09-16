@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Trash2, MessageSquare, Plus, MoreVertical } from 'lucide-react';
 import { ChatChunk } from '@/utils/chat/chatTypes';
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ChunkSelectorViewProps {
   chunks: ChatChunk[];
@@ -32,8 +32,8 @@ export const ChunkSelectorView: React.FC<ChunkSelectorViewProps> = ({
 }) => {
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h3 className={styles.title}>Чаты</h3>
+      <div className={unifiedStyles.chatDialogHeader}>
+        <h3 className={unifiedStyles.chatDialogTitle}>Чаты</h3>
         <div className={styles.controls}>
           <Button
             variant="ghost"

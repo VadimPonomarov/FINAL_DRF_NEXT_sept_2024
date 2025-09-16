@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronsUp, ChevronsDown } from "lucide-react";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 const ChatInputScrollButtons: React.FC = () => {
   // Функция для скролла вверх
@@ -55,19 +55,19 @@ const ChatInputScrollButtons: React.FC = () => {
       <Button
         type="button"
         onClick={scrollToTop}
-        className={styles.scrollButton}
+        className={unifiedStyles.scrollButton}
         aria-label="Scroll to top"
       >
-        <ChevronsUp className={styles.icon} />
+        <ChevronsUp className={unifiedStyles.submitButtonIcon} />
       </Button>
       
       <Button
         type="button"
         onClick={scrollToBottom}
-        className={styles.scrollButton}
+        className={unifiedStyles.scrollButton}
         aria-label="Scroll to bottom"
       >
-        <ChevronsDown className={styles.icon} />
+        <ChevronsDown className={unifiedStyles.submitButtonIcon} />
       </Button>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ResizableChatWrapperViewProps {
   children: React.ReactNode;

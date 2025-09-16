@@ -8,7 +8,7 @@ import { fileToBase64 } from "@/utils/chat/fileUpload";
 import { useErrorHandler, ErrorType } from "@/utils/ui/notificationUtils";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useToast } from "@/hooks/use-toast";
-import styles from './styles/FileUpload.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface FileUploadProps {
   onFilesSelected: (files: File[], message?: string) => Promise<void>;
@@ -207,7 +207,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 placeholder="Add a message with your files (optional)"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className={styles.input}
+                className={unifiedStyles.chatInputField}
                 disabled={isUploading}
               />
             </div>

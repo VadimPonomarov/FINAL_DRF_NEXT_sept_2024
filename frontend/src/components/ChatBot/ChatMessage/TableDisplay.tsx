@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Table, ExternalLink } from "lucide-react";
 import { FileAttachment } from "@/utils/chat/chatTypes";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface TableDisplayProps {
   tableHtml?: string;

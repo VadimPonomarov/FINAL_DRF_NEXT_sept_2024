@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, ChevronsUp, ChevronsDown } from "lucide-react";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 const ChatScrollButtons: React.FC = () => {
   const [showScrollUp, setShowScrollUp] = useState(false);
@@ -120,7 +120,7 @@ const ChatScrollButtons: React.FC = () => {
       <Button
         variant="secondary"
         size="icon"
-        className={styles.scrollButton}
+        className={unifiedStyles.scrollButton}
         onClick={scrollToTop}
         aria-label="Scroll to top"
       >
@@ -131,7 +131,7 @@ const ChatScrollButtons: React.FC = () => {
       <Button
         variant="secondary"
         size="icon"
-        className={styles.scrollButton}
+        className={unifiedStyles.scrollButton}
         onClick={scrollToBottom}
         aria-label="Scroll to bottom"
       >

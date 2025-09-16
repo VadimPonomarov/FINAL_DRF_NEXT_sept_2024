@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Send, Loader2 } from "lucide-react";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface SubmitButtonProps {
   onClick: () => void;
@@ -20,15 +20,15 @@ const SubmitButton: React.FC<SubmitButtonProps> = ({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={styles.submitButton}
+        className={unifiedStyles.submitButton}
         type="button"
         title="Отправить сообщение"
         aria-label="Отправить сообщение"
       >
         {isLoading ? (
-          <Loader2 className={styles.icon + " animate-spin"} />
+          <Loader2 className={unifiedStyles.submitButtonIcon + " animate-spin"} />
         ) : (
-          <Send className={styles.icon} />
+          <Send className={unifiedStyles.submitButtonIcon} />
         )}
       </button>
     </div>

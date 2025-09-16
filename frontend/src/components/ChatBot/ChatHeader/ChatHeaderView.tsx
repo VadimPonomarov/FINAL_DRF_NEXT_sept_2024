@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ChatHeaderViewProps {
   isConnected: boolean;
@@ -38,7 +38,7 @@ export const ChatHeaderView: React.FC<ChatHeaderViewProps> = ({
           <Bot className="h-6 w-6" />
         </div>
         <div>
-          <h2 className={styles.title}>{title}</h2>
+          <h2 className={unifiedStyles.chatDialogTitle}>{title}</h2>
           <p className={styles.subtitle}>
             {isConnecting
               ? 'Connecting...'

@@ -28,7 +28,7 @@ import { AuthProvider } from '@/common/constants/constants';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuth } from '@/contexts/AuthProviderContext';
 import AnimatedPlatformStatsWidget from '@/components/AutoRia/Statistics/AnimatedPlatformStatsWidget';
-import { useApiErrorHandler, setupGlobalFetchErrorTracking } from '@/hooks/useApiErrorHandler';
+import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
 
 // 🎭 LIGHTWEIGHT ANIMATION SYSTEM (dev-optimized) 🎭
 const useSpectacularAnimation = () => {
@@ -371,11 +371,8 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
     };
   }, []);
 
-  // Инициализируем глобальное отслеживание ошибок fetch
-  useEffect(() => {
-    console.log('[HomeContent] Setting up global fetch error tracking...');
-    setupGlobalFetchErrorTracking();
-  }, []);
+  // Глобальное отслеживание ошибок теперь настроено в RootProvider
+  // Здесь только локальная логика для HomeContent
 
 
   const [isProviderLoading, setIsProviderLoading] = useState(false); // Изменено на false для предотвращения hydration mismatch

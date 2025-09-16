@@ -8,6 +8,7 @@ import { ChatProvider } from "@/contexts/ChatContext";
 import { ChatContextProvider } from "@/components/ChatBot/providers/ChatContextProvider";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { preloadCriticalReferenceData, fetchBrandsWithCache } from "@/utils/cachedFetch";
+import { setupGlobalFetchErrorTracking, useApiErrorHandler } from "@/hooks/useApiErrorHandler";
 
 import { IProps } from ".";
 
@@ -28,6 +29,31 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Компонент для глобального отслеживания API ошибок
+const GlobalApiErrorHandler: FC = () => {
+  const { trackError } = useApiErrorHandler({
+    enableAutoRedirect: true,
+    criticalErrorThreshold: 3,
+    onCriticalError: () => {
+      console.log('[RootProvider] Critical API errors detected globally, forcing redirect to /signin');
+    },
+    onBackendUnavailable: () => {
+      console.warn('[RootProvider] Backend appears to be unavailable globally');
+    }
+  });
+
+  useEffect(() => {
+    console.log('[RootProvider] 🛡️ Setting up global API error tracking...');
+    setupGlobalFetchErrorTracking(trackError);
+
+    return () => {
+      console.log('[RootProvider] 🧹 Cleaning up global API error tracking...');
+    };
+  }, [trackError]);
+
+  return null; // Этот компонент не рендерит UI
+};
 
 const RootProvider: FC<IProps> = ({ children }) => {
   // Preload critical data on app startup
@@ -60,6 +86,7 @@ const RootProvider: FC<IProps> = ({ children }) => {
               <AuthProviderProvider>
                 <ChatProvider>
                   <ChatContextProvider>
+                    <GlobalApiErrorHandler />
                     {children}
                   </ChatContextProvider>
                 </ChatProvider>

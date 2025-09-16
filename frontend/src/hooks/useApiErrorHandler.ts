@@ -200,7 +200,7 @@ export function useApiErrorHandler(options: ApiErrorHandlerOptions = {}) {
 }
 
 // Глобальная функция для отслеживания ошибок fetch
-export function setupGlobalFetchErrorTracking() {
+export function setupGlobalFetchErrorTracking(trackErrorCallback?: (url: string, status: number) => void) {
   if (typeof window === 'undefined') return;
 
   const tracker = ApiErrorTracker.getInstance();
@@ -210,10 +210,16 @@ export function setupGlobalFetchErrorTracking() {
     try {
       const response = await originalFetch.apply(this, args);
       const url = typeof args[0] === 'string' ? args[0] : args[0].url;
-      
+
       // Отслеживаем ошибки HTTP статусов
       if (!response.ok) {
+        console.log(`[Global Fetch] Error detected: ${url} - Status: ${response.status}`);
         tracker.trackError(url, response.status);
+
+        // Вызываем callback если передан
+        if (trackErrorCallback) {
+          trackErrorCallback(url, response.status);
+        }
       }
       
       return response;

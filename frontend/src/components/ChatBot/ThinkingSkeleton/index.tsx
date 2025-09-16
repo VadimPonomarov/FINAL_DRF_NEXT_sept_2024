@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Bot, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ThinkingSkeletonProps {
   timeout?: number; // Время в миллисекундах, после которого будет показан текст

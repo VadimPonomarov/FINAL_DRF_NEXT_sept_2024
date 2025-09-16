@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronsUp, ChevronsDown } from "lucide-react";
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 const FloatingScrollButtons: React.FC = () => {
   // Функция для скролла вверх

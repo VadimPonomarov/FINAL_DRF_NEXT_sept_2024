@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import styles from './styles.module.css';
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 const FixedScrollButtons: React.FC = () => {
   const [showButtons, setShowButtons] = useState(true);
