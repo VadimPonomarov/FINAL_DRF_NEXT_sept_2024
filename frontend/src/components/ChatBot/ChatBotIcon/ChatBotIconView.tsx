@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
-import { ChatDialog } from "../ChatDialog/index";
+import { ChatDialog } from "../ChatDialog";
 import NewResizableWrapper from "@/components/All/ResizableWrapper/NewResizableWrapper";
 import SimpleScrollButtons from "../SimpleScrollButtons";
 import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';

@@ -1,7 +1,7 @@
 import { AuthApiResponse } from "@/common/interfaces/api.interfaces";
 import { IBackendAuthCredentials } from "@/common/interfaces/auth.interfaces";
 import { AuthProvider } from "@/common/constants/constants";
-import SimpleUrlResolver from "@/utils/api/simpleUrlResolver";
+import { resolveServiceUrl } from "@/utils/api/serviceUrlResolver";
 import { apiClient } from "@/services/api/apiClient";
 
 const getAbsoluteUrl = (path: string): string => {
@@ -182,11 +182,10 @@ export const backendApiHelpers = {
   auth: async (credentials: IBackendAuthCredentials): Promise<AuthApiResponse> => {
     try {
       // Используем упрощенную систему определения URL на основе переменных среды
-      const loginUrl = SimpleUrlResolver.getBackendUrl('/api/auth/login');
+      const loginUrl = await resolveServiceUrl('backend', '/api/auth/login');
 
       // Логируем информацию о запросе и окружении
-      console.log('[Auth] Using SimpleUrlResolver for backend URL');
-      SimpleUrlResolver.logConfig();
+      console.log('[Auth] Using serviceUrlResolver for backend URL');
       console.log('[Auth] Attempting login request to:', loginUrl);
       console.log('[Auth] With credentials:', {
         email: credentials.email,

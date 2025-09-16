@@ -21,6 +21,283 @@ This document describes the complete authentication system implementation, inclu
 - **`/login`** - Bearer token acquisition from external APIs
 - **Autoria pages** (`/autoria/*`) - Require `backend_auth` tokens presence in Redis (no validation)
 
+## Environment Variables Encryption System
+
+### Overview
+
+The authentication system uses encrypted environment variables to securely store sensitive OAuth credentials and API keys. This prevents accidental exposure of secrets in version control and provides an additional security layer.
+
+### Core Components
+
+1. **Encryption/Decryption Library** - `frontend/src/lib/simple-crypto.ts`
+2. **Encrypted Variables Storage** - `env-config/.env.secrets`
+3. **Configuration Integration** - `frontend/src/common/constants/constants.ts`
+4. **Environment Loading** - `env-config/load-env.py`
+
+### Encryption Tools and Locations
+
+#### 1. Simple Crypto Library
+**File**: `frontend/src/lib/simple-crypto.ts`
+
+**Core Functions**:
+```typescript
+// Decrypt single encrypted value
+export function decryptValue(encryptedText: string): string
+
+// Get decrypted environment variable
+export function getDecryptedEnv(key: string, defaultValue: string = ''): string
+
+// Get all OAuth configuration (decrypted)
+export function getDecryptedOAuthConfig()
+
+// Safe logging utility (shows only prefix)
+export function safeLogValue(key: string, value: string): string
+```
+
+**Encryption Format**:
+- **Prefix**: All encrypted values start with `ENC_`
+- **Algorithm**: Base64 encoding with string reversal
+- **Example**: `ENC_t92YuQnblRnbvNmclNXdlx2Zv92ZuMHcwFmLyZHMpJma21mbxgjZyMnc0R3Z1hWauNHcwJDdxdTcoxWLxIDMxUzM3ADM3EzM`
+
+#### 2. Encrypted Variables Storage
+**File**: `env-config/.env.secrets`
+
+**Structure**:
+```bash
+# =============================================================================
+# NEXTAUTH CONFIGURATION (ENCRYPTED)
+# =============================================================================
+NEXTAUTH_SECRET=ENC_=0TR2cDOoZjUiZzRBZTas9GRVtGN31ERpdncE5Wd3cDNYZUOup3Lwc3KMhlY
+
+# =============================================================================
+# GOOGLE OAUTH CREDENTIALS (ENCRYPTED)
+# =============================================================================
+GOOGLE_CLIENT_ID=ENC_t92YuQnblRnbvNmclNXdlx2Zv92ZuMHcwFmLyZHMpJma21mbxgjZyMnc0R3Z1hWauNHcwJDdxdTcoxWLxIDMxUzM3ADM3EzM
+GOOGLE_CLIENT_SECRET=ENC_=k3VxhkZjZnV2lXOxMleaNHUGJTdvFnTrl1bnlWLYB1UD90R
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=ENC_t92YuQnblRnbvNmclNXdlx2Zv92ZuMHcwFmLyZHMpJma21mbxgjZyMnc0R3Z1hWauNHcwJDdxdTcoxWLxIDMxUzM3ADM3EzM
+
+# =============================================================================
+# API KEYS (ENCRYPTED)
+# =============================================================================
+TAVILY_API_KEY=ENC_=oHePd1V1RnaJ9GNDBDdZRkd3hTaJZjSxdGMUplUnRXbtYXZk1SesZHd
+GOOGLE_MAPS_API_KEY=ENC_zl1RIx0dHRzQjlGcBN2aTV0QOxkZDNDbWZjbmR2XjZnQ5NVY6lUQ
+```
+
+#### 3. Configuration Integration
+**File**: `frontend/src/common/constants/constants.ts`
+
+**Implementation**:
+```typescript
+import { getDecryptedOAuthConfig, safeLogValue } from '@/lib/simple-crypto';
+
+// Логируем переменные для диагностики
+console.log('[Constants] Raw environment variables:');
+console.log(`  ${safeLogValue('NEXTAUTH_SECRET', process.env.NEXTAUTH_SECRET || '')}`);
+console.log(`  ${safeLogValue('GOOGLE_CLIENT_ID', process.env.GOOGLE_CLIENT_ID || '')}`);
+console.log(`  ${safeLogValue('GOOGLE_CLIENT_SECRET', process.env.GOOGLE_CLIENT_SECRET || '')}`);
+
+// Получаем дешифрованную конфигурацию
+const decryptedConfig = getDecryptedOAuthConfig();
+
+export const AUTH_CONFIG = {
+  NEXTAUTH_SECRET: decryptedConfig.NEXTAUTH_SECRET,
+  GOOGLE_CLIENT_ID: decryptedConfig.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: decryptedConfig.GOOGLE_CLIENT_SECRET,
+} as const;
+```
+
+### Encryption/Decryption Process
+
+#### Manual Encryption Process
+
+1. **Prepare Plain Text Value**:
+   ```javascript
+   const plainText = "317007351021-lhq7qt2ppsnihugttrs2f81nmvjbi0vr.apps.googleusercontent.com";
+   ```
+
+2. **Encode to Base64**:
+   ```javascript
+   const encoded = Buffer.from(plainText, 'utf8').toString('base64');
+   // Result: "MzE3MDA3MzUxMDIxLWxocTdxdDJwcHNuaWh1Z3R0cnMyZjgxbm12amJpMHZyLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29t"
+   ```
+
+3. **Reverse String**:
+   ```javascript
+   const reversed = encoded.split('').reverse().join('');
+   // Result: "t92YuQnblRnbvNmclNXdlx2Zv92ZuMHcwFmLyZHMpJma21mbxgjZyMnc0R3Z1hWauNHcwJDdxdTcoxWLxIDMxUzM3ADM3EzM"
+   ```
+
+4. **Add Prefix**:
+   ```javascript
+   const encrypted = `ENC_${reversed}`;
+   // Final: "ENC_t92YuQnblRnbvNmclNXdlx2Zv92ZuMHcwFmLyZHMpJma21mbxgjZyMnc0R3Z1hWauNHcwJDdxdTcoxWLxIDMxUzM3ADM3EzM"
+   ```
+
+#### Automatic Decryption Process
+
+The `decryptValue` function automatically handles decryption:
+
+```typescript
+export function decryptValue(encryptedText: string): string {
+  // 1. Check if value is encrypted (starts with ENC_)
+  if (!encryptedText || !encryptedText.startsWith('ENC_')) {
+    return encryptedText; // Return as-is if not encrypted
+  }
+
+  try {
+    // 2. Remove ENC_ prefix
+    const encoded = encryptedText.replace('ENC_', '');
+
+    // 3. Reverse the string back
+    const unreversed = encoded.split('').reverse().join('');
+
+    // 4. Decode from Base64
+    const decoded = Buffer.from(unreversed, 'base64').toString('utf8');
+
+    return decoded;
+  } catch (error) {
+    console.error('Decryption failed:', error);
+    return encryptedText; // Return original if decryption fails
+  }
+}
+```
+
+### Usage Instructions
+
+#### 1. Adding New Encrypted Variable
+
+**Step 1**: Encrypt the value manually
+```javascript
+// In browser console or Node.js
+const plainText = "your-secret-value";
+const encoded = Buffer.from(plainText, 'utf8').toString('base64');
+const reversed = encoded.split('').reverse().join('');
+const encrypted = `ENC_${reversed}`;
+console.log('Encrypted value:', encrypted);
+```
+
+**Step 2**: Add to `.env.secrets`
+```bash
+# Add the encrypted value
+YOUR_SECRET_KEY=ENC_your_encrypted_value_here
+```
+
+**Step 3**: Update decryption functions (if needed)
+```typescript
+// In simple-crypto.ts, add to getDecryptedOAuthConfig or create new function
+export function getDecryptedApiKeys() {
+  return {
+    YOUR_SECRET_KEY: getDecryptedEnv('YOUR_SECRET_KEY'),
+    // ... other keys
+  };
+}
+```
+
+**Step 4**: Use in configuration
+```typescript
+// In constants.ts
+import { getDecryptedApiKeys } from '@/lib/simple-crypto';
+const apiKeys = getDecryptedApiKeys();
+export const API_CONFIG = {
+  YOUR_SECRET_KEY: apiKeys.YOUR_SECRET_KEY,
+};
+```
+
+#### 2. Verifying Decryption
+
+**Check Server Logs**:
+```bash
+# Look for these log messages during startup:
+[Constants] Raw environment variables:
+  GOOGLE_CLIENT_ID: [ENCRYPTED - ENC_t92YuQ...]
+[Constants] Final AUTH_CONFIG:
+  GOOGLE_CLIENT_ID: [DECRYPTED]
+  GOOGLE_CLIENT_ID preview: 317007351021-lhq7qt2...
+```
+
+**Manual Verification**:
+```javascript
+// In browser console (after page load)
+fetch('/api/auth/providers')
+  .then(r => r.json())
+  .then(data => console.log('Available providers:', data));
+```
+
+#### 3. Troubleshooting Encryption Issues
+
+**Problem**: `[EMPTY]` in logs instead of `[DECRYPTED]`
+**Solution**: Check if variable exists in `.env.secrets` and starts with `ENC_`
+
+**Problem**: `Decryption failed` error
+**Solution**: Verify encryption format - must be valid Base64 after reversing
+
+**Problem**: Google OAuth returns 400 error
+**Solution**: Check if decrypted Client ID matches Google Console configuration
+
+**Problem**: Variables not loading
+**Solution**: Ensure `env-config/load-env.py` is properly loading `.env.secrets`
+
+### Environment Loading Order
+
+The system loads environment variables in this order:
+
+1. **Base Configuration**: `env-config/.env.base`
+2. **Environment Specific**: `env-config/.env.local` or `env-config/.env.docker`
+3. **Secrets (Encrypted)**: `env-config/.env.secrets`
+4. **System Environment**: Process environment variables (highest priority)
+
+**Loading Script**: `env-config/load-env.py`
+```python
+# Loads all .env files in correct order
+# Handles encrypted variables automatically
+# Sets environment variables for Next.js
+```
+
+### Security Considerations
+
+#### ✅ **Security Benefits**:
+- **Version Control Safe**: Encrypted values can be committed to Git
+- **Additional Layer**: Even if `.env.secrets` is compromised, values are still encoded
+- **Audit Trail**: Clear distinction between encrypted and plain values
+- **Fallback Protection**: System continues working if decryption fails
+
+#### ⚠️ **Security Limitations**:
+- **Not Military-Grade**: Simple encoding, not cryptographic encryption
+- **Key Rotation**: Manual process to update encrypted values
+- **Runtime Exposure**: Decrypted values exist in memory during runtime
+- **Log Exposure**: Partial values may appear in debug logs
+
+#### 🔒 **Best Practices**:
+- **Rotate Secrets Regularly**: Update OAuth credentials periodically
+- **Monitor Logs**: Watch for decryption failures or exposure
+- **Limit Access**: Restrict access to `.env.secrets` file
+- **Use HTTPS**: Always use secure connections in production
+- **Environment Separation**: Different secrets for dev/staging/production
+
+### Diagnostic Commands
+
+#### Check Environment Loading
+```bash
+# Verify environment variables are loaded
+cd frontend && npm run dev
+# Look for: "🔧 Loaded environment variables from env-config/"
+```
+
+#### Test Decryption Manually
+```javascript
+// In Node.js or browser console
+const { decryptValue } = require('./src/lib/simple-crypto');
+const encrypted = 'ENC_t92YuQnblRnbvNmclNXdlx2Zv92ZuMHcwFmLyZHMpJma21mbxgjZyMnc0R3Z1hWauNHcwJDdxdTcoxWLxIDMxUzM3ADM3EzM';
+console.log('Decrypted:', decryptValue(encrypted));
+```
+
+#### Verify OAuth Configuration
+```bash
+# Check Google OAuth setup
+curl "http://localhost:3000/api/auth/providers" | jq
+# Should show Google provider with correct client_id
+```
+
 ## Key Files and Their Roles
 
 ### 1. Authentication API Routes

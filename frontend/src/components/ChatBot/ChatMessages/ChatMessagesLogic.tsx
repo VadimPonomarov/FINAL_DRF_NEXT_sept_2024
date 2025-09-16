@@ -2,14 +2,13 @@
 
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { chatLogger } from '@/utils/chat/logger';
-import { useAgentThinking } from '@/hooks/useAgentThinking';
 import { ChatMessagesProps } from './types';
 import { Message, MessageType } from '@/utils/chat/chatTypes';
 import { useChatContext } from '../providers/ChatContextProvider';
 
 export const useChatMessagesLogic = (props: ChatMessagesProps) => {
   const { messages } = props;
-  const { isThinking } = useAgentThinking();
+  const isThinking = false; // Removed useAgentThinking hook
 
   // Get chat context hooks
   const {

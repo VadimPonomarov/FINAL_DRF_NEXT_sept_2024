@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cleanupTestAds } from '@/utils/createTestAds';
 
 export async function DELETE() {
   try {

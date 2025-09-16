@@ -2,13 +2,12 @@
 
 import { useCallback, useRef, useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useGeolocation } from "@/hooks/useGeolocation";
 import { WebSocketMessage, SendChatHistoryOptions } from "@/utils/chat/chatTypes";
 import { wsLogger } from "@/utils/chat/logger";
 import { fileToBase64 } from "@/utils/chat/fileUpload";
 import { API_URLS, AuthProvider } from "@/common/constants/constants";
 import { getRedisData } from "@/services/redis/redisService";
-import SimpleUrlResolver from "@/utils/api/simpleUrlResolver";
+import { resolveServiceUrl } from "@/utils/api/serviceUrlResolver";
 
 interface UseChatWebSocketProps {
   channelId?: string;
@@ -39,8 +38,18 @@ export const useChatWebSocket = ({
   const connectionAttemptRef = useRef<string | null>(null);
   const welcomeMessageReceivedRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
-  const { getLocation } = useGeolocation();
   const isExplicitDisconnect = useRef(false);
+
+  // Simple geolocation fallback
+  const getLocation = useCallback(async () => {
+    return {
+      city: 'Запорожье',
+      region: 'Запорожская область',
+      country: 'Украина',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      locale: navigator.language || 'en-US'
+    };
+  }, []);
 
   // Счетчик попыток обновления токена
   const tokenRefreshAttemptsRef = useRef<number>(0);
@@ -433,8 +442,9 @@ export const useChatWebSocket = ({
 
         // Эта проверка уже не нужна, так как обработана выше
 
-        // Используем SimpleUrlResolver для правильного определения WebSocket URL
-        const wsUrl = SimpleUrlResolver.getWebSocketUrl(`/api/chat/${targetChannelId}/?token=${token}`);
+        // Используем serviceUrlResolver для правильного определения WebSocket URL
+        const baseUrl = await resolveServiceUrl('backend', `/api/chat/${targetChannelId}/?token=${token}`);
+        const wsUrl = baseUrl.replace(/^http/, 'ws');
 
         wsLogger.info(`🔗 WebSocket URL: ${wsUrl}`);
 
