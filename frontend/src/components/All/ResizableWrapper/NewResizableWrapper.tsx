@@ -27,6 +27,21 @@ const NewResizableWrapper: FC<NewResizableWrapperProps> = ({
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [isResizing, setIsResizing] = useState(false);
     const [size, setSize] = useState({ width: defaultWidth, height: defaultHeight });
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Отслеживание размера окна для адаптивности
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const checkMobile = () => {
+                setIsMobile(window.innerWidth <= 768);
+            };
+
+            checkMobile();
+            window.addEventListener('resize', checkMobile);
+
+            return () => window.removeEventListener('resize', checkMobile);
+        }
+    }, []);
 
     // Загрузка сохраненного размера при монтировании
     useEffect(() => {
@@ -97,24 +112,29 @@ const NewResizableWrapper: FC<NewResizableWrapperProps> = ({
         document.addEventListener('mouseup', handleMouseUp);
     };
 
-    // Стили для контейнера
+    // Стили для контейнера с адаптивностью
     const containerStyle: React.CSSProperties = centered ? {
         position: 'fixed',
-        top: '50%',
+        top: isMobile ? 'auto' : '50%',
         left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 1000
+        bottom: isMobile ? '20px' : 'auto',
+        transform: isMobile ? 'translateX(-50%)' : 'translate(-50%, -50%)',
+        zIndex: 1000,
+        width: isMobile ? 'calc(100vw - 20px)' : 'auto',
+        maxWidth: isMobile ? 'calc(100vw - 20px)' : 'none'
     } : {};
 
-    // Стили для wrapper'а
+    // Стили для wrapper'а с адаптивностью
     const wrapperStyle: React.CSSProperties = {
         position: 'relative',
-        width: `${size.width}px`,
-        height: `${size.height}px`,
-        minWidth: `${minWidth}px`,
+        width: isMobile ? '100%' : `${size.width}px`,
+        height: isMobile ? 'calc(100vh - 100px)' : `${size.height}px`,
+        minWidth: isMobile ? '100%' : `${minWidth}px`,
         minHeight: `${minHeight}px`,
+        maxWidth: isMobile ? '100%' : 'none',
+        maxHeight: isMobile ? 'calc(100vh - 100px)' : 'none',
         border: '1px solid #e2e8f0',
-        borderRadius: '12px',
+        borderRadius: isMobile ? '8px' : '12px',
         backgroundColor: 'white',
         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
         overflow: 'hidden',
@@ -130,23 +150,25 @@ const NewResizableWrapper: FC<NewResizableWrapperProps> = ({
             >
                 {children}
                 
-                {/* Resize handle */}
-                <div
-                    onMouseDown={handleMouseDown}
-                    style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        right: 0,
-                        width: '20px',
-                        height: '20px',
-                        cursor: 'nw-resize',
-                        background: 'linear-gradient(-45deg, transparent 0%, transparent 40%, #cbd5e1 40%, #cbd5e1 60%, transparent 60%)',
-                        borderBottomRightRadius: '12px',
-                        opacity: isResizing ? 1 : 0.6,
-                        transition: 'opacity 0.2s ease'
-                    }}
-                    title="Drag to resize"
-                />
+                {/* Resize handle - скрыт на мобильных */}
+                {!isMobile && (
+                    <div
+                        onMouseDown={handleMouseDown}
+                        style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            right: 0,
+                            width: '20px',
+                            height: '20px',
+                            cursor: 'nw-resize',
+                            background: 'linear-gradient(-45deg, transparent 0%, transparent 40%, #cbd5e1 40%, #cbd5e1 60%, transparent 60%)',
+                            borderBottomRightRadius: '12px',
+                            opacity: isResizing ? 1 : 0.6,
+                            transition: 'opacity 0.2s ease'
+                        }}
+                        title="Drag to resize"
+                    />
+                )}
                 
                 {/* Resize indicator */}
                 {isResizing && (

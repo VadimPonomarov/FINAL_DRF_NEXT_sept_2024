@@ -446,72 +446,79 @@ export const ChatDialog = ({ onAuthError, useResizableSheet = false }: ChatDialo
     return (
       <>
         <CardHeader
-          className="flex flex-row items-center justify-between border-b pb-3"
+          className="flex flex-col space-y-4 border-b pb-4"
+          role="banner"
+          aria-label="Chat header"
         >
-          <div className="flex items-center gap-3">
-            <Bot className="h-6 w-6 text-foreground" />
-            <div>
-              <CardTitle className="text-lg font-semibold">AI Assistant</CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
-                {isConnecting
-                  ? 'Connecting...'
-                  : isConnected
-                    ? 'Connected'
-                    : connectionError
-                      ? `Connection error: ${connectionError}`
-                      : 'Not connected - Click power button to connect'}
-              </CardDescription>
+          {/* Первая строка: Заголовок и основные элементы управления */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <Bot className="h-6 w-6 text-foreground flex-shrink-0" />
+              <div className="min-w-0">
+                <CardTitle className="text-lg font-semibold truncate">AI Assistant</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground truncate">
+                  {isConnecting
+                    ? 'Connecting...'
+                    : isConnected
+                      ? 'Connected'
+                      : connectionError
+                        ? `Connection error: ${connectionError}`
+                        : 'Not connected - Click power button to connect'}
+                </CardDescription>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {availableDates.length > 0 && (
-              <>
-                <CalendarDateSelector
-                  availableDates={availableDates}
-                  currentDate={currentDate}
-                  onDateChange={changeDate}
-                  formatDate={formatDate}
-                  onDeleteAllDates={handleDeleteAllHistory}
-                />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleDeleteAllChunks}>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Удалить все чаты за {formatDateLocal(currentDate || '')}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDeleteAllHistory}>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Удалить всю историю</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
+
+            {/* Кнопка подключения - всегда видна */}
             <Button
               onClick={handleConnect}
               variant={isConnected ? "outline" : "default"}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 flex-shrink-0"
               aria-label={isConnected ? "Disconnect from chat" : "Connect to chat"}
               disabled={isConnecting}
             >
               {isConnecting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Connecting...</span>
+                  <span className="hidden sm:inline">Connecting...</span>
                 </>
               ) : (
                 <>
                   <Power className={`h-4 w-4 ${isConnected ? "text-green-500" : "text-red-500"}`} />
-                  <span>{isConnected ? 'Connected' : 'Connect'}</span>
+                  <span className="hidden sm:inline">{isConnected ? 'Connected' : 'Connect'}</span>
                 </>
               )}
             </Button>
           </div>
+
+          {/* Вторая строка: Дополнительные элементы управления (на мобильных переносятся) */}
+          {availableDates.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 justify-start">
+              <CalendarDateSelector
+                availableDates={availableDates}
+                currentDate={currentDate}
+                onDateChange={changeDate}
+                formatDate={formatDate}
+                onDeleteAllDates={handleDeleteAllHistory}
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleDeleteAllChunks}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Удалить все чаты за {formatDateLocal(currentDate || '')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDeleteAllHistory}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Удалить всю историю</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </CardHeader>
 
         {/* Добавляем сообщение об ошибке, если есть проблемы с подключением */}
@@ -531,10 +538,10 @@ export const ChatDialog = ({ onAuthError, useResizableSheet = false }: ChatDialo
           </div>
         )}
 
-        <div className="flex flex-1 overflow-hidden h-[calc(100vh-200px)]">
-          {/* Боковая панель с чанками */}
+        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden h-[calc(100vh-200px)]">
+          {/* Боковая панель с чанками - на мобильных сверху, на десктопе слева */}
           {sidebarOpen && (
-            <div className="w-64 border-r p-2">
+            <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r p-2 max-h-48 lg:max-h-none overflow-y-auto lg:overflow-y-visible">
               <ChunkSelector
                 chunks={availableChunks}
                 currentChunk={currentChunk}
@@ -547,7 +554,7 @@ export const ChatDialog = ({ onAuthError, useResizableSheet = false }: ChatDialo
           )}
 
           {/* Основной контент */}
-          <CardContent className="flex-1 p-0 relative z-[50] overflow-hidden">
+          <CardContent className="flex-1 p-0 relative z-[50] overflow-hidden min-h-0">
             <ScrollArea className="h-full overflow-auto">
               <div className="p-4">
                 <div
@@ -575,7 +582,7 @@ export const ChatDialog = ({ onAuthError, useResizableSheet = false }: ChatDialo
           </CardContent>
         </div>
 
-        <CardFooter className="flex items-center gap-2 pt-0">
+        <CardFooter className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-0 p-4">
           <div className="w-full">
             <ChatInput
               value={inputValue}

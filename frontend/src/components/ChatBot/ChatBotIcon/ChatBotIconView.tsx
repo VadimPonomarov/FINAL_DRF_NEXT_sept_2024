@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { ChatDialog } from "../ChatDialog/index";
-import { ResizableChatWrapper } from "../ResizableChatWrapper";
+import NewResizableWrapper from "@/components/All/ResizableWrapper/NewResizableWrapper";
 import SimpleScrollButtons from "../SimpleScrollButtons";
 import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
@@ -43,9 +43,17 @@ export const ChatBotIconView: React.FC<ChatBotIconViewProps> = ({
             className={unifiedStyles.chatDialogOverlay}
             onClick={onBackdropClick}
           >
-            <ResizableChatWrapper>
+            <NewResizableWrapper
+              storageKey="chat-dialog"
+              className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col"
+              defaultWidth={900}
+              defaultHeight={700}
+              minWidth={320}
+              minHeight={450}
+              centered={true}
+            >
               <ChatDialog onAuthError={onAuthError} useResizableSheet={false} />
-            </ResizableChatWrapper>
+            </NewResizableWrapper>
           </div>
           <SimpleScrollButtons />
         </>

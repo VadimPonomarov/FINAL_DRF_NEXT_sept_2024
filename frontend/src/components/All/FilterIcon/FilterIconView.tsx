@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { FaFilter } from 'react-icons/fa';
-import { ResizableFilterWrapper } from "../ResizableFilterWrapper";
+import NewResizableWrapper from "../ResizableWrapper/NewResizableWrapper";
 import styles from './styles.module.css';
 
 interface FilterIconViewProps {
@@ -37,7 +37,15 @@ export const FilterIconView: React.FC<FilterIconViewProps> = ({
           className={styles.filterOverlay}
           onClick={onBackdropClick}
         >
-          <ResizableFilterWrapper>
+          <NewResizableWrapper
+            storageKey="filter-dialog"
+            className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col"
+            defaultWidth={600}
+            defaultHeight={400}
+            minWidth={300}
+            minHeight={300}
+            centered={true}
+          >
             <div className={styles.closeButton}>
               <Button
                 variant="ghost"
@@ -52,7 +60,7 @@ export const FilterIconView: React.FC<FilterIconViewProps> = ({
               </Button>
             </div>
             {children}
-          </ResizableFilterWrapper>
+          </NewResizableWrapper>
         </div>
       )}
     </>
