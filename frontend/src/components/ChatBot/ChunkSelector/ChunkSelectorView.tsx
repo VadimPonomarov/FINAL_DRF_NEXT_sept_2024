@@ -31,10 +31,10 @@ export const ChunkSelectorView: React.FC<ChunkSelectorViewProps> = ({
   onDeleteAllChunks
 }) => {
   return (
-    <div className={styles.container}>
+    <div className={unifiedStyles.chatMessage}>
       <div className={unifiedStyles.chatDialogHeader}>
         <h3 className={unifiedStyles.chatDialogTitle}>Чаты</h3>
-        <div className={styles.controls}>
+        <div className={unifiedStyles.chunkControls}>
           <Button
             variant="ghost"
             size="icon"
@@ -60,35 +60,35 @@ export const ChunkSelectorView: React.FC<ChunkSelectorViewProps> = ({
         </div>
       </div>
 
-      <ScrollArea className={styles.chunkList}>
+      <ScrollArea className={unifiedStyles.chunkSelector}>
         <div className="space-y-1 px-1">
           {chunks.length === 0 ? (
-            <div className={styles.emptyState}>
+            <div className={unifiedStyles.chatEmptyState}>
               Нет доступных чатов
             </div>
           ) : (
             chunks.map((chunk) => (
               <div
                 key={chunk.id}
-                className={`${styles.chunkItem} ${
+                className={`${unifiedStyles.chunkOption} ${
                   currentChunk?.id === chunk.id
-                    ? styles.chunkItemActive
-                    : styles.chunkItemInactive
+                    ? unifiedStyles.chunkOptionSelected
+                    : unifiedStyles.chunkOption
                 }`}
               >
                 <button
-                  className={styles.chunkButton}
+                  className={unifiedStyles.chunkButton}
                   onClick={() => onSelectChunk(chunk.id)}
                   title={chunk.title}
                 >
-                  <div className={styles.chunkContent}>
-                    <span className={styles.chunkTitle}>{chunk.title || 'Новый чат'}</span>
+                  <div className={unifiedStyles.chunkContent}>
+                    <span className={unifiedStyles.chunkTitle}>{chunk.title || 'Новый чат'}</span>
                   </div>
                 </button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={styles.deleteButton}
+                  className={unifiedStyles.deleteButton}
                   onClick={() => onDeleteChunk(chunk.id)}
                   title="Удалить чат"
                 >

@@ -32,14 +32,14 @@ export const ChatHeaderView: React.FC<ChatHeaderViewProps> = ({
   onDeleteHistory
 }) => {
   return (
-    <div className={styles.container}>
-      <div className={styles.titleContainer}>
-        <div className={styles.iconContainer}>
+    <div className={unifiedStyles.chatMessage}>
+      <div className={unifiedStyles.headerTitle}>
+        <div className={unifiedStyles.headerIcon}>
           <Bot className="h-6 w-6" />
         </div>
         <div>
           <h2 className={unifiedStyles.chatDialogTitle}>{title}</h2>
-          <p className={styles.subtitle}>
+          <p className={unifiedStyles.headerSubtitle}>
             {isConnecting
               ? 'Connecting...'
               : isConnected
@@ -48,7 +48,7 @@ export const ChatHeaderView: React.FC<ChatHeaderViewProps> = ({
           </p>
         </div>
       </div>
-      <div className={styles.controlsContainer}>
+      <div className={unifiedStyles.headerControls}>
 
 
         {!isConnected && !isConnecting && (
@@ -64,7 +64,7 @@ export const ChatHeaderView: React.FC<ChatHeaderViewProps> = ({
         <Button
           onClick={onConnect}
           variant={isConnected ? "outline" : "default"}
-          className={styles.connectButton}
+          className={unifiedStyles.connectButton}
           disabled={isConnecting}
         >
           {isConnecting ? (
@@ -74,7 +74,7 @@ export const ChatHeaderView: React.FC<ChatHeaderViewProps> = ({
             </>
           ) : (
             <>
-              <Power className={isConnected ? styles.iconGreen : styles.iconRed} />
+              <Power className={isConnected ? unifiedStyles.iconConnected : unifiedStyles.iconDisconnected} />
               <span>{isConnected ? 'Connected' : 'Connect'}</span>
             </>
           )}

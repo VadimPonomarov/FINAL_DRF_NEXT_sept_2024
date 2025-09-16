@@ -51,7 +51,7 @@ const ChatInputScrollButtons: React.FC = () => {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={unifiedStyles.chatMessage}>
       <Button
         type="button"
         onClick={scrollToTop}

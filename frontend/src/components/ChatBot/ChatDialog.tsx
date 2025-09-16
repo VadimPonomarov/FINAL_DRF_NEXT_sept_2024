@@ -11,6 +11,7 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
+import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 import { Bot, Power, Loader2, X, Trash2, MoreVertical } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {

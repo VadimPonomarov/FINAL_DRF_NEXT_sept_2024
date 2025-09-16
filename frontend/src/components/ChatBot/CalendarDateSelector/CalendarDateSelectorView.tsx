@@ -77,7 +77,7 @@ export const CalendarDateSelectorView: React.FC<CalendarDateSelectorViewProps> =
   // Убираем отладочные логи для производительности
 
   return (
-    <div className={styles.calendarWrapper}>
+    <div className={unifiedStyles.dateSelector}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -100,7 +100,7 @@ export const CalendarDateSelectorView: React.FC<CalendarDateSelectorViewProps> =
               hasHistory: hasHistory,
             }}
             modifiersClassNames={{
-              hasHistory: styles.hasHistory,
+              hasHistory: unifiedStyles.calendarHasHistory,
             }}
             disabled={isDateDisabled}
             initialFocus

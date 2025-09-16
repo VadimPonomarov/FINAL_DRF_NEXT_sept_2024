@@ -69,16 +69,16 @@ const FixedScrollButtons: React.FC = () => {
   }, []);
 
   return (
-    <div className={styles.container}>
+    <div className={unifiedStyles.chatMessage}>
       <button
-        className={styles.upButton}
+        className={unifiedStyles.scrollButton}
         onClick={scrollToTop}
         title="Scroll to top"
       >
         ↑
       </button>
       <button
-        className={styles.downButton}
+        className={unifiedStyles.scrollButton}
         onClick={scrollToBottom}
         title="Scroll to bottom"
       >

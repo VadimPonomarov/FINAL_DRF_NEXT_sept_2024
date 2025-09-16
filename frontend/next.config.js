@@ -62,8 +62,6 @@ const nextConfig = {
     // reactCompiler: true,
     // Keep typedRoutes off for now
     typedRoutes: false,
-    // Отключаем Turbopack для стабильной сборки с множеством CSS модулей
-    turbo: false,
     // Оптимизируем CSS обработку для ChatBot компонентов
     optimizeCss: false, // Отключаем для избежания застоев
     // Ускоряем сборку за счет параллельной обработки

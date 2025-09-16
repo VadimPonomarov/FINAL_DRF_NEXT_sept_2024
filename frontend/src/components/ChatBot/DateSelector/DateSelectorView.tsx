@@ -36,8 +36,8 @@ export const DateSelectorView: React.FC<DateSelectorViewProps> = ({
   if (availableDates.length <= 1) return null;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.dateNavigation}>
+    <div className={unifiedStyles.chatMessage}>
+      <div className={unifiedStyles.dateNavigation}>
         <Button
           variant="ghost"
           size="icon"
@@ -51,7 +51,7 @@ export const DateSelectorView: React.FC<DateSelectorViewProps> = ({
           value={currentDate}
           onValueChange={onDateChange}
         >
-          <SelectTrigger className={styles.dateSelect}>
+          <SelectTrigger className={unifiedStyles.dateSelect}>
             <SelectValue placeholder="Select date">
               {formatDateString(currentDate)}
             </SelectValue>

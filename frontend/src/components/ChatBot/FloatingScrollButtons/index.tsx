@@ -26,12 +26,12 @@ const FloatingScrollButtons: React.FC = () => {
   };
 
   return (
-    <div className={styles.floatingButtonsContainer}>
+    <div className={unifiedStyles.scrollButtons}>
       {/* Кнопка скролла вверх */}
       <Button
         variant="secondary"
         size="icon"
-        className={styles.floatingButton}
+        className={unifiedStyles.scrollButton}
         onClick={scrollToTop}
         aria-label="Scroll to top"
       >
@@ -42,7 +42,7 @@ const FloatingScrollButtons: React.FC = () => {
       <Button
         variant="secondary"
         size="icon"
-        className={styles.floatingButton}
+        className={unifiedStyles.scrollButton}
         onClick={scrollToBottom}
         aria-label="Scroll to bottom"
       >

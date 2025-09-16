@@ -13,13 +13,13 @@ export const ImageSkeleton: React.FC<ImageSkeletonProps> = ({
   message = "Генерация изображения..."
 }) => {
   return (
-    <div className={styles.container}>
-      <div className={styles.skeletonWrapper}>
+    <div className={unifiedStyles.imageSkeletonContainer}>
+      <div className={unifiedStyles.imageSkeletonWrapper}>
         <Skeleton className={unifiedStyles.imageSkeleton} />
-        <div className={styles.overlay}>
+        <div className={unifiedStyles.imageSkeletonOverlay}>
           <ImageIcon className={unifiedStyles.submitButtonIcon} />
           <div className={unifiedStyles.chatMessage}>{message}</div>
-          <div className={styles.spinner}></div>
+          <div className={unifiedStyles.imageSkeletonSpinner}></div>
         </div>
       </div>
     </div>

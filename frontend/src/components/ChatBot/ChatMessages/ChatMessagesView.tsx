@@ -32,7 +32,7 @@ export const ChatMessagesView: React.FC<ChatMessagesViewProps> = ({
   activeThread
 }) => {
   return (
-    <div className={styles.container}>
+    <div className={unifiedStyles.chatMessage}>
       {activeThread && (
         <div className="sticky top-0 z-10 bg-background p-2 mb-2 border-b flex items-center justify-between">
           <span>Viewing Thread: {activeThread}</span>
@@ -47,7 +47,7 @@ export const ChatMessagesView: React.FC<ChatMessagesViewProps> = ({
       )}
 
       {messages.length === 0 && (
-        <div className={styles.emptyState}>
+        <div className={unifiedStyles.chatEmptyState}>
           <p>No messages yet. Start a conversation!</p>
         </div>
       )}

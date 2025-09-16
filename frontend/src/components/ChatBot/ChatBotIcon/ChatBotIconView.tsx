@@ -30,7 +30,7 @@ export const ChatBotIconView: React.FC<ChatBotIconViewProps> = ({
         <Button
           variant="default"
           size="icon"
-          className={`chat-button ${styles.chatButton} ${isOpen ? styles.chatButtonHidden : styles.chatButtonVisible}`}
+          className={`chat-button ${unifiedStyles.chatBotIcon} ${isOpen ? unifiedStyles.hidden : unifiedStyles.visible}`}
           onClick={onOpenChat}
         >
           <MessageCircle className="h-7 w-7 text-primary-foreground" />
@@ -40,7 +40,7 @@ export const ChatBotIconView: React.FC<ChatBotIconViewProps> = ({
       {isOpen && (
         <>
           <div
-            className={styles.chatOverlay}
+            className={unifiedStyles.chatDialogOverlay}
             onClick={onBackdropClick}
           >
             <ResizableChatWrapper>

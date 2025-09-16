@@ -178,20 +178,20 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   return (
-    <div className={styles.container}>
+    <div className={unifiedStyles.chatMessage}>
       {selectedFiles.length > 0 && (
-        <div className={styles.fileList}>
+        <div className={unifiedStyles.fileList}>
           {selectedFiles.map((file, index) => (
-            <div key={index} className={styles.fileItem}>
-              <div className={styles.fileInfo}>
+            <div key={index} className={unifiedStyles.fileItem}>
+              <div className={unifiedStyles.fileInfo}>
                 {getFileIcon(file)}
-                <span className={styles.fileName}>{file.name}</span>
-                <span className={styles.fileSize}>({(file.size / 1024).toFixed(1)} KB)</span>
+                <span className={unifiedStyles.fileName}>{file.name}</span>
+                <span className={unifiedStyles.fileSize}>({(file.size / 1024).toFixed(1)} KB)</span>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className={styles.removeButton}
+                className={unifiedStyles.removeButton}
                 onClick={() => handleRemoveFile(index)}
                 disabled={isUploading}
               >
@@ -201,7 +201,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           ))}
 
           {selectedFiles.length > 0 && (
-            <div className={styles.messageInput}>
+            <div className={unifiedStyles.messageInput}>
               <input
                 type="text"
                 placeholder="Add a message with your files (optional)"
@@ -213,13 +213,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             </div>
           )}
 
-          <div className={styles.actions}>
+          <div className={unifiedStyles.actions}>
             <Button
               variant="default"
               size="sm"
               onClick={handleSubmit}
               disabled={disabled || isUploading}
-              className={styles.sendButton}
+              className={unifiedStyles.sendButton}
             >
               {isUploading ? 'Uploading...' : 'Send Files'}
             </Button>
@@ -228,7 +228,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               size="sm"
               onClick={() => setSelectedFiles([])}
               disabled={isUploading}
-              className={styles.cancelButton}
+              className={unifiedStyles.cancelButton}
             >
               Cancel
             </Button>
@@ -251,7 +251,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         size="icon"
         onClick={handleButtonClick}
         disabled={disabled || isUploading}
-        className={cn(styles.attachButton, selectedFiles.length > 0 && styles.active)}
+        className={cn(unifiedStyles.attachButton, selectedFiles.length > 0 && unifiedStyles.active)}
         title="Attach files"
       >
         <Paperclip className="h-5 w-5" />

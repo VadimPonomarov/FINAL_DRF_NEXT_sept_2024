@@ -25,18 +25,18 @@ export const ResizableChatWrapperView: React.FC<ResizableChatWrapperViewProps> =
 }) => {
   return (
     <div
-      className={styles.resizableChatWrapper}
+      className={unifiedStyles.resizableWrapper}
       ref={wrapperRef}
       data-debug={JSON.stringify(debugInfo)}
     >
       <div
-        className={styles.dragHandle}
+        className={unifiedStyles.dragHandle}
         onMouseDown={onDragStart}
         title="Перетащите, чтобы переместить"
       />
       {children}
       <div
-        className={`${styles.resizer} ${isResizing ? styles.active : ''}`}
+        className={`${unifiedStyles.resizer} ${isResizing ? unifiedStyles.active : ''}`}
         onMouseDown={onMouseDown}
         title="Потяните, чтобы изменить размер"
       />

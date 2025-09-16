@@ -16,7 +16,7 @@ const SubmitButton: React.FC<SubmitButtonProps> = ({
   isLoading
 }) => {
   return (
-    <div className={styles.wrapper}>
+    <div className={unifiedStyles.submitButton}>
       <button
         onClick={onClick}
         disabled={disabled}

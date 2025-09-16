@@ -86,7 +86,7 @@ TEMPLATES = [
 
 # WSGI application
 WSGI_APPLICATION = 'config.wsgi.application'
-ASGI_APPLICATION = 'config.routing.application'
+ASGI_APPLICATION = 'config.asgi.application'
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'

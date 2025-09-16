@@ -115,7 +115,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
       )}
 
       {/* Основной контейнер сообщения */}
-      <div className={`${styles.messageContainer} ${isUser ? styles.userMessage : styles.assistantMessage} group`}>
+      <div className={`${unifiedStyles.chatMessage} ${isUser ? unifiedStyles.chatMessageUser : unifiedStyles.chatMessageAssistant} group`}>
         {/* Avatar without background */}
         <div className="flex items-center justify-center h-8 w-8">
           {isUser ? (
@@ -126,7 +126,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
         </div>
 
         {/* Содержимое сообщения */}
-        <div className={`${styles.messageContent} ${isUser ? styles.userMessageContent : styles.assistantMessageContent}`}>
+        <div className={`${unifiedStyles.chatMessageBubble} ${isUser ? unifiedStyles.chatMessageBubbleUser : unifiedStyles.chatMessageBubbleAssistant}`}>
 
         {/* Context information */}
         {showContext && contextInfo && (
@@ -154,7 +154,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
 
         {/* Отображаем изображение, если оно есть */}
         {imageUrl && (
-          <div className={imageState.isFullscreen ? styles.fullscreenContainer : styles.imageContainer}>
+          <div className={imageState.isFullscreen ? unifiedStyles.imageFullscreen : unifiedStyles.imageContainer}>
               {/* Показываем скелетон во время загрузки изображения */}
               {imageState.isLoading && !imageState.loaded && !imageState.error && (
                 <ImageSkeleton message="Загрузка изображения..." />
@@ -183,7 +183,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
               </div>
 
             {/* Элементы управления изображением */}
-            <div className={styles.imageControls}>
+            <div className={unifiedStyles.imageControls}>
               <Button
                 variant="secondary"
                 size="icon"
@@ -256,7 +256,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
         <Button
           variant="ghost"
           size="icon"
-          className={`${styles.deleteButton}`}
+          className={`${unifiedStyles.deleteButton}`}
           onClick={() => onDelete(messageId)}
           title="Удалить сообщение"
         >

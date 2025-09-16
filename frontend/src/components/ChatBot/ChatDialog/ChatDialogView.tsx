@@ -72,8 +72,8 @@ export const ChatDialogView: React.FC<ChatDialogViewProps> = ({
   onTokenRefresh
 }) => {
   return (
-    <Card className={styles.chatContainer}>
-      <CardHeader className={styles.chatHeader}>
+    <Card className={unifiedStyles.chatDialog}>
+      <CardHeader className={unifiedStyles.chatDialogHeader}>
         <div className="flex items-center gap-3">
           <Bot className="h-6 w-6" />
           <div>
@@ -89,7 +89,7 @@ export const ChatDialogView: React.FC<ChatDialogViewProps> = ({
             </CardDescription>
           </div>
         </div>
-        <div className={styles.controlsContainer}>
+        <div className={unifiedStyles.chatDialogControls}>
           <ChatHeader
             isConnected={isConnected}
             isConnecting={isConnecting}
@@ -120,8 +120,8 @@ export const ChatDialogView: React.FC<ChatDialogViewProps> = ({
           />
         </div>
 
-        <CardContent className={styles.chatContent}>
-          <div className={styles.scrollAreaContainer}>
+        <CardContent className={unifiedStyles.chatMessages}>
+          <div className={unifiedStyles.chatScrollArea}>
             <ScrollArea className="h-full pr-4" id="chat-scroll-area">
               <ChatMessages
                 messages={messages}
@@ -134,7 +134,7 @@ export const ChatDialogView: React.FC<ChatDialogViewProps> = ({
         </CardContent>
       </div>
 
-      <div className={styles.chatFooter}>
+      <div className={unifiedStyles.chatInput}>
         <ChatInput
           value={inputValue}
           onChange={onInputChange}

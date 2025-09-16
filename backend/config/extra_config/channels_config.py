@@ -53,5 +53,4 @@ WEBSOCKET_CONFIG = {
     'MAX_MESSAGE_SIZE': int(os.getenv('WEBSOCKET_MAX_MESSAGE_SIZE', 1024 * 1024)),  # 1MB
 }
 
-# ASGI application configuration
-ASGI_APPLICATION = 'config.asgi.application'
+# ASGI application configuration is defined in apps_config.py

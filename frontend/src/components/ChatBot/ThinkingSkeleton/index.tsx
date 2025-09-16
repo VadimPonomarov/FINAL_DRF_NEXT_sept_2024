@@ -31,21 +31,21 @@ export const ThinkingSkeleton: React.FC<ThinkingSkeletonProps> = ({
   }, [timeout]);
 
   return (
-    <div className={styles.container}>
-      <div className={styles.skeletonWrapper}>
+    <div className={unifiedStyles.chatMessage}>
+      <div className={unifiedStyles.thinkingSkeleton}>
         <Avatar className="bg-black">
           <AvatarFallback className="bg-black">
             <Bot className="h-4 w-4 text-white" />
           </AvatarFallback>
         </Avatar>
 
-        <div className={styles.contentWrapper}>
+        <div className={unifiedStyles.thinkingContent}>
           <Skeleton className="h-4 w-24 mb-2" />
-          <div className={styles.thinkingContent}>
+          <div className={unifiedStyles.thinkingContent}>
             <Skeleton className="h-16 w-[80%] rounded-lg" />
 
             {showThinkingText && (
-              <div className={styles.thinkingText}>
+              <div className={unifiedStyles.thinkingText}>
                 Агент обрабатывает ваш запрос...
               </div>
             )}
@@ -57,7 +57,7 @@ export const ThinkingSkeleton: React.FC<ThinkingSkeletonProps> = ({
             variant="ghost"
             size="icon"
             onClick={onCancel}
-            className={styles.cancelButton}
+            className={unifiedStyles.cancelButton}
           >
             <X className="h-4 w-4" />
           </Button>

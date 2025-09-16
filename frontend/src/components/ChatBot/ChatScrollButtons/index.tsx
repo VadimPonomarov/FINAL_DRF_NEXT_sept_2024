@@ -115,7 +115,7 @@ const ChatScrollButtons: React.FC = () => {
 
   // Всегда показываем кнопки скролла
   return (
-    <div className={styles.scrollButtonsContainer}>
+    <div className={unifiedStyles.scrollButtons}>
       {/* Кнопка скролла вверх */}
       <Button
         variant="secondary"

@@ -32,17 +32,17 @@ export const FileAttachments: React.FC<FileAttachmentsProps> = ({
   };
 
   return (
-    <div className={styles.fileAttachmentsContainer}>
+    <div className={unifiedStyles.fileAttachments}>
       {resultFileUrl && (
-        <div className={styles.resultFileContainer}>
-          <div className={styles.resultFileHeader}>
+        <div className={unifiedStyles.fileResult}>
+          <div className={unifiedStyles.fileResultHeader}>
             <FileText className="h-5 w-5" />
             <span>Result File</span>
           </div>
           <Button 
             variant="outline" 
             size="sm" 
-            className={styles.downloadButton}
+            className={unifiedStyles.downloadButton}
             onClick={() => window.open(resultFileUrl, '_blank')}
           >
             <Download className="h-4 w-4 mr-2" />
@@ -52,22 +52,22 @@ export const FileAttachments: React.FC<FileAttachmentsProps> = ({
       )}
       
       {files?.length > 0 && (
-        <div className={styles.filesContainer}>
-          <div className={styles.filesHeader}>
+        <div className={unifiedStyles.filesContainer}>
+          <div className={unifiedStyles.filesHeader}>
             <span>Attached Files ({files.length})</span>
           </div>
-          <div className={styles.filesList}>
+          <div className={unifiedStyles.filesList}>
             {files.map((file) => (
-              <div key={file.file_id} className={styles.fileItem}>
-                <div className={styles.fileInfo}>
+              <div key={file.file_id} className={unifiedStyles.fileItem}>
+                <div className={unifiedStyles.fileInfo}>
                   {getFileIcon(file.file_type)}
-                  <span className={styles.fileName}>{file.file_name}</span>
-                  <span className={styles.fileSize}>({(file.file_size / 1024).toFixed(1)} KB)</span>
+                  <span className={unifiedStyles.fileName}>{file.file_name}</span>
+                  <span className={unifiedStyles.fileSize}>({(file.file_size / 1024).toFixed(1)} KB)</span>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={styles.fileActionButton}
+                  className={unifiedStyles.fileActionButton}
                   onClick={() => handleDownload(file)}
                   title="Download file"
                 >

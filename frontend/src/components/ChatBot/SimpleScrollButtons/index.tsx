@@ -59,15 +59,15 @@ const SimpleScrollButtons: React.FC = () => {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={unifiedStyles.chatMessage}>
       <button
-        className={styles.upButton}
+        className={unifiedStyles.scrollButton}
         onClick={scrollToTop}
       >
         ↑
       </button>
       <button
-        className={styles.downButton}
+        className={unifiedStyles.scrollButton}
         onClick={scrollToBottom}
       >
         ↓
