@@ -23,6 +23,7 @@ const PUBLIC_PATHS = [
   '/api/reference',
   '/api/public',
   '/api/user',
+  '/api/openapi',  // OpenAPI schema proxy - should be public for docs
   '/register',     // User registration
   '/auth'          // Auth redirect page
   // NOTE: /login removed - it should require internal session to get external API tokens

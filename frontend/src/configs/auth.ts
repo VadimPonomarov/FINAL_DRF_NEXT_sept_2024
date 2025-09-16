@@ -150,17 +150,22 @@ export const authConfig: AuthOptions = {
     async session({ session, token }) {
       console.log('[NextAuth session] Callback triggered:', { session, token });
 
-      // Возвращаем правильную структуру сессии с объектом user
+      if (!session.expires) {
+        throw new Error("Session expiration date is undefined.");
+      }
+
+      const expiresTimestamp = new Date(session.expires).getTime();
+
+      if (isNaN(expiresTimestamp)) {
+        throw new Error("Session expiration date is not a valid timestamp.");
+      }
+
+      // Возвращаем кастомную структуру сессии как в оригинале
       return {
-        ...session,
-        user: {
-          ...session.user,
-          email: session.user?.email || token.email,
-          id: token.accessToken,
-        },
+        email: session.user?.email || token.email,
         accessToken: token.accessToken,
-        expires: session.expires,
-      };
+        expiresOn: new Date(expiresTimestamp).toLocaleString(),
+      } as unknown as Session;
     },
   },
 };

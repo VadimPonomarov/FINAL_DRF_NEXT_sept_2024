@@ -19,17 +19,13 @@ export const useUsers = ({ initialData }: IProps) => {
   const queryClient = useQueryClient();
   const limit = useMemo(() => {
     const paramValue = searchParams.get("limit");
-    const result = paramValue !== null ? Number(paramValue) : 30;
-    console.log(`[DEBUG] Computing limit: paramValue=${paramValue}, result=${result}`);
-    return result;
-  }, [searchParams]);
+    return paramValue !== null ? Number(paramValue) : 30;
+  }, [searchParams.get("limit")]); // Более точная зависимость
 
   const skip = useMemo(() => {
     const paramValue = searchParams.get("skip");
-    const result = paramValue !== null ? Number(paramValue) : 0;
-    console.log(`[DEBUG] Computing skip: paramValue=${paramValue}, result=${result}`);
-    return result;
-  }, [searchParams]);
+    return paramValue !== null ? Number(paramValue) : 0;
+  }, [searchParams.get("skip")]); // Более точная зависимость
   const total = initialData instanceof Error ? 0 : Number(initialData.total);
   const [uniqueUsers, setUniqueUsers] = useState<IUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<IUser[]>([]);
@@ -105,21 +101,8 @@ export const useUsers = ({ initialData }: IProps) => {
     }
   }, [data, filterParams]);
 
-  // Update URL parameters when skip/limit change (client-side only)
-  useEffect(() => {
-    // Only run on client-side to prevent build-time issues
-    if (typeof window === 'undefined') return;
-
-    const currentSkip = searchParams.get("skip") || "0";
-    const currentLimit = searchParams.get("limit") || "30";
-
-    if (currentSkip !== String(skip) || currentLimit !== String(limit)) {
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("skip", String(skip));
-      newParams.set("limit", String(limit));
-      router.replace(`?${newParams.toString()}`);
-    }
-  }, [skip, limit, searchParams, router]);
+  // Убираем этот useEffect - он может вызывать лишние перерисовки
+  // URL параметры должны управляться только через PaginationComponent
 
 
 

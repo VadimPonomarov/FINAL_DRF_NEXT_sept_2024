@@ -16,6 +16,8 @@ interface IProps {
 }
 
 const UsersClient: FC<IProps> = ({initialData}) => {
+    console.log('[UsersClient] Rendering with initialData:', initialData?.total || 'Error');
+
     const baseUrl = "/users";
     const searchParams = useSearchParams();
     const limit = searchParams.get("limit");
@@ -23,6 +25,7 @@ const UsersClient: FC<IProps> = ({initialData}) => {
 
     // Добавляем key для перерендеринга при изменении параметров URL
     const urlKey = `${limit}-${skip}`;
+    console.log('[UsersClient] URL key:', urlKey);
 
     const {filteredUsers, handleNextPage, isFetchingNextPage, hasNextPage, total, filterUsers} = useUsers({
         initialData,
