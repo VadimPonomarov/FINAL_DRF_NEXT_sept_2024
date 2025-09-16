@@ -28,6 +28,7 @@ import { AuthProvider } from '@/common/constants/constants';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuth } from '@/contexts/AuthProviderContext';
 import AnimatedPlatformStatsWidget from '@/components/AutoRia/Statistics/AnimatedPlatformStatsWidget';
+import { useApiErrorHandler, setupGlobalFetchErrorTracking } from '@/hooks/useApiErrorHandler';
 
 // 🎭 LIGHTWEIGHT ANIMATION SYSTEM (dev-optimized) 🎭
 const useSpectacularAnimation = () => {
@@ -329,6 +330,18 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
   const { provider, setProvider } = useAuthProvider();
   const { t, formatNumber, locale, setLocale } = useI18n();
 
+  // Инициализируем обработчик критических ошибок API
+  const { trackError, forceRedirect, criticalErrorCount } = useApiErrorHandler({
+    enableAutoRedirect: true,
+    criticalErrorThreshold: 3,
+    onCriticalError: () => {
+      console.log('[HomeContent] Critical API errors detected, forcing redirect to /signin');
+    },
+    onBackendUnavailable: () => {
+      console.warn('[HomeContent] Backend appears to be unavailable');
+    }
+  });
+
   // Дополнительная проверка API сессии
   useEffect(() => {
     const checkApiSession = async () => {
@@ -356,6 +369,12 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
     return () => {
       window.removeEventListener('authProviderChanged', handleAuthProviderChanged as EventListener);
     };
+  }, []);
+
+  // Инициализируем глобальное отслеживание ошибок fetch
+  useEffect(() => {
+    console.log('[HomeContent] Setting up global fetch error tracking...');
+    setupGlobalFetchErrorTracking();
   }, []);
 
 
@@ -724,8 +743,8 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
   // 🎭 ЕДИНАЯ АНИМАЦИОННАЯ ВЕРСИЯ ДЛЯ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ 🎭
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 relative overflow-hidden">
-        {/* Debug button Reset - левый верхний угол */}
-        <div className="fixed top-[5px] left-[5px] z-[999999] p-[1px]">
+        {/* Debug buttons - левый верхний угол */}
+        <div className="fixed top-[5px] left-[5px] z-[999999] p-[1px] flex gap-1">
           <button
             onClick={() => {
               localStorage.removeItem('autoria-spectacular-show-seen');
@@ -736,7 +755,40 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
           >
             🎭 Reset
           </button>
+
+          <button
+            onClick={() => {
+              // Имитируем критические ошибки API
+              console.log('[HomeContent] Testing API error tracking...');
+              trackError('/api/public/reference/regions', 404);
+              trackError('/api/ads/quick-stats', 404);
+              trackError('/api/public/reference/brands', 500);
+            }}
+            className="px-2 py-0.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[5px] font-bold rounded-full shadow-sm hover:shadow-md transform hover:scale-105 transition-all duration-300"
+            title="Test API error tracking (simulate 404/500 errors)"
+          >
+            🚨 Test API
+          </button>
         </div>
+
+        {/* API Error Indicator - правый верхний угол */}
+        {criticalErrorCount > 0 && (
+          <div className="fixed top-[5px] right-[120px] z-[999999]">
+            <div className="flex items-center gap-2 bg-red-500/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg">
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <span className="text-white text-xs font-medium">
+                API Errors: {criticalErrorCount}
+              </span>
+              <button
+                onClick={forceRedirect}
+                className="text-white hover:text-red-200 text-xs underline"
+                title="Force redirect to signin"
+              >
+                Fix
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Switch тоглер для переключения Dummy/Backend - правый верхний угол */}
         <div className="fixed top-[5px] right-[5px] z-[999999]">

@@ -887,7 +887,7 @@ def build_frontend():
             display_name = "⚛️ Next.js Frontend"
 
             if log_msg:
-                line = f"🔨 {display_name:20} [{progress_bar}] {progress:3.0f}% {status} 🔄 {log_msg[:50]}"
+                line = f"🔨 {display_name:20} [{progress_bar}] {progress:3.0f}% {status} 🔄 {log_msg[:120]}"
             else:
                 line = f"🔨 {display_name:20} [{progress_bar}] {progress:3.0f}% {status}"
 
@@ -909,31 +909,67 @@ def build_frontend():
             universal_newlines=True
         )
 
-        # Відстежуємо прогрес збірки в реальному часі
+        # Відстежуємо прогрес збірки в реальному часі з детекцією застоїв
         current_progress = 40
+        last_progress_time = time.time()
+        last_progress_value = current_progress
+        stuck_timeout = 180  # 3 хвилини без прогресу = застій
+
         while True:
             output = process.stdout.readline()
             if output == '' and process.poll() is not None:
                 break
             if output:
                 output_lower = output.lower()
+                old_progress = current_progress
 
-                # Оновлюємо прогрес на основі ключових слів
-                if 'compiling' in output_lower:
+                # Оновлюємо прогрес на основі ключових слів (розширена детекція для Next.js 15+ і Turbopack)
+                if any(keyword in output_lower for keyword in ['compiling', 'турбопак', 'turbopack', 'bundling']):
                     current_progress = min(60, current_progress + 2)
                     update_frontend_progress(current_progress, "🔨 Збірка", "Компіляція компонентів...")
-                elif 'compiled successfully' in output_lower or 'compiled' in output_lower:
+                elif any(keyword in output_lower for keyword in ['compiled successfully', 'compiled', 'build successful', 'збірка успішна']):
                     current_progress = min(75, current_progress + 3)
                     update_frontend_progress(current_progress, "✅ Компіляція", "Компіляція завершена...")
-                elif 'optimizing' in output_lower:
+                elif any(keyword in output_lower for keyword in ['optimizing', 'оптимізація', 'minifying', 'мініфікація']):
                     current_progress = min(85, current_progress + 2)
                     update_frontend_progress(current_progress, "⚡ Оптимізація", "Оптимізація бандлів...")
-                elif 'creating' in output_lower or 'generating' in output_lower:
+                elif any(keyword in output_lower for keyword in ['creating', 'generating', 'створення', 'генерація', 'static', 'статичн']):
                     current_progress = min(95, current_progress + 2)
                     update_frontend_progress(current_progress, "📦 Генерація", "Створення статичних файлів...")
-                elif 'route' in output_lower and ('/' in output or 'page' in output_lower):
+                elif any(keyword in output_lower for keyword in ['route', 'page', 'маршрут', 'сторінк', '/', 'app/']):
                     current_progress = min(98, current_progress + 1)
                     update_frontend_progress(current_progress, "🛣️ Маршрути", "Генерація сторінок...")
+                elif any(keyword in output_lower for keyword in ['ready', 'готов', 'server', 'сервер', 'localhost']):
+                    current_progress = 100
+                    update_frontend_progress(current_progress, "✅ Готово", "Сервер запущено!")
+                else:
+                    # Якщо є будь-який вивід, але не розпізнаємо - повільно збільшуємо прогрес
+                    if len(output.strip()) > 10:  # Ігноруємо короткі повідомлення
+                        current_progress = min(current_progress + 0.5, 95)
+                        # Очищаємо вивід від зайвих символів та показуємо більше тексту
+                        clean_output = output.strip().replace('\n', ' ').replace('\r', ' ')
+                        update_frontend_progress(current_progress, "🔄 Обробка", f"{clean_output[:100]}")
+
+                # Перевіряємо чи змінився прогрес
+                if current_progress > old_progress:
+                    last_progress_time = time.time()
+                    last_progress_value = current_progress
+
+            # Перевіряємо на застій
+            current_time = time.time()
+            if current_time - last_progress_time > stuck_timeout:
+                print(f"\n🚨 ЗАСТІЙ ВИЯВЛЕНО: Збірка застрягла на {last_progress_value}% більше ніж {stuck_timeout//60} хвилин")
+                print("💡 Рекомендації:")
+                print("   - Перервіть збірку (Ctrl+C) та спробуйте знову")
+                print("   - Очистіть кеш: rm -rf frontend/.next frontend/node_modules")
+                print("   - Перевірте доступний простір на диску")
+                print("   - Вимкніть антивірус для папки проекту")
+
+                # Автоматично перериваємо процес після попередження
+                print("⚠️ Автоматичне переривання через 30 секунд...")
+                time.sleep(30)
+                process.terminate()
+                return False
 
         return_code = process.poll()
         if return_code != 0:

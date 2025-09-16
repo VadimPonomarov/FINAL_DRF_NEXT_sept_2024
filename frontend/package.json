@@ -7,6 +7,7 @@
     "dev": "npm run kill 3000 && next dev --turbo",
     "dev:classic": "npm run kill 3000 && next dev",
     "dev:turbo": "npm run kill 3000 && next dev --turbo",
+    "dev:smart": "node scripts/dev-with-restart.js",
     "build": "next build",
     "start": "next start",
     "kill": "npx kill-port",
