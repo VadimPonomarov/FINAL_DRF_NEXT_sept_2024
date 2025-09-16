@@ -115,7 +115,20 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
       )}
 
       {/* Основной контейнер сообщения */}
-      <div className={`${unifiedStyles.chatMessage} ${isUser ? unifiedStyles.chatMessageUser : unifiedStyles.chatMessageAssistant} group`}>
+      <div className={`${unifiedStyles.chatMessage} ${isUser ? unifiedStyles.chatMessageUser : unifiedStyles.chatMessageAssistant} group relative`}>
+        {/* Кнопка удаления сообщения - в правом верхнем углу */}
+        {onDelete && messageId && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`${unifiedStyles.deleteButton}`}
+            onClick={() => onDelete(messageId)}
+            title="Удалить сообщение"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
+
         {/* Avatar without background */}
         <div className="flex items-center justify-center h-8 w-8">
           {isUser ? (
@@ -189,7 +202,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
                 size="icon"
                 onClick={onZoomOut}
                 title="Уменьшить"
-                className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 h-8 w-8"
+                className={`${unifiedStyles.imageControlButton} h-8 w-8`}
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
@@ -198,7 +211,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
                 size="icon"
                 onClick={onZoomIn}
                 title="Увеличить"
-                className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 h-8 w-8"
+                className={`${unifiedStyles.imageControlButton} h-8 w-8`}
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
@@ -207,7 +220,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
                 size="icon"
                 onClick={onDownload}
                 title="Скачать"
-                className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 h-8 w-8"
+                className={`${unifiedStyles.imageControlButton} h-8 w-8`}
               >
                 <Download className="h-4 w-4" />
               </Button>
@@ -216,7 +229,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
                 size="icon"
                 onClick={onToggleFullscreen}
                 title={imageState.isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
-                className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 h-8 w-8"
+                className={`${unifiedStyles.imageControlButton} h-8 w-8`}
               >
                 {imageState.isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
               </Button>
@@ -251,18 +264,6 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
         )}
       </div>
 
-      {/* Кнопка удаления сообщения - всегда справа */}
-      {onDelete && messageId && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`${unifiedStyles.deleteButton}`}
-          onClick={() => onDelete(messageId)}
-          title="Удалить сообщение"
-        >
-          <Trash2 className="h-3 w-3 text-red-500" />
-        </Button>
-      )}
       </div>
     </div>
   );

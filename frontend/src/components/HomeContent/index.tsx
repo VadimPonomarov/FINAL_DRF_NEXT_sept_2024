@@ -753,19 +753,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
             🎭 Reset
           </button>
 
-          <button
-            onClick={() => {
-              // Имитируем критические ошибки API
-              console.log('[HomeContent] Testing API error tracking...');
-              trackError('/api/public/reference/regions', 404);
-              trackError('/api/ads/quick-stats', 404);
-              trackError('/api/public/reference/brands', 500);
-            }}
-            className="px-2 py-0.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[5px] font-bold rounded-full shadow-sm hover:shadow-md transform hover:scale-105 transition-all duration-300"
-            title="Test API error tracking (simulate 404/500 errors)"
-          >
-            🚨 Test API
-          </button>
+
         </div>
 
         {/* API Error Indicator - правый верхний угол */}
@@ -840,7 +828,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
         {/* 🌌 SPECTACULAR COSMIC BACKGROUND 🌌 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Cosmic gradient overlay */}
-          <div className={`absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20 transition-all duration-[5000ms] ${
+          <div className={`absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20 transition-all duration-[5s] ${
             animationStage >= 1 ? 'opacity-100' : 'opacity-0'
           }`} />
 
@@ -848,7 +836,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
           {particles.map((particle) => (
             <div
               key={particle.id}
-              className={`absolute w-2 h-2 bg-white rounded-full transition-all duration-[4000ms] ${
+              className={`absolute w-2 h-2 bg-white rounded-full transition-all duration-[4s] ${
                 animationStage >= 1 ? 'opacity-60 animate-pulse' : 'opacity-0'
               }`}
               style={{
@@ -861,13 +849,13 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
           ))}
 
           {/* Large cosmic orbs */}
-          <div className={`absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl transition-all duration-[4000ms] ${
+          <div className={`absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl transition-all duration-[4s] ${
             animationStage >= 1 ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-50'
           }`} />
-          <div className={`absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl transition-all duration-[4000ms] delay-1000 ${
+          <div className={`absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl transition-all duration-[4s] delay-1000 ${
             animationStage >= 2 ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-50'
           }`} />
-          <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-full blur-3xl transition-all duration-[4000ms] delay-2000 ${
+          <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-full blur-3xl transition-all duration-[4s] delay-2000 ${
             animationStage >= 3 ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-50'
           }`} />
 

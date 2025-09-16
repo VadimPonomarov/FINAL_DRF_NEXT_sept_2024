@@ -126,6 +126,39 @@
   color: white !important; /* Белый цвет для иконки на цветном фоне */
 }
 
+/* Стили для кнопок управления изображениями */
+.chatbot-container .imageControlButton {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #333 !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+.chatbot-container .imageControlButton:hover {
+  background: rgba(255, 255, 255, 1) !important;
+  color: #000 !important;
+}
+
+.chatbot-container .imageControlButton svg {
+  color: inherit !important;
+}
+
+/* Стили для кнопки удаления */
+.chatbot-container .deleteButton {
+  background: rgba(239, 68, 68, 0.8) !important;
+  color: white !important;
+  cursor: pointer !important;
+}
+
+.chatbot-container .deleteButton:hover {
+  background: rgba(239, 68, 68, 1) !important;
+}
+
+.chatbot-container .deleteButton svg {
+  color: white !important;
+}
+
 .chatbot-container .send-button:hover {
   background-color: var(--primary-hover);
   color: white !important;

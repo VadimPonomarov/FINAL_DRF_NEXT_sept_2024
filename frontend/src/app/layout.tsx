@@ -49,7 +49,7 @@ export default function RootLayout({
             {children}
           </main>
           <Toaster />
-          {/* <ChatBotIcon /> */}
+          <ChatBotIcon />
         </RootProvider>
       </body>
     </html>

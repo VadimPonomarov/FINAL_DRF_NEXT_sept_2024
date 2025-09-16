@@ -382,10 +382,41 @@ export const useChatWebSocket = ({
           wsLogger.error("Failed to get access token");
           setIsConnecting(false);
 
+          // Сначала пробуем reset токена
+          if (tokenRefreshAttemptsRef.current < MAX_TOKEN_REFRESH_ATTEMPTS) {
+            tokenRefreshAttemptsRef.current += 1;
+
+            toast({
+              title: "Connection Error",
+              description: `Attempting to reset authentication... (${tokenRefreshAttemptsRef.current}/${MAX_TOKEN_REFRESH_ATTEMPTS})`,
+              variant: "destructive",
+              duration: 3000,
+            });
+
+            // Пытаемся принудительно обновить токен
+            setTimeout(async () => {
+              const newToken = await getAccessToken(true);
+              if (newToken) {
+                // Если токен получен, пробуем подключиться снова
+                connect(channelId);
+              } else {
+                // Если токен не получен, продолжаем с редиректом
+                handleTokenFailure();
+              }
+            }, 1000);
+
+            return;
+          } else {
+            handleTokenFailure();
+            return;
+          }
+        }
+
+        // Функция для обработки окончательной неудачи с токеном
+        const handleTokenFailure = () => {
           toast({
             title: "Connection Error",
-            description:
-              "Failed to get authentication token for WebSocket connection.",
+            description: "Failed to get authentication token for WebSocket connection. Redirecting to login...",
             variant: "destructive",
             duration: 5000,
           });
@@ -394,26 +425,13 @@ export const useChatWebSocket = ({
             onAuthError();
           }
 
-          return;
-        }
+          // Редирект на логин через 2 секунды
+          setTimeout(() => {
+            redirectToLogin("Authentication failed. Please login again.");
+          }, 2000);
+        };
 
-        if (!token) {
-          wsLogger.error("No token available for WebSocket connection");
-          setIsConnecting(false);
-
-          toast({
-            title: "Authentication Error",
-            description: "No authentication token available. Please sign in.",
-            variant: "destructive",
-            duration: 5000,
-          });
-
-          if (onAuthError) {
-            onAuthError();
-          }
-
-          return;
-        }
+        // Эта проверка уже не нужна, так как обработана выше
 
         // Используем SimpleUrlResolver для правильного определения WebSocket URL
         const wsUrl = SimpleUrlResolver.getWebSocketUrl(`/api/chat/${targetChannelId}/?token=${token}`);
@@ -671,31 +689,23 @@ export const useChatWebSocket = ({
           console.log("[DEBUG] WebSocket URL:", wsUrl);
           console.log("[DEBUG] WebSocket readyState:", socket.readyState);
 
-          // Показываем уведомление об ошибке
-          toast({
-            title: "Connection Error",
-            description: "Failed to connect to chat server. Please try again.",
-            variant: "destructive",
-            duration: 5000,
-          });
-
-          // При ошибке соединения проверяем, может ли это быть связано с аутентификацией
-          // Используем правильный счетчик для refresh попыток
+          // При ошибке соединения сначала пробуем reset токена
           if (tokenRefreshAttemptsRef.current < MAX_TOKEN_REFRESH_ATTEMPTS) {
             tokenRefreshAttemptsRef.current += 1;
+
+            // Показываем уведомление о попытке reset
+            toast({
+              title: "Connection Error",
+              description: `Attempting to reset authentication... (${tokenRefreshAttemptsRef.current}/${MAX_TOKEN_REFRESH_ATTEMPTS})`,
+              variant: "destructive",
+              duration: 3000,
+            });
 
             (async () => {
               console.log(
                 `[DEBUG] Attempting to refresh token after WebSocket error (attempt ${tokenRefreshAttemptsRef.current}/${MAX_TOKEN_REFRESH_ATTEMPTS})`,
               );
               wsLogger.info(`Attempting to refresh token after WebSocket error (attempt ${tokenRefreshAttemptsRef.current}/${MAX_TOKEN_REFRESH_ATTEMPTS})`);
-
-              // Показываем уведомление пользователю
-              toast({
-                title: "Connection Error",
-                description: `Checking authentication... (${tokenRefreshAttemptsRef.current}/${MAX_TOKEN_REFRESH_ATTEMPTS})`,
-                duration: 3000,
-              });
 
               // Проверяем и обновляем токен если нужно
               const newToken = await getAccessToken(false);
@@ -723,9 +733,19 @@ export const useChatWebSocket = ({
               }
             })();
           } else {
-            // Достигли максимума попыток refresh токена
+            // Достигли максимума попыток reset токена - редирект на логин
             wsLogger.warn(`Maximum token refresh attempts (${MAX_TOKEN_REFRESH_ATTEMPTS}) reached, redirecting to login`);
-            redirectToLogin("Connection failed: Please log in again");
+
+            toast({
+              title: "Authentication Failed",
+              description: "Unable to establish secure connection. Redirecting to login...",
+              variant: "destructive",
+              duration: 5000,
+            });
+
+            setTimeout(() => {
+              redirectToLogin("Connection failed after multiple attempts. Please log in again.");
+            }, 2000);
           }
         };
       } catch (error) {

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/configs/auth';
+import { authConfig } from '@/configs/auth';
 
 export async function GET(request: NextRequest) {
   try {
     console.log('[Auth Status API] Checking authentication status...');
 
     // 1. Проверяем NextAuth сессию
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authConfig);
     const hasNextAuthSession = !!session;
 
     console.log('[Auth Status API] NextAuth session:', hasNextAuthSession ? 'exists' : 'missing');
