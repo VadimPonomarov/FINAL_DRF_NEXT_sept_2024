@@ -413,6 +413,22 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
 
 
 
+  // Утилитная функция для проверки валидности сессии
+  const isValidSession = (session: any): boolean => {
+    if (!session) return false;
+
+    // Проверяем наличие обязательного поля email
+    if (!session.email) return false;
+
+    // Проверяем, что это наша кастомная структура сессии
+    if (session.user && !session.accessToken) {
+      // Это стандартная NextAuth сессия без нашей кастомной структуры
+      return false;
+    }
+
+    return true;
+  };
+
   // Effect hooks (always call)
   useEffect(() => {
     // Устанавливаем флаг монтирования для предотвращения hydration mismatch
@@ -440,19 +456,82 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
   const isAuthenticated = !!(currentSession?.email);
   const isLoading = sessionStatus === 'loading' || !isMounted;
 
+  // Проверяем на некорректную сессию используя утилитную функцию
+  const isCorruptedSession = currentSession &&
+    !isValidSession(currentSession) &&
+    sessionStatus !== 'loading' &&
+    sessionStatus !== 'unauthenticated' &&
+    isMounted;
+
   console.log('[HomeContent] NextAuth Session Check:', {
     serverSession: serverSession,
     clientSession: session,
     currentSession: currentSession,
     sessionStatus,
     isAuthenticated,
+    isCorruptedSession,
     provider,
     isMounted,
     userEmail: currentSession?.email || 'none',
     'currentSession structure': currentSession ? Object.keys(currentSession) : 'null',
+    'currentSession type': typeof currentSession,
+    'currentSession is null': currentSession === null,
+    'currentSession is undefined': currentSession === undefined,
     'has email': !!currentSession?.email,
-    'session email': currentSession?.email
+    'session email': currentSession?.email,
+    'will show content': isAuthenticated ? `${provider} content` : 'login form'
   });
+
+  // Автоматическая очистка некорректных сессий
+  useEffect(() => {
+    if (isCorruptedSession && isMounted) {
+      console.log('[HomeContent] Detected corrupted session, attempting to fix...');
+
+      // Сначала пробуем обновить сессию
+      getSession().then(updatedSession => {
+        console.log('[HomeContent] Attempted session refresh:', updatedSession);
+
+        // Если обновленная сессия все еще некорректна, очищаем
+        if (!isValidSession(updatedSession)) {
+          console.log('[HomeContent] Session refresh failed, clearing all data...');
+
+          // Очищаем NextAuth сессию
+          signOut({ redirect: false }).then(() => {
+            console.log('[HomeContent] NextAuth session cleared');
+
+            // Очищаем localStorage
+            localStorage.clear();
+
+            // Очищаем sessionStorage
+            sessionStorage.clear();
+
+            // Небольшая задержка перед перезагрузкой
+            setTimeout(() => {
+              window.location.reload();
+            }, 100);
+          }).catch(error => {
+            console.error('[HomeContent] Error clearing session:', error);
+            // В случае ошибки все равно очищаем storage и перезагружаем
+            localStorage.clear();
+            sessionStorage.clear();
+            setTimeout(() => {
+              window.location.reload();
+            }, 100);
+          });
+        }
+      }).catch(error => {
+        console.error('[HomeContent] Error refreshing session:', error);
+        // Если не удалось обновить сессию, очищаем
+        localStorage.clear();
+        sessionStorage.clear();
+        signOut({ redirect: false }).finally(() => {
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        });
+      });
+    }
+  }, [isCorruptedSession, isMounted]);
 
   // Таймер обратного отсчета - запускается ВСЕГДА когда нет сессии
   useEffect(() => {
@@ -537,6 +616,20 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Дополнительная защита: если обнаружена некорректная сессия, показываем загрузку
+  if (isCorruptedSession) {
+    console.log('[HomeContent] Corrupted session detected, showing loading while cleaning...');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Очистка сессии...</p>
+          <p className="text-gray-500 text-sm mt-2">Пожалуйста, подождите</p>
         </div>
       </div>
     );
