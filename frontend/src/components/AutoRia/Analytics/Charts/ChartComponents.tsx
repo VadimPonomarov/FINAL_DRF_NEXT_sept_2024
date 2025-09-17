@@ -1,24 +1,44 @@
 'use client';
 
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 
-// Динамические импорты для Chart.js компонентов
-const ChartComponents = lazy(async () => {
-  // Загружаем Chart.js и react-chartjs-2 динамически
-  await import('chart.js/auto');
-  const { Line, Bar, Pie, Doughnut, Scatter } = await import('react-chartjs-2');
+// Регистрация Chart.js компонентов
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
 
-  return {
-    default: {
-      Line,
-      Bar,
-      Pie,
-      Doughnut,
-      Scatter
-    }
-  };
-});
+import { Line, Bar, Pie, Doughnut, Scatter } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
+
+// Компоненты графиков
+const ChartComponents = {
+  Line,
+  Bar,
+  Pie,
+  Doughnut,
+  Scatter
+};
 
 // Заглушка для загрузки
 const ChartSkeleton = () => (

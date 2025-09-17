@@ -14,6 +14,32 @@ import { PriceDistributionChart, TopBrandsChart, MonthlyTrendsChart } from "@/co
 import { Line } from "react-chartjs-2";
 import { useI18n } from '@/contexts/I18nContext';
 
+// Регистрация Chart.js компонентов
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
+
 interface AnalyticsTabContentProps {
   filters: Record<string, any>;
   results: any[];

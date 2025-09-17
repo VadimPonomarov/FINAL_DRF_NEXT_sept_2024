@@ -26,7 +26,8 @@ import {
   Zap,
   ArrowUp,
   ArrowDown,
-  Minus
+  Minus,
+  Search
 } from 'lucide-react';
 
 import { useI18n } from '@/contexts/I18nContext';
@@ -261,13 +262,19 @@ const SimpleEnhancedAnalyticsPage: React.FC = () => {
                   <VirtualSelect
                     placeholder="Тип транспорта"
                     value={filters.vehicle_type}
-                    onValueChange={(value) => setFilters(prev => ({...prev, vehicle_type: value || ''}))}
+                    onValueChange={(value) => {
+                      console.log('🔍 [Analytics] Vehicle type selected:', value);
+                      setFilters(prev => ({...prev, vehicle_type: value || '', brand: '', model: ''}));
+                    }}
                     fetchOptions={async (search) => {
+                      console.log('🔍 [Analytics] Fetching vehicle types with search:', search);
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
+                      params.append('page_size', '1000');
                       const response = await fetch(`/api/public/reference/vehicle-types?${params}`);
                       const data = await response.json();
-                      return Array.isArray(data) ? data.map((i:any)=>({value: String(i.id), label: i.name})) : [];
+                      console.log('🔍 [Analytics] Vehicle types response:', data);
+                      return data.options || [];
                     }}
                     allowClear
                     searchable
@@ -278,15 +285,24 @@ const SimpleEnhancedAnalyticsPage: React.FC = () => {
                     placeholder="Марка"
                     value={filters.brand}
                     onValueChange={(value) => {
+                      console.log('🔍 [Analytics] Brand selected:', value);
                       setFilters(prev => ({...prev, brand: value || '', model: ''}));
                     }}
                     fetchOptions={async (search) => {
+                      console.log('🔍 [Analytics] Fetching brands with search:', search);
+                      console.log('🔍 [Analytics] Current vehicle_type:', filters.vehicle_type);
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
-                      if (filters.vehicle_type) params.append('vehicle_type_id', filters.vehicle_type);
+                      if (filters.vehicle_type) {
+                        params.append('vehicle_type_id', filters.vehicle_type);
+                        console.log('🔍 [Analytics] Added vehicle_type_id to params:', filters.vehicle_type);
+                      } else {
+                        console.log('🔍 [Analytics] ❌ No vehicle_type found, brands request will fail!');
+                      }
                       params.append('page_size', '1000');
                       const response = await fetch(`/api/public/reference/brands?${params}`);
                       const data = await response.json();
+                      console.log('🔍 [Analytics] Brands response:', data);
                       return data.options || [];
                     }}
                     allowClear
@@ -299,15 +315,24 @@ const SimpleEnhancedAnalyticsPage: React.FC = () => {
                   <VirtualSelect
                     placeholder="Модель"
                     value={filters.model}
-                    onValueChange={(value) => setFilters(prev => ({...prev, model: value || ''}))}
+                    onValueChange={(value) => {
+                      console.log('🔍 [Analytics] Model selected:', value);
+                      setFilters(prev => ({...prev, model: value || ''}));
+                    }}
                     fetchOptions={async (search) => {
-                      if (!filters.brand) return [];
+                      console.log('🔍 [Analytics] Fetching models with search:', search);
+                      console.log('🔍 [Analytics] Current brand:', filters.brand);
+                      if (!filters.brand) {
+                        console.log('🔍 [Analytics] ❌ No brand selected, returning empty models');
+                        return [];
+                      }
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
                       params.append('brand_id', filters.brand);
                       params.append('page_size', '1000');
                       const response = await fetch(`/api/public/reference/models?${params}`);
                       const data = await response.json();
+                      console.log('🔍 [Analytics] Models response:', data);
                       return data.options || [];
                     }}
                     allowClear
@@ -365,6 +390,34 @@ const SimpleEnhancedAnalyticsPage: React.FC = () => {
                     disabled={!filters.region}
                     dependencies={[regionId]}
                   />
+
+                  {/* Кнопки поиска и очистки */}
+                  <div className="flex gap-2">
+                    <Button onClick={() => {
+                      console.log('🚀 [Analytics] Apply filters clicked!');
+                      console.log('🚀 [Analytics] Current filters:', filters);
+                      // Здесь будет логика применения фильтров для аналитики
+                    }} className="flex-1">
+                      <Search className="h-4 w-4 mr-2" />
+                      Поиск
+                    </Button>
+                    <Button variant="outline" onClick={() => {
+                      console.log('🔄 [Analytics] Clear filters clicked');
+                      setFilters({
+                        search: '',
+                        vehicle_type: '',
+                        brand: '',
+                        model: '',
+                        price_from: '',
+                        price_to: '',
+                        region: '',
+                        city: ''
+                      });
+                      setRegionId('');
+                    }}>
+                      Очистить
+                    </Button>
+                  </div>
 
                   <Button variant="outline" className="w-full h-10">
                     <Calendar className="h-4 w-4 mr-2" />

@@ -564,11 +564,31 @@ const SearchPage = () => {
     return user.is_superuser || false;
   };
 
-  // Загрузка при монтировании - ОТКЛЮЧЕНО
-  // Поиск будет запускаться только по кнопке или при изменении быстрых фильтров
+  // Загрузка при монтировании - загружаем начальные данные
   useEffect(() => {
-    console.log('🔄 Component mounted, but auto-search disabled');
-    // searchCars(); // ОТКЛЮЧЕНО
+    console.log('🔄 Component mounted, loading initial data');
+    // Загружаем начальные данные без фильтров
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        const response = await CarAdsService.getCarAds({
+          page: 1,
+          page_size: 20,
+          ordering: '-created_at'
+        });
+        setSearchResults(response.results || []);
+        setTotalCount(response.count || 0);
+        setCurrentPage(1);
+      } catch (error) {
+        console.error('❌ Initial data loading error:', error);
+        setSearchResults([]);
+        setTotalCount(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
   }, []);
 
   // Очистка таймеров при размонтировании
