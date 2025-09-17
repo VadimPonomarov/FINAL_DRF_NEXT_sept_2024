@@ -122,14 +122,18 @@ class CustomOrderingFilter(OrderingFilter):
                     from decimal import Decimal
                     desc = field.startswith('-')
 
-                    # Получаем актуальные курсы валют (USD/UAH и EUR/UAH)
+                    # Используем те же курсы, что и на фронте/в сериализаторе (CurrencyService),
+                    # чтобы порядок совпадал с отображаемой ценой в USD
                     try:
-                        from ..models.exchange_rates import ExchangeRate
-                        rates = ExchangeRate.get_latest_rates()
-                        usd_to_uah = Decimal(str(rates.usd_rate)) if rates else Decimal('40')
-                        eur_to_uah = Decimal(str(rates.eur_rate)) if rates else Decimal('43')
+                        from apps.currency.services import CurrencyService
+                        usd_to_uah = CurrencyService.get_rate('UAH', 'USD')
+                        eur_to_uah = CurrencyService.get_rate('UAH', 'EUR')
+                        # Фикс на случай отсутствия курсов
+                        if not usd_to_uah:
+                            usd_to_uah = Decimal('40')
+                        if not eur_to_uah:
+                            eur_to_uah = Decimal('43')
                     except Exception:
-                        # Фоллбек, чтобы сортировка всё равно работала
                         usd_to_uah = Decimal('40')
                         eur_to_uah = Decimal('43')
 
