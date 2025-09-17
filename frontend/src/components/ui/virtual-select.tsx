@@ -125,6 +125,7 @@ const VirtualSelectComponent = React.memo(function VirtualSelect({
 
       const optionsArray = Array.isArray(result) ? result : [];
       console.log('[VirtualSelect] Got', optionsArray.length, 'options');
+      console.log('[VirtualSelect] First 3 options:', optionsArray.slice(0, 3));
       setOptions(optionsArray);
       
     } catch (error) {

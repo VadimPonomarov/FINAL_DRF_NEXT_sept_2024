@@ -661,11 +661,8 @@ const SearchPage = () => {
                       const data = await response.json();
                       console.log('🔍 Vehicle types response:', data);
 
-                      // API возвращает массив напрямую, преобразуем в нужный формат
-                      return Array.isArray(data) ? data.map(item => ({
-                        value: item.id.toString(),
-                        label: item.name
-                      })) : [];
+                      // API возвращает объект с полем options
+                      return data.options || [];
                     }}
                     allowClear={true}
                     searchable={true}

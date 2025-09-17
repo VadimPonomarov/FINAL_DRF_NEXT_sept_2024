@@ -42,6 +42,10 @@ export async function GET(
     console.log('[Car Detail API] Successfully fetched car ad:', {
       id: data.id,
       title: data.title?.substring(0, 50) + '...',
+      mark: data.mark,
+      markId: data.mark?.id,
+      markName: data.mark?.name,
+      model: data.model,
       hasImages: !!data.images,
       imagesCount: data.images?.length || 0,
       hasDynamicFields: !!data.dynamic_fields,

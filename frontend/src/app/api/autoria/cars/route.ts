@@ -28,6 +28,11 @@ export async function GET(request: NextRequest) {
       ordering: params.ordering || 'not set'
     });
 
+    // Дополнительное логирование для отладки фильтров
+    if (params.mark) console.log('[Cars API] 🏷️ Brand filter (mark):', params.mark);
+    if (params.model) console.log('[Cars API] 🚗 Model filter:', params.model);
+    if (params.search) console.log('[Cars API] 🔍 Text search:', params.search);
+
     // Отправляем запрос на backend напрямую
     const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     const queryString = new URLSearchParams(params).toString();

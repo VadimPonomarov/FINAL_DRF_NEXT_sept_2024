@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Формируем URL к Django backend
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    const apiUrl = `${backendUrl}/api/ads/cars/create`;
+    const apiUrl = `${backendUrl}/api/ads/cars/`;
     
     console.log('[Create Car API] 📤 Proxying to:', apiUrl);
 

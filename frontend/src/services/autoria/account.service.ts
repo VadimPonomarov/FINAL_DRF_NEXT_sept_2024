@@ -110,7 +110,8 @@ export class AccountService {
       const headers = await getAuthorizationHeaders();
       console.log('🔑 Headers received:', Object.keys(headers));
 
-      const url = `${this.BASE_URL}/api/users/?email=${encodeURIComponent(email)}`;
+      // Используем правильный admin endpoint для поиска пользователей
+      const url = `${this.BASE_URL}/api/users/admin/list/?email=${encodeURIComponent(email)}`;
       console.log('🌐 Making request to:', url);
 
       const response = await fetch(url, {
@@ -130,10 +131,20 @@ export class AccountService {
         if (response.status === 404) {
           throw new Error(`User with email ${email} not found`);
         }
+        if (response.status === 403) {
+          throw new Error(`Access denied. Admin rights required to search users`);
+        }
         throw new Error(`Failed to get user by email: ${response.statusText} - ${errorText}`);
       }
 
       const result = await response.json();
+      console.log('📋 API Response structure:', {
+        hasResults: !!result.results,
+        isArray: Array.isArray(result),
+        resultCount: result.results?.length || 0,
+        keys: Object.keys(result)
+      });
+
       // Если результат - массив, берем первый элемент
       const user = Array.isArray(result.results) ? result.results[0] :
                    Array.isArray(result) ? result[0] : result;
@@ -142,9 +153,52 @@ export class AccountService {
         throw new Error(`User with email ${email} not found`);
       }
 
+      console.log('✅ Found user:', { id: user.id, email: user.email });
       return user;
     } catch (error) {
       console.error(`❌ Error getting user by email ${email}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Получает информацию о пользователе по ID
+   */
+  static async getUserById(userId: number): Promise<any> {
+    try {
+      console.log('🔑 Getting authorization headers...');
+      const headers = await getAuthorizationHeaders();
+
+      const url = `${this.BASE_URL}/api/users/admin/${userId}/`;
+      console.log('🌐 Making request to:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
+      });
+
+      console.log('📡 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ HTTP error:', response.status, errorText);
+        if (response.status === 404) {
+          throw new Error(`User with ID ${userId} not found`);
+        }
+        if (response.status === 403) {
+          throw new Error(`Access denied. Admin rights required to get user details`);
+        }
+        throw new Error(`Failed to get user by ID: ${response.statusText} - ${errorText}`);
+      }
+
+      const user = await response.json();
+      console.log('✅ Found user:', { id: user.id, email: user.email });
+      return user;
+    } catch (error) {
+      console.error(`❌ Error getting user by ID ${userId}:`, error);
       throw error;
     }
   }

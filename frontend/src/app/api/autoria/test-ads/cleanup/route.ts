@@ -1,30 +1,79 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
+import { getAuthorizationHeaders } from '@/common/constants/headers';
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
     console.log('🧹 Starting cleanup of all test ads...');
 
-    // Перенаправляем на новый рабочий endpoint
-    const cleanupResponse = await fetch('http://localhost:3000/api/autoria/test-ads/cleanup-real', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+    // Получаем авторизационные заголовки
+    const authHeaders = await getAuthorizationHeaders();
+
+    // Обращаемся напрямую к Django backend
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const cleanupResponse = await fetch(`${backendUrl}/api/ads/cars/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders
+      }
     });
 
     if (!cleanupResponse.ok) {
       const errorText = await cleanupResponse.text();
-      throw new Error(`Real cleanup failed: ${cleanupResponse.status} - ${errorText}`);
+      throw new Error(`Failed to fetch ads: ${cleanupResponse.status} - ${errorText}`);
     }
 
-    const result = await cleanupResponse.json();
+    const adsData = await cleanupResponse.json();
+    const allAds = adsData.results || [];
 
-    console.log(`✅ Successfully cleaned up ${result.deleted} ads via real endpoint`);
+    console.log(`📊 Found ${allAds.length} ads to delete`);
+
+    if (allAds.length === 0) {
+      return NextResponse.json({
+        success: true,
+        deleted: 0,
+        total_found: 0,
+        message: 'No ads found to delete'
+      });
+    }
+
+    // Удаляем все объявления
+    let deleted = 0;
+    const errors: string[] = [];
+
+    for (const ad of allAds) {
+      try {
+        const deleteResponse = await fetch(`${backendUrl}/api/ads/cars/${ad.id}/`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders
+          }
+        });
+
+        if (deleteResponse.ok) {
+          deleted++;
+          console.log(`✅ Deleted ad ${ad.id}`);
+        } else {
+          const errorText = await deleteResponse.text();
+          errors.push(`Failed to delete ad ${ad.id}: ${deleteResponse.status} - ${errorText}`);
+          console.error(`❌ Failed to delete ad ${ad.id}:`, errorText);
+        }
+      } catch (error) {
+        const errorMsg = `Error deleting ad ${ad.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        errors.push(errorMsg);
+        console.error(`❌ ${errorMsg}`);
+      }
+    }
+
+    console.log(`✅ Successfully cleaned up ${deleted}/${allAds.length} ads`);
 
     return NextResponse.json({
-      success: result.success,
-      deleted: result.deleted,
-      total_found: result.total_found,
-      errors: result.errors || [],
-      message: result.message || `Successfully deleted ${result.deleted} ads`
+      success: true,
+      deleted,
+      total_found: allAds.length,
+      errors,
+      message: `Successfully deleted ${deleted} out of ${allAds.length} ads`
     });
 
   } catch (error) {
