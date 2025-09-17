@@ -33,6 +33,14 @@ export async function GET(request: NextRequest) {
     if (params.model) console.log('[Cars API] 🚗 Model filter:', params.model);
     if (params.search) console.log('[Cars API] 🔍 Text search:', params.search);
 
+    // Специальное логирование для пагинации
+    console.log('[Cars API] 📄 Pagination params:', {
+      page: params.page || 'not set',
+      page_size: params.page_size || 'not set',
+      hasPage: !!params.page,
+      hasPageSize: !!params.page_size
+    });
+
     // Отправляем запрос на backend напрямую
     const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     const queryString = new URLSearchParams(params).toString();
@@ -101,7 +109,10 @@ export async function GET(request: NextRequest) {
 
     console.log('[Cars API] ✅ Successfully fetched car ads:', {
       count: result.count || 0,
-      results: result.results?.length || 0
+      results: result.results?.length || 0,
+      page: result.page || 'not set',
+      page_size: result.page_size || 'not set',
+      total: result.total || 'not set'
     });
 
     // Логируем структуру первого объявления для отладки изображений

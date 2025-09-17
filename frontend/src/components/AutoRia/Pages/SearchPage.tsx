@@ -75,6 +75,7 @@ const SearchPage = () => {
   // Простые состояния
   const [searchResults, setSearchResults] = useState<CarAd[]>([]);
   const [loading, setLoading] = useState(false);
+  const [paginationLoading, setPaginationLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -135,9 +136,16 @@ const SearchPage = () => {
       vehicle_type: filters.vehicle_type,
       brand: filters.brand,
       model: filters.model,
-      search: filters.search
+      search: filters.search,
+      currentPage
     });
-    setLoading(true);
+
+    // Определяем тип загрузки: если paginationLoading уже true, то это пагинация
+    const isPagination = paginationLoading;
+
+    if (!isPagination) {
+      setLoading(true);
+    }
 
     try {
       // Формируем простые параметры с маппингом полей для backend
@@ -158,7 +166,9 @@ const SearchPage = () => {
       };
 
       console.log('🔍 Search params before API call:', searchParams);
-      console.log('🔍 Current page_size:', filters.page_size);
+      console.log('🔍 Current page_size from filters:', filters.page_size);
+      console.log('🔍 Current page:', currentPage);
+      console.log('🔍 Full filters object:', filters);
 
       // Добавляем только заполненные фильтры
       if (filters.search) searchParams.search = filters.search;
@@ -251,8 +261,19 @@ const SearchPage = () => {
       setTotalCount(0);
     } finally {
       setLoading(false);
+      setPaginationLoading(false);
     }
   }, [filters, currentPage, quickFilters, invertFilters, sortBy, sortOrder]);
+
+  // Функция для пагинации (без полной перезагрузки)
+  const handlePageChange = useCallback((newPage: number) => {
+    if (newPage === currentPage) return;
+
+    console.log('📄 Page change:', currentPage, '->', newPage);
+    setPaginationLoading(true);
+    setCurrentPage(newPage);
+    // searchCars автоматически вызовется через useCallback зависимости
+  }, [currentPage]);
 
   // Обновление фильтра
   const updateFilter = (key: string, value: any) => {
@@ -613,17 +634,33 @@ const SearchPage = () => {
     };
   }, []);
 
-  // Автоматический поиск при изменении быстрых фильтров
-  useEffect(() => {
-    console.log('🚀 Quick filters changed, searching...', quickFilters);
-    searchCars();
-  }, [quickFilters, searchCars]);
+  // ПРИМЕЧАНИЕ: searchCars автоматически вызывается при изменении:
+  // filters, currentPage, quickFilters, invertFilters, sortBy, sortOrder
+  // Дополнительные useEffect НЕ НУЖНЫ - они создают бесконечные циклы!
 
-  // Автоматический поиск при изменении инверсии
+  // Отдельный useEffect для page_size (для отладки)
   useEffect(() => {
-    console.log('🔄 Invert filters changed, searching...', invertFilters);
+    console.log('📄 Page size changed in useEffect:', filters.page_size);
+    console.log('📄 Full filters in useEffect:', filters);
+  }, [filters.page_size]);
+
+  // Отдельный useEffect для отслеживания всех изменений filters
+  useEffect(() => {
+    console.log('🔄 Filters changed, searchCars will be called:', filters);
+  }, [filters]);
+  // Автопоиск при изменении пагинации/сортировки/размера страницы и быстрых фильтров
+  useEffect(() => {
+    console.log('🚀 Auto-search trigger', {
+      currentPage,
+      sortBy,
+      sortOrder,
+      page_size: filters.page_size,
+      quickFilters,
+      invertFilters
+    });
     searchCars();
-  }, [invertFilters, searchCars]);
+  }, [currentPage, sortBy, sortOrder, filters.page_size, quickFilters, invertFilters]);
+
 
 
 
@@ -1092,18 +1129,17 @@ const SearchPage = () => {
                         <span className="text-sm text-slate-600 whitespace-nowrap">{t('autoria.perPage') || 'Per page'}:</span>
                         <select
                           value={filters.page_size === 0 ? 'all' : String(filters.page_size)}
-                          onChange={async (e) => {
+                          onChange={(e) => {
                             const val = e.target.value === 'all' ? 0 : parseInt(e.target.value);
                             console.log('📄 Page size changed to:', val);
                             const newPageSize = isNaN(val) ? 20 : val;
-                            setFilters(prev => ({ ...prev, page_size: newPageSize }));
+
+                            // Обновляем состояние
+                            const newFilters = { ...filters, page_size: newPageSize };
+                            setFilters(newFilters);
                             setCurrentPage(1);
 
-                            // Принудительно запускаем поиск
-                            console.log('📄 Forcing search after page size change');
-                            setTimeout(() => {
-                              searchCars();
-                            }, 100);
+                            console.log('📄 New filters after page_size change:', newFilters);
                           }}
                           className="text-sm border border-gray-300 rounded px-2 py-1 w-full max-w-[120px]"
                         >
@@ -1167,7 +1203,9 @@ const SearchPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className={viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-4'}>
+                <div
+                  className={`${viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-4'} transition-opacity duration-300 ${paginationLoading ? 'opacity-50' : 'opacity-100'}`}
+                >
                   {searchResults.map((car) => (
                     <Card key={car.id} className="hover:shadow-lg transition-shadow duration-300 group">
                     <CardContent className="p-0">
@@ -1480,32 +1518,37 @@ const SearchPage = () => {
                   variant="outline"
                   onClick={() => {
                     if (currentPage > 1) {
-                      setCurrentPage(currentPage - 1);
+                      handlePageChange(currentPage - 1);
                     }
                   }}
-                  disabled={currentPage <= 1}
+                  disabled={currentPage <= 1 || paginationLoading}
                   className="flex items-center gap-2"
                 >
-                  ← {t('autoria.prev') || 'Prev'}
+                  {paginationLoading ? '⏳' : '←'} {t('autoria.prev') || 'Prev'}
                 </Button>
 
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-600">
                     {t('page', 'Page')} {currentPage} / {filters.page_size === 0 ? 1 : Math.ceil(totalCount / filters.page_size)}
                   </span>
+                  {paginationLoading && (
+                    <span className="text-xs text-blue-500 animate-pulse">
+                      Загрузка...
+                    </span>
+                  )}
                 </div>
 
                 <Button
                   variant="outline"
                   onClick={() => {
                     if (filters.page_size !== 0 && currentPage < Math.ceil(totalCount / filters.page_size)) {
-                      setCurrentPage(currentPage + 1);
+                      handlePageChange(currentPage + 1);
                     }
                   }}
-                  disabled={filters.page_size === 0 || currentPage >= Math.ceil(totalCount / filters.page_size)}
+                  disabled={filters.page_size === 0 || currentPage >= Math.ceil(totalCount / filters.page_size) || paginationLoading}
                   className="flex items-center gap-2"
                 >
-                  {t('autoria.next') || 'Next'} →
+                  {t('autoria.next') || 'Next'} {paginationLoading ? '⏳' : '→'}
                 </Button>
               </div>
             )}
