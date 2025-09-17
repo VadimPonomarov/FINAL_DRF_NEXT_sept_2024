@@ -664,19 +664,19 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
                 <div className="text-center">
                   <Lock className="h-16 w-16 text-slate-400 mx-auto mb-4" />
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                    Требуется авторизация
+                    {t('authRequired.title')}
                   </h2>
                   <p className="text-slate-600 mb-4">
-                    Для доступа к функциям платформы необходимо войти в систему
+                    {t('authRequired.description')}
                   </p>
                   <p className="text-sm text-slate-500 mb-6">
-                    Автоматический переход через <span className="font-bold text-blue-600">{countdown}</span> секунд...
+                    {t('authRequired.autoRedirect').replace('7', countdown.toString())}
                   </p>
                   <div className="flex flex-col gap-3">
                     <Link href="/login">
                       <Button className="w-full">
                         <LogIn className="h-4 w-4 mr-2" />
-                        Войти в систему
+                        {t('authRequired.loginButton')}
                       </Button>
                     </Link>
                   </div>

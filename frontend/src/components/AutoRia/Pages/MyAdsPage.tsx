@@ -245,16 +245,16 @@ const MyAdsPage = () => {
                 <div className="text-center">
                   <Lock className="h-16 w-16 text-slate-400 mx-auto mb-4" />
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                    Требуется авторизация
+                    {t('authRequired.title')}
                   </h2>
                   <p className="text-slate-600 mb-6">
-                    {authError || 'Для просмотра ваших объявлений необходимо войти в систему'}
+                    {authError || t('authRequired.description')}
                   </p>
                   <div className="flex flex-col gap-3">
                     <Link href="/login">
                       <Button className="w-full">
                         <LogIn className="h-4 w-4 mr-2" />
-                        Войти в систему
+                        {t('authRequired.loginButton')}
                       </Button>
                     </Link>
                     <Link href="/autoria/search">
