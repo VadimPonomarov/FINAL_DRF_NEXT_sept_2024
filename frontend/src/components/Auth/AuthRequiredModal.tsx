@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useI18n } from '@/contexts/I18nContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock } from 'lucide-react';
@@ -17,7 +17,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
   onLogin,
   autoRedirectSeconds = 7
 }) => {
-  const { t } = useTranslation();
+  const { t } = useI18n();
   const [countdown, setCountdown] = useState(autoRedirectSeconds);
 
   useEffect(() => {
