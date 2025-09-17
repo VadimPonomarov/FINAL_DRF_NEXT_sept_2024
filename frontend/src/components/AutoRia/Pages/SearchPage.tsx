@@ -131,6 +131,12 @@ const SearchPage = () => {
   // Простая функция поиска
   const searchCars = useCallback(async () => {
     console.log('🔍 Starting search with filters:', filters);
+    console.log('🔍 Filter details:', {
+      vehicle_type: filters.vehicle_type,
+      brand: filters.brand,
+      model: filters.model,
+      search: filters.search
+    });
     setLoading(true);
 
     try {
@@ -241,8 +247,14 @@ const SearchPage = () => {
   // Обновление фильтра
   const updateFilter = (key: string, value: any) => {
     console.log('🔄 updateFilter called:', { key, value });
+    console.log('🔄 Previous filters:', filters);
+    const newFilters = { ...filters, [key]: value };
+    console.log('🔄 New filters will be:', newFilters);
     setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
+
+    // УБИРАЕМ автоматический поиск - только по кнопке!
+    console.log('🔄 Filter updated, but search will only run on button click');
   };
 
   // Дебаунсированное обновление поиска
@@ -255,11 +267,9 @@ const SearchPage = () => {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Устанавливаем новый таймер для автоматического поиска
-    searchTimeoutRef.current = setTimeout(() => {
-      console.log('🔍 Debounced search triggered for:', value);
-      searchCars();
-    }, 800); // 800ms задержка
+    // ОТКЛЮЧАЕМ автоматический поиск для текстового поля
+    // Поиск будет запускаться только по кнопке
+    console.log('🔍 Search text updated, but search will only run on button click:', value);
   };
 
   // Сброс только поля поиска
@@ -268,25 +278,26 @@ const SearchPage = () => {
       clearTimeout(searchTimeoutRef.current);
     }
     setFilters(prev => ({ ...prev, search: '' }));
-    setTimeout(() => searchCars(), 100);
+    // УБИРАЕМ автоматический поиск при очистке поля
+    console.log('🔄 Search field cleared, but search will only run on button click');
   };
 
-  // Дебаунсированное обновление фильтров
+  // Дебаунсированное обновление фильтров - ОТКЛЮЧЕНО
   const triggerFilterSearch = useCallback(() => {
     // Очищаем предыдущий таймер
     if (filtersTimeoutRef.current) {
       clearTimeout(filtersTimeoutRef.current);
     }
 
-    // Устанавливаем новый таймер
-    filtersTimeoutRef.current = setTimeout(() => {
-      console.log('🔄 Debounced filter search triggered');
-      searchCars();
-    }, 500); // 500ms задержка для фильтров
-  }, [searchCars]);
+    // ОТКЛЮЧАЕМ автоматический поиск для основных фильтров
+    // Поиск будет запускаться только по кнопке "Поиск"
+    console.log('🔄 Filter search disabled - use Search button instead');
+  }, []);
 
   // Применение фильтров
   const applyFilters = () => {
+    console.log('🚀 APPLY FILTERS CLICKED!');
+    console.log('🚀 Current filters:', filters);
     searchCars();
   };
 
@@ -553,10 +564,12 @@ const SearchPage = () => {
     return user.is_superuser || false;
   };
 
-  // Загрузка при монтировании
+  // Загрузка при монтировании - ОТКЛЮЧЕНО
+  // Поиск будет запускаться только по кнопке или при изменении быстрых фильтров
   useEffect(() => {
-    searchCars();
-  }, [searchCars]);
+    console.log('🔄 Component mounted, but auto-search disabled');
+    // searchCars(); // ОТКЛЮЧЕНО
+  }, []);
 
   // Очистка таймеров при размонтировании
   useEffect(() => {
@@ -686,10 +699,16 @@ const SearchPage = () => {
                     fetchOptions={async (search) => {
                       console.log('🔍 Fetching brands with search:', search);
                       console.log('🔍 Current vehicle_type:', filters.vehicle_type);
+                      console.log('🔍 All current filters:', filters);
 
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
-                      if (filters.vehicle_type) params.append('vehicle_type_id', filters.vehicle_type);
+                      if (filters.vehicle_type) {
+                        params.append('vehicle_type_id', filters.vehicle_type);
+                        console.log('🔍 Added vehicle_type_id to params:', filters.vehicle_type);
+                      } else {
+                        console.log('🔍 ❌ No vehicle_type found, brands request will fail!');
+                      }
                       params.append('page_size', '1000'); // Загружаем все данные
 
                       const response = await fetch(`/api/public/reference/brands?${params}`);
