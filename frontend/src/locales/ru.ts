@@ -1265,6 +1265,12 @@ export default {
     moderationTitle: "Модерация объявлений",
     moderationDescription: "Управление и модерация объявлений на платформе"
   },
+  authRequired: {
+    title: "Требуется авторизация",
+    description: "Для доступа к функциям платформы необходимо войти в систему",
+    autoRedirect: "Автоматический переход через 7 секунд...",
+    loginButton: "Войти в систему"
+  },
   "container mx-auto px-4 py-8": "container mx-auto px-4 py-8",
   "[Middleware] Valid NextAuth session found - allowing access": "Далее",
   "[Middleware] Error checking NextAuth session:": "Далее",

@@ -11,7 +11,7 @@
     "build": "next build",
     "start": "next start",
     "kill": "npx kill-port",
-    "check-translations": "node src/utils/dev-tools/check-translations.js",
+    "check-translations": "node src/utils/dev-tools/check-translations.cjs",
     "fix-translations": "node src/utils/dev-tools/fix-translations.js",
     "translation-doctor": "tsx src/utils/dev-tools/translation-doctor.ts",
     "translation-scan": "tsx src/utils/dev-tools/translation-doctor.ts scan",

@@ -2170,6 +2170,12 @@ export default {
     moderationTitle: "Ad Moderation",
     moderationDescription: "Manage and moderate ads on the platform"
   },
+  authRequired: {
+    title: "Authorization Required",
+    description: "To access platform features, you need to log in to the system",
+    autoRedirect: "Automatic redirect in 7 seconds...",
+    loginButton: "Log In"
+  },
   "container mx-auto px-4 py-8": "container mx-auto px-4 py-8",
   "[Middleware] Valid NextAuth session found - allowing access": "Next",
   "[Middleware] Error checking NextAuth session:": "Next",
