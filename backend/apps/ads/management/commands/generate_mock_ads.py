@@ -403,8 +403,9 @@ class Command(BaseCommand):
             negative_brands = self._get_negative_brands_for(english_brand)
             english_prompt = f"Generate a {vehicle_description} {english_brand} {english_model} {year} model in {english_color} color, {angle_desc}, ONLY {english_brand} brand logos and styling, {negative_brands}, high quality, photorealistic, clean background, studio lighting, series ID {session_id}"
         else:
-            # Safe mode: no logos for uncertain brands
-            english_prompt = f"Generate a {vehicle_description} in {english_color} color, {angle_desc}, clean design, no visible logos, no brand badges, no text, high quality, photorealistic, clean background, studio lighting, series ID {session_id}"
+            # Safe mode: no logos for uncertain brands - ENHANCED PROTECTION
+            forbidden_logos = "DO NOT show Toyota, BMW, Mercedes, Audi, Honda, Ford, Chevrolet, Nissan, Hyundai, Volkswagen, or any other automotive brand logos, badges, emblems, or text"
+            english_prompt = f"Generate a {vehicle_description} in {english_color} color, {angle_desc}, clean design, completely generic vehicle, {forbidden_logos}, no visible logos, no brand badges, no manufacturer emblems, no text on vehicle, high quality, photorealistic, clean background, studio lighting, series ID {session_id}"
 
         return english_prompt
 
@@ -537,6 +538,18 @@ class Command(BaseCommand):
             # Major trailer brands
             'Schmitz', 'Krone', 'Kogel', 'Wielton', 'Fruehauf'
         }
+
+        # Problematic brands that AI often confuses with major brands
+        problematic_brands = {
+            'Atlas', 'Dongfeng', 'Foton', 'JAC', 'Sinotruk', 'Shacman', 'Beiben',
+            'Howo', 'Camc', 'Faw', 'Jiefang', 'Yuejin', 'Isuzu', 'Hino',
+            'Mitsubishi Fuso', 'UD Trucks', 'Tata', 'Ashok Leyland', 'Eicher',
+            'BharatBenz', 'Force Motors', 'Mahindra', 'SML Isuzu'
+        }
+
+        # If brand is problematic, definitely don't show logos
+        if brand in problematic_brands or brand.lower() in [b.lower() for b in problematic_brands]:
+            return False
 
         # Check if brand is in safe list (case-insensitive)
         return brand in safe_brands or brand.lower() in [b.lower() for b in safe_brands]

@@ -721,6 +721,11 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         should_show_branding = False
         brand_mismatch_reason = f"Unknown brand '{brand}' not in validated lists"
         print(f"[ImageGen] 🚨 BRANDING DISABLED: {brand_mismatch_reason} - preventing logo hallucination")
+    elif brand_lower in special_equipment_brands:
+        # Special equipment brands are prone to AI confusion - disable branding for safety
+        should_show_branding = False
+        brand_mismatch_reason = f"Special equipment brand '{brand}' - AI often confuses with automotive brands"
+        print(f"[ImageGen] 🚨 BRANDING DISABLED: {brand_mismatch_reason} - preventing logo confusion")
 
     if should_show_branding:
         strict_branding = f"Use authentic {brand} {model} {year} design elements and branding"
@@ -752,7 +757,9 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     # Enhanced brand protection with specific instructions
     brand_protection = ""
     if not should_show_branding:
-        brand_protection = f"CRITICAL: Do not show any brand logos, badges, or emblems on this vehicle. Reason: {brand_mismatch_reason}. Generate a generic {vt} without any manufacturer branding. DO NOT show logos from BMW, Mercedes, Audi, Toyota, Honda, Hyundai, Ford, Volkswagen, or any other automotive brands. "
+        # Enhanced protection against common AI logo hallucinations
+        forbidden_automotive_logos = "BMW, Mercedes-Benz, Audi, Toyota, Honda, Hyundai, Ford, Volkswagen, Nissan, Chevrolet, Kia, Mazda, Subaru, Volvo"
+        brand_protection = f"CRITICAL: Do not show any brand logos, badges, or emblems on this vehicle. Reason: {brand_mismatch_reason}. Generate a completely generic {vt} without any manufacturer branding. ABSOLUTELY FORBIDDEN: Do not show logos from {forbidden_automotive_logos}, or any other automotive brand logos. No text, no badges, no emblems, no manufacturer markings. "
     else:
         # Only show the correct brand if it matches the vehicle type
         other_brands = [b for b in automotive_brands[:10] if b != brand_lower]

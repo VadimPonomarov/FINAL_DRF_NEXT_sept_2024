@@ -157,6 +157,9 @@ const SearchPage = () => {
         ordering: ordering
       };
 
+      console.log('🔍 Search params before API call:', searchParams);
+      console.log('🔍 Current page_size:', filters.page_size);
+
       // Добавляем только заполненные фильтры
       if (filters.search) searchParams.search = filters.search;
       if (filters.vehicle_type) searchParams.vehicle_type = filters.vehicle_type;
@@ -213,7 +216,9 @@ const SearchPage = () => {
 
       console.log('✅ Search successful:', {
         count: response.count,
-        resultsLength: response.results?.length
+        resultsLength: response.results?.length,
+        requestedPageSize: filters.page_size,
+        currentPage: currentPage
       });
 
       const results = (response.results || []).map((item: any) => {
@@ -221,6 +226,11 @@ const SearchPage = () => {
           return { ...item, is_favorite: true };
         }
         return item;
+      });
+
+      console.log('🔍 Final results to set:', {
+        resultsCount: results.length,
+        totalCount: response.count || 0
       });
 
       setSearchResults(results);
@@ -607,13 +617,15 @@ const SearchPage = () => {
   useEffect(() => {
     console.log('🚀 Quick filters changed, searching...', quickFilters);
     searchCars();
-  }, [quickFilters]);
+  }, [quickFilters, searchCars]);
 
   // Автоматический поиск при изменении инверсии
   useEffect(() => {
     console.log('🔄 Invert filters changed, searching...', invertFilters);
     searchCars();
-  }, [invertFilters]);
+  }, [invertFilters, searchCars]);
+
+
 
   // Автоматический поиск при изменении фильтров (ВРЕМЕННО ОТКЛЮЧЕН)
   // useEffect(() => {
@@ -1023,7 +1035,10 @@ const SearchPage = () => {
                     </h2>
                     {!loading && totalCount > 0 && (
                       <p className="text-sm text-slate-600">
-                        {searchResults.length} / {totalCount} • {t('page', 'Page')} {currentPage}
+                        {filters.page_size === 0 ?
+                          `${totalCount} ${t('autoria.total', 'total')}` :
+                          `${searchResults.length} / ${totalCount} • ${t('page', 'Page')} ${currentPage} ${t('autoria.of', 'of')} ${Math.ceil(totalCount / filters.page_size)}`
+                        }
                       </p>
                     )}
                   </div>
@@ -1056,6 +1071,7 @@ const SearchPage = () => {
                             const [field, dir] = val.split('_');
                             setSortBy(field as any);
                             setSortOrder((dir as 'asc' | 'desc') || 'desc');
+                            setCurrentPage(1); // Сбрасываем на первую страницу при изменении сортировки
                           }}
                           className="text-sm border border-gray-300 rounded px-2 py-1 w-full max-w-[220px]"
                         >
@@ -1076,14 +1092,24 @@ const SearchPage = () => {
                         <span className="text-sm text-slate-600 whitespace-nowrap">{t('autoria.perPage') || 'Per page'}:</span>
                         <select
                           value={filters.page_size === 0 ? 'all' : String(filters.page_size)}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const val = e.target.value === 'all' ? 0 : parseInt(e.target.value);
-                            setFilters(prev => ({ ...prev, page_size: isNaN(val) ? 20 : val }));
+                            console.log('📄 Page size changed to:', val);
+                            const newPageSize = isNaN(val) ? 20 : val;
+                            setFilters(prev => ({ ...prev, page_size: newPageSize }));
                             setCurrentPage(1);
+
+                            // Принудительно запускаем поиск
+                            console.log('📄 Forcing search after page size change');
+                            setTimeout(() => {
+                              searchCars();
+                            }, 100);
                           }}
                           className="text-sm border border-gray-300 rounded px-2 py-1 w-full max-w-[120px]"
                         >
                           <option value="all">{t('autoria.all') || 'Все'}</option>
+                          <option value={1}>1</option>
+                          <option value={5}>5</option>
                           <option value={10}>10</option>
                           <option value={20}>20</option>
                           <option value={50}>50</option>
