@@ -15,7 +15,55 @@ const getBackendUrl = (): string => {
     return process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 };
 
-import { EXTERNAL_SERVICES, PORTS, PROTOCOLS } from "@/config/constants";
+// Inline constants (replaced @/config/constants)
+const PROTOCOLS = {
+  BACKEND: 'http',
+  FRONTEND: 'http',
+  REDIS: 'redis'
+};
+
+const PORTS = {
+  BACKEND: 8000,
+  FRONTEND: 3000,
+  REDIS: 6379
+};
+
+const EXTERNAL_SERVICES = {
+  GOOGLE_OAUTH: 'https://accounts.google.com',
+  AUTORIA_API: 'https://developers.ria.com'
+};
+
+// Auth configuration with decryption
+import { getDecryptedOAuthConfig, safeLogValue } from '@/lib/simple-crypto';
+
+// Логируем переменные для диагностики
+console.log('[Constants] Raw environment variables:');
+console.log(`  ${safeLogValue('NEXTAUTH_SECRET', process.env.NEXTAUTH_SECRET || '')}`);
+console.log(`  ${safeLogValue('GOOGLE_CLIENT_ID', process.env.GOOGLE_CLIENT_ID || '')}`);
+console.log(`  ${safeLogValue('GOOGLE_CLIENT_SECRET', process.env.GOOGLE_CLIENT_SECRET || '')}`);
+
+// Получаем дешифрованную конфигурацию
+const decryptedConfig = getDecryptedOAuthConfig();
+
+export const AUTH_CONFIG = {
+  NEXTAUTH_SECRET: decryptedConfig.NEXTAUTH_SECRET,
+  GOOGLE_CLIENT_ID: decryptedConfig.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: decryptedConfig.GOOGLE_CLIENT_SECRET,
+} as const;
+
+// Логируем финальную конфигурацию
+console.log('[Constants] Final AUTH_CONFIG:');
+console.log(`  NEXTAUTH_SECRET: ${AUTH_CONFIG.NEXTAUTH_SECRET ? '[DECRYPTED]' : '[EMPTY]'}`);
+console.log(`  GOOGLE_CLIENT_ID: ${AUTH_CONFIG.GOOGLE_CLIENT_ID ? '[DECRYPTED]' : '[EMPTY]'}`);
+console.log(`  GOOGLE_CLIENT_SECRET: ${AUTH_CONFIG.GOOGLE_CLIENT_SECRET ? '[DECRYPTED]' : '[EMPTY]'}`);
+
+// Логируем первые символы для проверки
+if (AUTH_CONFIG.GOOGLE_CLIENT_ID) {
+  console.log(`  GOOGLE_CLIENT_ID preview: ${AUTH_CONFIG.GOOGLE_CLIENT_ID.substring(0, 20)}...`);
+}
+if (AUTH_CONFIG.GOOGLE_CLIENT_SECRET) {
+  console.log(`  GOOGLE_CLIENT_SECRET length: ${AUTH_CONFIG.GOOGLE_CLIENT_SECRET.length}`);
+}
 
 export const BaseUrl = {
     Backend: process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || `${PROTOCOLS.BACKEND}://localhost:${PORTS.BACKEND}`,

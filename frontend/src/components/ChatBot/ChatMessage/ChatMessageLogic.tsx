@@ -4,7 +4,7 @@ import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { sanitizeUrl, addCacheBusting } from '@/utils/chat/sanitizeUrl';
 import { chatLogger, imageLogger } from '@/utils/chat/logger';
 import { ChatMessageProps } from './types';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { extractFirstImageUrl, hasMarkdownImages, removeImagesFromMarkdown } from '@/utils/chat/markdownParser';
 import { useChatContext } from '../providers/ChatContextProvider';
 import { generateImageId, getImageSize, saveImageSize } from '@/utils/chat/imageStorage';

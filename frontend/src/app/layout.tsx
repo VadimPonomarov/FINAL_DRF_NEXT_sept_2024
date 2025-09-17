@@ -14,8 +14,19 @@ import { ChatBotIcon } from "@/components/ChatBot/ChatBotIcon";
 import { ThemeControls } from "@/components/ui/theme-controls.tsx";
 import { Toaster } from "@/components/ui/toaster";
 import TopRightControls from "@/components/All/TopRightControls/TopRightControls";
+import GlobalProviderToggle from "@/components/All/GlobalProviderToggle/GlobalProviderToggle";
 
-import {geistMono, geistSans} from "./constants";
+import { Geist, Geist_Mono } from "next/font/google";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: 'Автомобильная площадка',
@@ -45,6 +56,8 @@ export default function RootLayout({
           </header>
           {/* Top Right Controls - Auth + Language */}
           <TopRightControls />
+          {/* Global Provider Toggle - показывается на всех страницах для авторизованных пользователей */}
+          <GlobalProviderToggle />
           <main className="w-full min-h-[calc(100vh-50px)] pt-[60px] pb-4">
             {children}
           </main>

@@ -699,6 +699,8 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
     'AuthProvider.MyBackendDocs': AuthProvider.MyBackendDocs
   });
 
+
+
   if (provider === AuthProvider.Dummy) {
     // Для Dummy провайдера показываем описание проекта
     return (
@@ -775,39 +777,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
           </div>
         )}
 
-        {/* Switch тоглер для переключения Dummy/Backend - правый верхний угол */}
-        <div className="fixed top-[5px] right-[5px] z-[999999]">
-          <button
-            onClick={async () => {
-              const newProvider = provider === AuthProvider.Dummy ? AuthProvider.MyBackendDocs : AuthProvider.Dummy;
-              console.log('[HomeContent] Switching provider from', provider, 'to', newProvider);
-              await setProvider(newProvider);
-              console.log('[HomeContent] Provider switched successfully, components should re-render');
-            }}
-            className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 shadow-sm hover:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/40 transition-all cursor-pointer"
-            title={`Current: ${provider === AuthProvider.Dummy ? 'Dummy' : 'Backend'} | Click to switch to ${provider === AuthProvider.Dummy ? 'Backend' : 'Dummy'}`}
-          >
-            <span className={`text-[8px] font-medium transition-colors ${provider === AuthProvider.Dummy ? 'text-white' : 'text-white/60'}`}>
-              D
-            </span>
-            <div
-              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors ${
-                provider === AuthProvider.MyBackendDocs
-                  ? 'bg-blue-600'
-                  : 'bg-gray-400'
-              }`}
-            >
-              <span
-                className={`inline-block h-1.5 w-1.5 transform rounded-full bg-white transition-transform ${
-                  provider === AuthProvider.MyBackendDocs ? 'translate-x-2' : 'translate-x-0.5'
-                }`}
-              />
-            </div>
-            <span className={`text-[8px] font-medium transition-colors ${provider === AuthProvider.MyBackendDocs ? 'text-white' : 'text-white/60'}`}>
-              B
-            </span>
-          </button>
-        </div>
+
 
         {/* 🌍 LANGUAGE SELECTOR 🌍 */}
         <div className="absolute top-4 right-4 z-50 md:hidden">
