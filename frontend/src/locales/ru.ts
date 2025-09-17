@@ -2115,7 +2115,7 @@ export default {
   phone_reveal: "Телефон",
   "❌ Error tracking phone view:": "Ошибка",
   searchFilters: "Поиск",
-  enterBrandModel: "Марка",
+  enterBrandModel: "Марка, модель, ключевые слова...",
   "❌ Search error:": "Поиск",
   "🔄 updateFilter called:": "Обновить",
   "🔍 Debounced search triggered for:": "Поиск",

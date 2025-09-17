@@ -3020,7 +3020,7 @@ export default {
   phone_reveal: "Phone",
   "❌ Error tracking phone view:": "Error",
   searchFilters: "Search",
-  enterBrandModel: "Brand",
+  enterBrandModel: "Brand, model, keywords...",
   "❌ Search error:": "Search",
   "🔄 updateFilter called:": "Update",
   "🔍 Debounced search triggered for:": "Search",

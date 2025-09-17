@@ -2529,7 +2529,7 @@ export default {
   phone_reveal: "Телефон",
   "❌ Error tracking phone view:": "Помилка",
   searchFilters: "Пошук",
-  enterBrandModel: "Марка",
+  enterBrandModel: "Марка, модель, ключові слова...",
   "❌ Search error:": "Пошук",
   "🔄 updateFilter called:": "Оновити",
   "🔍 Debounced search triggered for:": "Пошук",
