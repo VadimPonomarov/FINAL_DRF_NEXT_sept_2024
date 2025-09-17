@@ -69,30 +69,30 @@ services:
       retries: 3
 
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    env_file:
-      - ./env-config/.env.base
-      - ./env-config/.env.secrets
-      - ./env-config/.env.docker
-    environment:
-      IS_DOCKER: true
-      NEXT_PUBLIC_IS_DOCKER: true
-      REDIS_HOST: redis
-      BACKEND_URL: http://app:8000
-      NEXTAUTH_URL_INTERNAL: http://frontend:3000
-    ports:
-      - "3000:3000"
+  #   frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   env_file:
+  #     - ./env-config/.env.base
+  #     - ./env-config/.env.secrets
+  #     - ./env-config/.env.docker
+  #   environment:
+  #     IS_DOCKER: true
+  #     NEXT_PUBLIC_IS_DOCKER: true
+  #     REDIS_HOST: redis
+  #     BACKEND_URL: http://app:8000
+  #     NEXTAUTH_URL_INTERNAL: http://frontend:3000
+  #   ports:
+  #     - "3000:3000"
     # Production mode - no volume mounts for better performance
-    depends_on:
-      - redis
-      - app
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
-      interval: 30s
+  #   depends_on:
+  #     - redis
+  #     - app
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
+  #     interval: 30s
   #     timeout: 10s
   #     retries: 3
   #     start_period: 60s
@@ -334,10 +334,11 @@ services:
         condition: service_started
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
 
 

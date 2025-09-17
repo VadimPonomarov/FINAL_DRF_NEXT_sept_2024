@@ -263,10 +263,10 @@ export const ChatDialog = ({ onAuthError, useResizableSheet = false }: ChatDialo
     setTimeout(scrollToBottom, 500);
   };
 
-  // Обработчик подключения/отключения с дебаунсером
-  const handleConnect = () => {
+  // Обработчик подключения/отключения с автоматическим рефрешем токенов
+  const handleConnect = async () => {
     // Используем дебаунсер для предотвращения слишком частых подключений
-    debounce(() => {
+    debounce(async () => {
       if (isConnected) {
         // Если уже подключены, отключаемся
         disconnect();
@@ -276,7 +276,46 @@ export const ChatDialog = ({ onAuthError, useResizableSheet = false }: ChatDialo
           duration: 3000,
         });
       } else {
-        // Если не подключены, подключаемся
+        // Если не подключены, сначала проверяем и обновляем токены
+        console.log('[ChatDialog] Attempting connection with token refresh check...');
+
+        try {
+          // Показываем индикатор подготовки к подключению
+          toast({
+            title: "Подключение...",
+            description: "Проверка и обновление токенов аутентификации...",
+            duration: 2000,
+          });
+
+          // Пытаемся обновить токены перед подключением
+          const tokenRefreshResponse = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (tokenRefreshResponse.ok) {
+            const refreshData = await tokenRefreshResponse.json();
+            console.log('[ChatDialog] Token refresh successful:', {
+              success: refreshData.success,
+              tokensVerified: refreshData.tokensVerified
+            });
+
+            toast({
+              title: "Готово к подключению",
+              description: "Токены обновлены, подключаемся к чату...",
+              duration: 2000,
+            });
+          } else {
+            console.warn('[ChatDialog] Token refresh failed, but attempting connection anyway');
+          }
+        } catch (error) {
+          console.error('[ChatDialog] Error during token refresh:', error);
+          // Продолжаем попытку подключения даже при ошибке рефреша
+        }
+
+        // Подключаемся к чату
         connect();
       }
     }, 300); // Задержка 300 мс

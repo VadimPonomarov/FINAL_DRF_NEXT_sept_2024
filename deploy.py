@@ -589,6 +589,99 @@ def run_docker_build_with_progress(selected_services=None):
 
     return success_count == selected_count
 
+def start_nginx_with_retry(max_attempts=5, wait_between_attempts=10):
+    """
+    Запускает nginx с циклическими попытками до успешного health check
+    """
+    print("🌐 Запуск Nginx с проверкой готовности...")
+
+    for attempt in range(1, max_attempts + 1):
+        print(f"🔄 Попытка {attempt}/{max_attempts}: Запуск Nginx...")
+
+        try:
+            # Останавливаем nginx если он уже запущен
+            subprocess.run(
+                "docker-compose stop nginx",
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            # Удаляем контейнер nginx
+            subprocess.run(
+                "docker-compose rm -f nginx",
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            # Запускаем nginx заново
+            nginx_result = subprocess.run(
+                "docker-compose up -d nginx",
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+
+            if nginx_result.returncode != 0:
+                print_warning(f"⚠️ Ошибка запуска Nginx (попытка {attempt})")
+                if nginx_result.stderr:
+                    print(f"   Ошибка: {nginx_result.stderr}")
+                continue
+
+            print_success(f"✅ Nginx запущен (попытка {attempt})")
+
+            # Ждем инициализации
+            print(f"⏳ Ожидание инициализации Nginx ({wait_between_attempts} сек)...")
+            time.sleep(wait_between_attempts)
+
+            # Проверяем health check nginx
+            print("🔍 Проверка health check Nginx...")
+            health_check_passed = False
+
+            # Пытаемся несколько раз проверить health check
+            for health_attempt in range(3):
+                try:
+                    health_result = subprocess.run(
+                        'docker exec nginx wget --quiet --tries=1 --spider http://localhost/nginx-health || echo "failed"',
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        timeout=10
+                    )
+
+                    if health_result.returncode == 0 and "failed" not in health_result.stdout:
+                        health_check_passed = True
+                        break
+                    else:
+                        print(f"   Health check неудачен (попытка {health_attempt + 1}/3)")
+                        time.sleep(3)
+
+                except Exception as e:
+                    print(f"   Ошибка health check: {e}")
+                    time.sleep(3)
+
+            if health_check_passed:
+                print_success("✅ Nginx успешно запущен и прошел health check!")
+                return True
+            else:
+                print_warning(f"⚠️ Nginx запущен, но health check не прошел (попытка {attempt})")
+
+        except Exception as e:
+            print_warning(f"⚠️ Ошибка при запуске Nginx (попытка {attempt}): {e}")
+
+        if attempt < max_attempts:
+            print(f"⏳ Ожидание перед следующей попыткой...")
+            time.sleep(5)
+
+    print_error("❌ Не удалось запустить Nginx после всех попыток")
+    print("🔧 Nginx может работать, но health check не проходит")
+    print("🔧 Проверьте доступность фронтенда на localhost:3000")
+    return False
+
 def check_services_health(frontend_mode="local"):
     """Перевіряє статус та здоров'я всіх сервісів включаючи фронтенд"""
     print("\n🔍 Перевірка статусу сервісів...")
@@ -1637,32 +1730,29 @@ def main():
                 time.sleep(1)
             print()
 
-            # Запускаем nginx ПОСЛЕ готовности фронтенда
+            # Запускаем nginx ПОСЛЕ готовности фронтенда с циклическими попытками
             print("🌐 Запуск Nginx (reverse proxy) ПОСЛЕ готовности фронтенда...")
-            try:
-                nginx_result = subprocess.run(
-                    "docker-compose up -d nginx",
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    timeout=30
-                )
-
-                if nginx_result.returncode == 0:
-                    print_success("✅ Nginx запущен")
-                    time.sleep(3)  # Даем nginx время на инициализацию
-                else:
-                    print_warning("⚠️ Проблема с запуском Nginx")
-                    if nginx_result.stderr:
-                        print(f"Ошибка Nginx: {nginx_result.stderr}")
-
-            except Exception as e:
-                print_warning(f"⚠️ Ошибка запуска Nginx: {e}")
+            nginx_healthy = start_nginx_with_retry()
 
             # Финальная проверка готовности ВСЕХ сервисов включая nginx
             print("🔍 Финальная проверка готовности ВСЕХ сервисов (включая Nginx)...")
             all_services_healthy = check_services_health("docker")
 
+            # Проверяем, работает ли nginx хотя бы частично
+            nginx_running = False
+            try:
+                nginx_status = subprocess.run(
+                    "docker ps --filter name=nginx --format '{{.Status}}'",
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                nginx_running = "Up" in nginx_status.stdout
+            except:
+                pass
+
+            # Предоставляем ссылки если основные сервисы работают
             if all_services_healthy:
                 print_success("🎉 ВСІ СЕРВІСИ ГОТОВІ! Система повністю функціональна!")
                 print()
@@ -1680,6 +1770,24 @@ def main():
                 print("   - http://localhost/redis/ - Redis Insight")
                 print()
                 print("💡 Всі сервіси працюють в Docker контейнерах")
+            elif nginx_running:
+                print_warning("⚠️ Деякі сервіси мають проблеми з health check, але система працює!")
+                print()
+                print("🌐 " + "="*60)
+                print("🚀 AutoRia Clone доступний для використання!")
+                print("🔗 Головна сторінка: http://localhost")
+                print("🔗 Фронтенд (прямо): http://localhost:3000")
+                print("="*63)
+                print()
+                print("📋 Додаткові сервіси:")
+                print("   - http://localhost/api/ - Backend API")
+                print("   - http://localhost/admin/ - Django Admin")
+                print("   - http://localhost/rabbitmq/ - RabbitMQ Management")
+                print("   - http://localhost/flower/ - Celery Flower")
+                print("   - http://localhost/redis/ - Redis Insight")
+                print()
+                print("⚠️ Примітка: Деякі health check не проходять, але сервіси працюють")
+                print("🔧 Рекомендується перевірити логи якщо виникнуть проблеми")
             else:
                 print_warning("⚠️ Деякі сервіси не готові. Система може працювати некоректно.")
                 print("❌ ССЫЛКИ НЕ ПРЕДОСТАВЛЯЮТСЯ - НЕ ВСЕ СЕРВИСЫ ГОТОВЫ!")

@@ -13,6 +13,7 @@ import { IBackendAuthCredentials } from "@/common/interfaces/auth.interfaces";
 import { ISession } from "@/common/interfaces/session.interfaces";
 import { User } from "@/common/interfaces/user.interface";
 import { useAuthProvider, useAuth } from "@/contexts/AuthProviderContext";
+import { redirectManager } from "@/utils/auth/redirectManager";
 
 import { backendSchema, dummySchema } from "./index.joi";
 
@@ -70,37 +71,15 @@ export const useLoginForm = () => {
   const [formKey, setFormKey] = useState<number>(0); // Add a key for forcing re-render
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Функция для правильного декодирования URL
-  const decodeCallbackUrl = (url: string | null, provider: AuthProvider): string => {
-    // Если нет URL, используем дефолтные значения в зависимости от провайдера
-    if (!url) {
-      return provider === AuthProvider.MyBackendDocs ? "/autoria" : "/users";
-    }
-
-    try {
-      // Попробуем декодировать URL (может быть закодирован дважды)
-      let decoded = decodeURIComponent(url);
-
-      // Если URL все еще содержит закодированные символы, декодируем еще раз
-      if (decoded.includes('%')) {
-        decoded = decodeURIComponent(decoded);
-      }
-
-      console.log('[useLoginForm] URL decoding:', {
-        original: url,
-        decoded: decoded,
-        provider: provider
-      });
-
-      return decoded;
-    } catch (error) {
-      console.error('[useLoginForm] Error decoding URL:', error);
-      return url; // Возвращаем оригинальный URL если декодирование не удалось
-    }
-  };
-
+  // Получаем callback URL из параметров запроса
   const rawCallbackUrl = searchParams.get("callbackUrl") || searchParams.get("returnUrl");
-  const callbackUrl = decodeCallbackUrl(rawCallbackUrl, provider);
+
+  // Используем redirectManager для определения URL перенаправления
+  const callbackUrl = redirectManager.getRedirectUrl({
+    callbackUrl: rawCallbackUrl,
+    provider: provider,
+    fallbackUrl: '/'
+  });
 
   // Логируем callbackUrl для отладки
   console.log('[useLoginForm] CallbackUrl from searchParams:', {
@@ -298,29 +277,26 @@ export const useLoginForm = () => {
 
           setMessage("Authentication successful!");
 
-          // Redirect after successful authentication using callback URL
-          console.log(`[Auth] Preparing redirect to: ${callbackUrl}`);
-          console.log(`[Auth] Current URL: ${window.location.href}`);
+          // Выполняем умное перенаправление после успешной аутентификации
+          console.log(`[Auth] Preparing smart redirect to: ${callbackUrl}`);
 
-          setTimeout(() => {
-            console.log(`[Auth] Executing redirect to: ${callbackUrl}`);
-
-            // Проверяем, что callbackUrl валидный
-            try {
-              const url = new URL(callbackUrl, window.location.origin);
-              console.log(`[Auth] Parsed URL:`, {
-                href: url.href,
-                pathname: url.pathname,
-                search: url.search
-              });
-
-              // Используем window.location для более надежного редиректа
-              window.location.href = url.href;
-            } catch (error) {
-              console.error(`[Auth] Invalid callbackUrl, using router.push:`, error);
-              router.push(callbackUrl);
+          redirectManager.smartRedirect({
+            callbackUrl: rawCallbackUrl,
+            provider: provider,
+            fallbackUrl: '/',
+            delay: 1500
+          }).then((result) => {
+            if (result.success) {
+              console.log(`[Auth] Redirect successful via ${result.method} to: ${result.redirectUrl}`);
+            } else {
+              console.error(`[Auth] Redirect failed:`, result.error);
+              // Fallback к router.push
+              router.push('/');
             }
-          }, 1500); // Увеличиваем задержку для надежности
+          }).catch((error) => {
+            console.error(`[Auth] Smart redirect error:`, error);
+            router.push('/');
+          });
         } else {
           console.error('[LoginForm] ❌ Tokens were NOT saved to Redis');
 
@@ -334,17 +310,24 @@ export const useLoginForm = () => {
           setError("Authentication failed: tokens not saved to Redis");
 
           // Попробуем редирект даже при проблемах с Redis, но с задержкой
-          console.log('[Auth] Attempting redirect despite Redis issues...');
-          setTimeout(() => {
-            console.log(`[Auth] Fallback redirect to: ${callbackUrl}`);
-            try {
-              const url = new URL(callbackUrl, window.location.origin);
-              window.location.href = url.href;
-            } catch (error) {
-              console.error(`[Auth] Fallback redirect failed:`, error);
-              router.push('/'); // Последний резерв - главная страница
+          console.log('[Auth] Attempting fallback redirect despite Redis issues...');
+
+          redirectManager.smartRedirect({
+            callbackUrl: rawCallbackUrl,
+            provider: provider,
+            fallbackUrl: '/',
+            delay: 3000 // Больше времени для отображения ошибки
+          }).then((result) => {
+            if (result.success) {
+              console.log(`[Auth] Fallback redirect successful via ${result.method} to: ${result.redirectUrl}`);
+            } else {
+              console.error(`[Auth] Fallback redirect failed:`, result.error);
+              router.push('/');
             }
-          }, 3000); // Больше времени для отображения ошибки
+          }).catch((error) => {
+            console.error(`[Auth] Fallback smart redirect error:`, error);
+            router.push('/');
+          });
         }
       } else {
         console.error('[Auth] ❌ Missing required authentication data in response');

@@ -6,6 +6,8 @@ import { ChatBotIconProps } from './types';
 import { getLastActiveChunk, saveLastActiveChunk } from '@/utils/chat/chatStorage';
 import { AuthProvider } from '@/common/constants/constants';
 import { useChatWebSocket } from '../hooks/useChatWebSocket';
+import { tokenRefreshManager } from '@/utils/auth/tokenRefreshManager';
+import { useToast } from '@/hooks/use-toast';
 
 // Hook для проверки гидратации
 const useIsHydrated = () => {
@@ -24,6 +26,7 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
   const [isOpen, setIsOpen] = useState(false);
   const { provider } = useAuthProvider();
   const isHydrated = useIsHydrated();
+  const { toast } = useToast();
 
   // WebSocket хук для управления соединением
   const { disconnect } = useChatWebSocket({
@@ -139,9 +142,48 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
     setHasBackendAuth(false); // Сбрасываем состояние backend_auth
   };
 
-  // Обработчик открытия чата
-  const handleOpenChat = () => {
-    // Просто открываем чат - последний активный чат будет загружен автоматически
+  // Обработчик открытия чата с умным рефрешем токенов
+  const handleOpenChat = async () => {
+    console.log('[ChatBotIcon] Opening chat with smart token refresh...');
+
+    try {
+      // Используем умный рефреш - обновляем токены только если нужно
+      const refreshResult = await tokenRefreshManager.smartRefresh({
+        maxRetries: 2,
+        showToast: true,
+        onProgress: (attempt, maxAttempts) => {
+          toast({
+            title: "Подготовка к подключению",
+            description: `Обновление токенов... (${attempt}/${maxAttempts})`,
+            duration: 2000,
+          });
+        },
+        onSuccess: (result) => {
+          if (result.tokensVerified) {
+            toast({
+              title: "✅ Готово к подключению",
+              description: "Токены обновлены и проверены",
+              duration: 2000,
+            });
+          }
+        },
+        onError: (error) => {
+          toast({
+            title: "⚠️ Предупреждение",
+            description: `Ошибка обновления токенов: ${error}. Попытка подключения продолжается...`,
+            variant: "destructive",
+            duration: 4000,
+          });
+        }
+      });
+
+      console.log('[ChatBotIcon] Token refresh result:', refreshResult);
+    } catch (error) {
+      console.error('[ChatBotIcon] Error during smart token refresh:', error);
+      // Продолжаем открытие чата даже при ошибке рефреша
+    }
+
+    // Открываем чат - последний активный чат будет загружен автоматически
     // благодаря useEffect в useChatStorage
     setIsOpen(true);
 
