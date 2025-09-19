@@ -19,13 +19,19 @@ const getBackendUrl = (): string => {
 const PROTOCOLS = {
   BACKEND: 'http',
   FRONTEND: 'http',
-  REDIS: 'redis'
+  REDIS: 'redis',
+  FLOWER: 'http',
+  RABBITMQ_MANAGEMENT: 'http',
+  REDIS_INSIGHT: 'http'
 };
 
 const PORTS = {
   BACKEND: 8000,
   FRONTEND: 3000,
-  REDIS: 6379
+  REDIS: 6379,
+  FLOWER: 5555,
+  RABBITMQ_MANAGEMENT: 15672,
+  REDIS_INSIGHT: 8001
 };
 
 const EXTERNAL_SERVICES = {
@@ -69,7 +75,7 @@ export const BaseUrl = {
     Backend: process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || `${PROTOCOLS.BACKEND}://localhost:${PORTS.BACKEND}`,
     Dummy: EXTERNAL_SERVICES.DUMMY_JSON,
     Flower: process.env.NEXT_PUBLIC_FLOWER_URL || `${PROTOCOLS.FLOWER}://localhost:${PORTS.FLOWER}`,
-    RedisInsight: process.env.NEXT_PUBLIC_REDIS_INSIGHT_URL || `${PROTOCOLS.FLOWER}://localhost:${PORTS.REDIS_INSIGHT}`,
+    RedisInsight: process.env.NEXT_PUBLIC_REDIS_INSIGHT_URL || `${PROTOCOLS.REDIS_INSIGHT}://localhost:${PORTS.REDIS_INSIGHT}`,
     RabbitMQ: process.env.NEXT_PUBLIC_RABBITMQ_URL || `${PROTOCOLS.RABBITMQ_MANAGEMENT}://localhost:${PORTS.RABBITMQ_MANAGEMENT}`,
     // Внутренний API Next.js
     Internal: typeof window !== 'undefined'
