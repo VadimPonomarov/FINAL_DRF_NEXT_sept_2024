@@ -10,6 +10,26 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Ensure the 'status' column exists before creating indexes that depend on it
+        migrations.AddField(
+            model_name='carad',
+            name='status',
+            field=models.CharField(
+                max_length=20,
+                default='active',
+                help_text='Current status of the advertisement',
+                choices=[
+                    ('draft', 'Draft'),
+                    ('pending', 'Pending Review'),
+                    ('active', 'Active'),
+                    ('needs_review', 'Needs Review'),
+                    ('rejected', 'Rejected'),
+                    ('sold', 'Sold'),
+                    ('archived', 'Archived'),
+                ],
+            ),
+        ),
+
         # Сначала включаем расширение pg_trgm для быстрого поиска по подстрокам
         migrations.RunSQL(
             sql="CREATE EXTENSION IF NOT EXISTS pg_trgm;",
