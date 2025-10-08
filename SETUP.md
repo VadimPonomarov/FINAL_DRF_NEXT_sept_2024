@@ -8,6 +8,12 @@
 
 ---
 
+## ⬇️ Клонування репозиторію
+```bash
+git clone https://github.com/VadimPonomarov/FINAL_DRF_NEXT_sept_2024.git
+cd FINAL_DRF_NEXT_sept_2024
+```
+
 ## ⚡ Автоматичне розгортання через deploy.py
 
 ```bash
