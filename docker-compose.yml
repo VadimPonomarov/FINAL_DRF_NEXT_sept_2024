@@ -3,6 +3,7 @@ services:
   app:
     build:
       context: ./backend
+      provenance: false
     volumes:
       # Включаем volume mount для разработки - синхронизация кода
       - ./backend:/app  # ВКЛЮЧЕНО: для синхронизации изменений кода
@@ -106,6 +107,7 @@ services:
     build:
       context: ./celery-service
       dockerfile: Dockerfile
+      provenance: false
     container_name: celery-worker
     restart: unless-stopped
     environment:
@@ -169,6 +171,7 @@ services:
     build:
       context: ./celery-service
       dockerfile: Dockerfile
+      provenance: false
     container_name: celery-beat
     restart: unless-stopped
     environment:
@@ -285,6 +288,7 @@ services:
   mailing:
     build:
       context: ./mailing
+      provenance: false
     container_name: mailing
     ports:
       - "8001:8001"
