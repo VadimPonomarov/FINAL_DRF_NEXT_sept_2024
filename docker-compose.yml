@@ -158,9 +158,10 @@ services:
     healthcheck:
       test: ["CMD", "python", "-m", "celery", "-A", "config.celery_app", "inspect", "ping"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      timeout: 15s
+      retries: 5
+      start_period: 90s
+      disable: false
     networks:
       - default
 
@@ -188,6 +189,13 @@ services:
     depends_on:
       - rabbitmq
       - redis
+    healthcheck:
+      test: ["CMD", "python", "-m", "celery", "-A", "config.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 90s
+      disable: false
     command:
       - python
       - -m
@@ -197,9 +205,6 @@ services:
       - beat
       - --loglevel=info
       - --schedule=/app/celerybeat-schedule/celerybeat-schedule
-    networks:
-      - default
-
   flower:
     build:
       context: ./celery-service
@@ -219,11 +224,6 @@ services:
       - ./env-config/.env.docker     # Docker overrides
     ports:
       - "5555:5555"
-    volumes:
-      - celery-logs:/app/logs
-    depends_on:
-      - rabbitmq
-      - redis
     command:
       - python
       - -m
@@ -235,8 +235,6 @@ services:
       - --broker_api=http://guest:guest@rabbitmq:15672/api/
     networks:
       - default
-
-
 
   redis:
     image: redis:7-alpine
@@ -279,10 +277,11 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
+      # Отключаем логи предупреждений о соединениях
+      - RABBITMQ_LOG_CONNECTION_CLOSE=false
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-      # Временно отключаем кастомный конфиг для диагностики
-      # - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     restart: unless-stopped
 
   mailing:

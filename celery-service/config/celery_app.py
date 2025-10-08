@@ -44,6 +44,21 @@ app.conf.update(
     broker_url=BROKER_URL,
     result_backend=RESULT_BACKEND,
     
+    # Connection and heartbeat settings for stability
+    broker_heartbeat=60,  # Heartbeat every 60 seconds
+    broker_heartbeat_checkrate=2,  # Check heartbeat every 2 seconds
+    broker_connection_retry=True,
+    broker_connection_retry_on_startup=True,
+    broker_connection_max_retries=100,  # Retry up to 100 times
+    broker_connection_timeout=300,  # 5 minutes timeout
+    broker_transport_options={
+        'master_name': 'rabbitmq',
+        'max_retries': 3,
+        'interval_start': 0,
+        'interval_step': 0.2,
+        'interval_max': 0.5,
+    },
+    
     # Serialization
     task_serializer='json',
     accept_content=['json'],
