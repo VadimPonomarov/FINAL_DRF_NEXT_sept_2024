@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ads', '0008_add_ad_contact_model'),
+        ('ads', '0007_create_analytics_models'),
         ('ads', '0009_add_ad_contact_only'),
     ]
 
