@@ -67,5 +67,5 @@ from .extra_config import *  # noqa
 
 # All other settings are imported from extra_config above
 
-print(f"🔧 SETTINGS: DEBUG ПОСЛЕ импорта extra_config = {DEBUG}")
-print(f"🔧 SETTINGS: ALLOWED_HOSTS = {ALLOWED_HOSTS}")
+print(f"[SETTINGS] DEBUG ПОСЛЕ импорта extra_config = {DEBUG}")
+print(f"[SETTINGS] ALLOWED_HOSTS = {ALLOWED_HOSTS}")
