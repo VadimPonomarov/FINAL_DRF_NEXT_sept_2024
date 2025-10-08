@@ -26,11 +26,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='carad',
-            name='moderated_at',
-            field=models.DateTimeField(
+            name='moderation_reason',
+            field=models.TextField(
                 blank=True,
-                help_text='When the ad was last moderated',
-                null=True
+                help_text='Reason for moderation decision'
             ),
         ),
     ]
