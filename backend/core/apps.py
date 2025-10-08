@@ -19,7 +19,7 @@ class CoreConfig(AppConfig):
     def ready(self):
         """Called when Django is ready."""
         # Consumer startup moved to manage.py for better control
-        logger.info("🚀 Core app ready - consumer startup handled by manage.py")
+        logger.info("[READY] Core app ready - consumer startup handled by manage.py")
 
         # Register service in Redis Service Registry
         self._register_service_in_redis()
