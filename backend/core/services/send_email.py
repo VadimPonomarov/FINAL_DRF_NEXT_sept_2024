@@ -32,7 +32,7 @@ class EmailService:
             if rabbitmq_url and rabbitmq_url.startswith('amqp://'):
                 # Формат: amqp://host:port
                 host = rabbitmq_url.replace('amqp://', '').split(':')[0]
-                logger.info(f"📡 Service Discovery: Using RabbitMQ host: {host}")
+                logger.info(f"[DISCOVERY] Service Discovery: Using RabbitMQ host: {host}")
                 return ConnectionParameters(
                     host=host,
                     port=5672,
@@ -40,10 +40,10 @@ class EmailService:
                     credentials=pika.PlainCredentials('guest', 'guest')
                 )
             else:
-                logger.warning(f"⚠️ Service Discovery: Unexpected RabbitMQ URL format: {rabbitmq_url}")
+                logger.warning(f"[WARNING] Service Discovery: Unexpected RabbitMQ URL format: {rabbitmq_url}")
                 # Fallback к переменным окружения
                 host = os.getenv('RABBITMQ_HOST', 'localhost')
-                logger.info(f"🔄 Fallback: Using RabbitMQ host from env: {host}")
+                logger.info(f"[FALLBACK] Fallback: Using RabbitMQ host from env: {host}")
                 return ConnectionParameters(
                     host=host,
                     port=int(os.getenv('RABBITMQ_PORT', 5672)),
@@ -55,10 +55,10 @@ class EmailService:
                 )
 
         except Exception as e:
-            logger.warning(f"⚠️ Service Discovery failed: {e}")
+            logger.warning(f"[WARNING] Service Discovery failed: {e}")
             # Final fallback
             host = os.getenv('RABBITMQ_HOST', 'localhost')
-            logger.info(f"🔄 Final fallback: Using RabbitMQ host: {host}")
+            logger.info(f"[FALLBACK] Final fallback: Using RabbitMQ host: {host}")
             return ConnectionParameters(
                 host=host,
                 port=int(os.getenv('RABBITMQ_PORT', 5672)),

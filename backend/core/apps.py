@@ -82,16 +82,16 @@ class CoreConfig(AppConfig):
 
             for cmd in skip_commands:
                 if cmd in sys.argv:
-                    logger.info(f"🚫 Skipping service registration during {cmd} command")
+                    logger.info(f"[SKIP] Skipping service registration during {cmd} command")
                     return
 
             # Import and register service
             from core.services.service_registry import register_current_service
             register_current_service()
-            logger.info("✅ Django service registered in Redis Service Registry")
+            logger.info("[SUCCESS] Django service registered in Redis Service Registry")
 
         except Exception as e:
-            logger.warning(f"⚠️ Failed to register service in Redis: {e}")
+            logger.warning(f"[WARNING] Failed to register service in Redis: {e}")
             # Don't fail startup if registration fails
 
     def _auto_seed_car_references(self):
@@ -103,14 +103,14 @@ class CoreConfig(AppConfig):
 
             # Check if car marks exist
             if not CarMarkModel.objects.exists():
-                logger.info("🌱 Car reference data is empty, auto-seeding...")
+                logger.info("[SEED] Car reference data is empty, auto-seeding...")
                 call_command('seed_car_references')
-                logger.info("✅ Car reference data seeded successfully")
+                logger.info("[SUCCESS] Car reference data seeded successfully")
             else:
-                logger.info("📚 Car reference data already exists")
+                logger.info("[INFO] Car reference data already exists")
 
         except Exception as e:
-            logger.warning(f"⚠️ Could not auto-seed car reference data: {e}")
+            logger.warning(f"[WARNING] Could not auto-seed car reference data: {e}")
             # Don't fail startup if seeding fails
     
     def _start_consumers_delayed(self):
@@ -121,13 +121,13 @@ class CoreConfig(AppConfig):
         time.sleep(2)
         
         try:
-            logger.info("🎧 Starting RabbitMQ consumers for continuous event listening...")
+            logger.info("[CONSUMERS] Starting RabbitMQ consumers for continuous event listening...")
             
             from core.consumers.manager import start_consumers
             start_consumers()
             
-            logger.info("✅ RabbitMQ consumers started successfully")
+            logger.info("[SUCCESS] RabbitMQ consumers started successfully")
             
         except Exception as e:
-            logger.error(f"❌ Failed to start RabbitMQ consumers: {e}")
+            logger.error(f"[ERROR] Failed to start RabbitMQ consumers: {e}")
             # Don't raise - let Django continue running even if consumers fail
