@@ -277,8 +277,6 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
-      # Отключаем логи предупреждений о соединениях
-      - RABBITMQ_LOG_CONNECTION_CLOSE=false
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
