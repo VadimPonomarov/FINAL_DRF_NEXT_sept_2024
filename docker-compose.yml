@@ -3,7 +3,6 @@ services:
   app:
     build:
       context: ./backend
-      provenance: false
     volumes:
       # Включаем volume mount для разработки - синхронизация кода
       - ./backend:/app  # ВКЛЮЧЕНО: для синхронизации изменений кода
@@ -107,7 +106,6 @@ services:
     build:
       context: ./celery-service
       dockerfile: Dockerfile
-      provenance: false
     container_name: celery-worker
     restart: unless-stopped
     environment:
@@ -160,10 +158,9 @@ services:
     healthcheck:
       test: ["CMD", "python", "-m", "celery", "-A", "config.celery_app", "inspect", "ping"]
       interval: 30s
-      timeout: 15s
-      retries: 5
-      start_period: 90s
-      disable: false
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - default
 
@@ -171,7 +168,6 @@ services:
     build:
       context: ./celery-service
       dockerfile: Dockerfile
-      provenance: false
     container_name: celery-beat
     restart: unless-stopped
     environment:
@@ -192,13 +188,6 @@ services:
     depends_on:
       - rabbitmq
       - redis
-    healthcheck:
-      test: ["CMD", "python", "-m", "celery", "-A", "config.celery_app", "inspect", "ping"]
-      interval: 30s
-      timeout: 15s
-      retries: 5
-      start_period: 90s
-      disable: false
     command:
       - python
       - -m
@@ -208,6 +197,9 @@ services:
       - beat
       - --loglevel=info
       - --schedule=/app/celerybeat-schedule/celerybeat-schedule
+    networks:
+      - default
+
   flower:
     build:
       context: ./celery-service
@@ -227,6 +219,11 @@ services:
       - ./env-config/.env.docker     # Docker overrides
     ports:
       - "5555:5555"
+    volumes:
+      - celery-logs:/app/logs
+    depends_on:
+      - rabbitmq
+      - redis
     command:
       - python
       - -m
@@ -238,6 +235,8 @@ services:
       - --broker_api=http://guest:guest@rabbitmq:15672/api/
     networks:
       - default
+
+
 
   redis:
     image: redis:7-alpine
@@ -282,13 +281,13 @@ services:
       - RABBITMQ_DEFAULT_PASS=guest
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      # Временно отключаем кастомный конфиг для диагностики
+      # - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     restart: unless-stopped
 
   mailing:
     build:
       context: ./mailing
-      provenance: false
     container_name: mailing
     ports:
       - "8001:8001"
