@@ -57,12 +57,15 @@ RUN poetry config repositories.pypi https://pypi.org/simple && \
 # Copy the entire application (this ensures all files are available)
 COPY . .
 
-# Copy and make entrypoint executable
-COPY entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+# Copy and make entrypoint executable (ensure it's in the correct location)
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-# Set entrypoint (temporarily disabled)
-# ENTRYPOINT ["./entrypoint.sh"]
+# Verify entrypoint exists
+RUN ls -la /app/entrypoint.sh
+
+# Set entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 # Run the application with Gunicorn and Daphne worker
 CMD ["gunicorn", "config.asgi:application", "--bind", "0.0.0.0:8000", "--worker-class", "daphne.worker.DaphneWorker", "--threads", "4"]
