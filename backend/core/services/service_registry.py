@@ -672,7 +672,12 @@ def _get_service_url_from_env(service_name: str, path: str = "") -> Optional[str
 
     host = os.getenv(host_var)
     port = os.getenv(port_var)
-    protocol = os.getenv(protocol_var, 'http')
+
+    # Для RabbitMQ используем amqp по умолчанию
+    if service_name.lower() == 'rabbitmq':
+        protocol = os.getenv(protocol_var, 'amqp')
+    else:
+        protocol = os.getenv(protocol_var, 'http')
 
     if not host:
         return None
@@ -721,10 +726,17 @@ def _get_service_url_default(service_name: str, path: str = "") -> str:
     host = config['host']
     port = config['port']
 
-    if port and port not in [80, 443]:
-        base_url = f"{protocol}://{host}:{port}"
+    # Для RabbitMQ используем специальный формат
+    if service_name.lower() == 'rabbitmq':
+        if port and port != 5672:  # Стандартный порт AMQP
+            base_url = f"{protocol}://{host}:{port}"
+        else:
+            base_url = f"{protocol}://{host}"
     else:
-        base_url = f"{protocol}://{host}"
+        if port and port not in [80, 443]:
+            base_url = f"{protocol}://{host}:{port}"
+        else:
+            base_url = f"{protocol}://{host}"
 
     if path:
         path = path.lstrip('/')

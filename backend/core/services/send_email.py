@@ -31,11 +31,13 @@ class EmailService:
             # Парсим URL для извлечения хоста
             if rabbitmq_url and rabbitmq_url.startswith('amqp://'):
                 # Формат: amqp://host:port
-                host = rabbitmq_url.replace('amqp://', '').split(':')[0]
-                logger.info(f"[DISCOVERY] Service Discovery: Using RabbitMQ host: {host}")
+                url_parts = rabbitmq_url.replace('amqp://', '').split(':')
+                host = url_parts[0]
+                port = int(url_parts[1]) if len(url_parts) > 1 else 5672
+                logger.info(f"[DISCOVERY] Service Discovery: Using RabbitMQ host: {host}, port: {port}")
                 return ConnectionParameters(
                     host=host,
-                    port=5672,
+                    port=port,
                     virtual_host='/',
                     credentials=pika.PlainCredentials('guest', 'guest')
                 )

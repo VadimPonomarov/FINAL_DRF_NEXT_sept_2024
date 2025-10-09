@@ -15,6 +15,12 @@ class Migration(migrations.Migration):
             name='rawaccountaddress',
             options={'verbose_name': 'Account Address', 'verbose_name_plural': 'Account Addresses'},
         ),
+        # First, ensure all existing addresses are unique per account
+        migrations.RunSQL(
+            "DELETE FROM accounts_rawaccountaddress WHERE id NOT IN "
+            "(SELECT MIN(id) FROM accounts_rawaccountaddress GROUP BY account_id)",
+            reverse_sql=migrations.RunSQL.noop
+        ),
         migrations.AlterField(
             model_name='rawaccountaddress',
             name='account',

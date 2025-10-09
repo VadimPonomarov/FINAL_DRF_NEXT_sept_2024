@@ -12,24 +12,36 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='carad',
-            name='moderated_by',
-            field=models.ForeignKey(
-                blank=True,
-                help_text='User who moderated this ad (null for auto-moderation)',
-                null=True,
-                on_delete=django.db.models.deletion.SET_NULL,
-                related_name='moderated_ads',
-                to=settings.AUTH_USER_MODEL
-            ),
+        migrations.RunSQL(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'car_ads'
+                    AND column_name = 'moderated_by_id'
+                ) THEN
+                    ALTER TABLE car_ads ADD COLUMN moderated_by_id integer NULL;
+                END IF;
+            END $$;
+            """,
+            reverse_sql=migrations.RunSQL.noop
         ),
-        migrations.AddField(
-            model_name='carad',
-            name='moderation_reason',
-            field=models.TextField(
-                blank=True,
-                help_text='Reason for moderation decision'
-            ),
+        migrations.RunSQL(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'car_ads'
+                    AND column_name = 'moderation_reason'
+                ) THEN
+                    ALTER TABLE car_ads ADD COLUMN moderation_reason text;
+                END IF;
+            END $$;
+            """,
+            reverse_sql=migrations.RunSQL.noop
         ),
     ]

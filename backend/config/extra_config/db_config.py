@@ -21,6 +21,7 @@ def get_database_config():
             'PORT': db_config['PORT'],
             'OPTIONS': {
                 'connect_timeout': int(os.getenv('DB_CONNECT_TIMEOUT', 10)),
+                'options': '-c search_path=public -c client_encoding=utf8',
             },
             'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', 60)),
             'CONN_HEALTH_CHECKS': os.getenv('DB_CONN_HEALTH_CHECKS', 'true').lower() == 'true',
