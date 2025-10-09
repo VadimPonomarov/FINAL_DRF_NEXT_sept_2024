@@ -4,6 +4,8 @@ Simplified RabbitMQ connection helper.
 
 import json
 import logging
+import os
+import time
 from typing import Callable
 
 import pika
@@ -214,25 +216,51 @@ class ConnectionFactory:
             channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 
     def consume(self):
-        """Start consuming messages from queue."""
-        try:
-            logger.info(f"🔧 Initializing consumer for queue: {self.queue_name}")
+        """Start consuming messages from queue with automatic reconnection."""
+        max_reconnect_attempts = 10
+        reconnect_delay = 5  # seconds
 
-            if not self.callback:
-                raise ValueError("Callback function is required for consuming")
+        while max_reconnect_attempts > 0:
+            try:
+                logger.info(f"🔧 Initializing consumer for queue: {self.queue_name}")
 
-            self.channel.basic_consume(
-                queue=self.queue_name, on_message_callback=self.get_callback
-            )
+                if not self.callback:
+                    raise ValueError("Callback function is required for consuming")
 
-            logger.info(f"🎧 Consumer registered for queue: {self.queue_name}")
-            logger.info(f"🚀 Starting active consumption from {self.queue_name}...")
-            self.channel.start_consuming()
-            logger.info(f"✅ Consumer is now ACTIVELY LISTENING to {self.queue_name}")
+                self.channel.basic_consume(
+                    queue=self.queue_name, on_message_callback=self.get_callback
+                )
 
-        except Exception as e:
-            logger.error(f"Error in consume: {e}")
-            raise
+                logger.info(f"🎧 Consumer registered for queue: {self.queue_name}")
+                logger.info(f"🚀 Starting active consumption from {self.queue_name}...")
+                self.channel.start_consuming()
+                logger.info(f"✅ Consumer is now ACTIVELY LISTENING to {self.queue_name}")
+
+                # If we get here, it means start_consuming() returned (unlikely)
+                return
+
+            except pika.exceptions.AMQPConnectionError as e:
+                logger.error(f"🔌 Connection lost: {e}")
+                max_reconnect_attempts -= 1
+                if max_reconnect_attempts <= 0:
+                    logger.error("💥 Maximum reconnection attempts reached")
+                    raise
+
+                logger.info(f"⏳ Reconnecting in {reconnect_delay} seconds...")
+                time.sleep(reconnect_delay)
+
+                # Re-establish connection
+                try:
+                    logger.info("🔄 Re-establishing RabbitMQ connection...")
+                    self._setup_connection_with_fallback()
+                    logger.info("✅ RabbitMQ connection re-established")
+                except Exception as reconnect_error:
+                    logger.error(f"❌ Failed to reconnect: {reconnect_error}")
+                    time.sleep(reconnect_delay)
+
+            except Exception as e:
+                logger.error(f"Error in consume: {e}")
+                raise
 
     def close(self):
         """Close connection."""

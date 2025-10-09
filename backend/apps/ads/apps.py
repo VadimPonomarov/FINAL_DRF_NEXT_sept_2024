@@ -11,7 +11,7 @@ class AdsConfig(AppConfig):
     def ready(self):
         # Auto-populate reference data on startup if enabled
         # Controlled by RUN_SEEDS environment variable (default: true)
-        # DISABLED: Seeds now run only through entrypoint.sh to avoid cycles
+        # DISABLED: Seeds now run only through docker-compose to avoid cycles
         pass
 
     def _run_seeds_safely(self):

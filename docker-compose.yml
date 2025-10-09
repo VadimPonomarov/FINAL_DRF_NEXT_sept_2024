@@ -4,8 +4,8 @@ services:
     build:
       context: ./backend
     volumes:
-      # Включаем volume mount для разработки - синхронизация кода
-      - ./backend:/app  # ВКЛЮЧЕНО: для синхронизации изменений кода
+      # Временно отключаем volume mount для диагностики
+      # - ./backend:/app  # ОТКЛЮЧЕНО: для диагностики
       - backend-static:/app/static
       - backend-temp:/app/temp
       - backend-staticfiles:/app/staticfiles
@@ -33,20 +33,16 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 300s
+      start_period: 600s
     command: >
       sh -c "
-        echo '🚀 Starting Django with seeding...' &&
+        echo '📊 Waiting for PostgreSQL database...' &&
         python manage.py wait_db --timeout=60 &&
-        python manage.py wait_redis --timeout=60 &&
-        python manage.py wait_rabbitmq --timeout=60 &&
-        echo '🔄 Running migrations...' &&
+        echo '🔄 Running database migrations...' &&
         python manage.py migrate --noinput &&
-        echo '🌱 Seeding database...' &&
-        python manage.py init_project_data &&
         echo '📁 Collecting static files...' &&
         python manage.py collectstatic --noinput --clear &&
-        echo '✅ Setup complete! Starting server...' &&
+        echo '🎉 Application setup complete!' &&
         daphne -b 0.0.0.0 -p 8000 config.asgi:application
       "
 
@@ -271,18 +267,16 @@ services:
       - redis-insight:/data
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.13
     container_name: rabbitmq
     ports:
       - "5672:5672"
-      - "15672:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_LOG_LEVELS=error
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-      # Временно отключаем кастомный конфиг для диагностики
-      # - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     restart: unless-stopped
 
   mailing:
