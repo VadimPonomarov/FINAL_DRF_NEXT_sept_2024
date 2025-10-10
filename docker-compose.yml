@@ -40,6 +40,8 @@ services:
         python manage.py wait_db --timeout=60 &&
         echo '🔄 Running database migrations...' &&
         python manage.py migrate --noinput &&
+        echo '🌱 Seeding reference data...' &&
+        python manage.py auto_populate_references --force &&
         echo '📁 Collecting static files...' &&
         python manage.py collectstatic --noinput --clear &&
         echo '🎉 Application setup complete!' &&
