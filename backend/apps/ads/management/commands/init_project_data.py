@@ -286,7 +286,7 @@ class Command(BaseCommand):
         self.stdout.write('📚 Populating reference data...')
         try:
             # Run reference population command
-            call_command('auto_populate_references', force=True, verbosity=1)
+            call_command('auto_populate_references', verbosity=1)
 
             # Count created records
             from apps.ads.models.reference import RegionModel, CityModel, CarMarkModel, CarModel
