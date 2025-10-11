@@ -167,7 +167,11 @@ export function useApiErrorHandler(options: ApiErrorHandlerOptions = {}) {
         console.warn('[ApiErrorHandler] Critical API error detected:', { url, status, error });
         
         // Проверяем, нужно ли принудительно перенаправить
-        if (tracker.shouldForceRedirect(criticalErrorThreshold)) {
+        // Не перенаправляем, если пользователь находится на главной странице и авторизован
+        const isHomePage = window.location.pathname === '/';
+        const isAuthenticated = !!localStorage.getItem('session-token'); // Пример проверки авторизации
+      
+        if (tracker.shouldForceRedirect(criticalErrorThreshold) && (!isHomePage || !isAuthenticated)) {
           console.error('[ApiErrorHandler] Too many critical errors, forcing redirect...');
           handleCriticalError();
         } else if (status === 404 && url.includes('/api/')) {

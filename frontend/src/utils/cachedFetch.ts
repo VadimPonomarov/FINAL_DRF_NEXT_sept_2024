@@ -52,8 +52,13 @@ export async function cachedFetch(url: string, options: CachedFetchOptions = {})
   }
 
   const response = await fetch(url, fetchOptions);
-  
+
   if (!response.ok) {
+    // Не вызываем редирект для ошибок 404 и 500
+    if (response.status === 404 || response.status === 500) {
+      console.warn(`[CachedFetch] ${response.status} error detected for ${url}, returning empty data`);
+      return { options: [] };
+    }
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 

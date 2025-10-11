@@ -330,17 +330,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
   const { provider, setProvider } = useAuthProvider();
   const { t, formatNumber, locale, setLocale } = useI18n();
 
-  // Инициализируем обработчик критических ошибок API
-  const { trackError, forceRedirect, criticalErrorCount } = useApiErrorHandler({
-    enableAutoRedirect: true,
-    criticalErrorThreshold: 3,
-    onCriticalError: () => {
-      console.log('[HomeContent] Critical API errors detected, forcing redirect to /signin');
-    },
-    onBackendUnavailable: () => {
-      console.warn('[HomeContent] Backend appears to be unavailable');
-    }
-  });
+  // Удалено дублирующееся использование useApiErrorHandler, так как оно уже настроено глобально в RootProvider
 
   // Дополнительная проверка API сессии
   useEffect(() => {
@@ -758,24 +748,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
 
         </div>
 
-        {/* API Error Indicator - правый верхний угол */}
-        {criticalErrorCount > 0 && (
-          <div className="fixed top-[5px] right-[120px] z-[999999]">
-            <div className="flex items-center gap-2 bg-red-500/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg">
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-              <span className="text-white text-xs font-medium">
-                API Errors: {criticalErrorCount}
-              </span>
-              <button
-                onClick={forceRedirect}
-                className="text-white hover:text-red-200 text-xs underline"
-                title="Force redirect to signin"
-              >
-                Fix
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Удален индикатор ошибок API, так как он дублирует глобальный обработчик */}
 
 
 
