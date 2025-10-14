@@ -131,21 +131,24 @@ export const fetchCitiesWithCache = async (regionId: string) => {
 export const fetchFuelTypesWithCache = async () => {
   return cachedFetch('/api/public/reference/fuel-types?page_size=20', {
     cacheTime: 86400,  // 24 часа
-    staleTime: 172800  // 48 часов stale
+    staleTime: 172800,  // 48 часов stale
+    cacheType: 'no-cache'  // Отключаем браузерный кеш для избежания старых 404
   });
 };
 
 export const fetchTransmissionsWithCache = async () => {
   return cachedFetch('/api/public/reference/transmissions?page_size=10', {
     cacheTime: 86400,  // 24 часа
-    staleTime: 172800  // 48 часов stale
+    staleTime: 172800,  // 48 часов stale
+    cacheType: 'no-cache'  // Отключаем браузерный кеш для избежания старых 404
   });
 };
 
 export const fetchBodyTypesWithCache = async () => {
   return cachedFetch('/api/public/reference/body-types?page_size=30', {
     cacheTime: 86400,  // 24 часа
-    staleTime: 172800  // 48 часов stale
+    staleTime: 172800,  // 48 часов stale
+    cacheType: 'no-cache'  // Отключаем браузерный кеш для избежания старых 404
   });
 };
 

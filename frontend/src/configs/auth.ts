@@ -74,10 +74,9 @@ export const authConfig: AuthOptions = {
     maxAge: 60 * 60 * 24, // 24 hours
   },
   pages: {
-    // Используем встроенную страницу NextAuth для signin
-    // signIn: '/api/auth/signin',  // NextAuth встроенная страница
-    // error: '/api/auth/error',    // NextAuth встроенная страница ошибок
-    // НЕ указываем signOut - пусть NextAuth использует свою страницу
+    // Используем кастомную страницу /signin для первичной аутентификации
+    // Страница включает два провайдера: Google OAuth и Credentials (только email)
+    signIn: '/signin',
   },
   callbacks: {
     async signIn({ user, account, profile }) {

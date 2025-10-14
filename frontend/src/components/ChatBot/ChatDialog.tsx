@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useChat } from "./hooks";
-import { clientRefreshToken } from '@/app/api/(helpers)/common';
+import { clientRefreshToken } from '@/app/api/common';
 import { ChatMessage } from "./ChatMessage";
 import { AssistantResponseSkeleton } from "./AssistantResponseSkeleton";
 import { toast } from "@/hooks/use-toast";

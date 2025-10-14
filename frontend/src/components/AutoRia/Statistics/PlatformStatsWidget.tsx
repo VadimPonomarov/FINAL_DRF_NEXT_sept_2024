@@ -37,7 +37,7 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
     try {
       console.log('[PlatformStatsWidget] 📊 Fetching platform statistics...');
       
-      const response = await fetch('/api/ads/quick-stats', {
+      const response = await fetch('/api/autoria/ads/quick-stats', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

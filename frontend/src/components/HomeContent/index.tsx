@@ -423,16 +423,14 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
   const isValidSession = (session: any): boolean => {
     if (!session) return false;
 
-    // Проверяем наличие обязательного поля email
-    if (!session.email) return false;
+    // Поддерживаем две структуры сессии:
+    // 1. Стандартная NextAuth: { authenticated: true, user: { email, ... } }
+    // 2. Кастомная: { email, ... }
 
-    // Проверяем, что это наша кастомная структура сессии
-    if (session.user && !session.accessToken) {
-      // Это стандартная NextAuth сессия без нашей кастомной структуры
-      return false;
-    }
+    // Проверяем наличие email в любой из структур
+    const hasEmail = !!(session.email || session.user?.email);
 
-    return true;
+    return hasEmail;
   };
 
   // Effect hooks (always call)
@@ -458,15 +456,18 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
 
   // Определяем сессию: приоритет серверной сессии, затем клиентской
   const currentSession = serverSession || session;
-  // После восстановления оригинального session callback, сессия имеет кастомную структуру { email, accessToken, expiresOn }
-  const isAuthenticated = !!(currentSession?.email);
+  // Проверяем аутентификацию для обеих структур сессии:
+  // 1. Стандартная NextAuth: { authenticated: true, user: { email } }
+  // 2. Кастомная: { email }
+  const isAuthenticated = !!(currentSession?.email || currentSession?.user?.email);
   const isLoading = sessionStatus === 'loading' || !isMounted;
 
   // Проверяем на некорректную сессию используя утилитную функцию
+  // Сессия считается поврежденной только если она существует, но невалидна
+  // И при этом статус сессии - authenticated (не loading и не unauthenticated)
   const isCorruptedSession = currentSession &&
     !isValidSession(currentSession) &&
-    sessionStatus !== 'loading' &&
-    sessionStatus !== 'unauthenticated' &&
+    sessionStatus === 'authenticated' &&
     isMounted;
 
   console.log('[HomeContent] NextAuth Session Check:', {

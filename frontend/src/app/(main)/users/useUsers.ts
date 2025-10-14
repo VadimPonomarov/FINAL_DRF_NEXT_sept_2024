@@ -5,7 +5,7 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { signOut } from "next-auth/react";
 import { IUser, IUsersResponse } from "@/common/interfaces/users.interfaces";
 import { filterItems } from "@/services/filters/filterServices";
-import { dummyApiHelpers } from "@/app/api/(helpers)/dummy";
+import { dummyApiHelpers } from "@/app/api/dummy";
 import { getAuthorizationHeaders } from "@/common/constants/headers";
 import { BaseUrl } from "@/common/constants/constants";
 

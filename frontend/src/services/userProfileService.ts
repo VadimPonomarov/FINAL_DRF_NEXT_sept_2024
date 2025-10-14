@@ -3,7 +3,7 @@
  * Использует существующий fetchData хелпер с поддержкой Bearer токенов и авторефреша
  */
 
-import { fetchData, fetchWithDomain } from '@/app/api/(helpers)/common';
+import { fetchData, fetchWithDomain } from '@/app/api/common';
 import {
   BackendUser,
   BackendProfile,

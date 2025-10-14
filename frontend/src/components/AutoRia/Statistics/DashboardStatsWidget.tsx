@@ -40,7 +40,7 @@ const DashboardStatsWidget: React.FC<DashboardStatsWidgetProps> = ({ className =
     try {
       console.log('[DashboardStatsWidget] 📊 Fetching dashboard statistics...');
       
-      const response = await fetch('/api/ads/quick-stats', {
+      const response = await fetch('/api/autoria/ads/quick-stats', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

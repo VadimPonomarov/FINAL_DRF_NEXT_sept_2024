@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchData } from '@/app/api/(helpers)/common';
+import { fetchData } from '@/app/api/common';
 
 // Интерфейсы для данных пользователя
 export interface UserProfile {

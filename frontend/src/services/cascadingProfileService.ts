@@ -3,7 +3,7 @@
  * Each tab loads all its related data in a single request
  */
 
-import { fetchWithDomain } from '@/app/api/(helpers)/common';
+import { fetchWithDomain } from '@/app/api/common';
 
 // ========================================
 // TYPE DEFINITIONS

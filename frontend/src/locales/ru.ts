@@ -1661,7 +1661,7 @@ export default {
     required: "any.required"
   },
   "@/utils/api/serviceUrlResolver": "@/utils/api/serviceUrlResolver",
-  "@/app/api/(helpers)/redis": "@/app/api/(helpers)/redis",
+  "@/app/api/redis": "@/app/api/redis",
   "WebSocket OPEN": "Открыть",
   "/login?message=": "Вход",
   "[Token Refresh] Error response:": "Ошибка",
