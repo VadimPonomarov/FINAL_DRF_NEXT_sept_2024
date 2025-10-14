@@ -26,7 +26,6 @@ const PUBLIC_PATHS = [
   '/api/openapi',  // OpenAPI schema proxy - should be public for docs
   '/api/autoria/ads/quick-stats',  // Public statistics endpoint
   '/api/autoria/accounts/admin/stats',  // Public account statistics
-  '/signin',       // Custom signin page (Google OAuth + Credentials with email only)
   '/register',     // User registration
   '/auth'          // Auth redirect page
 ];
@@ -58,16 +57,16 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
       req as any, // Cast to any to handle type mismatch
       {
         pages: {
-          signIn: '/signin'  // Custom signin page with Google OAuth and Credentials (email only)
+          signIn: '/api/auth/signin'  // NextAuth built-in signin page
         }
       }
     );
 
     // If withAuth returns a response, it means there's no valid session
     if (response) {
-      console.log('[Middleware] No valid NextAuth session - redirecting to signin with callback');
+      console.log('[Middleware] No valid NextAuth session - redirecting to NextAuth signin with callback');
       // Create signin URL with callbackUrl parameter
-      const signinUrl = new URL('/signin', req.url);
+      const signinUrl = new URL('/api/auth/signin', req.url);
       signinUrl.searchParams.set('callbackUrl', req.url);
       return NextResponse.redirect(signinUrl);
     }
@@ -77,7 +76,7 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   } catch (error) {
     console.error('[Middleware] Error checking NextAuth session:', error);
     // Create signin URL with callbackUrl parameter
-    const signinUrl = new URL('/signin', req.url);
+    const signinUrl = new URL('/api/auth/signin', req.url);
     signinUrl.searchParams.set('callbackUrl', req.url);
     return NextResponse.redirect(signinUrl);
   }

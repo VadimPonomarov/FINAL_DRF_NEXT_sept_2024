@@ -73,11 +73,10 @@ export const authConfig: AuthOptions = {
     strategy: "jwt",
     maxAge: 60 * 60 * 24, // 24 hours
   },
-  pages: {
-    // Используем кастомную страницу /signin для первичной аутентификации
-    // Страница включает два провайдера: Google OAuth и Credentials (только email)
-    signIn: '/signin',
-  },
+  // НЕ указываем pages - NextAuth будет использовать встроенные страницы по умолчанию
+  // pages: {
+  //   signIn: '/api/auth/signin',  // NextAuth built-in signin page (default)
+  // },
   callbacks: {
     async signIn({ user, account, profile }) {
       console.log('[NextAuth signIn] Callback triggered:');
