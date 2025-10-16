@@ -300,7 +300,7 @@ export const fetchAuth = async (
     const isServer = typeof window === 'undefined';
     const baseUrl = isServer
       ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' ? 'http://frontend:3000' : 'http://localhost:3000')
-      : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
+      : ''; // На клиенте используем относительный URL
     const redisUrl = `${baseUrl}/api/redis`;
     console.log(`[fetchAuth] Using Redis URL: ${redisUrl} (server: ${isServer})`);
 

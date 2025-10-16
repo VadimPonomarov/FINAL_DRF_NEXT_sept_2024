@@ -83,11 +83,10 @@ export const authConfig: AuthOptions = {
     maxAge: 60 * 60 * 24 * 30, // 30 days (увеличено с 24 часов)
     updateAge: 60 * 60 * 24, // Обновлять сессию каждые 24 часа
   },
-  pages: {
-    // НЕ указываем signIn - пусть NextAuth использует встроенную страницу /api/auth/signin
-    // НЕ указываем signOut - пусть NextAuth использует свою страницу
-    // НЕ указываем error - пусть NextAuth использует встроенную страницу ошибок
-  },
+  // НЕ указываем pages - пусть NextAuth использует встроенные страницы
+  // Встроенная страница входа: /api/auth/signin
+  // Встроенная страница выхода: /api/auth/signout
+  // Встроенная страница ошибок: /api/auth/error
   callbacks: {
     // JWT callback - добавляем данные в токен
     async jwt({ token, user }) {
@@ -140,15 +139,35 @@ export const authConfig: AuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log('[NextAuth redirect] Callback triggered:', { url, baseUrl });
 
-      // Если URL начинается с baseUrl, используем его
+      // Если это полный URL, начинающийся с baseUrl
       if (url.startsWith(baseUrl)) {
+        console.log('[NextAuth redirect] Full URL with baseUrl, using it:', url);
         return url;
       }
-      // Если URL относительный, добавляем baseUrl
-      else if (url.startsWith('/')) {
+
+      // Если это относительный URL
+      if (url.startsWith('/')) {
+        console.log('[NextAuth redirect] Relative URL, adding baseUrl:', `${baseUrl}${url}`);
         return `${baseUrl}${url}`;
       }
+
+      // Внешний URL - проверяем безопасность
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        const urlObj = new URL(url);
+        const baseUrlObj = new URL(baseUrl);
+
+        // Разрешаем только редиректы на тот же домен
+        if (urlObj.hostname === baseUrlObj.hostname) {
+          console.log('[NextAuth redirect] External URL on same domain, allowing:', url);
+          return url;
+        }
+
+        console.log('[NextAuth redirect] External URL on different domain, redirecting to base');
+        return baseUrl;
+      }
+
       // По умолчанию редиректим на главную
+      console.log('[NextAuth redirect] Default redirect to baseUrl');
       return baseUrl;
     },
     async signIn({ user, account, profile }) {
@@ -157,86 +176,23 @@ export const authConfig: AuthOptions = {
       console.log('  Account:', account);
       console.log('  Profile:', profile);
 
-      try {
-        // Если пользователь входит через credentials (наш бэкенд)
-        if (account?.provider === 'credentials' && user?.email) {
-          console.log('[NextAuth signIn] Credentials login, authenticating with backend...');
+      // ВАЖНО: Токены сохраняются в Redis клиентским кодом в useLoginForm.ts
+      // Здесь мы просто разрешаем вход для всех провайдеров
 
-          // Аутентификация с бэкендом
-          const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login/`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: user.email,
-              // Здесь можно добавить пароль если нужно
-            }),
-          });
-
-          if (backendResponse.ok) {
-            const authData = await backendResponse.json();
-            console.log('[NextAuth signIn] Backend authentication successful');
-
-            // Сохраняем токен в Redis
-            try {
-              await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/redis`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  key: 'backend_auth',
-                  value: JSON.stringify(authData),
-                }),
-              });
-              console.log('[NextAuth signIn] Token saved to Redis');
-            } catch (redisError) {
-              console.error('[NextAuth signIn] Failed to save token to Redis:', redisError);
-            }
-          } else {
-            console.warn('[NextAuth signIn] Backend authentication failed');
-          }
-        }
-
-        // Для Google OAuth или других провайдеров можно создать пользователя в бэкенде
-        if (account?.provider === 'google' && user?.email) {
-          console.log('[NextAuth signIn] Google OAuth, creating/updating user in backend...');
-          // Здесь можно добавить логику создания пользователя в бэкенде
-        }
-
+      if (account?.provider === 'credentials') {
+        console.log('[NextAuth signIn] Credentials login - allowing signin');
+        // Токены уже сохранены в Redis клиентским кодом
         return true;
-      } catch (error) {
-        console.error('[NextAuth signIn] Error during sign in:', error);
-        return true; // Разрешаем вход даже при ошибке бэкенда
-      }
-    },
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.accessToken = user.id;
-        token.email = user.email;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      console.log('[NextAuth session] Callback triggered:', { session, token });
-
-      if (!session.expires) {
-        throw new Error("Session expiration date is undefined.");
       }
 
-      const expiresTimestamp = new Date(session.expires).getTime();
-
-      if (isNaN(expiresTimestamp)) {
-        throw new Error("Session expiration date is not a valid timestamp.");
+      if (account?.provider === 'google') {
+        console.log('[NextAuth signIn] Google OAuth - allowing signin');
+        // Для Google OAuth можно добавить логику создания пользователя в бэкенде
+        return true;
       }
 
-      // Возвращаем кастомную структуру сессии как в оригинале
-      return {
-        email: session.user?.email || token.email,
-        accessToken: token.accessToken,
-        expiresOn: new Date(expiresTimestamp).toLocaleString(),
-      } as unknown as Session;
+      // Разрешаем вход для всех других провайдеров
+      return true;
     },
   },
 };

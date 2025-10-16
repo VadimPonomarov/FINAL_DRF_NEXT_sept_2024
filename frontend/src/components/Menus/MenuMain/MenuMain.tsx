@@ -335,14 +335,18 @@ export const MenuMain: FC = () => {
             </TooltipProvider>
           ),
           disabled: false,
-          cb: function() {
+          cb: async function() {
             console.log('Logout callback called');
             console.log('signOut type:', typeof signOut);
             console.log('signOut function:', signOut);
             try {
               if (typeof signOut === 'function') {
-                console.log('Calling signOut...');
-                signOut({ callbackUrl: "/api/auth/signin" });
+                console.log('Calling signOut with redirect: false...');
+                // ВАЖНО: используем redirect: false, чтобы избежать редиректа на /signin
+                await signOut({ redirect: false });
+                console.log('SignOut successful, redirecting to /api/auth/signin...');
+                // Вручную редиректим на страницу входа
+                window.location.href = '/api/auth/signin';
               } else {
                 console.error('signOut function is not available');
                 // Fallback to manual logout
