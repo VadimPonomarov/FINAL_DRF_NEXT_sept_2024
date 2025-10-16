@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from "next/server";
-import { withAuth } from 'next-auth/middleware';
+import { getToken } from 'next-auth/jwt';
 
 // Supported locales
 const locales = ['en', 'ru', 'uk'];
@@ -46,20 +46,16 @@ const STATIC_PATHS = [
   'favicon.ico'
 ];
 
-// Function to check internal NextAuth session using withAuth
+// Function to check internal NextAuth session using getToken
 async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   try {
-    console.log(`[Middleware] Checking NextAuth session with withAuth`);
+    console.log(`[Middleware] Checking NextAuth session with getToken`);
 
-    // Use NextAuth's withAuth to check session
-    const response = await withAuth(req, {
-      pages: {
-        signIn: '/api/auth/signin'
-      }
-    });
+    // Use NextAuth's getToken to check session
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-    // If withAuth returns a response, it means there's no valid session
-    if (response) {
+    // If no token, redirect to signin
+    if (!token) {
       console.log(`[Middleware] No valid NextAuth session - redirecting to signin with callback`);
       // Create signin URL with callbackUrl parameter
       const signinUrl = new URL('/api/auth/signin', req.url);
@@ -81,16 +77,12 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
 // Function to check backend_auth tokens presence in Redis (for Autoria access)
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
-    // First, check NextAuth session using withAuth
+    // First, check NextAuth session using getToken
     console.log(`[Middleware] Checking NextAuth session for Autoria access`);
-    const authResponse = await withAuth(req, {
-      pages: {
-        signIn: '/api/auth/signin'
-      }
-    });
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-    // If withAuth returns a response, it means there's no valid NextAuth session
-    if (authResponse) {
+    // If no token, redirect to signin
+    if (!token) {
       console.log(`[Middleware] No valid NextAuth session - redirecting to signin`);
       const signinUrl = new URL('/api/auth/signin', req.url);
       signinUrl.searchParams.set('callbackUrl', req.url);
