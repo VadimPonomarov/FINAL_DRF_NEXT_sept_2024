@@ -80,14 +80,62 @@ export const authConfig: AuthOptions = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60 * 24, // 24 hours
+    maxAge: 60 * 60 * 24 * 30, // 30 days (увеличено с 24 часов)
+    updateAge: 60 * 60 * 24, // Обновлять сессию каждые 24 часа
   },
   pages: {
-    signIn: '/api/auth/signin',  // Явно указываем встроенную страницу NextAuth
+    // НЕ указываем signIn - пусть NextAuth использует встроенную страницу /api/auth/signin
     // НЕ указываем signOut - пусть NextAuth использует свою страницу
     // НЕ указываем error - пусть NextAuth использует встроенную страницу ошибок
   },
   callbacks: {
+    // JWT callback - добавляем данные в токен
+    async jwt({ token, user }) {
+      console.log('[NextAuth JWT] Callback triggered:', {
+        hasToken: !!token,
+        hasUser: !!user,
+        email: token.email
+      });
+
+      if (user) {
+        token.accessToken = user.id;
+        token.email = user.email;
+      }
+      return token;
+    },
+
+    // Session callback - формируем сессию из токена
+    async session({ session, token }) {
+      console.log('[NextAuth Session] Callback triggered:', {
+        hasSession: !!session,
+        hasToken: !!token,
+        email: token.email
+      });
+
+      if (!session.expires) {
+        console.error('[NextAuth Session] Session expiration date is undefined');
+        throw new Error("Session expiration date is undefined.");
+      }
+
+      const expiresTimestamp = new Date(session.expires).getTime();
+
+      if (isNaN(expiresTimestamp)) {
+        console.error('[NextAuth Session] Session expiration date is not a valid timestamp');
+        throw new Error("Session expiration date is not a valid timestamp.");
+      }
+
+      // Возвращаем расширенную сессию с дополнительными данными
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          email: token.email as string,
+        },
+        accessToken: token.accessToken,
+        expiresOn: new Date(expiresTimestamp).toLocaleString(),
+      } as Session;
+    },
+
     // Redirect callback для управления редиректами после входа
     async redirect({ url, baseUrl }) {
       console.log('[NextAuth redirect] Callback triggered:', { url, baseUrl });

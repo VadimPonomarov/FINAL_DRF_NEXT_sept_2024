@@ -162,7 +162,7 @@ export const fetchRefresh = async (
     console.log(`Token refresh attempt ${newAttempts}/${maxAttempts} for ${key}`);
 
     // Сохраняем увеличенный счетчик попыток
-    await setRedisData(key, JSON.stringify({
+    await apiSetRedis(key, JSON.stringify({
       ...parsedData,
       refreshAttempts: newAttempts
     }));
@@ -191,7 +191,7 @@ export const fetchRefresh = async (
     const data = await response.json();
 
     // При успешном обновлении сбрасываем счетчик попыток
-    await setRedisData(key, JSON.stringify({
+    await apiSetRedis(key, JSON.stringify({
       access: data.access,
       refresh: data.refresh,
       refreshAttempts: 0 // Сбрасываем счетчик при успехе
@@ -207,7 +207,7 @@ export const fetchRefresh = async (
 
 // Helper functions for various requests
 export const fetchUsers = async (params?: Record<string, string>) => {
-  const authProvider = await getRedisData("auth_provider") || AuthProvider.MyBackendDocs;
+  const authProvider = await apiGetRedis("auth_provider") || AuthProvider.MyBackendDocs;
   const endpoint = authProvider === AuthProvider.Dummy ? '/users' : '/api/users/';
   const response = await fetchData(endpoint, "/users", params);
 
@@ -229,13 +229,13 @@ export const fetchUsers = async (params?: Record<string, string>) => {
 };
 
 export const fetchRecipes = async (params?: Record<string, string>) => {
-  const authProvider = await getRedisData("auth_provider") || AuthProvider.MyBackendDocs;
+  const authProvider = await apiGetRedis("auth_provider") || AuthProvider.MyBackendDocs;
   const endpoint = authProvider === AuthProvider.Dummy ? '/recipes' : '/api/recipes/';
   return fetchData(endpoint, "/recipes", params);
 };
 
 export const fetchRecipeById = async (id: string) => {
-  const authProvider = await getRedisData("auth_provider") || AuthProvider.MyBackendDocs;
+  const authProvider = await apiGetRedis("auth_provider") || AuthProvider.MyBackendDocs;
   const endpoint = authProvider === AuthProvider.Dummy ? `/recipes/${id}` : `/api/recipes/${id}/`;
   return fetchData(endpoint);
 };
@@ -304,6 +304,27 @@ export const fetchAuth = async (
     const redisUrl = `${baseUrl}/api/redis`;
     console.log(`[fetchAuth] Using Redis URL: ${redisUrl} (server: ${isServer})`);
 
+    // Сохраняем провайдер в Redis
+    const providerKey = "auth_provider";
+    const providerValue = isUsingDummyAuth ? AuthProvider.Dummy : AuthProvider.MyBackendDocs;
+    console.log(`[fetchAuth] Saving provider to Redis: ${providerValue}`);
+
+    const providerResponse = await fetch(redisUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key: providerKey,
+        value: providerValue
+      }),
+    });
+
+    if (!providerResponse.ok) {
+      console.error(`[fetchAuth] Failed to save provider to Redis: ${providerResponse.status}`);
+    } else {
+      console.log(`[fetchAuth] ✅ Provider saved to Redis successfully`);
+    }
+
+    // Сохраняем токены в Redis
     const redisResponse = await fetch(redisUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
