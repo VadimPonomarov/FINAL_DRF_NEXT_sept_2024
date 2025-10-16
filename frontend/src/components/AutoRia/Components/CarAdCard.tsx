@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ interface CarAdCardProps {
 
 const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
   const { t, locale } = useI18n();
+  const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(ad.is_favorite || false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(ad.favorites_count || 0);
@@ -178,14 +180,80 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     }
   };
 
+  // Helper function to get image URL
+  const getImageUrl = () => {
+    if (!ad.images || (Array.isArray(ad.images) && ad.images.length === 0)) {
+      return '/api/placeholder/400/300';
+    }
+
+    // If images is an array, get the first image
+    if (Array.isArray(ad.images)) {
+      const firstImage = ad.images[0];
+      if (!firstImage) return '/api/placeholder/400/300';
+
+      // Try different possible URL fields
+      const url = firstImage.image_display_url || firstImage.url || firstImage.image;
+
+      if (!url) return '/api/placeholder/400/300';
+
+      // If URL is already absolute (starts with http), use it as is
+      if (typeof url === 'string' && url.startsWith('http')) {
+        return url;
+      }
+
+      // If URL starts with /media/, proxy it through /api
+      if (typeof url === 'string' && url.startsWith('/media/')) {
+        return `/api${url}`;
+      }
+
+      // If URL starts with /api/media/, use it as is
+      if (typeof url === 'string' && url.startsWith('/api/media/')) {
+        return url;
+      }
+
+      // Otherwise, assume it's a relative path and add /api/media/ prefix
+      return `/api/media/${String(url).replace(/^\/+/, '')}`;
+    }
+
+    // If images is a string, use it directly
+    if (typeof ad.images === 'string') {
+      if (ad.images.startsWith('http')) return ad.images;
+      if (ad.images.startsWith('/media/')) return `/api${ad.images}`;
+      if (ad.images.startsWith('/api/media/')) return ad.images;
+      return `/api/media/${ad.images.replace(/^\/+/, '')}`;
+    }
+
+    return '/api/placeholder/400/300';
+  };
+
+  // Handle card click to navigate to ad details
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons or interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a')) {
+      return;
+    }
+    router.push(`/autoria/ad/${ad.id}`);
+  };
+
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+    <Card
+      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* 🖼️ Изображение */}
       <div className="relative">
         <img
-          src={(Array.isArray(ad.images) ? (ad.images[0]?.image_display_url || ad.images[0]?.url || ad.images[0]?.image) : ad.images) || '/api/placeholder/400/300'}
+          src={getImageUrl()}
           alt={ad.title}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            // Fallback to placeholder if image fails to load
+            const target = e.target as HTMLImageElement;
+            if (target.src !== '/api/placeholder/400/300') {
+              target.src = '/api/placeholder/400/300';
+            }
+          }}
         />
         
         {/* 🏷️ Бейджи */}
@@ -270,11 +338,11 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
             <Phone className="h-4 w-4 mr-1" />
             {t('phone')}
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="flex-1"
-            onClick={() => window.location.href = `/autoria/ad/${ad.id}`}
+            onClick={() => router.push(`/autoria/ad/${ad.id}`)}
           >
             {t('common.open')}
           </Button>

@@ -27,12 +27,14 @@ const PUBLIC_PATHS = [
   '/api/autoria/ads/quick-stats',  // Public statistics endpoint
   '/api/autoria/accounts/admin/stats',  // Public account statistics
   '/register',     // User registration
-  '/auth'          // Auth redirect page
+  '/auth',         // Auth redirect page
+  '/login'         // Login page - public to avoid redirect loops
 ];
 
 // Paths that require internal NextAuth session (but not backend tokens)
-const INTERNAL_AUTH_PATHS = [
-  '/login'      // Login page for getting external API tokens - requires internal session
+// REMOVED: /login should be public to avoid redirect loops
+const INTERNAL_AUTH_PATHS: string[] = [
+  // '/login' is now public - it handles its own authentication
 ];
 
 // Autoria paths that require backend_auth tokens in Redis

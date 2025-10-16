@@ -73,11 +73,27 @@ export const authConfig: AuthOptions = {
     strategy: "jwt",
     maxAge: 60 * 60 * 24, // 24 hours
   },
-  // НЕ указываем pages - NextAuth будет использовать встроенные страницы по умолчанию
-  // pages: {
-  //   signIn: '/api/auth/signin',  // NextAuth built-in signin page (default)
-  // },
+  // Настройка страниц для NextAuth
+  pages: {
+    signIn: '/login',  // Используем нашу кастомную страницу логина
+    error: '/login',   // При ошибке тоже редиректим на логин
+  },
   callbacks: {
+    // Redirect callback для управления редиректами после входа
+    async redirect({ url, baseUrl }) {
+      console.log('[NextAuth redirect] Callback triggered:', { url, baseUrl });
+
+      // Если URL начинается с baseUrl, используем его
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      // Если URL относительный, добавляем baseUrl
+      else if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      // По умолчанию редиректим на главную
+      return baseUrl;
+    },
     async signIn({ user, account, profile }) {
       console.log('[NextAuth signIn] Callback triggered:');
       console.log('  User:', user);

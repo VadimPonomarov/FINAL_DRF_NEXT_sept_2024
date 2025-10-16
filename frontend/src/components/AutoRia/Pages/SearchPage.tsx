@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,6 +66,8 @@ interface CarAd {
 const SearchPage = () => {
   // Хук для переводов
   const t = useTranslation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Хук для авторизации
   const { user, isAuthenticated } = useAutoRiaAuth();
@@ -84,6 +87,7 @@ const SearchPage = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Быстрые фильтры
   const [quickFilters, setQuickFilters] = useState({
@@ -128,6 +132,34 @@ const SearchPage = () => {
     brand_id: '',
     region_id: ''
   });
+
+  // Update URL with current filters (объявляем в самом начале, чтобы использовать везде)
+  const updateURL = useCallback((newFilters: typeof filters, page: number, sort: string, order: 'asc' | 'desc') => {
+    const params = new URLSearchParams();
+
+    // Add filters to URL
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value && value !== '' && key !== 'page_size') {
+        params.set(key, String(value));
+      }
+    });
+
+    // Add pagination and sorting
+    if (page > 1) params.set('page', String(page));
+    if (sort !== 'created_at') params.set('sort', sort);
+    if (order !== 'desc') params.set('order', order);
+
+    // Add quick filters
+    if (quickFilters.with_images) params.set('with_images', 'true');
+    if (quickFilters.my_ads) params.set('my_ads', 'true');
+    if (quickFilters.favorites) params.set('favorites', 'true');
+    if (quickFilters.verified) params.set('verified', 'true');
+    if (invertFilters) params.set('invert', 'true');
+
+    // Update URL without page reload
+    const newURL = params.toString() ? `?${params.toString()}` : '/autoria/search';
+    router.push(newURL, { scroll: false });
+  }, [router, quickFilters, invertFilters]);
 
   // Простая функция поиска
   const searchCars = useCallback(async () => {
@@ -272,8 +304,9 @@ const SearchPage = () => {
     console.log('📄 Page change:', currentPage, '->', newPage);
     setPaginationLoading(true);
     setCurrentPage(newPage);
+    updateURL(filters, newPage, sortBy, sortOrder);
     // searchCars автоматически вызовется через useCallback зависимости
-  }, [currentPage]);
+  }, [currentPage, filters, sortBy, sortOrder, updateURL]);
 
   // Обновление фильтра
   const updateFilter = (key: string, value: any) => {
@@ -283,6 +316,9 @@ const SearchPage = () => {
     console.log('🔄 New filters will be:', newFilters);
     setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
+
+    // Update URL with new filters
+    updateURL(newFilters, 1, sortBy, sortOrder);
 
     // УБИРАЕМ автоматический поиск - только по кнопке!
     console.log('🔄 Filter updated, but search will only run on button click');
@@ -329,6 +365,7 @@ const SearchPage = () => {
   const applyFilters = () => {
     console.log('🚀 APPLY FILTERS CLICKED!');
     console.log('🚀 Current filters:', filters);
+    updateURL(filters, currentPage, sortBy, sortOrder);
     searchCars();
   };
 
@@ -365,6 +402,9 @@ const SearchPage = () => {
       premium: false
     });
     setInvertFilters(false);
+
+    // Clear URL params
+    router.push('/autoria/search', { scroll: false });
 
     console.log('🔄 clearFilters - loading all cars without filters');
 
@@ -595,32 +635,64 @@ const SearchPage = () => {
     return user.is_superuser || false;
   };
 
-  // Загрузка при монтировании - загружаем начальные данные
+  // Restore filters from URL on mount
   useEffect(() => {
-    console.log('🔄 Component mounted, loading initial data');
-    // Загружаем начальные данные без фильтров
-    const loadInitialData = async () => {
-      try {
-        setLoading(true);
-        const response = await CarAdsService.getCarAds({
-          page: 1,
-          page_size: 20,
-          ordering: '-created_at'
-        });
-        setSearchResults(response.results || []);
-        setTotalCount(response.count || 0);
-        setCurrentPage(1);
-      } catch (error) {
-        console.error('❌ Initial data loading error:', error);
-        setSearchResults([]);
-        setTotalCount(0);
-      } finally {
-        setLoading(false);
-      }
+    if (isInitialized) return;
+
+    console.log('🔄 Component mounted, restoring filters from URL');
+
+    // Get filters from URL
+    const urlFilters: typeof filters = {
+      search: searchParams.get('search') || '',
+      vehicle_type: searchParams.get('vehicle_type') || '',
+      brand: searchParams.get('brand') || '',
+      model: searchParams.get('model') || '',
+      condition: searchParams.get('condition') || '',
+      year_from: searchParams.get('year_from') || '',
+      year_to: searchParams.get('year_to') || '',
+      price_from: searchParams.get('price_from') || '',
+      price_to: searchParams.get('price_to') || '',
+      region: searchParams.get('region') || '',
+      city: searchParams.get('city') || '',
+      page_size: 20
     };
 
-    loadInitialData();
-  }, []);
+    // Get pagination and sorting from URL
+    const urlPage = parseInt(searchParams.get('page') || '1');
+    const urlSort = searchParams.get('sort') || 'created_at';
+    const urlOrder = (searchParams.get('order') || 'desc') as 'asc' | 'desc';
+
+    // Get quick filters from URL
+    const urlQuickFilters = {
+      with_images: searchParams.get('with_images') === 'true',
+      my_ads: searchParams.get('my_ads') === 'true',
+      favorites: searchParams.get('favorites') === 'true',
+      verified: searchParams.get('verified') === 'true',
+      vip: false,
+      premium: false
+    };
+
+    const urlInvert = searchParams.get('invert') === 'true';
+
+    // Update state with URL params
+    setFilters(urlFilters);
+    setCurrentPage(urlPage);
+    setSortBy(urlSort);
+    setSortOrder(urlOrder);
+    setQuickFilters(urlQuickFilters);
+    setInvertFilters(urlInvert);
+    setIsInitialized(true);
+
+    console.log('✅ Filters restored from URL:', { urlFilters, urlPage, urlSort, urlOrder, urlQuickFilters, urlInvert });
+  }, [searchParams, isInitialized]);
+
+  // Загрузка при монтировании - загружаем начальные данные
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    console.log('🔄 Component initialized, loading data with filters');
+    searchCars();
+  }, [isInitialized]);
 
   // Очистка таймеров при размонтировании
   useEffect(() => {
