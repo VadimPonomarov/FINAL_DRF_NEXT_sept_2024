@@ -1160,6 +1160,9 @@ const SearchPage = () => {
                     <TabsTrigger value="results">{t('searchResults')}</TabsTrigger>
                     <TabsTrigger value="analytics">{t('analytics')}</TabsTrigger>
                   </TabsList>
+                  <TabsContent value="results">
+                    {/* Контент результатов будет отображаться ниже */}
+                  </TabsContent>
                   <TabsContent value="analytics">
                     <AnalyticsTabContent filters={filters as any} results={searchResults as any} loading={loading} />
                   </TabsContent>

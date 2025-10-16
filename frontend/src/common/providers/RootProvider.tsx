@@ -33,13 +33,13 @@ const queryClient = new QueryClient({
 // Компонент для глобального отслеживания API ошибок
 const GlobalApiErrorHandler: FC = () => {
   const { trackError } = useApiErrorHandler({
-    enableAutoRedirect: true,
-    criticalErrorThreshold: 3,
+    enableAutoRedirect: false, // Отключаем автоматический редирект - пользователь должен оставаться на странице
+    criticalErrorThreshold: 5, // Увеличиваем порог до 5 ошибок
     onCriticalError: () => {
-      console.log('[RootProvider] Critical API errors detected globally, forcing redirect to /signin');
+      console.log('[RootProvider] Critical API errors detected globally - NOT redirecting, user stays on page');
     },
     onBackendUnavailable: () => {
-      console.warn('[RootProvider] Backend appears to be unavailable globally');
+      console.warn('[RootProvider] Backend appears to be unavailable globally - user can continue working');
     }
   });
 

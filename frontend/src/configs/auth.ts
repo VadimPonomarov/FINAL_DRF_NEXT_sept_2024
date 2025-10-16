@@ -83,7 +83,7 @@ export const authConfig: AuthOptions = {
     maxAge: 60 * 60 * 24, // 24 hours
   },
   pages: {
-    // НЕ указываем signIn - пусть NextAuth использует встроенную страницу /api/auth/signin
+    signIn: '/api/auth/signin',  // Явно указываем встроенную страницу NextAuth
     // НЕ указываем signOut - пусть NextAuth использует свою страницу
     // НЕ указываем error - пусть NextAuth использует встроенную страницу ошибок
   },
