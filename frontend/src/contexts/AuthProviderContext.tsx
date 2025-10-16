@@ -68,8 +68,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut({ redirect: false }); // next-auth logout
     localStorage.removeItem("backend_auth");
     toast({ title: "Logged out successfully." });
-    // Redirect or update UI
-    window.location.href = '/login';
+    // Redirect to NextAuth signin page
+    window.location.href = '/api/auth/signin';
   }, []);
   
   const login = useCallback((user: User, accessToken: string, refreshToken: string) => {

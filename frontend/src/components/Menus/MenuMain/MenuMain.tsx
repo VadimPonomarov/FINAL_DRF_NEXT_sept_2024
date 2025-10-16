@@ -342,7 +342,7 @@ export const MenuMain: FC = () => {
             try {
               if (typeof signOut === 'function') {
                 console.log('Calling signOut...');
-                signOut({ callbackUrl: "/" });
+                signOut({ callbackUrl: "/api/auth/signin" });
               } else {
                 console.error('signOut function is not available');
                 // Fallback to manual logout

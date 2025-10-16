@@ -142,10 +142,10 @@ export function useApiErrorHandler(options: ApiErrorHandlerOptions = {}) {
       // Вызываем пользовательский обработчик
       onCriticalError?.();
       
-      // Перенаправляем на страницу первичной авторизации (/signin)
+      // Перенаправляем на страницу первичной авторизации NextAuth (/api/auth/signin)
       if (enableAutoRedirect) {
         const currentPath = window.location.pathname;
-        const redirectUrl = currentPath === '/signin' ? '/signin' : `/signin?callbackUrl=${encodeURIComponent(currentPath)}`;
+        const redirectUrl = currentPath === '/api/auth/signin' ? '/api/auth/signin' : `/api/auth/signin?callbackUrl=${encodeURIComponent(currentPath)}`;
 
         setTimeout(() => {
           window.location.href = redirectUrl;

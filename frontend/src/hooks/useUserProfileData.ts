@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 import {
   FullUserDataService,
@@ -31,9 +32,10 @@ import {
  * Хук для управления полными данными пользователя
  */
 export const useUserProfileData = () => {
+  const { data: session, status } = useSession();
   const { toast } = useToast();
   const DEBUG = process.env.NEXT_PUBLIC_DEBUG_PROFILE !== 'false' && process.env.NODE_ENV !== 'production';
-  
+
   // Состояние данных
   const [state, setState] = useState<DataLoadingState<FullUserProfileData>>({
     loading: true,
@@ -604,10 +606,30 @@ export const useUserProfileData = () => {
     }
   }, [toast]);
 
-  // Загружаем данные при монтировании компонента
+  // Загружаем данные только если пользователь авторизован
   useEffect(() => {
+    // Проверяем, что сессия загружена и пользователь авторизован
+    if (status === 'loading') {
+      // Сессия еще загружается, ждем
+      if (DEBUG) console.log('[useUserProfileData] Session loading, waiting...');
+      return;
+    }
+
+    if (status === 'unauthenticated' || !session) {
+      // Пользователь не авторизован, не загружаем данные
+      if (DEBUG) console.log('[useUserProfileData] User not authenticated, skipping data load');
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: 'User not authenticated'
+      }));
+      return;
+    }
+
+    // Пользователь авторизован, загружаем данные
+    if (DEBUG) console.log('[useUserProfileData] User authenticated, loading data...');
     loadUserData();
-  }, [loadUserData]);
+  }, [status, session, loadUserData, DEBUG]);
 
   return {
     // Состояние

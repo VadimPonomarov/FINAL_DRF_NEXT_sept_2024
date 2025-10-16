@@ -16,7 +16,7 @@ const intlMiddleware = createIntlMiddleware({
 
 // Public paths that don't require authentication
 const PUBLIC_PATHS = [
-  '/api/auth',     // NextAuth internal authentication
+  '/api/auth',     // NextAuth internal authentication (includes /api/auth/signin)
   '/api/redis',
   '/api/backend-health',
   '/api/health',
@@ -24,17 +24,14 @@ const PUBLIC_PATHS = [
   '/api/public',
   '/api/user',
   '/api/openapi',  // OpenAPI schema proxy - should be public for docs
-  '/api/autoria/ads/quick-stats',  // Public statistics endpoint
-  '/api/autoria/accounts/admin/stats',  // Public account statistics
   '/register',     // User registration
-  '/auth',         // Auth redirect page
-  '/login'         // Login page - public to avoid redirect loops
+  '/auth'          // Auth redirect page
+  // NOTE: /login removed - it should require internal session to get external API tokens
 ];
 
 // Paths that require internal NextAuth session (but not backend tokens)
-// REMOVED: /login should be public to avoid redirect loops
-const INTERNAL_AUTH_PATHS: string[] = [
-  // '/login' is now public - it handles its own authentication
+const INTERNAL_AUTH_PATHS = [
+  '/login'      // Login page for getting external API tokens - requires internal session
 ];
 
 // Autoria paths that require backend_auth tokens in Redis
@@ -52,31 +49,28 @@ const STATIC_PATHS = [
 // Function to check internal NextAuth session using withAuth
 async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   try {
-    console.log('[Middleware] Checking NextAuth session with withAuth');
+    console.log(`[Middleware] Checking NextAuth session with withAuth`);
 
     // Use NextAuth's withAuth to check session
-    const response = await withAuth(
-      req as any, // Cast to any to handle type mismatch
-      {
-        pages: {
-          signIn: '/api/auth/signin'  // NextAuth built-in signin page
-        }
+    const response = await withAuth(req, {
+      pages: {
+        signIn: '/api/auth/signin'
       }
-    );
+    });
 
     // If withAuth returns a response, it means there's no valid session
     if (response) {
-      console.log('[Middleware] No valid NextAuth session - redirecting to NextAuth signin with callback');
+      console.log(`[Middleware] No valid NextAuth session - redirecting to signin with callback`);
       // Create signin URL with callbackUrl parameter
       const signinUrl = new URL('/api/auth/signin', req.url);
       signinUrl.searchParams.set('callbackUrl', req.url);
       return NextResponse.redirect(signinUrl);
     }
 
-    console.log('[Middleware] Valid NextAuth session found - allowing access');
+    console.log(`[Middleware] Valid NextAuth session found - allowing access`);
     return NextResponse.next();
   } catch (error) {
-    console.error('[Middleware] Error checking NextAuth session:', error);
+    console.error(`[Middleware] Error checking NextAuth session:`, error);
     // Create signin URL with callbackUrl parameter
     const signinUrl = new URL('/api/auth/signin', req.url);
     signinUrl.searchParams.set('callbackUrl', req.url);
@@ -84,10 +78,29 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Function to check auth tokens presence in Redis (for Autoria access)
+// Function to check backend_auth tokens presence in Redis (for Autoria access)
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
-    // First, check which provider is used
+    // First, check NextAuth session using withAuth
+    console.log(`[Middleware] Checking NextAuth session for Autoria access`);
+    const authResponse = await withAuth(req, {
+      pages: {
+        signIn: '/api/auth/signin'
+      }
+    });
+
+    // If withAuth returns a response, it means there's no valid NextAuth session
+    if (authResponse) {
+      console.log(`[Middleware] No valid NextAuth session - redirecting to signin`);
+      const signinUrl = new URL('/api/auth/signin', req.url);
+      signinUrl.searchParams.set('callbackUrl', req.url);
+      return NextResponse.redirect(signinUrl);
+    }
+
+    // NextAuth session exists, now check backend tokens
+    console.log(`[Middleware] NextAuth session valid, checking backend tokens`);
+
+    // Check which provider is used
     const providerResponse = await fetch(`${req.nextUrl.origin}/api/redis?key=auth_provider`);
     let authKey = 'backend_auth'; // default
 
@@ -105,7 +118,6 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
 
     if (!redisResponse.ok) {
       console.log(`[Middleware] Failed to check Redis for ${authKey} tokens`);
-      // Create login URL with callbackUrl parameter
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('callbackUrl', req.url);
       return NextResponse.redirect(loginUrl);
@@ -114,42 +126,23 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
     const redisData = await redisResponse.json();
     if (!redisData.exists || !redisData.value) {
       console.log(`[Middleware] No ${authKey} tokens found in Redis - redirecting to login with callback`);
-      // Create login URL with callbackUrl parameter
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('callbackUrl', req.url);
-
-      console.log('[Middleware] Redirecting to login:', {
-        originalUrl: req.url,
-        loginUrl: loginUrl.href,
-        callbackUrl: req.url,
-        checkedKey: authKey
-      });
-
       return NextResponse.redirect(loginUrl);
     }
 
     const authData = JSON.parse(redisData.value);
     if (!authData.access || !authData.refresh) {
       console.log(`[Middleware] Incomplete ${authKey} tokens in Redis - redirecting to login with callback`);
-      // Create login URL with callbackUrl parameter
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('callbackUrl', req.url);
-
-      console.log('[Middleware] Redirecting to login (incomplete tokens):', {
-        originalUrl: req.url,
-        loginUrl: loginUrl.href,
-        callbackUrl: req.url,
-        checkedKey: authKey
-      });
-
       return NextResponse.redirect(loginUrl);
     }
 
     console.log(`[Middleware] ${authKey} tokens found in Redis - allowing Autoria access`);
     return NextResponse.next();
   } catch (error) {
-    console.error('[Middleware] Error checking auth tokens:', error);
-    // Create login URL with callbackUrl parameter
+    console.error('[Middleware] Error checking backend_auth tokens:', error);
     const loginUrl = new URL('/login', req.url);
     loginUrl.searchParams.set('callbackUrl', req.url);
     return NextResponse.redirect(loginUrl);
@@ -164,12 +157,6 @@ export default async function middleware(req: NextRequest) {
   // Check if this is a static file path
   if (STATIC_PATHS.some(path => pathname.includes(path))) {
     console.log('[Middleware] Static path, allowing access');
-    return NextResponse.next();
-  }
-
-  // Check if this is the root path (home page) - always allow access
-  if (pathname === '/') {
-    console.log('[Middleware] Root path (home page), allowing access without authentication');
     return NextResponse.next();
   }
 
@@ -207,8 +194,8 @@ export default async function middleware(req: NextRequest) {
   }
 
   // Handle internationalization only for specific paths that need it
-  const i18nPaths = ['/help', '/about']; // Only for static pages
-  const excludeFromI18n = ['/autoria', '/api', '/login', '/register', '/docs']; // Exclude from i18n
+  const i18nPaths = ['/help', '/about'];
+  const excludeFromI18n = ['/autoria', '/api', '/login', '/register', '/docs'];
 
   const needsI18n = i18nPaths.some(path => pathname.startsWith(path));
   const shouldExcludeFromI18n = excludeFromI18n.some(path => pathname.startsWith(path));
@@ -223,9 +210,9 @@ export default async function middleware(req: NextRequest) {
     return intlMiddleware(req);
   }
 
-  // For all other paths, require authentication (NextAuth session)
-  console.log('[Middleware] Protected path, checking NextAuth session');
-  return await checkInternalAuth(req);
+  // For all other paths, allow access without i18n processing
+  console.log('[Middleware] Regular path, allowing access without i18n');
+  return NextResponse.next();
 }
 
 export const config = {
@@ -234,3 +221,4 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
+

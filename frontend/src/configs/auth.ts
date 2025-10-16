@@ -64,7 +64,16 @@ export const authConfig: AuthOptions = {
         },
       },
       async authorize(credentials) {
-        if (!credentials?.email) return null;
+        console.log('[CredentialsProvider] authorize called with:', { email: credentials?.email });
+
+        if (!credentials?.email) {
+          console.log('[CredentialsProvider] No email provided');
+          return null;
+        }
+
+        // Разрешаем создание NextAuth сессии для любого email
+        // Backend токены будут проверяться middleware для доступа к /autoria
+        console.log('[CredentialsProvider] Allowing NextAuth session for email:', credentials.email);
         return { id: credentials.email, email: credentials.email };
       },
     }),
@@ -73,10 +82,10 @@ export const authConfig: AuthOptions = {
     strategy: "jwt",
     maxAge: 60 * 60 * 24, // 24 hours
   },
-  // Настройка страниц для NextAuth
   pages: {
-    signIn: '/login',  // Используем нашу кастомную страницу логина
-    error: '/login',   // При ошибке тоже редиректим на логин
+    // НЕ указываем signIn - пусть NextAuth использует встроенную страницу /api/auth/signin
+    // НЕ указываем signOut - пусть NextAuth использует свою страницу
+    // НЕ указываем error - пусть NextAuth использует встроенную страницу ошибок
   },
   callbacks: {
     // Redirect callback для управления редиректами после входа

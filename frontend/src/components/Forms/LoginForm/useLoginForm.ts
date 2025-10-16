@@ -267,36 +267,23 @@ export const useLoginForm = () => {
         if (redisSaveSuccess) {
           console.log('[LoginForm] ✅ Tokens confirmed saved to Redis by fetchAuth');
 
-          // Показываем только один toast с коротким временем отображения
           toast({
             title: "Authentication",
             description: "Authentication successful!",
-            duration: 2000, // Сокращаем время отображения
+            duration: 2000,
             variant: "default",
           });
 
           setMessage("Authentication successful!");
 
-          // Выполняем умное перенаправление после успешной аутентификации
-          console.log(`[Auth] Preparing smart redirect to: ${callbackUrl}`);
+          // Определяем URL для редиректа
+          const redirectUrl = rawCallbackUrl || callbackUrl || '/';
+          console.log(`[Auth] Redirecting to: ${redirectUrl}`);
 
-          redirectManager.smartRedirect({
-            callbackUrl: rawCallbackUrl,
-            provider: provider,
-            fallbackUrl: '/',
-            delay: 1500
-          }).then((result) => {
-            if (result.success) {
-              console.log(`[Auth] Redirect successful via ${result.method} to: ${result.redirectUrl}`);
-            } else {
-              console.error(`[Auth] Redirect failed:`, result.error);
-              // Fallback к router.push
-              router.push('/');
-            }
-          }).catch((error) => {
-            console.error(`[Auth] Smart redirect error:`, error);
-            router.push('/');
-          });
+          // Используем window.location.href для полной перезагрузки
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 1500);
         } else {
           console.error('[LoginForm] ❌ Tokens were NOT saved to Redis');
 
