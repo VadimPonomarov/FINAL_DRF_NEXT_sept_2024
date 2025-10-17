@@ -246,6 +246,7 @@ export class ServerAuthManager {
   static async getUserId(request: NextRequest): Promise<string | null> {
     const tokens = await this.getTokensFromRedis(request);
     if (!tokens) {
+      console.error('[ServerAuth] No tokens available for getUserId');
       return null;
     }
 
@@ -253,14 +254,22 @@ export class ServerAuthManager {
       // Decode the access token to get user ID
       const base64Url = tokens.access.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
+
+      // Use Buffer in Node.js; fallback to atob when available (edge/runtime)
+      let jsonPayload: string;
+      if (typeof (globalThis as any).atob === 'function') {
+        jsonPayload = decodeURIComponent(
+          (globalThis as any).atob(base64)
+            .split('')
+            .map((c: string) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+      } else {
+        jsonPayload = Buffer.from(base64, 'base64').toString('utf-8');
+      }
 
       const payload = JSON.parse(jsonPayload);
+      console.log('[ServerAuth] Token payload:', { user_id: payload.user_id, email: payload.email });
       return payload.user_id ? payload.user_id.toString() : null;
     } catch (error) {
       console.error('[ServerAuth] Error decoding token for user ID:', error);

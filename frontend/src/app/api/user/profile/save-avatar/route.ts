@@ -7,6 +7,8 @@ export async function PATCH(request: NextRequest) {
 
     // Check if user is authenticated
     const isAuthenticated = await ServerAuthManager.isAuthenticated(request);
+    console.log('[User Save Avatar API] 🔐 Authentication check result:', isAuthenticated);
+
     if (!isAuthenticated) {
       console.log('[User Save Avatar API] ❌ User not authenticated');
       return NextResponse.json(
@@ -17,6 +19,8 @@ export async function PATCH(request: NextRequest) {
 
     // Get user ID from token
     const userId = await ServerAuthManager.getUserId(request);
+    console.log('[User Save Avatar API] 👤 User ID from token:', userId);
+
     if (!userId) {
       console.log('[User Save Avatar API] ❌ Could not get user ID');
       return NextResponse.json(
@@ -41,6 +45,8 @@ export async function PATCH(request: NextRequest) {
       }
 
       console.log('[User Save Avatar API] 🔄 Saving avatar URL to profile...');
+      console.log('[User Save Avatar API] 🌐 Backend URL:', backendUrl);
+      console.log('[User Save Avatar API] 🖼️ Avatar URL to download:', requestData.avatar_url);
 
       // First, download and save the image locally on the backend
       const downloadResponse = await ServerAuthManager.authenticatedFetch(
@@ -54,15 +60,19 @@ export async function PATCH(request: NextRequest) {
         }
       );
 
+      console.log('[Save Avatar API] 📥 Download response status:', downloadResponse.status);
+
       if (!downloadResponse.ok) {
-        console.error('[Save Avatar API] ❌ Failed to download avatar:', downloadResponse.status);
+        const errorText = await downloadResponse.text();
+        console.error('[Save Avatar API] ❌ Failed to download avatar:', downloadResponse.status, errorText);
         return NextResponse.json(
-          { error: 'Failed to download avatar' },
+          { error: `Failed to download avatar: ${errorText}` },
           { status: downloadResponse.status }
         );
       }
 
       const downloadResult = await downloadResponse.json();
+      console.log('[Save Avatar API] 📦 Download result:', downloadResult);
       const localAvatarUrl = downloadResult.local_url;
 
       console.log('[Save Avatar API] ✅ Avatar downloaded and saved locally:', localAvatarUrl);
