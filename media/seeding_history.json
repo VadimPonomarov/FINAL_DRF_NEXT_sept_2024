@@ -1,0 +1,84 @@
+{
+  "version": "1.0.0",
+  "created_at": "2025-10-10T13:39:03.695029",
+  "seeding_operations": {
+    "reference_data": {
+      "seed_name": "reference_data",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-10-17T09:15:18.152053",
+      "completed_at": "2025-10-17T09:15:21.915279",
+      "environment": "docker",
+      "forced": true,
+      "records_created": 13673,
+      "records_updated": 0,
+      "execution_time": 3.7577648162841797,
+      "error_message": ""
+    },
+    "test_users": {
+      "seed_name": "test_users",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-10-17T09:15:21.919503",
+      "completed_at": "2025-10-17T09:15:23.338305",
+      "environment": "docker",
+      "forced": true,
+      "records_created": 0,
+      "records_updated": 0,
+      "execution_time": 1.4180428981781006,
+      "error_message": ""
+    },
+    "car_generations": {
+      "seed_name": "car_generations",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-10-17T09:15:23.368229",
+      "completed_at": "2025-10-17T09:15:23.487771",
+      "environment": "docker",
+      "forced": true,
+      "records_created": 131,
+      "records_updated": 0,
+      "execution_time": 0.12059998512268066,
+      "error_message": ""
+    },
+    "formatted_addresses": {
+      "seed_name": "formatted_addresses",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-10-17T09:15:23.586242",
+      "completed_at": "2025-10-17T09:15:23.781387",
+      "environment": "docker",
+      "forced": true,
+      "records_created": 0,
+      "records_updated": 0,
+      "execution_time": 0.1989290714263916,
+      "error_message": ""
+    },
+    "car_ads": {
+      "seed_name": "car_ads",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-10-17T09:15:23.802740",
+      "completed_at": "2025-10-17T09:15:23.883070",
+      "environment": "docker",
+      "forced": true,
+      "records_created": 0,
+      "records_updated": 0,
+      "execution_time": 0.09364676475524902,
+      "error_message": ""
+    },
+    "car_images": {
+      "seed_name": "car_images",
+      "seed_version": "1.0.0",
+      "status": "completed",
+      "started_at": "2025-10-17T09:15:23.896639",
+      "completed_at": "2025-10-17T09:15:24.016117",
+      "environment": "docker",
+      "forced": true,
+      "records_created": 0,
+      "records_updated": 0,
+      "execution_time": 0.06792926788330078,
+      "error_message": ""
+    }
+  }
+}
