@@ -13,10 +13,34 @@ interface TokenData {
  * Server-side utility for making authenticated requests with automatic token refresh
  */
 export class ServerAuthManager {
+  /**
+   * Get current auth provider from Redis
+   */
+  private static async getAuthProvider(request: NextRequest): Promise<'backend' | 'dummy'> {
+    try {
+      const providerResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=auth_provider`);
+      if (providerResponse.ok) {
+        const providerData = await providerResponse.json();
+        if (providerData.exists && providerData.value === 'dummy') {
+          return 'dummy';
+        }
+      }
+    } catch (error) {
+      console.error('[ServerAuth] Error getting provider:', error);
+    }
+    return 'backend'; // default
+  }
+
   private static async getTokensFromRedis(request: NextRequest): Promise<TokenData | null> {
     try {
       console.log('[ServerAuth] 🔍 Getting tokens from Redis...');
-      const redisUrl = `${request.nextUrl.origin}/api/redis?key=backend_auth`;
+
+      // Определяем провайдер
+      const provider = await this.getAuthProvider(request);
+      const authKey = provider === 'dummy' ? 'dummy_auth' : 'backend_auth';
+      console.log('[ServerAuth] 🔍 Using provider:', provider, 'with key:', authKey);
+
+      const redisUrl = `${request.nextUrl.origin}/api/redis?key=${authKey}`;
       console.log('[ServerAuth] 🔍 Redis URL:', redisUrl);
 
       const redisResponse = await fetch(redisUrl);
@@ -85,12 +109,17 @@ export class ServerAuthManager {
         return null;
       }
 
+      // Определяем провайдер для правильного ключа
+      const provider = await this.getAuthProvider(request);
+      const authKey = provider === 'dummy' ? 'dummy_auth' : 'backend_auth';
+      console.log('[ServerAuth] Storing refreshed tokens with key:', authKey);
+
       // Persist back to Redis for consistency (route already does it, but double-ensure)
       await fetch(`${request.nextUrl.origin}/api/redis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          key: 'backend_auth',
+          key: authKey,
           value: JSON.stringify({ access, refresh: newRefresh }),
         }),
       });
