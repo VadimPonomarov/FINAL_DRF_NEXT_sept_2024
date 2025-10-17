@@ -31,14 +31,18 @@ const PUBLIC_PATHS = [
 
 // Paths that require internal NextAuth session (but not backend tokens)
 const INTERNAL_AUTH_PATHS = [
-  '/login',     // Login page requires NextAuth session
   '/profile',   // Profile page requires NextAuth session
   '/settings'   // Settings page requires NextAuth session
 ];
 
 // Autoria paths that require backend_auth tokens in Redis
 const AUTORIA_PATHS = [
-  '/autoria'
+  '/autoria/search',    // Search page requires backend auth
+  '/autoria/ad',        // Ad detail page requires backend auth
+  '/autoria/my-ads',    // My ads page requires backend auth
+  '/autoria/favorites', // Favorites page requires backend auth
+  '/autoria/create',    // Create ad page requires backend auth
+  '/autoria'            // All other autoria paths require backend auth
 ];
 
 // Additional paths for Next.js static files
@@ -83,8 +87,10 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
     console.log(`[Middleware] Checking NextAuth session for Autoria access`);
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
+    console.log(`[Middleware] getToken result:`, token ? 'Token exists' : 'No token', token ? `email: ${token.email}` : '');
+
     // If no token, redirect to signin
-    if (!token) {
+    if (!token || !token.email) {
       console.log(`[Middleware] No valid NextAuth session - redirecting to signin`);
       const signinUrl = new URL('/api/auth/signin', req.url);
       signinUrl.searchParams.set('callbackUrl', req.url);
@@ -92,7 +98,7 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
     }
 
     // NextAuth session exists, now check backend tokens
-    console.log(`[Middleware] NextAuth session valid, checking backend tokens`);
+    console.log(`[Middleware] NextAuth session valid (email: ${token.email}), checking backend tokens`);
 
     // Check which provider is used
     const providerResponse = await fetch(`${req.nextUrl.origin}/api/redis?key=auth_provider`);

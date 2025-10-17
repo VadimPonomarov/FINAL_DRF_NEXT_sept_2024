@@ -722,7 +722,7 @@ const UpdatedProfilePage = () => {
             <Alert>
               <AlertDescription>
                 Please log in to access your profile.
-                <a href="/login" className="ml-2 underline text-blue-600">
+                <a href="/api/auth/signin" className="ml-2 underline text-blue-600">
                   Go to Login
                 </a>
               </AlertDescription>

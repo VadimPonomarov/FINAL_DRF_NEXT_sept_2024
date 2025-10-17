@@ -76,7 +76,7 @@ class ApiErrorTracker {
   private isCriticalError(status: number, url: string): boolean {
     // Критические ошибки:
     // 1. 500+ серверные ошибки
-    // 2. Network errors (status 0)
+    // 2. Network errors (status 0) - НО НЕ CORS ошибки для backend
     // 3. 404 для API endpoints (НО НЕ для /api/auth/* и /api/public/*)
 
     // Исключаем все auth endpoints - они могут возвращать 400/401/404 в нормальном режиме
@@ -94,6 +94,14 @@ class ApiErrorTracker {
       return false;
     }
 
+    // Исключаем CORS ошибки для прямых запросов к backend (status 0)
+    // Это происходит когда компоненты пытаются обратиться напрямую к http://localhost:8000
+    // вместо использования Next.js API routes
+    if (status === 0 && url.includes('localhost:8000')) {
+      console.warn('[ApiErrorTracker] CORS error detected for backend URL (not critical):', url);
+      return false;
+    }
+
     // 400-499 ошибки НЕ критические (это клиентские ошибки - неправильный запрос, нет прав и т.д.)
     if (status >= 400 && status < 500) {
       return false;
@@ -103,7 +111,7 @@ class ApiErrorTracker {
 
     return (
       status >= 500 ||  // Серверные ошибки
-      status === 0 ||   // Network error
+      status === 0 ||   // Network error (но CORS для backend уже отфильтрованы выше)
       (status === 404 && isApiEndpoint) // 404 для API (но уже отфильтрованы auth/public/redis выше)
     );
   }

@@ -191,8 +191,8 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       const firstImage = ad.images[0];
       if (!firstImage) return '/api/placeholder/400/300';
 
-      // Try different possible URL fields
-      const url = firstImage.image_display_url || firstImage.url || firstImage.image;
+      // ПРИОРИТЕТ: image_display_url (это правильное поле от бекенда)
+      const url = firstImage.image_display_url || firstImage.image_url || firstImage.url || firstImage.image;
 
       if (!url) return '/api/placeholder/400/300';
 
@@ -201,9 +201,9 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
         return url;
       }
 
-      // If URL starts with /media/, proxy it through /api
+      // If URL starts with /media/, proxy it through /api/media
       if (typeof url === 'string' && url.startsWith('/media/')) {
-        return `/api${url}`;
+        return `/api/media${url.substring(6)}`; // Remove /media/ and add /api/media/
       }
 
       // If URL starts with /api/media/, use it as is
@@ -218,7 +218,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     // If images is a string, use it directly
     if (typeof ad.images === 'string') {
       if (ad.images.startsWith('http')) return ad.images;
-      if (ad.images.startsWith('/media/')) return `/api${ad.images}`;
+      if (ad.images.startsWith('/media/')) return `/api/media${ad.images.substring(6)}`;
       if (ad.images.startsWith('/api/media/')) return ad.images;
       return `/api/media/${ad.images.replace(/^\/+/, '')}`;
     }

@@ -251,7 +251,7 @@ const MyAdsPage = () => {
                     {authError || t('authRequired.description')}
                   </p>
                   <div className="flex flex-col gap-3">
-                    <Link href="/login">
+                    <Link href="/api/auth/signin">
                       <Button className="w-full">
                         <LogIn className="h-4 w-4 mr-2" />
                         {t('authRequired.loginButton')}

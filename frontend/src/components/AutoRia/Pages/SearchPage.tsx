@@ -334,9 +334,28 @@ const SearchPage = () => {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // ОТКЛЮЧАЕМ автоматический поиск для текстового поля
-    // Поиск будет запускаться только по кнопке
-    console.log('🔍 Search text updated, but search will only run on button click:', value);
+    // Запускаем поиск автоматически через 800ms после последнего ввода
+    searchTimeoutRef.current = setTimeout(async () => {
+      console.log('🔍 Auto-search triggered after debounce:', value);
+
+      // Обновляем URL
+      const newFilters = { ...filters, search: value };
+      updateURL(newFilters, currentPage, sortBy, sortOrder);
+
+      // Запускаем поиск
+      try {
+        setLoading(true);
+        const searchParams = buildSearchParams(newFilters, currentPage, sortBy, sortOrder);
+        const response = await CarAdsService.getCarAds(searchParams);
+
+        setSearchResults(response.results || []);
+        setTotalCount(response.count || 0);
+      } catch (error) {
+        console.error('🔍 Auto-search error:', error);
+      } finally {
+        setLoading(false);
+      }
+    }, 800);
   };
 
   // Сброс только поля поиска
@@ -1307,10 +1326,11 @@ const SearchPage = () => {
                               let imageUrl = null;
 
                               if (car.images && car.images.length > 0) {
-                                let mainImage = car.images.find(img => img.is_main === true) || car.images[0];
+                                let mainImage = car.images.find(img => img.is_primary === true) || car.images[0];
 
                                 if (typeof mainImage === 'object') {
-                                  imageUrl = mainImage.image_display_url || mainImage.image;
+                                  // ПРИОРИТЕТ: image_display_url (это правильное поле от бекенда)
+                                  imageUrl = mainImage.image_display_url || mainImage.image_url || mainImage.image;
                                 } else if (typeof mainImage === 'string') {
                                   imageUrl = mainImage;
                                 }
@@ -1318,11 +1338,21 @@ const SearchPage = () => {
 
                               if (imageUrl) {
                                 let fullImageUrl = imageUrl;
+
+                                // Если URL уже абсолютный (начинается с http), используем как есть
                                 if (!imageUrl.startsWith('http')) {
-                                  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-                                  fullImageUrl = imageUrl.startsWith('/')
-                                    ? `${backendUrl}${imageUrl}`
-                                    : `${backendUrl}/${imageUrl}`;
+                                  // Если URL начинается с /media/, используем через /api/media
+                                  if (imageUrl.startsWith('/media/')) {
+                                    fullImageUrl = `/api/media${imageUrl.substring(6)}`;
+                                  }
+                                  // Если URL начинается с /api/media/, используем как есть
+                                  else if (imageUrl.startsWith('/api/media/')) {
+                                    fullImageUrl = imageUrl;
+                                  }
+                                  // Иначе добавляем префикс /api/media/
+                                  else {
+                                    fullImageUrl = `/api/media/${imageUrl.replace(/^\/+/, '')}`;
+                                  }
                                 }
 
                                 return (
@@ -1331,6 +1361,7 @@ const SearchPage = () => {
                                     alt={car.title}
                                     className="w-full h-full object-cover rounded-t-lg"
                                     onError={(e) => {
+                                      console.error('❌ Image load error:', fullImageUrl);
                                       e.currentTarget.style.display = 'none';
                                       e.currentTarget.nextElementSibling!.style.display = 'flex';
                                     }}

@@ -562,8 +562,8 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
           console.log('[HomeContent] Countdown:', newValue);
 
           if (newValue <= 0) {
-            console.log('[HomeContent] Redirecting to /login');
-            window.location.href = '/login';
+            console.log('[HomeContent] Redirecting to /api/auth/signin');
+            window.location.href = '/api/auth/signin';
             return 0;
           }
           return newValue;
@@ -664,7 +664,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
                     {t('authRequired.autoRedirect').replace('7', countdown.toString())}
                   </p>
                   <div className="flex flex-col gap-3">
-                    <Link href="/login">
+                    <Link href="/api/auth/signin">
                       <Button className="w-full">
                         <LogIn className="h-4 w-4 mr-2" />
                         {t('authRequired.loginButton')}

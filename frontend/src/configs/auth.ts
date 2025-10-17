@@ -93,13 +93,17 @@ export const authConfig: AuthOptions = {
       console.log('[NextAuth JWT] Callback triggered:', {
         hasToken: !!token,
         hasUser: !!user,
-        email: token.email
+        tokenEmail: token.email,
+        userEmail: user?.email
       });
 
       if (user) {
         token.accessToken = user.id;
         token.email = user.email;
+        console.log('[NextAuth JWT] Added email to token:', user.email);
       }
+
+      console.log('[NextAuth JWT] Returning token with email:', token.email);
       return token;
     },
 
@@ -123,16 +127,14 @@ export const authConfig: AuthOptions = {
         throw new Error("Session expiration date is not a valid timestamp.");
       }
 
-      // Возвращаем расширенную сессию с дополнительными данными
+      // Возвращаем плоский объект с email на верхнем уровне (как в примере)
+      // ВАЖНО: должны вернуть expires для корректной работы NextAuth
       return {
-        ...session,
-        user: {
-          ...session.user,
-          email: token.email as string,
-        },
+        email: token.email as string,
         accessToken: token.accessToken,
         expiresOn: new Date(expiresTimestamp).toLocaleString(),
-      } as Session;
+        expires: session.expires, // Обязательно для NextAuth
+      } as unknown as Session;
     },
 
     // Redirect callback для управления редиректами после входа
