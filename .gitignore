@@ -298,3 +298,4 @@ logs/
 log/
 /docs/
 /frontend/docs/
+/rabbitmq/
