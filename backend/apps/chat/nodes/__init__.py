@@ -3,7 +3,7 @@ Enhanced nodes package for LangGraph chat agent.
 
 This package contains all processing nodes for the chat agent:
 - ChatAI nodes for text and image generation
-- Tavily nodes for web search
+- DuckDuckGo nodes for web search
 - Crawl4AI nodes for web scraping
 - File operation nodes
 - Utility nodes for basic operations
@@ -16,10 +16,10 @@ from .chatai_nodes import (
     chatai_enhanced_text_node
 )
 
-from .tavily_nodes import (
-    tavily_search_node,
-    tavily_enhanced_search_node,
-    tavily_context_node
+from .duckduckgo_nodes import (
+    duckduckgo_search_node,
+    duckduckgo_enhanced_search_node,
+    duckduckgo_context_node
 )
 
 from .crawl4ai_nodes import (
@@ -49,10 +49,10 @@ __all__ = [
     'chatai_image_node',
     'chatai_enhanced_text_node',
 
-    # Tavily nodes
-    'tavily_search_node',
-    'tavily_enhanced_search_node',
-    'tavily_context_node',
+    # DuckDuckGo nodes
+    'duckduckgo_search_node',
+    'duckduckgo_enhanced_search_node',
+    'duckduckgo_context_node',
 
     # Crawl4AI nodes
     'crawl4ai_extract_node',

@@ -1,9 +1,8 @@
+import { AUTH_CONFIG } from '@/common/constants/constants';
 import { AuthOptions, Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { AUTH_CONFIG } from "@/common/constants/constants";
 
-// Простое логирование без криптографии
 console.log('[Auth Config] Simple OAuth Configuration:');
 console.log(`  GOOGLE_CLIENT_ID: ${AUTH_CONFIG.GOOGLE_CLIENT_ID ? '[SET]' : '[EMPTY]'}`);
 console.log(`  GOOGLE_CLIENT_SECRET: ${AUTH_CONFIG.GOOGLE_CLIENT_SECRET ? '[SET]' : '[EMPTY]'}`);

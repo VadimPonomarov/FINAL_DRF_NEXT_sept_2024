@@ -15,10 +15,10 @@ from .nodes.chatai_nodes import (
     chatai_image_node,
     chatai_enhanced_text_node
 )
-from .nodes.tavily_nodes import (
-    tavily_search_node,
-    tavily_enhanced_search_node,
-    tavily_context_node
+from .nodes.duckduckgo_nodes import (
+    duckduckgo_search_node,
+    duckduckgo_enhanced_search_node,
+    duckduckgo_context_node
 )
 from .nodes.crawl4ai_nodes import (
     crawl4ai_extract_node,
@@ -94,8 +94,8 @@ class EnhancedAgentGraph:
             "chatai_enhanced": chatai_enhanced_text_node,
 
             # Search and crawling nodes
-            "tavily_search": tavily_search_node,
-            "tavily_enhanced": tavily_enhanced_search_node,
+            "duckduckgo_search": duckduckgo_search_node,
+            "duckduckgo_enhanced": duckduckgo_enhanced_search_node,
             "crawl4ai_extract": crawl4ai_extract_node,
             "crawl4ai_ask": crawl4ai_ask_node,
 
@@ -137,7 +137,7 @@ class EnhancedAgentGraph:
                 Intent.GENERAL_CHAT: "chatai_enhanced",
                 Intent.TEXT_GENERATION: "chatai_text",
                 Intent.IMAGE_GENERATION: "chatai_image",
-                Intent.FACTUAL_SEARCH: "tavily_enhanced",
+                Intent.FACTUAL_SEARCH: "duckduckgo_enhanced",
                 Intent.WEB_CRAWLING: "crawl4ai_ask",
                 Intent.CODE_EXECUTION: "codegen",
                 Intent.FILE_READ: "file_read",
@@ -151,8 +151,8 @@ class EnhancedAgentGraph:
         graph.add_edge("chatai_text", "output")
         graph.add_edge("chatai_image", "output")
         graph.add_edge("chatai_enhanced", "output")
-        graph.add_edge("tavily_search", "output")
-        graph.add_edge("tavily_enhanced", "output")
+        graph.add_edge("duckduckgo_search", "output")
+        graph.add_edge("duckduckgo_enhanced", "output")
         graph.add_edge("crawl4ai_extract", "output")
         graph.add_edge("crawl4ai_ask", "output")
         graph.add_edge("file_read", "output")

@@ -50,6 +50,18 @@ console.log(`📁 REDIS_HOST: ${process.env.REDIS_HOST || 'NOT_SET'}`);
 console.log(`📁 REDIS_URL: ${process.env.REDIS_URL || 'NOT_SET'}`);
 console.log(`📁 IS_DOCKER: ${process.env.IS_DOCKER || 'NOT_SET'}`);
 console.log(`📁 NEXT_PUBLIC_IS_DOCKER: ${process.env.NEXT_PUBLIC_IS_DOCKER || 'NOT_SET'}`);
+console.log(`📁 NEXTAUTH_URL: ${process.env.NEXTAUTH_URL || 'NOT_SET'}`);
+
+// Проверка дешифровки переменных
+console.log('🔐 Checking decrypted OAuth config:');
+try {
+  const crypto = require('./src/lib/simple-crypto');
+  const decrypted = crypto.getDecryptedOAuthConfig();
+  console.log(`✅ Decryption check - GOOGLE_CLIENT_ID: ${decrypted.GOOGLE_CLIENT_ID ? 'OK' : 'EMPTY'}`);
+  console.log(`✅ Decryption check - GOOGLE_CLIENT_SECRET: ${decrypted.GOOGLE_CLIENT_SECRET ? 'OK' : 'EMPTY'}`);
+} catch (error) {
+  console.error('❌ Decryption check failed:', error.message);
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

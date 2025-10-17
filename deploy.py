@@ -952,13 +952,40 @@ def build_frontend():
     show_progress_bar(2, 4, "🧹 Очищення порту 3000...")
     run_command("npm run kill 3000", cwd=frontend_dir, check=False, capture_output=False)
 
+    # Налаштовуємо змінні оточення для production режиму з development поведінкою
+    show_progress_bar(3, 4, "⚙️ Налаштування змінних оточення...")
+
+    # Створюємо тимчасовий .env файл для production збірки
+    env_file = frontend_dir / ".env.production"
+    with open(env_file, 'w', encoding='utf-8') as f:
+        f.write("# Тимчасові змінні для production збірки з development поведінкою\n")
+        f.write("NODE_ENV=production\n")
+        f.write(f"NEXT_PUBLIC_BACKEND_URL={os.getenv('NEXT_PUBLIC_BACKEND_URL', 'http://localhost:8000')}\n")
+        f.write("NEXT_PUBLIC_IS_DOCKER=false\n")
+        f.write("DEPLOY_MODE=true\n")
+        f.write("NEXTAUTH_URL=http://localhost:3000\n")
+        # Используем дешифрованные значения из переменных окружения
+        nextauth_secret = os.getenv('NEXTAUTH_SECRET', '')
+        google_client_id = os.getenv('GOOGLE_CLIENT_ID', '')
+        google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET', '')
+
+        f.write(f"NEXTAUTH_SECRET={nextauth_secret}\n")
+        f.write(f"GOOGLE_CLIENT_ID={google_client_id}\n")
+        f.write(f"GOOGLE_CLIENT_SECRET={google_client_secret}\n")
+        f.write(f"NEXT_PUBLIC_GOOGLE_CLIENT_ID={google_client_id}\n")
+        f.write("NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000\n")
+        f.write("NEXT_PUBLIC_WS_URL=ws://localhost:8000\n")
+
+    print_success("Змінні оточення налаштовано")
+
     # Перевірка наявності старої збірки
     next_dir = frontend_dir / ".next"
     if next_dir.exists():
-        show_progress_bar(3, 4, "🗑️ Видалення старої збірки...")
+        show_progress_bar(4, 5, "🗑️ Видалення старої збірки...")
         run_command("rm -rf .next", cwd=frontend_dir, check=False, capture_output=False)
 
     # Production збірка з детальною індикацією прогресу
+    show_progress_bar(5, 5, "🔨 Production збірка...")
     print("⏳ Збірка фронтенда може зайняти 2-3 хвилини...")
     print("🔄 Відстеження прогресу збірки:")
 
@@ -1000,6 +1027,20 @@ def build_frontend():
     try:
         update_frontend_progress(40, "🔨 Збірка", "Компіляція TypeScript...")
 
+        # Налаштовуємо змінні оточення для Next.js збірки
+        build_env = os.environ.copy()
+        build_env.update({
+            "NODE_ENV": "production",
+            "NEXT_PUBLIC_BACKEND_URL": os.getenv('NEXT_PUBLIC_BACKEND_URL', 'http://localhost:8000'),
+            "NEXT_PUBLIC_IS_DOCKER": "false",
+            "DEPLOY_MODE": "true",
+            "NEXTAUTH_URL": "http://localhost:3000",
+            # Используем дешифрованные значения из переменных окружения
+            "NEXTAUTH_SECRET": os.getenv('NEXTAUTH_SECRET', ''),
+            "GOOGLE_CLIENT_ID": os.getenv('GOOGLE_CLIENT_ID', ''),
+            "GOOGLE_CLIENT_SECRET": os.getenv('GOOGLE_CLIENT_SECRET', ''),
+        })
+
         # Запускаємо збірку з відстеженням прогресу
         process = subprocess.Popen(
             "npm run build",
@@ -1010,7 +1051,8 @@ def build_frontend():
             stdin=subprocess.DEVNULL,
             text=True,
             bufsize=1,
-            universal_newlines=True
+            universal_newlines=True,
+            env=build_env  # Використовуємо налаштовані змінні оточення
         )
 
         # Відстежуємо прогрес збірки в реальному часі з детекцією застоїв
@@ -1020,6 +1062,39 @@ def build_frontend():
         stuck_timeout = 600  # 10 хвилин без прогресу = застій (збільшено для складних проектів)
         last_activity_time = time.time()  # Час останньої активності (будь-якого виводу)
         activity_timeout = 120  # 2 хвилини без будь-якого виводу = показуємо індикатор активності
+
+        # Добавляем анимацию для индикации активности
+        def show_activity_spinner():
+            spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+            import itertools
+            spinner_cycle = itertools.cycle(spinner_chars)
+            last_update = 0
+
+            while True:
+                time.sleep(1)
+                current_time = time.time()
+
+                # Показываем спиннер каждые 2 секунды если нет вывода
+                if current_time - last_update > 2:
+                    with build_progress["lock"]:
+                        current_progress_val = build_progress["progress"]
+                        current_status_val = build_progress["status"]
+
+                    # Показываем спиннер только если прогресс не меняется
+                    if current_progress_val < 100:
+                        spinner = next(spinner_cycle)
+                        progress_bar = "█" * int(current_progress_val / 10) + "░" * (10 - int(current_progress_val / 10))
+                        line = f"🔨 ⚛️ Next.js Frontend  [{progress_bar}] {current_progress_val:3.0f}% {spinner} {current_status_val}"
+                        print(f"\r{line}", end="", flush=True)
+                        last_update = current_time
+
+                # Выходим если сборка завершена
+                if current_progress >= 100:
+                    break
+
+        # Запускаем спиннер в отдельном потоке
+        spinner_thread = threading.Thread(target=show_activity_spinner, daemon=True)
+        spinner_thread.start()
 
         while True:
             output = process.stdout.readline()
@@ -1065,18 +1140,9 @@ def build_frontend():
                         safe_output = clean_output[:60] + ("..." if len(clean_output) > 60 else "")
                         update_frontend_progress(current_progress, "🔄 Обробка", safe_output)
             else:
-                # Якщо немає виводу, але процес живий - показуємо індикатор активності
-                if process.poll() is None and time_without_activity > 10:
-                    # Кожні 10 секунд без виводу показуємо анімований індикатор
-                    if int(time_without_activity) % 10 == 0:
-                        spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-                        spinner = spinner_chars[int(time_without_activity // 2) % len(spinner_chars)]
-                        update_frontend_progress(current_progress, f"{spinner} Обробка", f"Тиха обробка файлів... ({int(time_without_activity)}с без виводу)")
-
-                # Перевіряємо чи змінився прогрес
-                if current_progress > old_progress:
-                    last_progress_time = time.time()
-                    last_progress_value = current_progress
+                # Якщо немає виводу, но процесс живий - спиннер уже работает
+                # Обновляем время активности для корректного отслеживания
+                pass
 
             # Перевіряємо на застій (але не якщо процес завершився)
             time_without_progress = current_time - last_progress_time
@@ -1086,7 +1152,8 @@ def build_frontend():
             if time_without_activity > activity_timeout and process.poll() is None:
                 if time_without_activity % 30 < 1:  # Кожні 30 секунд
                     dots = "." * (int(time_without_activity // 30) % 4)
-                    update_frontend_progress(current_progress, "🔄 Обробка", f"Тиха обробка файлів{dots} ({int(time_without_activity//60)} хв без виводу)")
+                    update_frontend_progress(current_progress, "🔄 Тиха обробка", f"Next.js працює{dots} ({int(time_without_activity//60)} хв без виводу)")
+                    print(f"\n💡 Спіннер показує активність кожні 2 секунди")
 
             # Показуємо попередження кожні 2 хвилини
             if time_without_progress > 120 and time_without_progress % 120 < 1 and process.poll() is None:
@@ -1246,7 +1313,7 @@ def deploy_full_docker():
     return True
 
 def start_local_frontend():
-    """Запускає локальний фронтенд в production режимі"""
+    """Запускає локальний фронтенд в production режимі з правильними змінними"""
     print_step(4, "ТРЕТІЙ ЕТАП: Запуск оптимізованого локального фронтенда")
 
     frontend_dir = Path("frontend")
@@ -1265,16 +1332,32 @@ def start_local_frontend():
     print("⚠️  Для зупинки натисніть Ctrl+C")
     print()
 
-    # Запускаємо в production режимі
+    # Налаштовуємо змінні оточення для production сервера
+    server_env = os.environ.copy()
+    server_env.update({
+        "NODE_ENV": "production",
+        "NEXT_PUBLIC_BACKEND_URL": os.getenv('NEXT_PUBLIC_BACKEND_URL', 'http://localhost:8000'),
+        "NEXT_PUBLIC_IS_DOCKER": "false",
+        "DEPLOY_MODE": "true",
+        "NEXTAUTH_URL": "http://localhost:3000",
+        # Используем дешифрованные значения из переменных окружения
+        "NEXTAUTH_SECRET": os.getenv('NEXTAUTH_SECRET', ''),
+        "GOOGLE_CLIENT_ID": os.getenv('GOOGLE_CLIENT_ID', ''),
+        "GOOGLE_CLIENT_SECRET": os.getenv('GOOGLE_CLIENT_SECRET', ''),
+        "PORT": "3000",
+        "HOSTNAME": "localhost"
+    })
+
+    # Запускаємо в production режимі з правильними змінними
     try:
-        subprocess.run("npm run start", shell=True, cwd=frontend_dir)
+        subprocess.run("npm run start", shell=True, cwd=frontend_dir, env=server_env)
     except KeyboardInterrupt:
         print_success("\n✅ Локальний фронтенд зупинено")
-    
+
     return True
 
 def start_local_frontend_background():
-    """Запускає локальний фронтенд у фоновому режимі"""
+    """Запускає локальний фронтенд у фоновому режимі з правильними змінними оточення"""
     frontend_dir = Path("frontend")
     next_dir = frontend_dir / ".next"
 
@@ -1289,14 +1372,31 @@ def start_local_frontend_background():
     print("🚀 Запуск локального фронтенда у фоновому режимі...")
 
     try:
-        # Запускаємо фронтенд у фоновому режимі
+        # Налаштовуємо змінні оточення для production сервера
+        server_env = os.environ.copy()
+        server_env.update({
+            "NODE_ENV": "production",
+            "NEXT_PUBLIC_BACKEND_URL": os.getenv('NEXT_PUBLIC_BACKEND_URL', 'http://localhost:8000'),
+            "NEXT_PUBLIC_IS_DOCKER": "false",
+            "DEPLOY_MODE": "true",
+            "NEXTAUTH_URL": "http://localhost:3000",
+            # Используем дешифрованные значения из переменных окружения
+            "NEXTAUTH_SECRET": os.getenv('NEXTAUTH_SECRET', ''),
+            "GOOGLE_CLIENT_ID": os.getenv('GOOGLE_CLIENT_ID', ''),
+            "GOOGLE_CLIENT_SECRET": os.getenv('GOOGLE_CLIENT_SECRET', ''),
+            "PORT": "3000",
+            "HOSTNAME": "localhost"
+        })
+
+        # Запускаємо фронтенд у фоновому режимі з правильними змінними
         process = subprocess.Popen(
             "npm run start",
             shell=True,
             cwd=frontend_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            stdin=subprocess.DEVNULL
+            stdin=subprocess.DEVNULL,
+            env=server_env  # Використовуємо налаштовані змінні оточення
         )
 
         print(f"✅ Фронтенд запущено (PID: {process.pid})")
