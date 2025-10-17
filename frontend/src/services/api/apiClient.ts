@@ -20,11 +20,17 @@ class ApiClient {
   private baseUrl: string;
   private timeout: number;
   private retries: number;
+  private useProxy: boolean;
 
   constructor(options: ApiClientOptions = {}) {
-    this.baseUrl = options.baseUrl || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // Use environment variable for backend URL
+    const defaultBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    this.useProxy = false; // Direct backend requests
+    this.baseUrl = options.baseUrl || defaultBaseUrl;
     this.timeout = options.timeout || 15000;
     this.retries = options.retries || 1;
+
+    console.log(`[ApiClient] Initialized with baseUrl: ${this.baseUrl}`);
   }
 
   /**
@@ -102,7 +108,9 @@ class ApiClient {
     }
 
     // Подготавливаем URL
-    const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
+    const url = endpoint.startsWith('http')
+      ? endpoint
+      : `${this.baseUrl}${endpoint}`;
 
     // Создаем контроллер для таймаута
     const controller = new AbortController();
@@ -110,12 +118,11 @@ class ApiClient {
 
     try {
       console.log(`[ApiClient] ${method} ${url}`);
-      
+
       const response = await fetch(url, {
         method,
         headers: requestHeaders,
         body: body ? JSON.stringify(body) : undefined,
-        credentials: 'include',
         signal: controller.signal
       });
 

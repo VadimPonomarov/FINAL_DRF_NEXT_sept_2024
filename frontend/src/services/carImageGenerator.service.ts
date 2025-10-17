@@ -515,9 +515,9 @@ class CarImageGeneratorService {
    */
   private async generateSingleCarImage(prompt: string): Promise<string> {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-
-      const response = await fetch(`${backendUrl}/api/users/generate-image/`, {
+      // Используем Next.js API proxy вместо прямого запроса к backend
+      // Это избегает CORS ошибок и следует архитектуре проекта
+      const response = await fetch('/api/proxy/api/users/generate-image/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -529,6 +529,7 @@ class CarImageGeneratorService {
           width: 1024,
           height: 768
         }),
+        cache: 'no-store'
       });
 
       if (!response.ok) {

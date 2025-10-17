@@ -34,7 +34,7 @@ const queryClient = new QueryClient({
 const GlobalApiErrorHandler: FC = () => {
   const { trackError } = useApiErrorHandler({
     enableAutoRedirect: false, // Отключаем автоматический редирект - пользователь должен оставаться на странице
-    criticalErrorThreshold: 5, // Увеличиваем порог до 5 ошибок
+    criticalErrorThreshold: 10, // Увеличиваем порог до 10 ошибок (только серверные 500+ и network errors)
     onCriticalError: () => {
       console.log('[RootProvider] Critical API errors detected globally - NOT redirecting, user stays on page');
     },

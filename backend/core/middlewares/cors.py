@@ -18,17 +18,11 @@ class CORSMiddleware:
         origin = request.META.get('HTTP_ORIGIN', '')
         print(f"🔧 CORS: Processing request {request.method} {request.path} from origin: {origin}")
 
-        # Определяем CORS заголовки
-        if request.path.startswith('/api/doc/') or request.path.startswith('/api/docs/') or request.path.startswith('/swagger/'):
-            # Для документации разрешаем любой источник для iframe
-            allow_origin = '*'
-            allow_credentials = 'false'
-            print(f"🔧 CORS: API docs - allowing any origin for iframe: {request.path}")
-        else:
-            # Для API эндпоинтов разрешаем все источники для разработки
-            allow_origin = '*'
-            allow_credentials = 'false'
-            print(f"🔧 CORS: API endpoint - allowing all origins for development")
+        # Полностью отключаем CORS - разрешаем ВСЕ запросы без исключений
+        # Это безопасно для разработки и упрощает работу с API
+        allow_origin = '*'
+        allow_credentials = 'false'  # ВАЖНО: должно быть 'false' при allow_origin = '*'
+        print(f"🔧 CORS: Allowing ALL origins and methods (CORS fully disabled for development)")
 
         # Обработка preflight запросов (OPTIONS)
         if request.method == "OPTIONS":

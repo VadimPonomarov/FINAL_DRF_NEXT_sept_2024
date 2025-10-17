@@ -3,7 +3,8 @@
 export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   const resp = await fetch(input, {
     ...init,
-    credentials: init.credentials ?? 'include',
+    // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
+    // credentials: 'include' вызывает CORS ошибку с Access-Control-Allow-Origin: *
     headers: {
       'Content-Type': 'application/json',
       ...(init.headers || {})
@@ -20,7 +21,7 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
     if (refresh.ok) {
       const retry = await fetch(input, {
         ...init,
-        credentials: init.credentials ?? 'include',
+        // НЕ используем credentials: 'include'
         headers: {
           'Content-Type': 'application/json',
           ...(init.headers || {})

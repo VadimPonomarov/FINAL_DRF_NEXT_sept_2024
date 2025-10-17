@@ -28,8 +28,10 @@ export const apiAuthService = {
                     'Accept': 'application/json',
                 },
                 body: JSON.stringify(data),
-                credentials: 'include',
+                // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
+                // credentials: 'include' вызывает CORS ошибку с Access-Control-Allow-Origin: *
                 mode: 'cors',
+                cache: 'no-store'
             });
 
             console.log("Registration response status:", response.status);

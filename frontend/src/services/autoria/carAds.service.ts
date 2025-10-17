@@ -100,7 +100,9 @@ export class CarAdsService {
       headers: {
         'Content-Type': 'application/json'
       },
-      credentials: 'include' // Включаем cookies для авторизации
+      // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
+      // credentials: 'include' вызывает CORS ошибку с Access-Control-Allow-Origin: *
+      cache: 'no-store'
     });
 
     if (!response.ok) {

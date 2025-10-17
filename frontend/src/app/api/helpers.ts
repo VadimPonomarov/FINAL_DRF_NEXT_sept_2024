@@ -45,13 +45,14 @@ const handleFetchErrors = async (response: Response, key: string = "backend_auth
 
     switch (response.status) {
       case 401: {
-        console.log("Error 401: Token not valid. Attempting to refresh...");
+        console.log("[handleFetchErrors] Error 401: Token not valid. Attempting to refresh...");
         const refreshResult = await fetchRefresh(key);
         if (!refreshResult) {
-          console.log("Refresh failed after all attempts, redirecting to login...");
+          console.log("[handleFetchErrors] Refresh failed after all attempts, redirecting to login...");
           redirect("/login");
         }
-        // Return null to trigger a retry with new token
+        console.log("[handleFetchErrors] Refresh successful, returning null to trigger retry");
+        // Return null to trigger a retry with new token (caller must handle retry limit)
         return null;
       }
 
@@ -76,7 +77,7 @@ const handleFetchErrors = async (response: Response, key: string = "backend_auth
 };
 
 // General function for executing requests
-const fetchData = async (
+export const fetchData = async (
   endpoint: string,
   callbackUrl?: string,
   params?: Record<string, string>,
@@ -85,26 +86,15 @@ const fetchData = async (
   try {
     const urlSearchParams = new URLSearchParams(params).toString();
     const headers = await getAuthorizationHeaders();
+    const url = `${endpoint}${urlSearchParams ? `?${urlSearchParams}` : ''}`;
 
-    // Используем универсальный резолвер с приоритетной системой
-    // 1. Redis Service Registry -> 2. Environment -> 3. Defaults
-    const baseUrl = await resolveServiceUrl('backend', '', async (key: string) => {
-      return await apiGetRedis(key.replace('service_registry:', ''));
-    });
-
-    // Определяем ключ для токенов (пока оставляем старую логику)
+    // Определяем ключ для токенов
     const authProvider = (await apiGetRedis("auth_provider")) || AuthProvider.MyBackendDocs;
-
-    // Определяем ключ для токенов в зависимости от провайдера
     const tokenKey = authProvider === AuthProvider.Dummy ? "dummy_auth" : "backend_auth";
-
-    const url = `${baseUrl}${endpoint}${urlSearchParams ? `?${urlSearchParams}` : ''}`;
-    console.log('Fetching data from:', url);
 
     const response = await fetch(url, {
       headers,
       method: "GET",
-      credentials: 'include',
       cache: 'no-store' // Важно для серверных компонентов
     });
 
@@ -112,7 +102,14 @@ const fetchData = async (
 
     // If token refresh was needed and successful, retry the request once
     if (!result && response.status === 401 && retryCount === 0) {
+      console.log('[fetchData] Token refreshed, retrying request (attempt 1/1)...');
       return fetchData(endpoint, callbackUrl, params, retryCount + 1);
+    }
+
+    // If we still get 401 after refresh, don't retry again
+    if (!result && response.status === 401 && retryCount > 0) {
+      console.error('[fetchData] Still got 401 after token refresh, stopping retry to prevent infinite loop');
+      redirect("/login");
     }
 
     return result;
@@ -142,29 +139,41 @@ export const fetchRefresh = async (
 
     const redisDataString = typeof redisData === 'string' ? redisData : JSON.stringify(redisData);
     const parsedData = JSON.parse(redisDataString);
-    const { refresh, refreshAttempts = 0 } = parsedData;
+    const { refresh, refreshAttempts = 0, lastRefreshFailed = false, lastRefreshTime = 0 } = parsedData;
 
     if (!refresh) {
       console.error("No refresh token found in Redis data");
       return false;
     }
 
+    // Если последний refresh был неудачным менее 60 секунд назад, не пытаемся снова
+    const now = Date.now();
+    if (lastRefreshFailed && (now - lastRefreshTime) < 60000) {
+      console.error(`[fetchRefresh] Last refresh failed ${Math.round((now - lastRefreshTime) / 1000)}s ago, waiting before retry`);
+      return false;
+    }
+
     // Проверяем, не превысили ли мы максимальное количество попыток
     if (refreshAttempts >= maxAttempts) {
-      console.error(`Max refresh attempts (${maxAttempts}) reached for ${key}`);
+      console.error(`[fetchRefresh] Max refresh attempts (${maxAttempts}) reached for ${key}`);
       // Очищаем токены из Redis при превышении лимита попыток
-      await apiSetRedis(key, JSON.stringify({ refreshAttempts: maxAttempts }));
+      await apiSetRedis(key, JSON.stringify({
+        refreshAttempts: maxAttempts,
+        lastRefreshFailed: true,
+        lastRefreshTime: now
+      }));
       return false;
     }
 
     // Увеличиваем счетчик попыток
     const newAttempts = refreshAttempts + 1;
-    console.log(`Token refresh attempt ${newAttempts}/${maxAttempts} for ${key}`);
+    console.log(`[fetchRefresh] Token refresh attempt ${newAttempts}/${maxAttempts} for ${key}`);
 
     // Сохраняем увеличенный счетчик попыток
     await apiSetRedis(key, JSON.stringify({
       ...parsedData,
-      refreshAttempts: newAttempts
+      refreshAttempts: newAttempts,
+      lastRefreshTime: now
     }));
 
     const response = await fetch(`${baseUrl}/api/auth/refresh`, {
@@ -173,16 +182,24 @@ export const fetchRefresh = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ refresh }),
-      credentials: 'include',
+      // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
       cache: 'no-store'
     });
 
     if (!response.ok) {
-      console.error(`Failed to refresh token. Status: ${response.status}, Attempt: ${newAttempts}/${maxAttempts}`);
+      console.error(`[fetchRefresh] Failed to refresh token. Status: ${response.status}, Attempt: ${newAttempts}/${maxAttempts}`);
+
+      // Сохраняем информацию о неудачной попытке
+      await apiSetRedis(key, JSON.stringify({
+        ...parsedData,
+        refreshAttempts: newAttempts,
+        lastRefreshFailed: true,
+        lastRefreshTime: now
+      }));
 
       // Если это последняя попытка, логируем это
       if (newAttempts >= maxAttempts) {
-        console.error(`All ${maxAttempts} refresh attempts failed for ${key}`);
+        console.error(`[fetchRefresh] All ${maxAttempts} refresh attempts failed for ${key}, blocking retries for 60s`);
       }
 
       return false;
@@ -190,14 +207,16 @@ export const fetchRefresh = async (
 
     const data = await response.json();
 
-    // При успешном обновлении сбрасываем счетчик попыток
+    // При успешном обновлении сбрасываем счетчик попыток и флаги
     await apiSetRedis(key, JSON.stringify({
       access: data.access,
       refresh: data.refresh,
-      refreshAttempts: 0 // Сбрасываем счетчик при успехе
+      refreshAttempts: 0, // Сбрасываем счетчик при успехе
+      lastRefreshFailed: false, // Сбрасываем флаг неудачи
+      lastRefreshTime: now
     }));
 
-    console.log(`Token refresh successful for ${key}, attempts reset to 0`);
+    console.log(`[fetchRefresh] Token refresh successful for ${key}, attempts reset to 0`);
     return true;
   } catch (error) {
     console.error("Error during token refresh:", error);
@@ -297,12 +316,12 @@ export const fetchAuth = async (
     console.log(`[fetchAuth] Saving tokens to Redis with key: ${redisKey}`);
 
     // Get absolute URL for Redis API (server-side needs absolute URLs)
-    const isServer = typeof window === 'undefined';
-    const baseUrl = isServer
+    const isServerSide = typeof window === 'undefined';
+    const baseUrl = isServerSide
       ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' ? 'http://frontend:3000' : 'http://localhost:3000')
       : ''; // На клиенте используем относительный URL
     const redisUrl = `${baseUrl}/api/redis`;
-    console.log(`[fetchAuth] Using Redis URL: ${redisUrl} (server: ${isServer})`);
+    console.log(`[fetchAuth] Using Redis URL: ${redisUrl} (server: ${isServerSide})`);
 
     // Сохраняем провайдер в Redis
     const providerKey = "auth_provider";

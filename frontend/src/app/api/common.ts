@@ -106,7 +106,8 @@ export async function fetchWithDomain<T = any>(
         'Content-Type': 'application/json',
         ...customHeaders
       },
-      credentials: 'include',
+      // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
+      // credentials: 'include' вызывает CORS ошибку с Access-Control-Allow-Origin: *
       cache: 'no-store'
     };
 

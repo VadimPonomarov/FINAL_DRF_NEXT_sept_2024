@@ -40,7 +40,8 @@ export class AutoRiaUsersService {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        cache: 'no-store'
       });
 
       if (!response.ok) {
@@ -68,7 +69,8 @@ export class AutoRiaUsersService {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        cache: 'no-store'
       });
 
       if (!response.ok) {

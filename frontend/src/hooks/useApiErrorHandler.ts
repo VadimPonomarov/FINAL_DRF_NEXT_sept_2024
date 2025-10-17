@@ -75,16 +75,36 @@ class ApiErrorTracker {
 
   private isCriticalError(status: number, url: string): boolean {
     // Критические ошибки:
-    // 1. 404 для API endpoints (backend недоступен или неправильно настроен)
-    // 2. 500+ серверные ошибки
-    // 3. Network errors (status 0)
-    
-    const isApiEndpoint = url.includes('/api/') && !url.includes('/api/auth/');
-    
+    // 1. 500+ серверные ошибки
+    // 2. Network errors (status 0)
+    // 3. 404 для API endpoints (НО НЕ для /api/auth/* и /api/public/*)
+
+    // Исключаем все auth endpoints - они могут возвращать 400/401/404 в нормальном режиме
+    if (url.includes('/api/auth/')) {
+      return false;
+    }
+
+    // Исключаем public endpoints - они могут возвращать 404 если данных нет
+    if (url.includes('/api/public/')) {
+      return false;
+    }
+
+    // Исключаем Redis API - он может возвращать 404 если ключа нет
+    if (url.includes('/api/redis')) {
+      return false;
+    }
+
+    // 400-499 ошибки НЕ критические (это клиентские ошибки - неправильный запрос, нет прав и т.д.)
+    if (status >= 400 && status < 500) {
+      return false;
+    }
+
+    const isApiEndpoint = url.includes('/api/');
+
     return (
-      (status === 404 && isApiEndpoint) ||
-      status >= 500 ||
-      status === 0 // Network error
+      status >= 500 ||  // Серверные ошибки
+      status === 0 ||   // Network error
+      (status === 404 && isApiEndpoint) // 404 для API (но уже отфильтрованы auth/public/redis выше)
     );
   }
 

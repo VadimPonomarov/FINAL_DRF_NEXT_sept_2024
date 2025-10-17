@@ -32,6 +32,7 @@ export class AccountService {
           ...headers,
         },
         body: JSON.stringify(updateData),
+        cache: 'no-store'
       });
 
       if (!response.ok) {
@@ -62,6 +63,7 @@ export class AccountService {
           'Content-Type': 'application/json',
           ...headers,
         },
+        cache: 'no-store'
       });
 
       if (!response.ok) {
@@ -88,6 +90,7 @@ export class AccountService {
           'Content-Type': 'application/json',
           ...headers,
         },
+        cache: 'no-store'
       });
 
       if (!response.ok) {
@@ -120,6 +123,7 @@ export class AccountService {
           'Content-Type': 'application/json',
           ...headers,
         },
+        cache: 'no-store'
       });
 
       console.log('📡 Response status:', response.status);
@@ -178,6 +182,7 @@ export class AccountService {
           'Content-Type': 'application/json',
           ...headers,
         },
+        cache: 'no-store'
       });
 
       console.log('📡 Response status:', response.status);
@@ -216,6 +221,7 @@ export class AccountService {
           'Content-Type': 'application/json',
           ...headers,
         },
+        cache: 'no-store'
       });
 
       if (!response.ok) {
@@ -266,6 +272,7 @@ export class AccountService {
           ...headers,
         },
         body: JSON.stringify(updateData),
+        cache: 'no-store'
       });
 
       console.log('📡 Response status:', response.status);

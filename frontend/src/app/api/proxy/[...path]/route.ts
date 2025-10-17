@@ -65,15 +65,14 @@ async function handleRequest(
     
     console.log(`[Proxy API] ${method} /${path}`);
 
-    // Get backend URL - use Docker service name if in Docker environment
-    const isDocker = process.env.NEXT_PUBLIC_IS_DOCKER === 'true';
-    const backendUrl = isDocker
-      ? 'http://app:8000'  // Docker service name
-      : (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
+    // Get backend URL
+    // IMPORTANT: Frontend runs locally (not in Docker), so always use localhost
+    // Backend runs in Docker but exposes port 8000 to localhost
+    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
     // Build full URL
     const url = `${backendUrl}/${path}${request.nextUrl.search}`;
-    console.log(`[Proxy API] Proxying to: ${url} (Docker: ${isDocker})`);
+    console.log(`[Proxy API] Proxying to: ${url}`);
 
     // Get authorization headers
     const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
@@ -85,7 +84,8 @@ async function handleRequest(
         ...authHeaders,
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
+      // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
+      // credentials: 'include' вызывает CORS ошибку с Access-Control-Allow-Origin: *
       cache: 'no-store'
     };
 

@@ -98,14 +98,15 @@ const EnhancedCRUDGenerator: React.FC = () => {
   const authenticate = async () => {
     setIsLoading(true);
     try {
-      // Используем существующий NextAuth или другой механизм аутентификации
-      const response = await fetch('http://localhost:8000/api/auth/login', {
+      // Используем Next.js API proxy вместо прямого запроса к backend
+      const response = await fetch('/api/proxy/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: 'pvs.versia@gmail.com',
           password: '12345678'
-        })
+        }),
+        cache: 'no-store'
       });
 
       if (response.ok) {
@@ -152,8 +153,10 @@ const EnhancedCRUDGenerator: React.FC = () => {
     if (!authToken) return;
 
     try {
-      const response = await fetch('http://localhost:8000/api/ads/cars/', {
-        headers: getAuthHeaders()
+      // Используем Next.js API proxy вместо прямого запроса к backend
+      const response = await fetch('/api/proxy/api/ads/cars/', {
+        headers: getAuthHeaders(),
+        cache: 'no-store'
       });
 
       if (response.ok) {
@@ -224,10 +227,12 @@ const EnhancedCRUDGenerator: React.FC = () => {
         }
       };
       
-      const response = await fetch('http://localhost:8000/api/ads/cars/create', {
+      // Используем Next.js API proxy вместо прямого запроса к backend
+      const response = await fetch('/api/proxy/api/ads/cars/create', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify(adData)
+        body: JSON.stringify(adData),
+        cache: 'no-store'
       });
       
       if (response.ok) {
@@ -319,7 +324,8 @@ const EnhancedCRUDGenerator: React.FC = () => {
       const bodyTypeStr = pickBodyByType(vt, formData.body_type);
       const condStr = mapCondition(formData.condition);
 
-      const response = await fetch('http://localhost:8000/api/chat/generate-car-images/', {
+      // Используем Next.js API proxy вместо прямого запроса к backend
+      const response = await fetch('/api/proxy/api/chat/generate-car-images/', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -355,10 +361,12 @@ const EnhancedCRUDGenerator: React.FC = () => {
         const formData = new FormData();
         formData.append('image', file);
         
-        const response = await fetch(`http://localhost:8000/api/ads/${adId}/images`, {
+        // Используем Next.js API proxy вместо прямого запроса к backend
+        const response = await fetch(`/api/proxy/api/ads/${adId}/images`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${authToken}` },
-          body: formData
+          body: formData,
+          cache: 'no-store'
         });
         
         if (response.ok) {
@@ -384,10 +392,12 @@ const EnhancedCRUDGenerator: React.FC = () => {
         description: `${formData.description} [Обновлено: ${new Date().toLocaleString()}]`
       };
       
-      const response = await fetch(`http://localhost:8000/api/ads/cars/${adId}/update`, {
+      // Используем Next.js API proxy вместо прямого запроса к backend
+      const response = await fetch(`/api/proxy/api/ads/cars/${adId}/update`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
-        body: JSON.stringify(updateData)
+        body: JSON.stringify(updateData),
+        cache: 'no-store'
       });
       
       if (response.ok) {
@@ -416,9 +426,11 @@ const EnhancedCRUDGenerator: React.FC = () => {
     addOperation('DELETE', 'pending', `Удаление объявления ${adId}...`);
     
     try {
-      const response = await fetch(`http://localhost:8000/api/ads/cars/${adId}/delete`, {
+      // Используем Next.js API proxy вместо прямого запроса к backend
+      const response = await fetch(`/api/proxy/api/ads/cars/${adId}/delete`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
+        cache: 'no-store'
       });
       
       if (response.ok) {
@@ -444,9 +456,11 @@ const EnhancedCRUDGenerator: React.FC = () => {
     if (!authToken) return;
     
     try {
-      const response = await fetch(`http://localhost:8000/api/ads/${adId}/images/${imageId}`, {
+      // Используем Next.js API proxy вместо прямого запроса к backend
+      const response = await fetch(`/api/proxy/api/ads/${adId}/images/${imageId}`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
+        cache: 'no-store'
       });
       
       if (response.ok) {

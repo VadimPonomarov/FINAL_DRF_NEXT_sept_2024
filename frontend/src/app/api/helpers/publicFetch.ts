@@ -12,16 +12,20 @@ export async function fetchPublicData<T = any>(
   params?: Record<string, string>
 ): Promise<T | null> {
   try {
-    // Get backend URL from environment
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // Use Docker service name if in Docker, otherwise localhost
+    const isDocker = process.env.NEXT_PUBLIC_IS_DOCKER === 'true';
+    const backendUrl = isDocker
+      ? 'http://app:8000'  // Docker service name
+      : (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
 
     // Build URL with parameters
     const urlParams = new URLSearchParams(params || {});
-    const url = `${backendUrl}/${endpoint}${urlParams.toString() ? `?${urlParams.toString()}` : ''}`;
+    const queryString = urlParams.toString() ? `?${urlParams.toString()}` : '';
+    const url = `${backendUrl}/${endpoint}${queryString}`;
 
     console.log(`[Public Fetch] GET ${url}`);
 
-    // Make request to Django backend
+    // Make request
     const response = await fetch(url, {
       method: 'GET',
       headers: {
