@@ -23,6 +23,7 @@ import AnalyticsTabContent from '@/components/AutoRia/Analytics/AnalyticsTabCont
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
 import { useUserProfileData } from '@/hooks/useUserProfileData';
+import { smartFetch } from '@/utils/smartFetch';
 
 // Простой тип для автомобиля
 interface CarAd {
@@ -581,7 +582,7 @@ const SearchPage = () => {
       // Небольшая фоновая синхронизация счётчиков
       setTimeout(async () => {
         try {
-          const response = await fetch(`/api/autoria/cars/${carId}`);
+          const response = await smartFetch(`/api/autoria/cars/${carId}`);
           if (response.ok) {
             const carData = await response.json();
             setSearchResults(prevResults =>
@@ -651,7 +652,7 @@ const SearchPage = () => {
     setDeletingIds(prev => new Set(prev).add(carId));
 
     try {
-      const response = await fetch(`/api/autoria/cars/${carId}/delete`, {
+      const response = await smartFetch(`/api/autoria/cars/${carId}/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

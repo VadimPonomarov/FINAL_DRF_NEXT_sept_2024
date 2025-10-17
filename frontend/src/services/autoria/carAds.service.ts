@@ -18,6 +18,7 @@ import {
   ModerationResult,
   AccountLimits
 } from '@/types/autoria';
+import { fetchWithAuth } from '@/utils/fetchWithAuth';
 
 export class CarAdsService {
   // Получение списка объявлений с пагинацией и фильтрами
@@ -95,13 +96,11 @@ export class CarAdsService {
 
     console.log('[CarAdsService] Fetching cars:', endpoint);
 
-    const response = await fetch(endpoint, {
+    const response = await fetchWithAuth(endpoint, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       },
-      // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
-      // credentials: 'include' вызывает CORS ошибку с Access-Control-Allow-Origin: *
       cache: 'no-store'
     });
 
@@ -121,7 +120,7 @@ export class CarAdsService {
   static async getCarAd(id: number): Promise<CarAd> {
     console.log('[CarAdsService] Fetching car ad:', id);
 
-    const response = await fetch(`/api/autoria/cars/${id}`, {
+    const response = await fetchWithAuth(`/api/autoria/cars/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -227,7 +226,7 @@ export class CarAdsService {
     const deleteUrl = `/api/autoria/cars/${id}`;
     console.log('[CarAdsService] 📤 Delete URL:', deleteUrl);
 
-    const response = await fetch(deleteUrl, {
+    const response = await fetchWithAuth(deleteUrl, {
       method: 'DELETE'
     });
 
@@ -303,7 +302,7 @@ export class CarAdsService {
 
     console.log('[CarAdsService] Fetching my ads:', endpoint);
 
-    const response = await fetch(endpoint, {
+    const response = await fetchWithAuth(endpoint, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -405,7 +404,7 @@ export class CarAdsService {
 
     console.log('[CarAdsService] Fetching favorites:', endpoint);
 
-    const response = await fetch(endpoint, {
+    const response = await fetchWithAuth(endpoint, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

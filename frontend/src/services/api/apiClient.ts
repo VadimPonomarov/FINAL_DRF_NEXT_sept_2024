@@ -131,7 +131,7 @@ class ApiClient {
       // Если получили 401 и не пропускаем повтор, пытаемся обновить токены
       if (response.status === 401 && !skipAuth && !skipRetry) {
         console.log('[ApiClient] Got 401, attempting token refresh...');
-        
+
         const refreshSuccess = await this.refreshTokens();
         if (refreshSuccess) {
           console.log('[ApiClient] Token refreshed, retrying request...');
@@ -139,8 +139,14 @@ class ApiClient {
           return this.request<T>(endpoint, { ...options, skipRetry: true });
         } else {
           console.error('[ApiClient] Token refresh failed, redirecting to login');
-          // Можно добавить редирект на страницу логина
-          throw new Error('Authentication failed');
+
+          // Редирект на страницу логина с сохранением текущего URL
+          if (typeof window !== 'undefined') {
+            const currentUrl = window.location.pathname + window.location.search;
+            window.location.href = `/login?callbackUrl=${encodeURIComponent(currentUrl)}&error=session_expired`;
+          }
+
+          throw new Error('Authentication failed - session expired');
         }
       }
 
