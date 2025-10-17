@@ -86,18 +86,36 @@ export async function fetchWithDomain<T = any>(
     // This avoids CORS issues and follows the project architecture
     let url: string;
 
+    // Check if endpoint starts with 'api/' - these are direct Next.js API routes
+    const isDirectApiRoute = endpoint.startsWith('api/user/') ||
+                             endpoint.startsWith('api/auth/') ||
+                             endpoint.startsWith('api/autoria/');
+
     if (isServer) {
       // Server-side: use absolute URL to Next.js API
       const baseUrl = process.env.NEXT_PUBLIC_IS_DOCKER === 'true'
         ? 'http://frontend:3000'
         : 'http://localhost:3000';
-      url = `${baseUrl}/api/proxy/${endpoint}`;
+
+      if (isDirectApiRoute) {
+        // Direct API route - no proxy needed
+        url = `${baseUrl}/${endpoint}`;
+      } else {
+        // Backend endpoint - use proxy
+        url = `${baseUrl}/api/proxy/${endpoint}`;
+      }
     } else {
       // Client-side: use relative URL
-      url = `/api/proxy/${endpoint}`;
+      if (isDirectApiRoute) {
+        // Direct API route - no proxy needed
+        url = `/${endpoint}`;
+      } else {
+        // Backend endpoint - use proxy
+        url = `/api/proxy/${endpoint}`;
+      }
     }
 
-    console.log(`[fetchWithDomain] Proxied URL: ${url}`);
+    console.log(`[fetchWithDomain] ${isDirectApiRoute ? 'Direct' : 'Proxied'} URL: ${url}`);
 
     // Prepare request options
     const requestOptions: RequestInit = {

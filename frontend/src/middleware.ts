@@ -30,9 +30,8 @@ const PUBLIC_PATHS = [
 ];
 
 // Paths that require internal NextAuth session (but not backend tokens)
-// ВАЖНО: /login НЕ требует NextAuth сессию, потому что это страница для первичной авторизации
-// Страница /login сама проверит наличие сессии и покажет соответствующий UI
 const INTERNAL_AUTH_PATHS = [
+  '/login',     // Login page requires NextAuth session
   '/profile',   // Profile page requires NextAuth session
   '/settings'   // Settings page requires NextAuth session
 ];

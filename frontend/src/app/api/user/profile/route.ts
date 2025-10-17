@@ -1,0 +1,115 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { ServerAuthManager } from '@/utils/auth/serverAuth';
+
+/**
+ * API route for user profile
+ * Proxies requests to Django backend /api/users/profile/
+ */
+
+export async function GET(request: NextRequest) {
+  try {
+    console.log('[User Profile API] 📤 GET user profile...');
+
+    // Check if user is authenticated
+    const isAuthenticated = await ServerAuthManager.isAuthenticated(request);
+    if (!isAuthenticated) {
+      console.log('[User Profile API] ❌ User not authenticated');
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Get backend URL from environment
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+
+    // Make authenticated request to backend
+    const response = await ServerAuthManager.authenticatedFetch(
+      request,
+      `${backendUrl}/api/users/profile/`,
+      {
+        method: 'GET'
+      }
+    );
+
+    console.log('[User Profile API] 📥 Backend response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[User Profile API] ❌ Backend error:', errorText);
+      return NextResponse.json(
+        { error: `Backend request failed: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    console.log('[User Profile API] ✅ Profile data received successfully');
+
+    return NextResponse.json(data);
+
+  } catch (error) {
+    console.error('[User Profile API] ❌ Error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to fetch profile' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    console.log('[User Profile API] 📤 PATCH user profile...');
+
+    // Check if user is authenticated
+    const isAuthenticated = await ServerAuthManager.isAuthenticated(request);
+    if (!isAuthenticated) {
+      console.log('[User Profile API] ❌ User not authenticated');
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Get backend URL from environment
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+
+    // Get request body
+    const body = await request.json();
+    console.log('[User Profile API] 📝 Update data:', body);
+
+    // Make authenticated request to backend
+    const response = await ServerAuthManager.authenticatedFetch(
+      request,
+      `${backendUrl}/api/users/profile/`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(body)
+      }
+    );
+
+    console.log('[User Profile API] 📥 Backend response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[User Profile API] ❌ Backend error:', errorText);
+      return NextResponse.json(
+        { error: `Backend request failed: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    console.log('[User Profile API] ✅ Profile updated successfully');
+
+    return NextResponse.json(data);
+
+  } catch (error) {
+    console.error('[User Profile API] ❌ Error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to update profile' },
+      { status: 500 }
+    );
+  }
+}
+

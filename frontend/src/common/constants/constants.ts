@@ -36,7 +36,8 @@ const PORTS = {
 
 const EXTERNAL_SERVICES = {
   GOOGLE_OAUTH: 'https://accounts.google.com',
-  AUTORIA_API: 'https://developers.ria.com'
+  AUTORIA_API: 'https://developers.ria.com',
+  DUMMY_JSON: 'https://dummyjson.com'
 };
 
 // Auth configuration with decryption
