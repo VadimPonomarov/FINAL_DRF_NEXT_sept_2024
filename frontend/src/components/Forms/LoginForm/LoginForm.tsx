@@ -8,9 +8,9 @@ import NewResizableWrapper from "@/components/All/ResizableWrapper/NewResizableW
 import FormFieldsRenderer from "@/components/All/FormFieldsRenderer/FormFieldsRenderer";
 import { Button } from "@/components/ui/button";
 import ButtonGroup from "@/components/All/ButtonGroup/ButtonGroup";
-import UsersComboBox from "@/app/(main)/users/(details)/UsersComboBox/UsersComboBox";
-import BackendUsersComboBox from "@/app/(main)/users/(details)/BackendUsersComboBox/BackendUsersComboBox";
-import DummyUsersComboBox from "@/app/(main)/users/(details)/DummyUsersComboBox/DummyUsersComboBox";
+import UsersComboBox from "@/app/(main)/(dummy)/users/(details)/UsersComboBox/UsersComboBox";
+import BackendUsersComboBox from "@/app/(main)/(dummy)/users/(details)/BackendUsersComboBox/BackendUsersComboBox";
+import DummyUsersComboBox from "@/app/(main)/(dummy)/users/(details)/DummyUsersComboBox/DummyUsersComboBox";
 import {
     Select,
     SelectContent,

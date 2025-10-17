@@ -20,12 +20,12 @@ export const useUsers = ({ initialData }: IProps) => {
   const limit = useMemo(() => {
     const paramValue = searchParams.get("limit");
     return paramValue !== null ? Number(paramValue) : 30;
-  }, [searchParams.get("limit")]); // Более точная зависимость
+  }, [searchParams]); // Зависимость от всего searchParams
 
   const skip = useMemo(() => {
     const paramValue = searchParams.get("skip");
     return paramValue !== null ? Number(paramValue) : 0;
-  }, [searchParams.get("skip")]); // Более точная зависимость
+  }, [searchParams]); // Зависимость от всего searchParams
   const total = initialData instanceof Error ? 0 : Number(initialData.total);
   const [uniqueUsers, setUniqueUsers] = useState<IUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<IUser[]>([]);
@@ -85,6 +85,12 @@ export const useUsers = ({ initialData }: IProps) => {
         : { pages: [initialData], pageParams: [skip] },
       staleTime: Infinity,
     });
+
+  // Инвалидируем кэш при изменении URL параметров
+  useEffect(() => {
+    console.log('[useUsers] URL params changed, invalidating cache:', { limit, skip });
+    queryClient.invalidateQueries({ queryKey: ["users", limit, skip] });
+  }, [limit, skip, queryClient]);
 
   useEffect(() => {
     if (data) {

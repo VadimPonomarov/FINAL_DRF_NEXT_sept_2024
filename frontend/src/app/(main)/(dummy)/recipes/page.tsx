@@ -1,18 +1,25 @@
 import {FC} from "react";
 import {Metadata} from "next";
 import {IRecipesResponse} from "@/common/interfaces/recipe.interfaces";
-import RecipesClient from "@/app/(main)/recipes/RecipesClient";
+import RecipesClient from "@/app/(main)/(dummy)/recipes/RecipesClient";
 import {BaseUrl} from "@/common/constants/constants";
 import {notFound} from 'next/navigation';
 import { getAuthorizationHeaders } from "@/common/constants/headers";
 
 import styles from "./index.module.css";
 
-const RecipesPage: FC = async () => {
+import { PageProps } from 'next';
+
+type RecipesPageProps = PageProps;
+
+const RecipesPage: FC<RecipesPageProps> = async ({ searchParams }) => {
     try {
-        // Используем фиксированные значения для начальной загрузки
-        const limit = "10";
-        const skip = "0";
+        // Читаем параметры из URL
+        const resolvedSearchParams = await searchParams;
+        const limit = resolvedSearchParams?.limit?.toString() || "10";
+        const skip = resolvedSearchParams?.skip?.toString() || "0";
+
+        console.log('[RecipesPage] Server-side rendering with params:', { limit, skip });
 
         const headers = await getAuthorizationHeaders();
         const response = await fetch(

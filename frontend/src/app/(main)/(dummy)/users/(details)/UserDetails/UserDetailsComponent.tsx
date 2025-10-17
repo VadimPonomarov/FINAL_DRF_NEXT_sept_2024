@@ -1,4 +1,4 @@
-import styles from "@/app/(main)/users/(details)/UserCard/index.module.css";
+import styles from "@/app/(main)/(dummy)/users/(details)/UserCard/index.module.css";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,} from "@/components/ui/card.tsx";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
 import clsx from "clsx";

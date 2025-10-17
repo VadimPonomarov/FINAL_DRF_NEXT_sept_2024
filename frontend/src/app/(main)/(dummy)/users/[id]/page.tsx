@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { IUserResponse } from "@/common/interfaces/users.interfaces";
 import { IRecipesResponse } from "@/common/interfaces/recipe.interfaces";
 import { Metadata } from "next";
-import UserDetailsComponent from "@/app/(main)/users/(details)/UserDetails/UserDetailsComponent";
+import UserDetailsComponent from "@/app/(main)/(dummy)/users/(details)/UserDetails/UserDetailsComponent";
 import { BaseUrl } from "@/common/constants/constants";
 import { getAuthorizationHeaders } from "@/common/constants/headers";
 

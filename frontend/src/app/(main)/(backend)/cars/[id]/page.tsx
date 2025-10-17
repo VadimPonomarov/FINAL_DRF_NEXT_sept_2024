@@ -8,12 +8,12 @@ interface CarShowroomPageProps {
 }
 
 /**
- * Редирект со старого маршрута /cars/[id] на новый /autoria/ads/view/[id]
+ * Редирект со старого маршрута /cars/[id] на новый /autoria/ad/[id]
  * Обеспечивает обратную совместимость для старых ссылок
  */
 export default function CarShowroomPage({ params }: CarShowroomPageProps) {
   const resolvedParams = use(params);
 
   // Редиректим на новый маршрут
-  redirect(`/autoria/ads/view/${resolvedParams.id}`);
+  redirect(`/autoria/ad/${resolvedParams.id}`);
 }

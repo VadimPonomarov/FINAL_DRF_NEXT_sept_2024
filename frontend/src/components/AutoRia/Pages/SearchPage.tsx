@@ -1318,9 +1318,9 @@ const SearchPage = () => {
 
 
                   {activeTab === 'results' && !loading && searchResults.length > 0 && (
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-center">
+                    <div className="flex-1 flex flex-wrap gap-3 items-center">
                       {/* Sort (combined) */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-[200px] flex-1">
                         <span className="text-sm text-slate-600 whitespace-nowrap">{t('common.sort') || 'Sort'}:</span>
                         <select
                           value={`${sortBy}_${sortOrder}`}
@@ -1331,7 +1331,7 @@ const SearchPage = () => {
                             setSortOrder((dir as 'asc' | 'desc') || 'desc');
                             setCurrentPage(1); // Сбрасываем на первую страницу при изменении сортировки
                           }}
-                          className="text-sm border border-gray-300 rounded px-2 py-1 w-full max-w-[220px]"
+                          className="text-sm border border-gray-300 rounded px-2 py-1 flex-1 min-w-0"
                         >
                           <option value="created_at_desc">{t('autoria.byDate') || 'By date'} ↓</option>
                           <option value="created_at_asc">{t('autoria.byDate') || 'By date'} ↑</option>
@@ -1346,7 +1346,7 @@ const SearchPage = () => {
                       </div>
 
                       {/* Per page */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-[140px]">
                         <span className="text-sm text-slate-600 whitespace-nowrap">{t('autoria.perPage') || 'Per page'}:</span>
                         <select
                           value={filters.page_size === 0 ? 'all' : String(filters.page_size)}
@@ -1362,7 +1362,7 @@ const SearchPage = () => {
 
                             console.log('📄 New filters after page_size change:', newFilters);
                           }}
-                          className="text-sm border border-gray-300 rounded px-2 py-1 w-full max-w-[120px]"
+                          className="text-sm border border-gray-300 rounded px-2 py-1 w-[80px]"
                         >
                           <option value="all">{t('autoria.all') || 'Все'}</option>
                           <option value={1}>1</option>
@@ -1376,7 +1376,7 @@ const SearchPage = () => {
                       </div>
 
                       {/* View mode */}
-                      <div className="flex items-center gap-2 justify-end">
+                      <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-600 hidden sm:inline">{t('autoria.view') || 'View'}:</span>
                         <div className="flex border rounded-lg overflow-hidden">
                           <button

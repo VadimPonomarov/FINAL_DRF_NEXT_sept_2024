@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { Metadata } from "next";
-import RecipeDetailsComponent from "@/app/(main)/recipes/(details)/RecipeDetailsComponent/RecipeDetailsComponent";
+import RecipeDetailsComponent from "@/app/(main)/(dummy)/recipes/(details)/RecipeDetailsComponent/RecipeDetailsComponent";
 import { BaseUrl } from "@/common/constants/constants";
 import { getAuthorizationHeaders } from "@/common/constants/headers";
 import { IRecipe } from "@/common/interfaces/recipe.interfaces";

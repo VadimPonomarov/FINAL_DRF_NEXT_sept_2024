@@ -6,7 +6,7 @@ import {
   IRecipe,
   IRecipesResponse,
 } from "@/common/interfaces/recipe.interfaces.ts";
-import { RecipeCard } from "@/app/(main)/recipes/(details)/RecipeCard/RecipeCard.tsx";
+import { RecipeCard } from "@/app/(main)/(dummy)/recipes/(details)/RecipeCard/RecipeCard.tsx";
 import DialogModal from "@/components/All/DialogModal/DialogModal.tsx";
 import UniversalFilter from "@/components/All/UniversalFilter/FilterInput.tsx";
 import { useSearchParams } from "next/navigation";

@@ -2,18 +2,25 @@ import { FC } from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { IUsersResponse } from "@/common/interfaces/users.interfaces";
-import UsersClient from "@/app/(main)/users/UsersClient";
+import UsersClient from "@/app/(main)/(dummy)/users/UsersClient";
 import { BaseUrl } from "@/common/constants/constants";
 import { getAuthorizationHeaders } from "@/common/constants/headers";
 import { BackendAuthGuard } from '@/hooks/useBackendAuth';
 
 import styles from "./index.module.css";
 
-const UsersPage: FC = async () => {
+import { PageProps } from 'next';
+
+type UsersPageProps = PageProps;
+
+const UsersPage: FC<UsersPageProps> = async ({ searchParams }) => {
   try {
-    // Используем фиксированные значения для начальной загрузки
-    const limit = "30";
-    const skip = "0";
+    // Читаем параметры из URL
+    const resolvedSearchParams = await searchParams;
+    const limit = resolvedSearchParams?.limit?.toString() || "30";
+    const skip = resolvedSearchParams?.skip?.toString() || "0";
+
+    console.log('[UsersPage] Server-side rendering with params:', { limit, skip });
 
     const headers = await getAuthorizationHeaders();
     const response = await fetch(

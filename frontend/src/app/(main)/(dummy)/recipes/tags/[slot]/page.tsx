@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { IRecipe } from "@/common/interfaces/recipe.interfaces";
-import { RecipeCard } from "@/app/(main)/recipes/(details)/RecipeCard/RecipeCard";
+import { RecipeCard } from "@/app/(main)/(dummy)/recipes/(details)/RecipeCard/RecipeCard";
 import { BaseUrl } from "@/common/constants/constants";
 import { getAuthorizationHeaders } from "@/common/constants/headers";
 

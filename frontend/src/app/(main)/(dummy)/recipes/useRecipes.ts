@@ -1,7 +1,7 @@
 "use client";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
-import {useInfiniteQuery} from "@tanstack/react-query";
+import {useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {signOut} from "next-auth/react";
 import {IRecipe, IRecipesResponse} from "@/common/interfaces/recipe.interfaces";
 import {filterItems} from "@/services/filters/filterServices";
@@ -15,6 +15,7 @@ interface IProps {
 export const useRecipes = ({initialData}: IProps) => {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const limit = useMemo(() => {
         const paramValue = searchParams.get("limit");
@@ -39,6 +40,12 @@ export const useRecipes = ({initialData}: IProps) => {
             signOut({callbackUrl: "/api/auth"});
         }
     }, [initialData]);
+
+    // Инвалидируем кэш при изменении URL параметров
+    useEffect(() => {
+        console.log('[useRecipes] URL params changed, invalidating cache:', { limit, skip });
+        queryClient.invalidateQueries({ queryKey: ["recipes", skip, limit] });
+    }, [limit, skip, queryClient]);
 
     const {
         data,
