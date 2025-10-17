@@ -109,6 +109,9 @@ const SearchPage = () => {
   const filtersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [activeTab, setActiveTab] = useState<'results' | 'analytics'>('results');
 
+  // Ref для отслеживания предыдущих URL параметров
+  const prevSearchParamsRef = useRef<string>('');
+
 
   // Простые фильтры
   const [filters, setFilters] = useState({
@@ -137,10 +140,20 @@ const SearchPage = () => {
   const updateURL = useCallback((newFilters: typeof filters, page: number, sort: string, order: 'asc' | 'desc') => {
     const params = new URLSearchParams();
 
-    // Add filters to URL
+    console.log('🔗 updateURL called with filters:', newFilters);
+
+    // Add filters to URL (только непустые значения)
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value && value !== '' && key !== 'page_size') {
-        params.set(key, String(value));
+      // Пропускаем page_size и пустые значения
+      if (key === 'page_size') return;
+
+      // Проверяем, что значение не пустое
+      const stringValue = String(value).trim();
+      if (stringValue !== '' && stringValue !== '0') {
+        params.set(key, stringValue);
+        console.log(`  ✅ Added to URL: ${key}=${stringValue}`);
+      } else {
+        console.log(`  ❌ Skipped empty: ${key}=${value}`);
       }
     });
 
@@ -158,6 +171,7 @@ const SearchPage = () => {
 
     // Update URL without page reload
     const newURL = params.toString() ? `?${params.toString()}` : '/autoria/search';
+    console.log('🔗 New URL:', newURL);
     router.push(newURL, { scroll: false });
   }, [router, quickFilters, invertFilters]);
 
@@ -327,45 +341,97 @@ const SearchPage = () => {
   // Дебаунсированное обновление поиска
   const updateSearchWithDebounce = (value: string) => {
     // Обновляем состояние сразу для UI
-    setFilters(prev => ({ ...prev, search: value }));
+    setFilters(prev => {
+      const newFilters = { ...prev, search: value };
 
-    // Очищаем предыдущий таймер
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // Запускаем поиск автоматически через 800ms после последнего ввода
-    searchTimeoutRef.current = setTimeout(async () => {
-      console.log('🔍 Auto-search triggered after debounce:', value);
-
-      // Обновляем URL
-      const newFilters = { ...filters, search: value };
-      updateURL(newFilters, currentPage, sortBy, sortOrder);
-
-      // Запускаем поиск
-      try {
-        setLoading(true);
-        const searchParams = buildSearchParams(newFilters, currentPage, sortBy, sortOrder);
-        const response = await CarAdsService.getCarAds(searchParams);
-
-        setSearchResults(response.results || []);
-        setTotalCount(response.count || 0);
-      } catch (error) {
-        console.error('🔍 Auto-search error:', error);
-      } finally {
-        setLoading(false);
+      // Очищаем предыдущий таймер
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
-    }, 800);
+
+      // Если поле очищено, запускаем поиск сразу без debounce
+      if (value.trim() === '') {
+        console.log('🔍 Search cleared, triggering immediate search');
+
+        // Обновляем URL
+        updateURL(newFilters, currentPage, sortBy, sortOrder);
+
+        // Запускаем поиск сразу
+        (async () => {
+          try {
+            setLoading(true);
+            const searchParams = buildSearchParams(newFilters, currentPage, sortBy, sortOrder);
+            const response = await CarAdsService.getCarAds(searchParams);
+
+            setSearchResults(response.results || []);
+            setTotalCount(response.count || 0);
+          } catch (error) {
+            console.error('🔍 Auto-search error:', error);
+          } finally {
+            setLoading(false);
+          }
+        })();
+
+        return newFilters;
+      }
+
+      // Запускаем поиск автоматически через 300ms после последнего ввода (стандарт для поиска)
+      searchTimeoutRef.current = setTimeout(async () => {
+        console.log('🔍 Auto-search triggered after debounce:', value);
+
+        // Обновляем URL
+        updateURL(newFilters, currentPage, sortBy, sortOrder);
+
+        // Запускаем поиск
+        try {
+          setLoading(true);
+          const searchParams = buildSearchParams(newFilters, currentPage, sortBy, sortOrder);
+          const response = await CarAdsService.getCarAds(searchParams);
+
+          setSearchResults(response.results || []);
+          setTotalCount(response.count || 0);
+        } catch (error) {
+          console.error('🔍 Auto-search error:', error);
+        } finally {
+          setLoading(false);
+        }
+      }, 300); // Уменьшено с 800ms до 300ms
+
+      return newFilters;
+    });
   };
 
   // Сброс только поля поиска
-  const clearSearchField = () => {
+  const clearSearchField = async () => {
+    console.log('🔍 Search field cleared via X button, triggering immediate search');
+
+    // Очищаем таймер debounce
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-    setFilters(prev => ({ ...prev, search: '' }));
-    // УБИРАЕМ автоматический поиск при очистке поля
-    console.log('🔄 Search field cleared, but search will only run on button click');
+
+    // Создаем новые фильтры с пустым поиском
+    const newFilters = { ...filters, search: '' };
+
+    // Обновляем состояние
+    setFilters(newFilters);
+
+    // Обновляем URL (параметр search будет удален)
+    updateURL(newFilters, currentPage, sortBy, sortOrder);
+
+    // Запускаем поиск сразу
+    try {
+      setLoading(true);
+      const searchParams = buildSearchParams(newFilters, currentPage, sortBy, sortOrder);
+      const response = await CarAdsService.getCarAds(searchParams);
+
+      setSearchResults(response.results || []);
+      setTotalCount(response.count || 0);
+    } catch (error) {
+      console.error('🔍 Clear search error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Дебаунсированное обновление фильтров - ОТКЛЮЧЕНО
@@ -703,6 +769,67 @@ const SearchPage = () => {
     setIsInitialized(true);
 
     console.log('✅ Filters restored from URL:', { urlFilters, urlPage, urlSort, urlOrder, urlQuickFilters, urlInvert });
+  }, [searchParams, isInitialized]);
+
+  // Watch for URL changes and update filters (for direct URL navigation)
+  useEffect(() => {
+    if (!isInitialized) return; // Skip on initial mount
+
+    // Создаем строку из всех параметров для сравнения
+    const currentParamsString = searchParams.toString();
+
+    // Проверяем, изменились ли параметры
+    if (currentParamsString === prevSearchParamsRef.current) {
+      return; // Параметры не изменились, ничего не делаем
+    }
+
+    console.log('🔄 URL changed, updating filters from searchParams');
+    console.log('Previous params:', prevSearchParamsRef.current);
+    console.log('Current params:', currentParamsString);
+
+    // Обновляем ref
+    prevSearchParamsRef.current = currentParamsString;
+
+    // Читаем все параметры из URL
+    const urlFilters: typeof filters = {
+      search: searchParams.get('search') || '',
+      vehicle_type: searchParams.get('vehicle_type') || '',
+      brand: searchParams.get('brand') || '',
+      model: searchParams.get('model') || '',
+      condition: searchParams.get('condition') || '',
+      year_from: searchParams.get('year_from') || '',
+      year_to: searchParams.get('year_to') || '',
+      price_from: searchParams.get('price_from') || '',
+      price_to: searchParams.get('price_to') || '',
+      region: searchParams.get('region') || '',
+      city: searchParams.get('city') || '',
+      page_size: parseInt(searchParams.get('page_size') || '20')
+    };
+
+    const urlPage = parseInt(searchParams.get('page') || '1');
+    const urlSort = searchParams.get('sort') || 'created_at';
+    const urlOrder = (searchParams.get('order') || 'desc') as 'asc' | 'desc';
+
+    const urlQuickFilters = {
+      with_images: searchParams.get('with_images') === 'true',
+      my_ads: searchParams.get('my_ads') === 'true',
+      favorites: searchParams.get('favorites') === 'true',
+      verified: searchParams.get('verified') === 'true',
+      vip: false,
+      premium: false
+    };
+
+    const urlInvert = searchParams.get('invert') === 'true';
+
+    // Обновляем все состояния
+    setFilters(urlFilters);
+    setCurrentPage(urlPage);
+    setSortBy(urlSort);
+    setSortOrder(urlOrder);
+    setQuickFilters(urlQuickFilters);
+    setInvertFilters(urlInvert);
+
+    console.log('✅ Filters updated from URL:', { urlFilters, urlPage, urlSort, urlOrder });
   }, [searchParams, isInitialized]);
 
   // Загрузка при монтировании - загружаем начальные данные
