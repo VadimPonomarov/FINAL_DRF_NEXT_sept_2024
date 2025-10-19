@@ -8,7 +8,7 @@ from ..views.car_ad_views import (
     CarAdUpdateView, CarAdDeleteView, MyCarAdsListView,
     TestModerationView,
     validate_car_ad, car_ad_statistics, car_ad_analytics,
-    check_ad_creation_limits
+    check_ad_creation_limits, cleanup_all_ads
 )
 
 from ..views.moderation_queue_views import (
@@ -17,6 +17,9 @@ from ..views.moderation_queue_views import (
 )
 
 urlpatterns = [
+    # Special testing endpoints (must be FIRST!)
+    path('cleanup-all', cleanup_all_ads, name='cleanup-all-ads'),
+
     # Public car ads endpoints
     path('', CarAdListView.as_view(), name='car_ads_list'),
     path('create', CarAdCreateView.as_view(), name='car_ads_create'),

@@ -37,7 +37,7 @@ export const useRecipes = ({initialData}: IProps) => {
 
     useEffect(() => {
         if (initialData instanceof Error) {
-            signOut({callbackUrl: "/api/auth"});
+            signOut({callbackUrl: "/api/auth/signin"});
         }
     }, [initialData]);
 
@@ -75,7 +75,7 @@ export const useRecipes = ({initialData}: IProps) => {
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        signOut({callbackUrl: "/api/auth"});
+                        signOut({callbackUrl: "/api/auth/signin"});
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }

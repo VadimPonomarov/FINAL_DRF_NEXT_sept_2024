@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+﻿import { Metadata } from "next";
 import FlowerFrame from "@/components/Flower/FlowerFrame";
 
 export const metadata: Metadata = {
@@ -6,7 +6,6 @@ export const metadata: Metadata = {
   description: "Celery task monitoring with Flower",
 };
 
-// Отключаем статическую генерацию для этой страницы
 export const dynamic = 'force-dynamic';
 
 const FlowerPage = () => {

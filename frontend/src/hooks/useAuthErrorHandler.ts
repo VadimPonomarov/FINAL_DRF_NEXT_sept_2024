@@ -4,25 +4,32 @@ import { useCallback } from 'react';
 
 /**
  * Hook for handling authentication errors and automatic redirects
+ *
+ * ВАЖНО: 401 ошибки НЕ обрабатываются здесь!
+ * ApiClient и fetchData автоматически делают refresh токенов при 401.
+ * Этот hook используется только для критических auth ошибок после неудачного refresh.
  */
 export function useAuthErrorHandler() {
   const router = useRouter();
 
   const handleAuthError = useCallback(async (error: any, response?: Response) => {
-    // Check if it's an authentication error
-    if (response?.status === 401 || error?.message?.includes('Authentication')) {
-      console.log('[AuthErrorHandler] Authentication error detected, signing out...');
-      
+    // ВАЖНО: НЕ обрабатываем 401 ошибки здесь!
+    // ApiClient и fetchData автоматически делают refresh токенов при 401
+    // Мы обрабатываем только критические auth ошибки (например, "Authentication required" после неудачного refresh)
+
+    if (error?.message?.includes('Authentication required') || error?.message?.includes('Authentication failed')) {
+      console.log('[AuthErrorHandler] Critical authentication error detected (after failed refresh), redirecting to login...');
+
       try {
         // Sign out from NextAuth
         await signOut({ redirect: false });
-        
+
         // Clear any local storage tokens
         if (typeof window !== 'undefined') {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
         }
-        
+
         // Redirect to login with error message
         router.push('/login?alert=session_expired&message=Your session has expired. Please log in again.');
       } catch (signOutError) {
@@ -30,10 +37,10 @@ export function useAuthErrorHandler() {
         // Force redirect even if sign out fails
         router.push('/login?alert=auth_error&message=Authentication error. Please log in again.');
       }
-      
+
       return true; // Indicates error was handled
     }
-    
+
     return false; // Error was not an auth error
   }, [router]);
 

@@ -9,7 +9,7 @@ from apps.ads.views.reference_views import (
     car_marks_popular, car_marks_choices, car_marks_with_models,
     # Car Models
     CarModelListCreateView, CarModelRetrieveUpdateDestroyView,
-    car_models_by_mark, car_models_popular, car_models_choices, car_models_with_generations,
+    car_models_by_mark, car_models_popular, car_models_choices, car_models_random, car_models_with_generations,
     # Car Colors
     CarColorListCreateView, CarColorRetrieveUpdateDestroyView,
     car_colors_popular, car_colors_choices,
@@ -21,7 +21,7 @@ from apps.ads.views.reference_views import (
     car_modifications_by_generation,
 
     # Regions and Cities
-    RegionListView, CityListView,
+    RegionListView, CityListView, locations_random,
 
     # Vehicle Types
     VehicleTypeListView, VehicleTypeChoicesView,
@@ -47,6 +47,7 @@ urlpatterns = [
     path('models/by_mark/', car_models_by_mark, name='car-models-by-mark'),
     path('models/popular/', car_models_popular, name='car-models-popular'),
     path('models/choices/', car_models_choices, name='car-models-choices'),
+    path('models/random/', car_models_random, name='car-models-random'),
     path('models/<int:pk>/with_generations/', car_models_with_generations, name='car-models-with-generations'),
 
     # Car Colors CRUD endpoints
@@ -75,6 +76,7 @@ urlpatterns = [
     # Regions and Cities
     path('regions/', RegionListView.as_view(), name='region-list'),
     path('cities/', CityListView.as_view(), name='city-list'),
+    path('locations/random/', locations_random, name='locations-random'),
 
     # Vehicle Types
     path('vehicle-types/', VehicleTypeListView.as_view(), name='vehicle-type-list'),

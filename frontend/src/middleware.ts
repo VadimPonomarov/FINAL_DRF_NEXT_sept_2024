@@ -22,7 +22,8 @@ const PUBLIC_PATHS = [
   '/api/health',
   '/api/reference',
   '/api/public',
-  '/api/user',
+  // ВАЖНО: /api/user НЕ должен быть public - это backend endpoint, который должен идти через proxy!
+  // Убрали '/api/user' из списка - теперь эти запросы будут проксироваться через /api/proxy
   '/api/openapi',  // OpenAPI schema proxy - should be public for docs
   '/register',     // User registration
   '/auth'          // Auth redirect page

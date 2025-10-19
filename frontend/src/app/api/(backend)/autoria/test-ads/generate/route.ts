@@ -25,6 +25,17 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
   const results = [];
   let totalImages = 0;
 
+  // 🚀 КЕШИРОВАНИЕ: Загружаем модели один раз для всех объявлений
+  console.log('📦 [TestAds] Pre-loading models cache...');
+  let cachedModels: any[] = [];
+  try {
+    const modelsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000'}/api/public/reference/models?page_size=1000`);
+    const modelsData = await modelsResponse.json();
+    cachedModels = modelsData.options || [];
+    console.log(`✅ [TestAds] Cached ${cachedModels.length} models for generation`);
+  } catch (error) {
+    console.warn('⚠️ [TestAds] Failed to cache models, will use individual requests:', error);
+  }
 
   // Получаем список пользователей для распределения объявлений
   console.log('👥 Fetching users for ad distribution...');
@@ -153,8 +164,8 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
 
 
 
-      // Генерируем корректные данные формы
-      const mock = await generateFullMockData();
+      // Генерируем корректные данные формы используя кешированные модели
+      const mock = await generateFullMockData(cachedModels.length > 0 ? cachedModels : undefined);
       const uniqueTitle = `${(mock as any).brand_name || mock.brand || 'Auto'} ${mock.model || ''} ${mock.year || ''} - Test Ad ${i + 1}`.trim();
 
       // Resolve valid region/city IDs from backend reference endpoints
@@ -291,7 +302,9 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
 
       if (includeImages) {
         try {
-          console.log(`🎨 Generating images for ad ${createdAd.id}...`);
+          console.log(`🎨 [TestAds] Starting image generation for ad ${createdAd.id}...`);
+          console.log(`📊 [TestAds] Image types requested:`, imageTypes);
+
           // Normalize values for relevancy
           // ❌ NORMALIZATION DISABLED: Use ONLY real vehicle_type_name
           const normalizeVehicleType = (raw?: any, rawName?: any): string => {
@@ -326,11 +339,23 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
           const bodyTypeStr = String(formData.body_type || (vt === 'truck' ? 'semi-truck' : vt === 'motorcycle' ? 'sport' : vt === 'bus' ? 'coach' : vt === 'van' ? 'van' : vt === 'trailer' ? 'curtainsider' : 'sedan')).toLowerCase();
           const conditionStr = String(formData.condition || 'good').toLowerCase();
 
+          console.log(`🚗 [TestAds] Car data for image generation:`, {
+            brand: brandStr,
+            model: modelStr,
+            year: formData.year,
+            color: colorStr,
+            body_type: bodyTypeStr,
+            vehicle_type: vt,
+            vehicle_type_name: (formData as any).vehicle_type_name || vt
+          });
+
           // Generate images via normalized frontend endpoint with debug for relevancy checks
           const imageProgress = 50 + Math.round((i / count) * 40); // 50-90% для изображений
           onProgress?.(imageProgress, `Генерация изображений для объявления ${i + 1}/${count}...`);
+
           // Call backend directly to use pollinations-based mock algorithm and avoid frontend placeholders
-          const genResp = await fetch(`${backendUrl}/api/chat/generate-car-images/`, {
+          console.log(`🌐 [TestAds] Calling image generation endpoint: ${backendUrl}/api/chat/generate-car-images-mock/`);
+          const genResp = await fetch(`${backendUrl}/api/chat/generate-car-images-mock/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -351,8 +376,16 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
             })
           });
 
+          console.log(`📡 [TestAds] Image generation response status: ${genResp.status}`);
+
           if (genResp.ok) {
             const genData = await genResp.json();
+            console.log(`✅ [TestAds] Image generation response:`, {
+              success: genData.success,
+              status: genData.status,
+              imagesCount: genData.images?.length || 0,
+              hasImages: Array.isArray(genData.images)
+            });
             debugInfo = {
               canonical: genData?.debug?.canonical,
               prompts: genData?.debug?.prompts,
@@ -385,14 +418,29 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
             }
 
             if ((genData.success || genData.status === 'ok') && Array.isArray(genData.images)) {
+              console.log(`📸 [TestAds] Processing ${genData.images.length} generated images...`);
+
               for (let idx = 0; idx < genData.images.length; idx++) {
                 const img = genData.images[idx];
                 const url = String(img?.url || '').trim();
+
+                console.log(`🔍 [TestAds] Image ${idx + 1}/${genData.images.length}:`, {
+                  url: url.substring(0, 100) + '...',
+                  angle: img?.angle,
+                  title: img?.title,
+                  isValid: !(!url || !/^https?:\/\//i.test(url) || url.includes('via.placeholder.com'))
+                });
+
                 if (!url || !/^https?:\/\//i.test(url) || url.includes('via.placeholder.com')) {
-                  console.warn(`⚠️ Skipping invalid/empty image URL for ad ${createdAd.id} at index ${idx}`);
+                  console.warn(`⚠️ [TestAds] Skipping invalid/empty image URL for ad ${createdAd.id} at index ${idx}:`, {
+                    url: url || 'EMPTY',
+                    reason: !url ? 'empty' : (!/^https?:\/\//i.test(url) ? 'not http/https' : 'placeholder')
+                  });
                   continue;
                 }
+
                 try {
+                  console.log(`💾 [TestAds] Saving image ${idx + 1} to ad ${createdAd.id}...`);
                   const saveResp = await currentAuthFetch(`${backendUrl}/api/ads/${createdAd.id}/images`, {
                     method: 'POST',
                     headers: {
@@ -405,26 +453,49 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
                       order: idx + 1
                     })
                   });
+
                   if (saveResp.ok) {
                     savedCount++;
                     totalImages++;
+                    console.log(`✅ [TestAds] Successfully saved image ${idx + 1} for ad ${createdAd.id} (total: ${savedCount})`);
                   } else {
-                    console.warn(`⚠️ Failed to save image ${idx + 1} for ad ${createdAd.id}:`, await saveResp.text());
+                    const errorText = await saveResp.text();
+                    console.error(`❌ [TestAds] Failed to save image ${idx + 1} for ad ${createdAd.id}:`, {
+                      status: saveResp.status,
+                      error: errorText
+                    });
                   }
                 } catch (saveErr) {
-                  console.warn(`⚠️ Error saving image ${idx + 1} for ad ${createdAd.id}:`, saveErr);
+                  console.error(`❌ [TestAds] Error saving image ${idx + 1} for ad ${createdAd.id}:`, saveErr);
                 }
               }
+
+              console.log(`📊 [TestAds] Image saving complete for ad ${createdAd.id}: ${savedCount}/${genData.images.length} saved`);
             } else {
-              console.warn('⚠️ Image generation returned no images');
+              console.error(`❌ [TestAds] Image generation returned no images or invalid response:`, {
+                success: genData.success,
+                status: genData.status,
+                hasImages: Array.isArray(genData.images),
+                imagesCount: genData.images?.length || 0
+              });
             }
           } else {
-            console.warn('⚠️ Image generation failed:', await genResp.text());
+            const errorText = await genResp.text();
+            console.error(`❌ [TestAds] Image generation failed:`, {
+              status: genResp.status,
+              error: errorText
+            });
           }
         } catch (imgErr) {
-          console.warn('⚠️ Image generation flow error:', imgErr);
+          console.error(`❌ [TestAds] Image generation flow error:`, imgErr);
         }
       }
+
+      console.log(`✅ [TestAds] Ad ${i + 1} created successfully:`, {
+        id: createdAd.id,
+        title: formData.title,
+        imagesCount: savedCount
+      });
 
       results.push({
         success: true,
@@ -437,7 +508,7 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
       });
 
     } catch (error: any) {
-      console.error(`❌ Error creating ad ${i + 1}:`, error);
+      console.error(`❌ [TestAds] Error creating ad ${i + 1}:`, error);
       results.push({
         success: false,
         error: error.message,
@@ -448,6 +519,16 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
   }
 
   const created = results.filter(r => r.success).length;
+  const totalAdsWithImages = results.filter(r => r.success && r.imagesCount > 0).length;
+
+  console.log(`🎉 [TestAds] Generation complete:`, {
+    totalRequested: count,
+    created,
+    totalImages,
+    adsWithImages: totalAdsWithImages,
+    adsWithoutImages: created - totalAdsWithImages
+  });
+
   onProgress?.(100, `Завершено! Создано ${created} объявлений с ${totalImages} изображениями`);
   return { created, totalImages, details: results };
 }
@@ -589,7 +670,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Проверяем, нужно ли использовать асинхронный режим
-    const shouldUseAsync = maxCount > 5 || (includeImages && maxCount > 3);
+    // ВСЕГДА используем асинхронный режим если есть изображения (генерация медленная)
+    const shouldUseAsync = includeImages || maxCount > 5;
 
     if (shouldUseAsync) {
       console.log('🚀 Using async generation for large request...');
@@ -639,17 +721,27 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await createTestAdsServer(request, maxCount, includeImages, imageTypes, progressCallback);
-    console.log('📊 Server test ads result:', result);
+    console.log('📊 [TestAds] Server test ads result:', result);
 
     const duration = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
-    console.log(`✅ Successfully generated ${result.created} test ads in ${duration}`);
+    const adsWithImages = result.details?.filter((d: any) => d.success && d.imagesCount > 0).length || 0;
+    const adsWithoutImages = result.created - adsWithImages;
+
+    console.log(`✅ [TestAds] Successfully generated ${result.created} test ads in ${duration}:`, {
+      totalAds: result.created,
+      totalImages: result.totalImages,
+      adsWithImages,
+      adsWithoutImages
+    });
 
     return NextResponse.json({
       success: true,
       count: result.created,
       totalImages: result.totalImages || 0,
+      adsWithImages,
+      adsWithoutImages,
       duration: duration,
-      message: `Successfully created ${result.created} test ads${includeImages ? ' with images' : ''}`,
+      message: `Successfully created ${result.created} test ads${includeImages ? ` with ${result.totalImages} images` : ''}`,
       details: result.details
     });
   } catch (error) {

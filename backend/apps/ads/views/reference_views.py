@@ -466,6 +466,90 @@ def car_models_choices(request):
 
 @swagger_auto_schema(
     method='get',
+    operation_summary="Get random car models for test data generation",
+    operation_description="Get random selection of car models with full cascade data (vehicle_type, brand, model). Optimized for test data generation - returns only requested count instead of all models.",
+    tags=['🚗 Car Models'],
+    manual_parameters=[
+        openapi.Parameter('count', openapi.IN_QUERY, description="Number of random models to return (default: 10, max: 100)", type=openapi.TYPE_INTEGER),
+    ],
+    responses={
+        200: "Success response with random models including cascade data",
+    }
+)
+@api_view(['GET'])
+@permission_classes([])  # Public access
+def car_models_random(request):
+    """Get random car models with full cascade data for test generation."""
+    try:
+        count = int(request.query_params.get('count', 10))
+        count = min(count, 100)  # Limit to 100 max
+    except (ValueError, TypeError):
+        count = 10
+
+    # Get random models with related data
+    models = CarModel.objects.select_related('mark', 'mark__vehicle_type').order_by('?')[:count]
+
+    # Transform to format with full cascade data
+    data = [
+        {
+            'id': model.id,
+            'name': model.name,
+            'brand_id': model.mark_id,
+            'brand_name': model.mark.name,
+            'vehicle_type_id': model.mark.vehicle_type_id,
+            'vehicle_type_name': model.mark.vehicle_type.name,
+        }
+        for model in models
+    ]
+
+    return Response(data)
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_summary="Get random location (region + city) for test data generation",
+    operation_description="Get random selection of locations with region and city. Optimized for test data generation.",
+    tags=['📍 Locations'],
+    manual_parameters=[
+        openapi.Parameter('count', openapi.IN_QUERY, description="Number of random locations to return (default: 1, max: 50)", type=openapi.TYPE_INTEGER),
+    ],
+    responses={
+        200: "Success response with random locations including region and city data",
+    }
+)
+@api_view(['GET'])
+@permission_classes([])  # Public access
+def locations_random(request):
+    """Get random locations with region and city for test generation."""
+    from apps.ads.models.reference import RegionModel, CityModel
+
+    try:
+        count = int(request.query_params.get('count', 1))
+        count = min(count, 50)  # Limit to 50 max
+    except (ValueError, TypeError):
+        count = 1
+
+    # Get random regions
+    regions = list(RegionModel.objects.order_by('?')[:count])
+
+    data = []
+    for region in regions:
+        # Get random city for this region
+        city = CityModel.objects.filter(region=region).order_by('?').first()
+
+        if city:
+            data.append({
+                'region_id': region.id,
+                'region_name': region.name,
+                'city_id': city.id,
+                'city_name': city.name,
+            })
+
+    return Response(data)
+
+
+@swagger_auto_schema(
+    method='get',
     operation_summary="Get car models with generations",
     operation_description="Get detailed information about a car model including all its associated generations. Useful for cascading dropdowns.",
     tags=['🚗 Car Models'],

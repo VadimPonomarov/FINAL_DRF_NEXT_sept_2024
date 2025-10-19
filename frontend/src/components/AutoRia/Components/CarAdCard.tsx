@@ -122,8 +122,8 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
         console.warn('⚠️ [CarAdCard] Tracking failed, but favorite toggle succeeded:', trackingError);
       }
 
-      // Затем синхронизируем с сервером для一致ности с шоурумом
-      setTimeout(() => { void refreshCountersFromServer(); }, 400);
+      // Убираем автоматическое обновление - только локальное состояние
+      // setTimeout(() => { void refreshCountersFromServer(); }, 400);
 
       console.log(`✅ [CarAdCard] Favorite ${response.is_favorite ? 'added' : 'removed'} for ad ${ad.id}, new count: ${newFavoritesCount}`);
     } catch (error) {
@@ -168,8 +168,8 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       setPhoneViewsCount(newPhoneViewsCount);
       onCountersUpdate?.(ad.id, { favorites_count: favoritesCount, phone_views_count: newPhoneViewsCount });
 
-      // Затем синхронизируем с сервером для一致ности с шоурумом
-      setTimeout(() => { void refreshCountersFromServer(); }, 400);
+      // Убираем автоматическое обновление - только локальное состояние
+      // setTimeout(() => { void refreshCountersFromServer(); }, 400);
 
       console.log(`✅ Phone view tracked for ad ${ad.id}, total phone views: ${newPhoneViewsCount}`);
       
@@ -191,8 +191,8 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       const firstImage = ad.images[0];
       if (!firstImage) return '/api/placeholder/400/300';
 
-      // ПРИОРИТЕТ: image_display_url (это правильное поле от бекенда)
-      const url = firstImage.image_display_url || firstImage.image_url || firstImage.url || firstImage.image;
+      // ПРИОРИТЕТ: image_url (это правильное поле от бекенда)
+      const url = firstImage.image_url || firstImage.image_display_url || firstImage.url || firstImage.image;
 
       if (!url) return '/api/placeholder/400/300';
 

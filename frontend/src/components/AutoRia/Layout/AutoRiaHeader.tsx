@@ -32,7 +32,10 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   const { t, locale, setLocale, availableLocales } = useI18n();
 
   // Получаем данные профиля пользователя
-  const { data: userProfileData } = useUserProfileData();
+  // TEMPORARILY DISABLED due to Turbopack caching issue causing CORS errors
+  // See docs/CORS_ERRORS_FIX.md for details
+  // const { data: userProfileData } = useUserProfileData();
+  const userProfileData = null;
   const { user } = useAuth();
 
   // Отладочная информация при каждом рендере

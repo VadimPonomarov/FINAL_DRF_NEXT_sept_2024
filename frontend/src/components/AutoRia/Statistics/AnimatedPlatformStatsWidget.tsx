@@ -167,21 +167,21 @@ const AnimatedPlatformStatsWidget: React.FC<AnimatedPlatformStatsWidgetProps> = 
     fetchStats();
   }, [fetchStats]);
 
-  // Автоматическое обновление каждую минуту
+  // Автоматическое обновление каждую минуту - ОТКЛЮЧЕНО для уменьшения трафика
   useEffect(() => {
     // Загружаем данные при монтировании компонента
     fetchStats();
 
-    // Устанавливаем интервал для автоматического обновления каждую минуту
-    const interval = setInterval(() => {
-      console.log('[AnimatedPlatformStatsWidget] ⏰ Auto-refreshing statistics...');
-      fetchStats();
-    }, 60000); // 60 секунд
+    // Убираем автоматическое обновление каждую минуту
+    // const interval = setInterval(() => {
+    //   console.log('[AnimatedPlatformStatsWidget] ⏰ Auto-refreshing statistics...');
+    //   fetchStats();
+    // }, 60000); // 60 секунд
 
-    // Очищаем интервал при размонтировании
-    return () => {
-      clearInterval(interval);
-    };
+    // // Очищаем интервал при размонтировании
+    // return () => {
+    //   clearInterval(interval);
+    // };
   }, [fetchStats]);
 
   return (

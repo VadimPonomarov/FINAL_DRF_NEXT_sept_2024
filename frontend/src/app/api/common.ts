@@ -87,9 +87,12 @@ export async function fetchWithDomain<T = any>(
     let url: string;
 
     // Check if endpoint starts with 'api/' - these are direct Next.js API routes
-    const isDirectApiRoute = endpoint.startsWith('api/user/') ||
-                             endpoint.startsWith('api/auth/') ||
-                             endpoint.startsWith('api/autoria/');
+    // ВАЖНО: api/user/ НЕ является Next.js API route - это backend endpoint!
+    // Только api/auth/ и api/autoria/ являются Next.js API routes
+    const isDirectApiRoute = endpoint.startsWith('api/auth/') ||
+                             endpoint.startsWith('api/autoria/') ||
+                             endpoint.startsWith('api/redis') ||
+                             endpoint.startsWith('api/public/');
 
     if (isServer) {
       // Server-side: use absolute URL to Next.js API
@@ -115,6 +118,8 @@ export async function fetchWithDomain<T = any>(
       }
     }
 
+    console.log(`[fetchWithDomain] 🔍 Endpoint: ${endpoint}`);
+    console.log(`[fetchWithDomain] 🔍 isDirectApiRoute: ${isDirectApiRoute}`);
     console.log(`[fetchWithDomain] ${isDirectApiRoute ? 'Direct' : 'Proxied'} URL: ${url}`);
 
     // Prepare request options

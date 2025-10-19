@@ -1,5 +1,6 @@
 "use client";
 import { FC, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 // import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Activity, Menu as BurgerIcon, X as CloseIcon } from 'lucide-react';
@@ -15,6 +16,7 @@ import AuthBadge from '@/components/All/AuthBadge/AuthBadge';
 
 export const MenuMain: FC = () => {
   const { provider } = useAuthProvider();
+  const router = useRouter();
   // const router = useRouter();
   // const pathname = usePathname();
   const { data: session, status } = useSession();
@@ -102,7 +104,7 @@ export const MenuMain: FC = () => {
     // Add Auth item only for non-authenticated users
     if (!isAuthenticated) {
       commonItems.push({
-        path: "/api/auth",
+        path: "/api/auth/signin",
         label: (
           <TooltipProvider>
             <Tooltip>
@@ -397,6 +399,10 @@ export const MenuMain: FC = () => {
               const handleClick = (e: React.MouseEvent) => {
                 e.preventDefault();
                 setMobileMenuOpen(false);
+
+                // Сервисы, которые не поддерживают iframe из-за CORS ограничений
+                const iframeBlockedServices = ['/redis-insight'];
+
                 if (item.cb) {
                   try {
                     if (typeof item.cb === 'function') {
@@ -408,14 +414,20 @@ export const MenuMain: FC = () => {
                     console.error('Error executing mobile menu callback:', error);
                   }
                 } else if (item.path) {
-                  window.location.href = item.path;
+                  if (iframeBlockedServices.includes(item.path)) {
+                    // Redis Insight открываем в новой вкладке из-за CORS ограничений
+                    window.open(item.path, '_blank', 'noopener,noreferrer');
+                  } else {
+                    // Другие сервисы - используем Next.js роутинг для iframe
+                    router.push(item.path);
+                  }
                 }
               };
 
               return (
                 <a
                   key={item.path || `item-${item.index}`}
-                  href={item.path || '#'}
+                  href={iframeBlockedServices.includes(item.path) ? item.path : '#'}
                   className="px-6 py-4 text-lg border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                   onClick={handleClick}
                 >

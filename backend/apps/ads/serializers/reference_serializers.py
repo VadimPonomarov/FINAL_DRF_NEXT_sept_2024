@@ -287,10 +287,10 @@ class CarGenerationWithModificationsSerializer(CarGenerationDetailSerializer):
 # Utility serializers for dropdowns and autocomplete
 class CarMarkChoiceSerializer(serializers.ModelSerializer):
     """Simple serializer for mark choices in forms."""
-    
+
     class Meta:
         model = CarMarkModel
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'vehicle_type']  # Добавлено vehicle_type для каскадной фильтрации
 
 
 class CarModelChoiceSerializer(serializers.ModelSerializer):

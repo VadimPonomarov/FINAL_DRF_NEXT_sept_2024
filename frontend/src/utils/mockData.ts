@@ -310,113 +310,74 @@ function resolveVehicleTypeByBrand(brandName: string): string | null {
 
 
 
+// Глобальный кеш для brands и vehicle types (чтобы не запрашивать при каждом вызове)
+let cachedBrands: any[] | null = null;
+let cachedVehicleTypes: any[] | null = null;
+
 /**
  * ОБРАТНЫЙ КАСКАД: Генерация мокковых данных модель->марка->тип
  * Сначала выбираем случайную модель из всех доступных, затем поднимаемся по каскаду связей
+ * @param cachedModels - Опциональный массив предзагруженных моделей для избежания повторных запросов
  */
-export const generateMockSpecs = async (): Promise<Partial<CarAdFormData>> => {
+export const generateMockSpecs = async (cachedModels?: any[]): Promise<Partial<CarAdFormData>> => {
   try {
     console.log('[MockData] 🎲 Generating REVERSE-CASCADE mock specs (Model → Brand → Type)...');
 
-    // НОВЫЙ АЛГОРИТМ: Модель → Марка → Тип (снизу вверх по каскаду)
+    // НОВЫЙ АЛГОРИТМ: Используем оптимизированный endpoint /random/ вместо получения всех моделей
+    // Это избегает передачи 451KB данных для выбора 1 случайной модели
 
-    // 1. Получаем ВСЕ модели из API (без фильтрации)
-    let allModels = [];
-    let retryCount = 0;
-    while (allModels.length === 0 && retryCount < 3) {
-      const modelsResponse = await fetch(`${getBaseUrl()}/api/public/reference/models?page_size=1000`);
-      const modelsData = await modelsResponse.json();
-      allModels = modelsData.options || [];
-      if (allModels.length === 0) {
-        console.warn(`[MockData] ⚠️ No models found, retry ${retryCount + 1}/3`);
-        retryCount++;
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+    console.log('[MockData] 📡 Fetching random model from optimized endpoint...');
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const randomModelResponse = await fetch(`${backendUrl}/api/ads/reference/models/random/?count=1`);
+
+    if (!randomModelResponse.ok) {
+      throw new Error(`Failed to fetch random model: ${randomModelResponse.status}`);
     }
 
-    if (allModels.length === 0) {
-      throw new Error('No models found after 3 retries');
+    const randomModelsData = await randomModelResponse.json();
+
+    if (!Array.isArray(randomModelsData) || randomModelsData.length === 0) {
+      throw new Error('No random models returned from API');
     }
 
-    // Выбираем случайную модель из ВСЕХ доступных
-    const selectedModel = allModels[Math.floor(Math.random() * allModels.length)];
+    const randomModelData = randomModelsData[0];
+    console.log('[MockData] ✅ Got random model with full cascade data:', randomModelData);
+
+    // Преобразуем данные из формата Django в формат который ожидает остальной код
+    const selectedModel = {
+      value: String(randomModelData.id),
+      label: randomModelData.name,
+      brand_id: randomModelData.brand_id,
+      vehicle_type_id: randomModelData.vehicle_type_id
+    };
+
     console.log(`[MockData] 🎯 Step 1 - Selected random model: ${selectedModel.label} (ID: ${selectedModel.value})`);
 
-    // 2. Получаем марку для этой модели
-    if (!selectedModel.brand_id) {
-      throw new Error(`Model ${selectedModel.label} has no brand_id`);
-    }
+    // 2. Все данные каскада уже получены из random endpoint - не нужны дополнительные запросы!
+    console.log(`[MockData] 🎯 Step 2 - Brand from cascade: ${randomModelData.brand_name} (ID: ${randomModelData.brand_id})`);
+    console.log(`[MockData] 🎯 Step 3 - Vehicle Type from cascade: ${randomModelData.vehicle_type_name} (ID: ${randomModelData.vehicle_type_id})`);
 
-    let selectedBrand = null;
-    retryCount = 0;
-    while (!selectedBrand && retryCount < 3) {
-      const brandsResponse = await fetch(`${getBaseUrl()}/api/public/reference/brands?page_size=1000`);
-      const brandsData = await brandsResponse.json();
-      const allBrands = brandsData.options || [];
-
-      selectedBrand = allBrands.find((brand: any) => brand.value == selectedModel.brand_id);
-
-      if (!selectedBrand) {
-        console.warn(`[MockData] ⚠️ Brand not found for model ${selectedModel.label} (brand_id: ${selectedModel.brand_id}), retry ${retryCount + 1}/3`);
-        retryCount++;
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    }
-
-    if (!selectedBrand) {
-      throw new Error(`Brand not found for model ${selectedModel.label} (brand_id: ${selectedModel.brand_id})`);
-    }
-
-    console.log(`[MockData] 🎯 Step 2 - Found brand for model: ${selectedBrand.label} (ID: ${selectedBrand.value})`);
-
-    // 3. Получаем тип транспорта для этой марки
-    if (!selectedBrand.vehicle_type_id) {
-      throw new Error(`Brand ${selectedBrand.label} has no vehicle_type_id`);
-    }
-
-    let selectedVehicleType = null;
-    retryCount = 0;
-    while (!selectedVehicleType && retryCount < 3) {
-      const vehicleTypesResponse = await fetch(`${getBaseUrl()}/api/public/reference/vehicle-types?page_size=100`);
-      const vehicleTypesData = await vehicleTypesResponse.json();
-      const allVehicleTypes = vehicleTypesData.options || [];
-
-      selectedVehicleType = allVehicleTypes.find((vt: any) => vt.value == selectedBrand.vehicle_type_id);
-
-      if (!selectedVehicleType) {
-        console.warn(`[MockData] ⚠️ Vehicle type not found for brand ${selectedBrand.label} (vehicle_type_id: ${selectedBrand.vehicle_type_id}), retry ${retryCount + 1}/3`);
-        retryCount++;
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    }
-
-    if (!selectedVehicleType) {
-      throw new Error(`Vehicle type not found for brand ${selectedBrand.label} (vehicle_type_id: ${selectedBrand.vehicle_type_id})`);
-    }
-
-    console.log(`[MockData] 🎯 Step 3 - Found vehicle type for brand: ${selectedVehicleType.label} (ID: ${selectedVehicleType.value})`);
-
-    // 4. ПРОВЕРЯЕМ КАСКАДНУЮ ЦЕЛОСТНОСТЬ (снизу вверх)
+    // 3. ПРОВЕРЯЕМ КАСКАДНУЮ ЦЕЛОСТНОСТЬ (данные уже валидны из Django)
     console.log(`[MockData] ✅ REVERSE-CASCADE INTEGRITY CHECK:`);
-    console.log(`[MockData] ✅ Model: ${selectedModel.label} (ID: ${selectedModel.value})`);
-    console.log(`[MockData] ✅ ↑ Brand: ${selectedBrand.label} (ID: ${selectedBrand.value}) <- model belongs to this brand`);
-    console.log(`[MockData] ✅ ↑ Vehicle Type: ${selectedVehicleType.label} (ID: ${selectedVehicleType.value}) <- brand belongs to this type`);
+    console.log(`[MockData] ✅ Model: ${randomModelData.name} (ID: ${randomModelData.id})`);
+    console.log(`[MockData] ✅ ↑ Brand: ${randomModelData.brand_name} (ID: ${randomModelData.brand_id}) <- model belongs to this brand`);
+    console.log(`[MockData] ✅ ↑ Vehicle Type: ${randomModelData.vehicle_type_name} (ID: ${randomModelData.vehicle_type_id}) <- brand belongs to this type`);
 
-    // 5. Генерируем характеристики БЕЗ ПЕРЕОПРЕДЕЛЕНИЙ
+    // 4. Генерируем характеристики БЕЗ ПЕРЕОПРЕДЕЛЕНИЙ
     const year = [2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015][Math.floor(Math.random() * 10)];
     const mileage = Math.floor(Math.random() * 200000) + 10000;
     const condition = mileage < 5000 ? 'new' : mileage < 50000 ? 'excellent' : mileage < 100000 ? 'good' : 'fair';
 
-    console.log(`[MockData] 🔧 Creating result with REVERSE-CASCADE data - NO OVERRIDES!`);
+    console.log(`[MockData] 🔧 Creating result with REVERSE-CASCADE data from optimized endpoint - NO OVERRIDES!`);
 
     const result = {
-      // СТРОГО ИСПОЛЬЗУЕМ ДАННЫЕ ИЗ API БЕЗ ИЗМЕНЕНИЙ
-      vehicle_type: selectedVehicleType.value,
-      vehicle_type_name: selectedVehicleType.label,
-      brand: selectedBrand.value,
-      brand_name: selectedBrand.label,
-      model: selectedModel.label,
-      model_name: selectedModel.label,
+      // СТРОГО ИСПОЛЬЗУЕМ ДАННЫЕ ИЗ RANDOM ENDPOINT БЕЗ ИЗМЕНЕНИЙ
+      vehicle_type: String(randomModelData.vehicle_type_id),
+      vehicle_type_name: randomModelData.vehicle_type_name,
+      brand: String(randomModelData.brand_id),
+      brand_name: randomModelData.brand_name,
+      model: randomModelData.name,
+      model_name: randomModelData.name,
 
       year,
       mileage,
@@ -434,8 +395,8 @@ export const generateMockSpecs = async (): Promise<Partial<CarAdFormData>> => {
       currency: 'USD',
 
       // Заголовок и описание
-      title: `${selectedBrand.label} ${selectedModel.label} ${year}`,
-      description: `Продается ${selectedBrand.label} ${selectedModel.label} ${year} года в ${condition === 'new' ? 'новом' : condition === 'excellent' ? 'отличном' : condition === 'good' ? 'хорошем' : 'рабочем'} состоянии. Пробег ${mileage} км.`,
+      title: `${randomModelData.brand_name} ${randomModelData.name} ${year}`,
+      description: `Продается ${randomModelData.brand_name} ${randomModelData.name} ${year} года в ${condition === 'new' ? 'новом' : condition === 'excellent' ? 'отличном' : condition === 'good' ? 'хорошем' : 'рабочем'} состоянии. Пробег ${mileage} км.`,
 
       // Местоположение (будет заполнено отдельно)
       region: '',
@@ -613,41 +574,31 @@ export const generateMockPricing = (): Partial<CarAdFormData> => {
  */
 export const generateMockLocation = async (): Promise<Partial<CarAdFormData>> => {
   try {
-    console.log('[MockData] 🌍 Generating cascading location data...');
+    console.log('[MockData] 🌍 Fetching random location from optimized endpoint...');
 
-    // 1. Получаем случайный регион
-    const regionsResponse = await fetch(`${getBaseUrl()}/api/public/reference/regions?page_size=50`);
-    const regionsData = await regionsResponse.json();
-    const regions = regionsData.options || [];
+    // Используем оптимизированный endpoint для получения случайной локации
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const randomLocationResponse = await fetch(`${backendUrl}/api/ads/reference/locations/random/?count=1`);
 
-    if (regions.length === 0) {
-      console.warn('[MockData] ⚠️ No regions found, retrying...');
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return generateMockLocation();
+    if (!randomLocationResponse.ok) {
+      throw new Error(`Failed to fetch random location: ${randomLocationResponse.status}`);
     }
 
-    const region = regions[Math.floor(Math.random() * regions.length)];
-    console.log('[MockData] 🏛️ Selected region:', region);
+    const randomLocationsData = await randomLocationResponse.json();
 
-    // 2. Получаем случайный город для выбранного региона
-    const citiesResponse = await fetch(`${getBaseUrl()}/api/public/reference/cities?region_id=${region.value}&page_size=50`);
-    const citiesData = await citiesResponse.json();
-    const cities = citiesData.options || [];
-
-    if (cities.length === 0) {
-      console.warn('[MockData] ⚠️ No cities found for region, retrying...');
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return generateMockLocation();
+    if (!Array.isArray(randomLocationsData) || randomLocationsData.length === 0) {
+      throw new Error('No random locations returned from API');
     }
 
-    const city = cities[Math.floor(Math.random() * cities.length)];
-    console.log('[MockData] 🏙️ Selected city:', city);
+    const randomLocationData = randomLocationsData[0];
+    console.log('[MockData] ✅ Got random location with full cascade data:', randomLocationData);
 
+    // Все данные каскада уже получены из random endpoint - дополнительные запросы не нужны!
     const result = {
-      region: region.value,
-      city: city.value,
-      region_name: region.label,
-      city_name: city.label
+      region: String(randomLocationData.region_id),
+      city: String(randomLocationData.city_id),
+      region_name: randomLocationData.region_name,
+      city_name: randomLocationData.city_name
     };
 
     console.log('[MockData] ✅ Generated cascading location:', result);
@@ -655,10 +606,14 @@ export const generateMockLocation = async (): Promise<Partial<CarAdFormData>> =>
 
   } catch (error) {
     console.error('[MockData] ❌ Error generating cascading location:', error);
-    console.log('[MockData] 🔄 FALLBACK DISABLED - Retrying location with real data...');
-    // Повторяем попытку через 1 секунду
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return generateMockLocation();
+    // Fallback to hardcoded data instead of infinite recursion
+    console.log('[MockData] 🔄 Using fallback location data...');
+    return {
+      region: '1',
+      city: '1',
+      region_name: 'Київська область',
+      city_name: 'Київ'
+    };
   }
 };
 
@@ -822,14 +777,15 @@ export const generateMockMetadata = (vehicleType?: string, vehicleSpecs?: any): 
 
 /**
  * Генерує полный набор мокковых данных с поддержкой каскадных селектов
+ * @param cachedModels - Опциональный массив предзагруженных моделей для избежания повторных запросов
  */
-export const generateFullMockData = async (): Promise<Partial<CarAdFormData>> => {
+export const generateFullMockData = async (cachedModels?: any[]): Promise<Partial<CarAdFormData>> => {
   try {
     console.log('[MockData] 🎲 Generating full cascading mock data...');
 
     // Генерируем данные параллельно для ускорения
     const [specs, location] = await Promise.all([
-      generateMockSpecs(),
+      generateMockSpecs(cachedModels),
       generateMockLocation()
     ]);
 
@@ -856,9 +812,9 @@ export const generateFullMockData = async (): Promise<Partial<CarAdFormData>> =>
   } catch (error) {
     console.error('[MockData] ❌ Error generating full mock data:', error);
     console.log('[MockData] 🔄 FALLBACK DISABLED - Retrying full mock data...');
-    // Повторяем попытку через 1 секунду
+    // Повторяем попытку через 1 секунду, ПЕРЕДАВАЯ cachedModels чтобы избежать повторных запросов
     await new Promise(resolve => setTimeout(resolve, 1000));
-    return generateFullMockData();
+    return generateFullMockData(cachedModels);
   }
 };
 

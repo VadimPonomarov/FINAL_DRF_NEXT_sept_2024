@@ -417,6 +417,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
         logger.info(f"🎨 [mock_algorithm] Generating images with improved algorithm")
         logger.info(f"🚗 [mock_algorithm] Car data: {car_data}")
         logger.info(f"📐 [mock_algorithm] Angles: {angles}")
+        logger.info(f"🎯 [mock_algorithm] Total angles to generate: {len(angles)}")
 
         # Import the mock algorithm functions
         from apps.ads.management.commands.generate_mock_ads import Command as MockCommand
@@ -457,6 +458,8 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
 
         for index, angle in enumerate(angles):
             try:
+                logger.info(f"🔄 [mock_algorithm] Generating image {index + 1}/{len(angles)} for angle: {angle}")
+
                 # Create prompt using mock algorithm
                 prompt = create_car_image_prompt(canonical_data, angle, style, car_session_id)
 
@@ -472,6 +475,8 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 seed = abs(hash(session_id)) % 1000000
                 image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&model=flux&enhance=true&seed={seed}&nologo=true"
 
+                logger.info(f"🔗 [mock_algorithm] Generated URL for {angle}: {image_url[:100]}...")
+
                 # Create image object
                 image_obj = {
                     'url': image_url,
@@ -485,20 +490,35 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
 
                 generated_images.append(image_obj)
 
-                logger.info(f"✅ [mock_algorithm] Generated {angle} image with seed {seed}")
+                logger.info(f"✅ [mock_algorithm] Generated {angle} image with seed {seed} (total: {len(generated_images)})")
 
             except Exception as e:
                 logger.error(f"❌ [mock_algorithm] Error generating {angle} image: {e}")
+                import traceback
+                logger.error(f"❌ [mock_algorithm] Traceback: {traceback.format_exc()}")
                 continue
 
-        logger.info(f"🎉 [mock_algorithm] Successfully generated {len(generated_images)} images")
+        logger.info(f"🎉 [mock_algorithm] Successfully generated {len(generated_images)}/{len(angles)} images")
 
-        return Response({
+        response_data = {
             'success': True,
+            'status': 'ok',
             'images': generated_images,
             'session_id': f"CAR-{car_session_id}",
-            'canonical_data': canonical_data
-        })
+            'canonical_data': canonical_data,
+            'debug': {
+                'requested_angles': angles,
+                'generated_count': len(generated_images),
+                'canonical': canonical_data,
+                'prompts': [img.get('prompt', '') for img in generated_images],
+                'angles': [img.get('angle', '') for img in generated_images],
+                'style': style
+            }
+        }
+
+        logger.info(f"📤 [mock_algorithm] Returning response with {len(generated_images)} images")
+
+        return Response(response_data)
 
     except Exception as e:
         logger.error(f"❌ [mock_algorithm] Error: {e}")

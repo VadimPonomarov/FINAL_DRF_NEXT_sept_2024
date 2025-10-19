@@ -39,21 +39,28 @@ class ApiErrorTracker {
   trackError(url: string, status: number, error?: any) {
     const now = new Date();
     const key = `${status}_${new URL(url, 'http://localhost').pathname}`;
-    
+
     const stats = this.errorStats.get(key) || { count: 0, lastError: now, consecutiveErrors: 0 };
     stats.count++;
     stats.lastError = now;
     stats.consecutiveErrors++;
-    
+
     this.errorStats.set(key, stats);
 
     // Определяем критические ошибки
     const isCritical = this.isCriticalError(status, url);
-    
+
+    console.log('[ApiErrorTracker] Error tracked:', {
+      url,
+      status,
+      isCritical,
+      totalCriticalErrors: this.criticalErrorCount
+    });
+
     if (isCritical) {
       this.criticalErrorCount++;
       this.lastCriticalError = now;
-      
+
       console.error('[ApiErrorTracker] Critical error detected:', {
         url,
         status,
@@ -75,7 +82,7 @@ class ApiErrorTracker {
 
   private isCriticalError(status: number, url: string): boolean {
     // Критические ошибки:
-    // 1. 500+ серверные ошибки
+    // 1. 500+ серверные ошибки - НО НЕ для /api/autoria/* (backend может быть недоступен)
     // 2. Network errors (status 0) - НО НЕ CORS ошибки для backend
     // 3. 404 для API endpoints (НО НЕ для /api/auth/* и /api/public/*)
 
@@ -94,12 +101,25 @@ class ApiErrorTracker {
       return false;
     }
 
+    // Исключаем AutoRia API - backend может быть недоступен, это не должно вызывать signOut
+    if (url.includes('/api/autoria/')) {
+      console.warn('[ApiErrorTracker] AutoRia API error (not critical, backend may be unavailable):', url, status);
+      return false;
+    }
+
     // Исключаем CORS ошибки для прямых запросов к backend (status 0)
     // Это происходит когда компоненты пытаются обратиться напрямую к http://localhost:8000
     // вместо использования Next.js API routes
-    if (status === 0 && url.includes('localhost:8000')) {
-      console.warn('[ApiErrorTracker] CORS error detected for backend URL (not critical):', url);
-      return false;
+    // ВАЖНО: URL может быть как полным (http://localhost:8000/api/user/profile/),
+    // так и относительным (/api/user/profile), поэтому проверяем оба варианта
+    if (status === 0) {
+      if (url.includes('localhost:8000') ||
+          url.includes('/api/user/') ||
+          url.includes('/api/accounts/') ||
+          url.includes('/api/ads/')) {
+        console.warn('[ApiErrorTracker] CORS error detected for backend URL (not critical):', url);
+        return false;
+      }
     }
 
     // 400-499 ошибки НЕ критические (это клиентские ошибки - неправильный запрос, нет прав и т.д.)
@@ -154,36 +174,43 @@ export function useApiErrorHandler(options: ApiErrorHandlerOptions = {}) {
   const tracker = ApiErrorTracker.getInstance();
 
   const handleCriticalError = useCallback(async () => {
-    console.log('[ApiErrorHandler] Handling critical error - clearing session and redirecting to /signin...');
-    
+    console.log('[ApiErrorHandler] Handling critical error...');
+
     try {
-      // Очищаем NextAuth сессию
-      await signOut({ redirect: false });
-      
-      // Очищаем localStorage и sessionStorage
-      localStorage.clear();
-      sessionStorage.clear();
-      
       // Сбрасываем счетчик ошибок
       tracker.reset();
-      
+
       // Вызываем пользовательский обработчик
       onCriticalError?.();
-      
+
       // Перенаправляем на страницу первичной авторизации NextAuth (/api/auth/signin)
+      // ТОЛЬКО если enableAutoRedirect === true
       if (enableAutoRedirect) {
+        console.log('[ApiErrorHandler] Auto-redirect enabled - clearing session and redirecting to /signin...');
+
+        // Очищаем NextAuth сессию
+        await signOut({ redirect: false });
+
+        // Очищаем localStorage и sessionStorage
+        localStorage.clear();
+        sessionStorage.clear();
+
         const currentPath = window.location.pathname;
         const redirectUrl = currentPath === '/api/auth/signin' ? '/api/auth/signin' : `/api/auth/signin?callbackUrl=${encodeURIComponent(currentPath)}`;
 
         setTimeout(() => {
           window.location.href = redirectUrl;
         }, 100);
+      } else {
+        console.log('[ApiErrorHandler] Auto-redirect disabled - user stays on page');
       }
-      
+
     } catch (error) {
       console.error('[ApiErrorHandler] Error during cleanup:', error);
-      // В крайнем случае просто перезагружаем страницу
-      window.location.reload();
+      // В крайнем случае просто перезагружаем страницу (только если enableAutoRedirect === true)
+      if (enableAutoRedirect) {
+        window.location.reload();
+      }
     }
   }, [onCriticalError, enableAutoRedirect, router, tracker]);
 

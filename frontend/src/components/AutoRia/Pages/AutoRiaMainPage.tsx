@@ -34,22 +34,9 @@ const AutoRiaMainPage = () => {
   const [testAdsCount, setTestAdsCount] = useState(3);
 
 
-  // Получаем информацию о текущем пользователе
-  React.useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await fetch('/api/user/profile');
-        if (response.ok) {
-          const userData = await response.json();
-          setCurrentUser(userData);
-        }
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-      }
-    };
-
-    fetchCurrentUser();
-  }, []);
+  // УДАЛЕНО: Дублирующий запрос к /api/user/profile
+  // useUserProfileData в AutoRiaHeader уже загружает эти данные
+  // Этот код вызывал CORS ошибки, так как /api/user/profile не существует как Next.js API route
 
   const isSuperUser = currentUser?.is_superuser || currentUser?.is_staff || true; // Временно true для тестирования
 
@@ -326,9 +313,9 @@ const AutoRiaMainPage = () => {
           >
             {isGenerating ? (
               <>
-                <div className="animate-spin h-4 md:h-5 w-4 md:w-5 mr-2 border-2 border-green-600 border-t-transparent rounded-full" />
-                <span className="hidden sm:inline">{t('autoria.testAds.creatingDemo')}</span>
-                <span className="sm:hidden">{t('autoria.testAds.creating')}</span>
+                <div className="animate-spin h-4 md:h-5 w-4 md:w-5 mr-2 border-2 border-green-600 border-t-transparent rounded-full animate-pulse" />
+                <span className="hidden sm:inline animate-pulse">{t('autoria.testAds.creatingDemo')}</span>
+                <span className="sm:hidden animate-pulse">{t('autoria.testAds.creating')}</span>
               </>
             ) : (
               <>
