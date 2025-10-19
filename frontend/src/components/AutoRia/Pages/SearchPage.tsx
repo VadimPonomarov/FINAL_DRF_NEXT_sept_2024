@@ -22,8 +22,9 @@ import { cachedFetch } from '@/utils/cachedFetch';
 import AnalyticsTabContent from '@/components/AutoRia/Analytics/AnalyticsTabContent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
-import { useUserProfileData } from '@/hooks/useUserProfileData';
 import { smartFetch } from '@/utils/smartFetch';
+import { CurrencySelector } from '@/components/AutoRia/CurrencySelector/CurrencySelector';
+import { usePriceConverter } from '@/hooks/usePriceConverter';
 
 // Простой тип для автомобиля
 interface CarAd {
@@ -35,6 +36,7 @@ interface CarAd {
   price?: number;
   currency?: string;
   price_usd?: number; // Цена в USD для отображения
+  price_eur?: number; // Цена в EUR для отображения
   mileage?: number;
   city?: string;
   city_name?: string; // Название города
@@ -73,8 +75,8 @@ const SearchPage = () => {
   // Хук для авторизации
   const { user, isAuthenticated } = useAutoRiaAuth();
 
-  // Хук для получения данных профиля пользователя (не используется для ограничения таба аналитики)
-  const { data: userProfileData } = useUserProfileData();
+  // Хук для конвертации цен
+  const { formatPrice: formatPriceInSelectedCurrency } = usePriceConverter();
 
   // Простые состояния
   const [searchResults, setSearchResults] = useState<CarAd[]>([]);
@@ -987,21 +989,22 @@ const SearchPage = () => {
                     fetchOptions={async (search) => {
                       console.log('🔍 Fetching brands with search:', search);
                       console.log('🔍 Current vehicle_type:', filters.vehicle_type);
-                      console.log('🔍 All current filters:', filters);
+
+                      // ✅ КАСКАДНАЯ ФИЛЬТРАЦИЯ: Если тип не выбран, возвращаем пустой массив
+                      if (!filters.vehicle_type) {
+                        console.log('🔍 ❌ No vehicle_type selected, returning empty array');
+                        return [];
+                      }
 
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
-                      if (filters.vehicle_type) {
-                        params.append('vehicle_type_id', filters.vehicle_type);
-                        console.log('🔍 Added vehicle_type_id to params:', filters.vehicle_type);
-                      } else {
-                        console.log('🔍 ❌ No vehicle_type found, brands request will fail!');
-                      }
+                      params.append('vehicle_type_id', filters.vehicle_type);
                       params.append('page_size', '1000'); // Загружаем все данные
+                      console.log('🔍 ✅ Fetching brands for vehicle_type:', filters.vehicle_type);
 
                       const response = await fetch(`/api/public/reference/brands?${params}`);
                       const data = await response.json();
-                      console.log('🔍 Brands response:', data);
+                      console.log('🔍 Brands response count:', data.options?.length || 0);
                       return data.options || [];
                     }}
                     allowClear={true}
@@ -1054,7 +1057,7 @@ const SearchPage = () => {
 
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
-                      params.append('brand_id', filters.brand);
+                      params.append('mark_id', filters.brand); // ИСПРАВЛЕНО: brand_id → mark_id
                       params.append('page_size', '1000'); // Загружаем все данные
 
                       const response = await fetch(`/api/public/reference/models?${params}`);
@@ -1302,18 +1305,23 @@ const SearchPage = () => {
 	            {/* Tabs: Results / Analytics */}
 	            {!loading && totalCount > 0 && (
 	              <div className="mt-2">
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-                  <TabsList>
-                    <TabsTrigger value="results">{t('searchResults')}</TabsTrigger>
-                    <TabsTrigger value="analytics">{t('analytics')}</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="results">
-                    {/* Контент результатов будет отображаться ниже */}
-                  </TabsContent>
-                  <TabsContent value="analytics">
-                    <AnalyticsTabContent filters={filters as any} results={searchResults as any} loading={loading} />
-                  </TabsContent>
-                </Tabs>
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1">
+                    <TabsList>
+                      <TabsTrigger value="results">{t('searchResults')}</TabsTrigger>
+                      <TabsTrigger value="analytics">{t('analytics')}</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="results">
+                      {/* Контент результатов будет отображаться ниже */}
+                    </TabsContent>
+                    <TabsContent value="analytics">
+                      <AnalyticsTabContent filters={filters as any} results={searchResults as any} loading={loading} />
+                    </TabsContent>
+                  </Tabs>
+
+                  {/* Currency Selector - всегда видимый */}
+                  <CurrencySelector showLabel={true} />
+                </div>
 	              </div>
 	            )}
 
@@ -1644,7 +1652,7 @@ const SearchPage = () => {
 
                             <div className="flex justify-between items-center">
                               <div className="text-2xl font-bold text-green-600">
-                                {car.price_usd ? `$${car.price_usd.toLocaleString()}` : formatCardPrice(car.price, car.currency)}
+                                {formatPriceInSelectedCurrency(car)}
                               </div>
                             </div>
 

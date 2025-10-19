@@ -59,7 +59,7 @@ export const useVirtualReferenceData = (): UseVirtualReferenceDataReturn => {
   }, [fetchData]);
 
   const fetchModels = useCallback(async (search: string = '', brandId?: string) => {
-    const params = brandId ? { brand_id: brandId } : {};
+    const params = brandId ? { mark_id: brandId } : {}; // ИСПРАВЛЕНО: brand_id → mark_id
     return fetchData('models', search, params);
   }, [fetchData]);
 

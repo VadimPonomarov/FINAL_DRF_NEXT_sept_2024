@@ -85,7 +85,7 @@ export const fetchBrandsWithCache = async (search?: string, vehicleTypeId?: stri
 // 🚀 МОДЕЛИ: Долгое кеширование для стабильных данных
 export const fetchModelsWithCache = async (brandId: string) => {
   const params = new URLSearchParams();
-  params.append('brand_id', brandId);
+  params.append('mark_id', brandId); // ИСПРАВЛЕНО: brand_id → mark_id
   params.append('page_size', '100');
 
   return cachedFetch(`/api/public/reference/models?${params}`, {

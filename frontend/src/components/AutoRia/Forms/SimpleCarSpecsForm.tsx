@@ -178,23 +178,23 @@ const SimpleCarSpecsForm: React.FC<SimpleCarSpecsFormProps> = memo(({ data, onCh
                 console.log('🔍 Current vehicle_type:', localData.vehicle_type);
                 console.log('🔍 Current vehicle_type_name:', localData.vehicle_type_name);
 
+                // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: ВСЕГДА фильтруем по типу транспорта!
+                // Каскадная фильтрация: Тип → Марка → Модель
+                if (!localData.vehicle_type && !localData.vehicle_type_name) {
+                  console.log('🔍 ❌ No vehicle type selected, returning empty array');
+                  return [];
+                }
+
                 const params = new URLSearchParams();
                 if (search) params.append('search', search);
 
-                // Если у нас уже есть сохраненная марка (brand_id), не фильтруем по типу транспорта,
-                // чтобы гарантировать появление этой марки в списке и корректную отрисовку label
-                const hasSavedBrand = !!(localData.brand || localData.brand_id);
-                if (!hasSavedBrand) {
-                  // Фильтруем по типу, только если бренда ещё нет
-                  if (!localData.vehicle_type && !localData.vehicle_type_name) {
-                    console.log('🔍 No vehicle type selected and no saved brand, returning empty array');
-                    return [];
-                  }
-                  if (localData.vehicle_type) {
-                    params.append('vehicle_type_id', String(localData.vehicle_type));
-                  } else if (localData.vehicle_type_name) {
-                    params.append('vehicle_type_name', String(localData.vehicle_type_name));
-                  }
+                // ВСЕГДА добавляем фильтр по типу транспорта
+                if (localData.vehicle_type) {
+                  params.append('vehicle_type_id', String(localData.vehicle_type));
+                  console.log('🔍 ✅ Added vehicle_type_id filter:', localData.vehicle_type);
+                } else if (localData.vehicle_type_name) {
+                  params.append('vehicle_type_name', String(localData.vehicle_type_name));
+                  console.log('🔍 ✅ Added vehicle_type_name filter:', localData.vehicle_type_name);
                 }
 
                 params.append('page_size', '1000');
@@ -210,19 +210,8 @@ const SimpleCarSpecsForm: React.FC<SimpleCarSpecsFormProps> = memo(({ data, onCh
                 }
 
                 const data = await response.json();
-                let options = data.options || [];
-
-                // Если сохранялся бренд и его нет в отфильтрованном списке — добавим как минимум одну опцию
-                if (hasSavedBrand) {
-                  const currentId = String(localData.brand_id || localData.brand || '');
-                  const exists = options.some((o: any) => String(o.value) === currentId);
-                  if (!exists && (localData.brand_name || (localData as any).mark_name)) {
-                    options = [
-                      { value: currentId, label: (localData.brand_name || (localData as any).mark_name) as string },
-                      ...options
-                    ];
-                  }
-                }
+                const options = data.options || [];
+                console.log('🔍 ✅ Brands filtered by vehicle type, count:', options.length);
 
                 return options;
               } catch (error) {
@@ -232,8 +221,8 @@ const SimpleCarSpecsForm: React.FC<SimpleCarSpecsFormProps> = memo(({ data, onCh
             }}
             allowClear={true}
             searchable={true}
-            // Разрешаем открыть селект, если уже есть сохраненная марка, даже без выбранного типа
-            disabled={!localData.vehicle_type && !localData.vehicle_type_name && !localData.brand && !localData.brand_id}
+            // ✅ ИСПРАВЛЕНО: Марка доступна только если выбран тип транспорта (каскадная фильтрация)
+            disabled={!localData.vehicle_type && !localData.vehicle_type_name}
             dependencies={[localData.vehicle_type, localData.vehicle_type_name]} // Перезагружать при смене типа транспорта
           />
         </div>
@@ -278,9 +267,10 @@ const SimpleCarSpecsForm: React.FC<SimpleCarSpecsFormProps> = memo(({ data, onCh
                 brandType: typeof localData.brand
               });
 
+              // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Django ожидает mark_id, а не brand_id!
               // Используем ID марки если есть, иначе название
               if (localData.brand) {
-                params.append('brand_id', localData.brand.toString());
+                params.append('mark_id', localData.brand.toString()); // ИСПРАВЛЕНО: brand_id → mark_id
               } else if (localData.brand_name) {
                 params.append('brand_name', localData.brand_name);
               } else {

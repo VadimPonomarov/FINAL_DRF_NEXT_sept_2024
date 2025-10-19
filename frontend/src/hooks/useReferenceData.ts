@@ -160,7 +160,7 @@ export const useReferenceData = (): UseReferenceDataReturn => {
 
     console.log('[useReferenceData] Loading models for brand:', brandId);
     await fetchData(
-      `/api/public/reference/models?brand_id=${brandId}`,
+      `/api/public/reference/models?mark_id=${brandId}`, // ИСПРАВЛЕНО: brand_id → mark_id
       setModels,
       setModelsLoading,
       setModelsError,

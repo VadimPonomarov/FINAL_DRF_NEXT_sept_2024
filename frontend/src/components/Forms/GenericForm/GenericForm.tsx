@@ -271,8 +271,8 @@ export function GenericForm<T extends FieldValues>({
             // Создаем новую функцию с актуальным значением brand
             dynamicFetchOptions = async (search: string, page: number, pageSize: number) => {
               console.log(`[GenericForm] Fetching models for brand:`, currentBrand);
-              // Используем fetchModels из useVirtualReferenceData
-              const response = await fetch(`/api/public/reference/models?brand_id=${currentBrand}&page=${page}&page_size=${pageSize}&search=${search}`);
+              // ИСПРАВЛЕНО: brand_id → mark_id
+              const response = await fetch(`/api/public/reference/models?mark_id=${currentBrand}&page=${page}&page_size=${pageSize}&search=${search}`);
               if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
               }

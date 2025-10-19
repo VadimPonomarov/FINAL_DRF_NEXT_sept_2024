@@ -64,6 +64,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const data = await response.json();
 
+    console.log(`📊 PUBLIC REFERENCE API: Django response for ${type}:`, {
+      isArray: Array.isArray(data),
+      hasResults: !!data.results,
+      dataLength: Array.isArray(data) ? data.length : (data.results?.length || 0),
+      sampleItem: Array.isArray(data) ? data[0] : data.results?.[0]
+    });
+
     // Трансформируем данные в формат {value, label} для VirtualSelect
     let options: any[] = [];
     let rawData: any[] = [];
@@ -83,6 +90,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ...(item.mark && { brand_id: item.mark }),
         ...(item.region && { region_id: item.region }),
       }));
+
+      console.log(`✅ PUBLIC REFERENCE API: Transformed ${options.length} choices items for ${type}`);
     } else if (data.results && Array.isArray(data.results)) {
       // Обычные endpoints возвращают {results: [...], count, next, previous}
       rawData = data.results;

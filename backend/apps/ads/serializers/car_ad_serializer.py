@@ -176,13 +176,51 @@ class CarAdSerializer(BaseModelSerializer):
         """
         attrs = super().validate(attrs)
 
+        # ✅ КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Проверка цены
+        price = attrs.get('price')
+        if price is not None and price <= 0:
+            raise serializers.ValidationError({
+                'price': 'Price must be greater than zero.'
+            })
+
+        # ✅ КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Проверка dynamic_fields
+        dynamic_fields = attrs.get('dynamic_fields', {})
+        if dynamic_fields:
+            # Проверка года
+            year = dynamic_fields.get('year')
+            if year is not None:
+                current_year = 2025  # Можно использовать datetime.now().year
+                if year < 1900 or year > current_year:
+                    raise serializers.ValidationError({
+                        'dynamic_fields': {
+                            'year': f'Year must be between 1900 and {current_year}.'
+                        }
+                    })
+
+            # Проверка пробега
+            mileage = dynamic_fields.get('mileage')
+            if mileage is not None and mileage < 0:
+                raise serializers.ValidationError({
+                    'dynamic_fields': {
+                        'mileage': 'Mileage cannot be negative.'
+                    }
+                })
+
+            # Проверка объема двигателя
+            engine_volume = dynamic_fields.get('engine_volume')
+            if engine_volume is not None and (engine_volume <= 0 or engine_volume > 20):
+                raise serializers.ValidationError({
+                    'dynamic_fields': {
+                        'engine_volume': 'Engine volume must be between 0 and 20 liters.'
+                    }
+                })
+
         # Проверка лимитов перенесена в perform_create при переводе в ACTIVE
         # DRAFT объявления создаются без проверки лимитов
 
         # Perform LLM moderation on content fields
         title = attrs.get('title', '')
         description = attrs.get('description', '')
-        price = attrs.get('price')
 
         if title or description:
             # Интеллектуальная LLM-модерация

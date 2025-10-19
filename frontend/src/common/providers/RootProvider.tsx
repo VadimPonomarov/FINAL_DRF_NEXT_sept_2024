@@ -7,6 +7,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { ChatContextProvider } from "@/components/ChatBot/providers/ChatContextProvider";
 import { I18nProvider } from "@/contexts/I18nContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { preloadCriticalReferenceData, fetchBrandsWithCache } from "@/utils/cachedFetch";
 import { setupGlobalFetchErrorTracking, useApiErrorHandler } from "@/hooks/useApiErrorHandler";
 
@@ -81,18 +82,20 @@ const RootProvider: FC<IProps> = ({ children }) => {
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <I18nProvider>
-          <AuthProvider>
-            <NotificationProvider>
-              <AuthProviderProvider>
-                <ChatProvider>
-                  <ChatContextProvider>
-                    <GlobalApiErrorHandler />
-                    {children}
-                  </ChatContextProvider>
-                </ChatProvider>
-              </AuthProviderProvider>
-            </NotificationProvider>
-          </AuthProvider>
+          <CurrencyProvider>
+            <AuthProvider>
+              <NotificationProvider>
+                <AuthProviderProvider>
+                  <ChatProvider>
+                    <ChatContextProvider>
+                      <GlobalApiErrorHandler />
+                      {children}
+                    </ChatContextProvider>
+                  </ChatProvider>
+                </AuthProviderProvider>
+              </NotificationProvider>
+            </AuthProvider>
+          </CurrencyProvider>
         </I18nProvider>
       </SessionProvider>
     </QueryClientProvider>

@@ -211,8 +211,15 @@ def car_marks_popular(request):
 @permission_classes([])  # Public access
 def car_marks_choices(request):
     """Get simplified mark choices for forms."""
-    marks = CarMarkModel.objects.all().order_by('name')
-    serializer = CarMarkChoiceSerializer(marks, many=True)
+    queryset = CarMarkModel.objects.all().select_related('vehicle_type').order_by('name')
+
+    # ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Фильтрация марок по типу транспорта!
+    # Каскадная фильтрация: Тип → Марка → Модель
+    vehicle_type_id = request.query_params.get('vehicle_type_id')
+    if vehicle_type_id:
+        queryset = queryset.filter(vehicle_type_id=vehicle_type_id)
+
+    serializer = CarMarkChoiceSerializer(queryset, many=True)
     return Response(serializer.data)
 
 

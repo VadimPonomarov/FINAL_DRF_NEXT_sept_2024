@@ -291,18 +291,22 @@ const SimpleEnhancedAnalyticsPage: React.FC = () => {
                     fetchOptions={async (search) => {
                       console.log('🔍 [Analytics] Fetching brands with search:', search);
                       console.log('🔍 [Analytics] Current vehicle_type:', filters.vehicle_type);
+
+                      // ✅ КАСКАДНАЯ ФИЛЬТРАЦИЯ: Если тип не выбран, возвращаем пустой массив
+                      if (!filters.vehicle_type) {
+                        console.log('🔍 [Analytics] ❌ No vehicle_type selected, returning empty array');
+                        return [];
+                      }
+
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
-                      if (filters.vehicle_type) {
-                        params.append('vehicle_type_id', filters.vehicle_type);
-                        console.log('🔍 [Analytics] Added vehicle_type_id to params:', filters.vehicle_type);
-                      } else {
-                        console.log('🔍 [Analytics] ❌ No vehicle_type found, brands request will fail!');
-                      }
+                      params.append('vehicle_type_id', filters.vehicle_type);
                       params.append('page_size', '1000');
+                      console.log('🔍 [Analytics] ✅ Fetching brands for vehicle_type:', filters.vehicle_type);
+
                       const response = await fetch(`/api/public/reference/brands?${params}`);
                       const data = await response.json();
-                      console.log('🔍 [Analytics] Brands response:', data);
+                      console.log('🔍 [Analytics] Brands response count:', data.options?.length || 0);
                       return data.options || [];
                     }}
                     allowClear
@@ -328,7 +332,7 @@ const SimpleEnhancedAnalyticsPage: React.FC = () => {
                       }
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
-                      params.append('brand_id', filters.brand);
+                      params.append('mark_id', filters.brand); // ИСПРАВЛЕНО: brand_id → mark_id
                       params.append('page_size', '1000');
                       const response = await fetch(`/api/public/reference/models?${params}`);
                       const data = await response.json();
