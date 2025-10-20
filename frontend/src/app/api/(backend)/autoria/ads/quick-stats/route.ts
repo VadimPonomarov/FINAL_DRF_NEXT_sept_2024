@@ -12,8 +12,14 @@ export async function GET(request: NextRequest) {
   try {
     console.log('📊 AUTORIA QUICK STATS API: GET request received!');
 
+    // Получаем параметры запроса
+    const { searchParams } = new URL(request.url);
+    const forceRefresh = searchParams.get('force_refresh');
+
+    console.log('🔄 AUTORIA QUICK STATS API: force_refresh =', forceRefresh);
+
     // Проксируем запрос к Django backend
-    const backendUrl = `${BACKEND_URL}/api/ads/statistics/quick/`;
+    const backendUrl = `${BACKEND_URL}/api/ads/statistics/quick/${forceRefresh ? '?force_refresh=true' : ''}`;
     console.log('🔗 AUTORIA QUICK STATS API: Proxying to:', backendUrl);
 
     // Получаем заголовки авторизации
@@ -46,6 +52,12 @@ export async function GET(request: NextRequest) {
 
     const result = await response.json();
     console.log('✅ AUTORIA QUICK STATS API: Success!', result);
+    console.log('📦 AUTORIA QUICK STATS API: Data source:', result.source);
+    console.log('📊 AUTORIA QUICK STATS API: Stats:', {
+      total_ads: result.data?.total_ads,
+      active_ads: result.data?.active_ads,
+      total_users: result.data?.total_users
+    });
 
     return NextResponse.json(result);
 

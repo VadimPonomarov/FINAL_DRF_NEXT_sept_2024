@@ -7,6 +7,7 @@ interface CarAd {
   currency?: string;
   price_usd?: number;
   price_eur?: number;
+  price_uah?: number;
 }
 
 const CURRENCY_SYMBOLS = {
@@ -20,7 +21,7 @@ export const usePriceConverter = () => {
 
   /**
    * Конвертирует цену объявления в выбранную валюту
-   * Использует предварительно рассчитанные поля price_usd и price_eur из backend
+   * Использует предварительно рассчитанные поля price_usd, price_eur и price_uah из backend
    */
   const convertPrice = (ad: CarAd): { amount: number | null; currency: Currency; symbol: string } => {
     let amount: number | null = null;
@@ -34,15 +35,8 @@ export const usePriceConverter = () => {
         amount = ad.price_eur ?? null;
         break;
       case 'UAH':
-        // Если оригинальная валюта UAH, используем оригинальную цену
-        if (ad.currency === 'UAH') {
-          amount = ad.price ?? null;
-        } else {
-          // Иначе конвертируем из USD (если есть price_usd)
-          // UAH = USD * rate (примерно 41.65)
-          // Но лучше использовать backend расчет, поэтому возвращаем null если нет прямого значения
-          amount = null;
-        }
+        // Используем price_uah из backend (всегда рассчитывается)
+        amount = ad.price_uah ?? null;
         break;
     }
 

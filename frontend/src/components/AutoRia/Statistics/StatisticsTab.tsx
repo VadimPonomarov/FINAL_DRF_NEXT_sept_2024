@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { AdStatistics, UserRole, AccountType } from '@/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
+import { fetchWithAuth } from '@/utils/fetchWithAuth';
 
 // 📊 Интерфейс для статистики объявления
 interface AdStatistics {
@@ -133,7 +134,13 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({
       try {
         console.log('[StatisticsTab] 📊 Loading statistics for ad:', adId);
 
-        const response = await fetch(`/api/ads/statistics?ad_id=${adId}`);
+        const response = await fetchWithAuth(`/api/ads/statistics?ad_id=${adId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          cache: 'no-store'
+        });
         const result = await response.json();
 
         if (!response.ok) {

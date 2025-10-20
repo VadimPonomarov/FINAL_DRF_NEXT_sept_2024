@@ -14,17 +14,17 @@ export const CURRENCY_CONFIG: Record<Currency, CurrencyConfig> = {
   USD: {
     symbol: '$',
     name: 'Доллары США',
-    locale: 'en-US'
+    locale: 'ru-RU' // Используем ru-RU для пробела как разделителя тысяч
   },
   EUR: {
     symbol: '€',
     name: 'Евро',
-    locale: 'de-DE'
+    locale: 'ru-RU' // Используем ru-RU для пробела как разделителя тысяч
   },
   UAH: {
     symbol: '₴',
     name: 'Гривны',
-    locale: 'uk-UA'
+    locale: 'ru-RU' // Используем ru-RU для пробела как разделителя тысяч
   }
 };
 
@@ -46,7 +46,8 @@ export function formatPrice(
   } = {}
 ): string {
   // Проверяем валидность цены
-  if (!price || price <= 0) {
+  if (price === null || price === undefined || price <= 0) {
+    console.warn('[formatPrice] Invalid price:', { price, currency });
     return 'Цена не указана';
   }
 

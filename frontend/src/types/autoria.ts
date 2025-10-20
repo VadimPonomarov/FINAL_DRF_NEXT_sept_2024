@@ -182,6 +182,9 @@ export interface CarAd {
   // Ценообразование
   price: number;
   currency: Currency;
+  price_usd?: number; // Цена в USD (рассчитывается backend)
+  price_eur?: number; // Цена в EUR (рассчитывается backend)
+  price_uah?: number; // Цена в UAH (рассчитывается backend)
 
   // Местоположение (могут быть объектами или строками/числами)
   region: {

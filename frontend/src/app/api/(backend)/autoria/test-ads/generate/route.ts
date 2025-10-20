@@ -587,7 +587,15 @@ function generateRandomCarData(index: number) {
   const bodyType = bodyTypes[Math.floor(Math.random() * bodyTypes.length)];
   const vehicleType = vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
   const year = 2015 + Math.floor(Math.random() * 9); // 2015-2023
-  const price = 10000 + Math.floor(Math.random() * 40000); // 10k-50k
+  const price = 10000 + Math.floor(Math.random() * 40000); // 10k-50k UAH
+
+  // Курсы валют (примерные)
+  const USD_RATE = 41.65; // 1 USD = 41.65 UAH
+  const EUR_RATE = 45.20; // 1 EUR = 45.20 UAH
+
+  // Рассчитываем цены для всех валют
+  const price_usd = Math.round(price / USD_RATE);
+  const price_eur = Math.round(price / EUR_RATE);
 
   return {
     title: `${brand} ${model} ${year} - Test Ad ${index}`,
@@ -597,6 +605,8 @@ function generateRandomCarData(index: number) {
     year: year,
     price: price,
     currency: 'UAH',
+    price_usd: price_usd,
+    price_eur: price_eur,
     color: color,
     body_type: bodyType,
     vehicle_type: vehicleType,

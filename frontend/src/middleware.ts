@@ -32,6 +32,7 @@ const PUBLIC_PATHS = [
 
 // Paths that require internal NextAuth session (but not backend tokens)
 const INTERNAL_AUTH_PATHS = [
+    '/login',     // Login page requires internal auth
   '/profile',   // Profile page requires NextAuth session
   '/settings'   // Settings page requires NextAuth session
 ];
@@ -82,6 +83,7 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
 }
 
 // Function to check backend_auth tokens presence in Redis (for Autoria access)
+// UPDATED: Now only checks NextAuth session, allows client-side token refresh
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
     // First, check NextAuth session using getToken
@@ -90,7 +92,7 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
 
     console.log(`[Middleware] getToken result:`, token ? 'Token exists' : 'No token', token ? `email: ${token.email}` : '');
 
-    // If no token, redirect to signin
+    // If no NextAuth session, redirect to signin (not /login, because /login requires session)
     if (!token || !token.email) {
       console.log(`[Middleware] No valid NextAuth session - redirecting to signin`);
       const signinUrl = new URL('/api/auth/signin', req.url);
@@ -98,55 +100,17 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
       return NextResponse.redirect(signinUrl);
     }
 
-    // NextAuth session exists, now check backend tokens
-    console.log(`[Middleware] NextAuth session valid (email: ${token.email}), checking backend tokens`);
+    // NextAuth session exists - allow access
+    // Client-side code (fetchWithAuth) will handle token refresh if needed
+    console.log(`[Middleware] ✅ NextAuth session valid (email: ${token.email}) - allowing Autoria access`);
+    console.log(`[Middleware] 💡 Client-side code will handle backend token refresh if needed`);
 
-    // Check which provider is used
-    const providerResponse = await fetch(`${req.nextUrl.origin}/api/redis?key=auth_provider`);
-    let authKey = 'backend_auth'; // default
-
-    if (providerResponse.ok) {
-      const providerData = await providerResponse.json();
-      if (providerData.exists && providerData.value === 'dummy') {
-        authKey = 'dummy_auth';
-        console.log(`[Middleware] Using dummy provider, checking key: ${authKey}`);
-      } else {
-        console.log(`[Middleware] Using backend provider, checking key: ${authKey}`);
-      }
-    }
-
-    const redisResponse = await fetch(`${req.nextUrl.origin}/api/redis?key=${authKey}`);
-
-    if (!redisResponse.ok) {
-      console.log(`[Middleware] Failed to check Redis for ${authKey} tokens`);
-      const loginUrl = new URL('/login', req.url);
-      loginUrl.searchParams.set('callbackUrl', req.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    const redisData = await redisResponse.json();
-    if (!redisData.exists || !redisData.value) {
-      console.log(`[Middleware] No ${authKey} tokens found in Redis - redirecting to login with callback`);
-      const loginUrl = new URL('/login', req.url);
-      loginUrl.searchParams.set('callbackUrl', req.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    const authData = JSON.parse(redisData.value);
-    if (!authData.access || !authData.refresh) {
-      console.log(`[Middleware] Incomplete ${authKey} tokens in Redis - redirecting to login with callback`);
-      const loginUrl = new URL('/login', req.url);
-      loginUrl.searchParams.set('callbackUrl', req.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    console.log(`[Middleware] ${authKey} tokens found in Redis - allowing Autoria access`);
     return NextResponse.next();
   } catch (error) {
-    console.error('[Middleware] Error checking backend_auth tokens:', error);
-    const loginUrl = new URL('/login', req.url);
-    loginUrl.searchParams.set('callbackUrl', req.url);
-    return NextResponse.redirect(loginUrl);
+    console.error('[Middleware] Error checking NextAuth session:', error);
+    const signinUrl = new URL('/api/auth/signin', req.url);
+    signinUrl.searchParams.set('callbackUrl', req.url);
+    return NextResponse.redirect(signinUrl);
   }
 }
 

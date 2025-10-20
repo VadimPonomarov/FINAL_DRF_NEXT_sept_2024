@@ -4,6 +4,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
+import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface PlatformStats {
   total_ads: number;
@@ -28,30 +35,33 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<string>('');
 
   // Функция для загрузки статистики
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (forceRefresh: boolean = false) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      console.log('[PlatformStatsWidget] 📊 Fetching platform statistics...');
-      
-      const response = await fetch('/api/autoria/ads/quick-stats', {
+      console.log('[PlatformStatsWidget] 📊 Fetching platform statistics...', forceRefresh ? '(force refresh)' : '');
+
+      const url = forceRefresh
+        ? '/api/autoria/ads/quick-stats?force_refresh=true'
+        : '/api/autoria/ads/quick-stats';
+
+      const response = await fetchWithAuth(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        cache: 'no-cache'
+        cache: 'no-store'
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
       const result = await response.json();
-      
+      console.log('[PlatformStatsWidget] 📦 Response:', result);
+
       if (result.success && result.data) {
+        setDataSource(result.source || 'unknown');
         setStats({
           total_ads: result.data.total_ads || 0,
           active_ads: result.data.active_ads || 0,
@@ -61,19 +71,21 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
         });
         setLastUpdated(new Date());
         console.log('[PlatformStatsWidget] ✅ Statistics updated:', result.data);
+        console.log('[PlatformStatsWidget] 📦 Data source:', result.source);
       } else {
         throw new Error(result.error || 'Failed to fetch statistics');
       }
     } catch (error: any) {
       console.error('[PlatformStatsWidget] ❌ Error fetching statistics:', error);
       setError(error.message || 'Ошибка загрузки статистики');
-      
-      // Fallback к статичным данным при ошибке (фиксированные значения)
+      setDataSource('error');
+
+      // НЕ устанавливаем fallback данные - показываем 0
       setStats({
-        total_ads: 8,
-        active_ads: 8,
-        total_users: 50,
-        premium_accounts: 4
+        total_ads: 0,
+        active_ads: 0,
+        total_users: 0,
+        premium_accounts: 0
       });
       setLastUpdated(new Date());
     } finally {
@@ -83,7 +95,7 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
 
   // Принудительное обновление по клику пользователя
   const handleManualRefresh = useCallback(() => {
-    fetchStats();
+    fetchStats(true); // Принудительное обновление с очисткой кеша
   }, [fetchStats]);
 
   // Автоматическое обновление каждую минуту
@@ -103,6 +115,25 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
     };
   }, [fetchStats]);
 
+  const getDataSourceInfo = () => {
+    switch (dataSource) {
+      case 'cache':
+        return { icon: '💾', text: t('autoria.dataSource.cache') };
+      case 'generated_direct':
+        return { icon: '🔄', text: t('autoria.dataSource.fresh') };
+      case 'mock_fallback':
+        return { icon: '⚠️', text: t('autoria.dataSource.mockFallback') };
+      case 'error_fallback':
+        return { icon: '❌', text: t('autoria.dataSource.errorFallback') };
+      case 'error':
+        return { icon: '❌', text: t('autoria.dataSource.error') };
+      default:
+        return null;
+    }
+  };
+
+  const sourceInfo = getDataSourceInfo();
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Заголовок с кнопкой обновления */}
@@ -112,9 +143,25 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
         </h3>
         <div className="flex items-center gap-2">
           {lastUpdated && (
-            <span className="text-xs text-gray-500">
-              Обновлено: {lastUpdated.toLocaleTimeString()}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500">
+                Обновлено: {lastUpdated.toLocaleTimeString()}
+              </span>
+              {sourceInfo && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-sm cursor-help">
+                        {sourceInfo.icon}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{sourceInfo.text}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
           )}
           <Button
             variant="outline"

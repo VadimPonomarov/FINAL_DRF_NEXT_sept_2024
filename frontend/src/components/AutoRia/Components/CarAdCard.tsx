@@ -17,6 +17,8 @@ import {
 import { CarAd } from '@/types/autoria';
 import { FavoritesService } from '@/services/autoria/favorites.service';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatCardPrice } from '@/utils/priceFormatter';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface CarAdCardProps {
   ad: CarAd;
@@ -26,6 +28,7 @@ interface CarAdCardProps {
 const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
   const { t, locale } = useI18n();
   const router = useRouter();
+  const { currency } = useCurrency();
   const [isFavorite, setIsFavorite] = useState(ad.is_favorite || false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(ad.favorites_count || 0);
@@ -52,9 +55,24 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     });
   }, [ad.id]);
 
-  const formatPrice = (price: number, currency: string) => {
-    const symbols = { USD: '$', EUR: '€', UAH: '₴' };
-    return `${symbols[currency as keyof typeof symbols] || '$'}${price.toLocaleString()}`;
+  // Удалена локальная функция formatPrice - используем импортированную formatCardPrice
+
+  /**
+   * Получает цену в выбранной валюте
+   * Backend всегда рассчитывает price_usd, price_eur и price_uah для всех объявлений
+   */
+  const getPriceInCurrency = (): { price: number | null; currency: string } => {
+    switch (currency) {
+      case 'USD':
+        return { price: ad.price_usd || ad.price, currency: 'USD' };
+      case 'EUR':
+        return { price: ad.price_eur || ad.price, currency: 'EUR' };
+      case 'UAH':
+        // Используем price_uah из backend (всегда рассчитывается)
+        return { price: ad.price_uah || ad.price, currency: 'UAH' };
+      default:
+        return { price: ad.price, currency: ad.currency || 'USD' };
+    }
   };
 
   const refreshCountersFromServer = async () => {
@@ -292,7 +310,10 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
         
         {/* 💰 Цена */}
         <div className="text-2xl font-bold text-green-600 mb-3">
-          {formatPrice(ad.price || 0, ad.currency || 'USD')}
+          {(() => {
+            const { price, currency: displayCurrency } = getPriceInCurrency();
+            return formatCardPrice(price, displayCurrency);
+          })()}
         </div>
         
         {/* 📊 Характеристики */}

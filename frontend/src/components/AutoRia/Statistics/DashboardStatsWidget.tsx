@@ -201,7 +201,7 @@ const DashboardStatsWidget: React.FC<DashboardStatsWidgetProps> = ({ className =
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold text-blue-600 ${isLoading ? 'animate-pulse' : ''}`}>
-              {(stats.today_views * 100).toLocaleString()}
+              {stats.today_views.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
               +{stats.today_views} сегодня

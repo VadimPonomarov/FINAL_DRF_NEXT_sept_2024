@@ -370,10 +370,24 @@ class QuickStatsView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         """Получить быструю статистику"""
         try:
-            # Проверяем кеш
-            cached_stats = cache.get('quick_stats')
+            # Проверяем, нужно ли принудительно обновить данные
+            force_refresh = request.GET.get('force_refresh', 'false').lower() == 'true'
+
+            # Если принудительное обновление - очищаем кеш
+            if force_refresh:
+                try:
+                    cache.delete('quick_stats')
+                    print('[QuickStats] 🗑️ Cache cleared due to force_refresh=true')
+                except Exception as e:
+                    print(f'[QuickStats] ⚠️ Failed to clear cache: {e}')
+
+            # Проверяем кеш (если не принудительное обновление)
+            cached_stats = None
+            if not force_refresh:
+                cached_stats = cache.get('quick_stats')
 
             if cached_stats:
+                print('[QuickStats] 💾 Returning cached data')
                 return Response({
                     'success': True,
                     'data': cached_stats,
@@ -385,46 +399,62 @@ class QuickStatsView(generics.GenericAPIView):
                 # Безопасное получение статистики с fallback значениями
                 try:
                     total_ads = CarAd.objects.count()
-                except Exception:
+                    print(f'[QuickStats] 📊 total_ads from DB: {total_ads}')
+                except Exception as e:
+                    print(f'[QuickStats] ❌ Error getting total_ads: {e}')
                     total_ads = 0
 
                 try:
                     active_ads = CarAd.objects.filter(status='active').count()
-                except Exception:
+                    print(f'[QuickStats] 📊 active_ads from DB: {active_ads}')
+                except Exception as e:
+                    print(f'[QuickStats] ❌ Error getting active_ads: {e}')
                     active_ads = 0
 
                 try:
                     total_users = User.objects.count()
-                except Exception:
+                    print(f'[QuickStats] 📊 total_users from DB: {total_users}')
+                except Exception as e:
+                    print(f'[QuickStats] ❌ Error getting total_users: {e}')
                     total_users = 0
 
                 try:
                     active_users = User.objects.filter(is_active=True).count()
-                except Exception:
+                    print(f'[QuickStats] 📊 active_users from DB: {active_users}')
+                except Exception as e:
+                    print(f'[QuickStats] ❌ Error getting active_users: {e}')
                     active_users = 0
 
                 try:
                     total_views = AdView.objects.count()
-                except Exception:
+                    print(f'[QuickStats] 📊 total_views from DB: {total_views}')
+                except Exception as e:
+                    print(f'[QuickStats] ❌ Error getting total_views: {e}')
                     total_views = 0
 
                 try:
                     premium_accounts = AddsAccount.objects.filter(account_type='premium').count()
-                except Exception:
+                    print(f'[QuickStats] 📊 premium_accounts from DB: {premium_accounts}')
+                except Exception as e:
+                    print(f'[QuickStats] ❌ Error getting premium_accounts: {e}')
                     premium_accounts = 0
 
                 try:
                     today_ads = CarAd.objects.filter(
                         created_at__date=timezone.now().date()
                     ).count()
-                except Exception:
+                    print(f'[QuickStats] 📊 today_ads from DB: {today_ads}')
+                except Exception as e:
+                    print(f'[QuickStats] ❌ Error getting today_ads: {e}')
                     today_ads = 0
 
                 try:
                     today_views = AdView.objects.filter(
                         created_at__date=timezone.now().date()
                     ).count()
-                except Exception:
+                    print(f'[QuickStats] 📊 today_views from DB: {today_ads}')
+                except Exception as e:
+                    print(f'[QuickStats] ❌ Error getting today_views: {e}')
                     today_views = 0
 
                 quick_stats = {
@@ -439,11 +469,14 @@ class QuickStatsView(generics.GenericAPIView):
                     'generated_at': timezone.now().isoformat()
                 }
 
-                # Сохраняем в кеш на 15 минут
+                print(f'[QuickStats] 🔄 Generated fresh stats: total_ads={total_ads}, active_ads={active_ads}, total_users={total_users}')
+
+                # Сохраняем в кеш на 1 минуту
                 try:
-                    cache.set('quick_stats', quick_stats, timeout=900)
-                except Exception:
-                    pass  # Игнорируем ошибки кеша
+                    cache.set('quick_stats', quick_stats, timeout=60)
+                    print('[QuickStats] 💾 Stats cached for 60 seconds')
+                except Exception as e:
+                    print(f'[QuickStats] ⚠️ Failed to cache stats: {e}')
 
                 return Response({
                     'success': True,
@@ -452,6 +485,9 @@ class QuickStatsView(generics.GenericAPIView):
                 })
             except Exception as e:
                 # Fallback к mock данным при ошибке
+                print(f'[QuickStats] ❌ INNER EXCEPTION: {str(e)}')
+                import traceback
+                traceback.print_exc()
                 return Response({
                     'success': True,
                     'data': {
@@ -471,6 +507,9 @@ class QuickStatsView(generics.GenericAPIView):
 
         except Exception as e:
             # Всегда возвращаем успешный ответ с mock данными
+            print(f'[QuickStats] ❌ OUTER EXCEPTION: {str(e)}')
+            import traceback
+            traceback.print_exc()
             return Response({
                 'success': True,
                 'data': {

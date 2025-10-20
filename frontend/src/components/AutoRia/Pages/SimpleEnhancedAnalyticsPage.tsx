@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 
 import { useI18n } from '@/contexts/I18nContext';
+import { fetchWithAuth } from '@/utils/fetchWithAuth';
 
 interface KPIData {
   totalUsers: number;
@@ -41,6 +42,7 @@ interface KPIData {
   avgPrice: number;
   activeUsers: number;
   newUsers: number;
+  generatedAt?: string; // Timestamp когда данные были сгенерированы
 }
 
 interface AnalyticsFilters {
@@ -61,6 +63,7 @@ interface AnalyticsFilters {
 const SimpleEnhancedAnalyticsPage: React.FC = () => {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
+  const [dataSource, setDataSource] = useState<string>(''); // Источник данных: cache, generated_direct, etc.
   const [filters, setFilters] = useState<AnalyticsFilters>({
     period: '30d',
     search: '',
@@ -118,35 +121,71 @@ const SimpleEnhancedAnalyticsPage: React.FC = () => {
   };
 
   // Загрузка данных
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = async (forceRefresh: boolean = false) => {
     setLoading(true);
     try {
-      // Здесь будет реальная загрузка данных
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('[Analytics] 📊 Loading quick stats...', forceRefresh ? '(force refresh)' : '');
 
-      // Симуляция обновления данных
-      setKpiData(prev => ({
-        ...prev,
-        totalUsers: prev.totalUsers + Math.floor(Math.random() * 100),
-        totalViews: prev.totalViews + Math.floor(Math.random() * 1000)
-      }));
+      // Загружаем быструю статистику с бэкенда
+      const url = forceRefresh
+        ? '/api/autoria/ads/quick-stats?force_refresh=true'
+        : '/api/autoria/ads/quick-stats';
+
+      const response = await fetchWithAuth(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analytics: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('[Analytics] ✅ Quick stats loaded:', result);
+      console.log('[Analytics] 📦 Data source:', result.source);
+
+      if (result.success && result.data) {
+        // Сохраняем источник данных для отображения
+        setDataSource(result.source || 'unknown');
+
+        // Обновляем KPI данные из реального API
+        const newKpiData = {
+          totalUsers: result.data.total_users || 0,
+          totalAds: result.data.total_ads || 0,
+          totalViews: result.data.total_views || 0,
+          totalFavorites: 0, // Пока нет в API
+          conversionRate: 0, // Пока нет в API
+          avgPrice: 0, // Пока нет в API
+          activeUsers: result.data.active_users || 0,
+          newUsers: result.data.today_ads || 0, // Используем today_ads как новых пользователей
+          generatedAt: result.data.generated_at
+        };
+
+        console.log('[Analytics] 📈 Updating KPI data:', newKpiData);
+        setKpiData(newKpiData);
+      }
     } catch (error) {
-      console.error('Error loading analytics data:', error);
+      console.error('[Analytics] ❌ Error loading analytics data:', error);
+      // Оставляем текущие данные при ошибке
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadAnalyticsData();
-  }, [filters]);
+    loadAnalyticsData(false);
+  }, []); // Загружаем только при монтировании компонента
 
   const handleFilterChange = (key: keyof AnalyticsFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const handleRefresh = () => {
-    loadAnalyticsData();
+    // Принудительное обновление с игнорированием кеша
+    loadAnalyticsData(true);
   };
 
   const getTrendIcon = (value: number) => {
@@ -221,6 +260,24 @@ const SimpleEnhancedAnalyticsPage: React.FC = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Индикатор источника данных */}
+            {dataSource && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <Badge variant={dataSource === 'cache' ? 'secondary' : 'default'} className="text-xs">
+                  {dataSource === 'cache' && '💾 Из кеша'}
+                  {dataSource === 'generated_direct' && '🔄 Свежие данные'}
+                  {dataSource === 'mock_fallback' && '⚠️ Тестовые данные'}
+                  {dataSource === 'error_fallback' && '❌ Резервные данные'}
+                  {!['cache', 'generated_direct', 'mock_fallback', 'error_fallback'].includes(dataSource) && `📊 ${dataSource}`}
+                </Badge>
+                {kpiData.generatedAt && (
+                  <span className="text-xs text-gray-500">
+                    Обновлено: {new Date(kpiData.generatedAt).toLocaleString('ru-RU')}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           </div>
 

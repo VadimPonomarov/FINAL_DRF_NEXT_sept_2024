@@ -106,9 +106,10 @@ class CarAdSerializer(BaseModelSerializer):
     # Vehicle specifications
     body_type = serializers.CharField(source='specs.body_type', read_only=True)
 
-    # Price in USD and EUR (converted from original currency)
+    # Price in USD, EUR and UAH (converted from original currency)
     price_usd = serializers.SerializerMethodField()
     price_eur = serializers.SerializerMethodField()
+    price_uah = serializers.SerializerMethodField()
 
 
     # Per-user favorite flag
@@ -124,7 +125,8 @@ class CarAdSerializer(BaseModelSerializer):
             'validation_errors', 'status', 'moderated_by', 'moderated_at',
             'moderation_reason', 'images', 'view_count', 'user', 'year', 'mileage',
             'is_favorite', 'created_at', 'updated_at', 'use_profile_contacts', 'contact_name', 'additional_info',
-            'mark_name', 'region_name', 'city_name', 'vehicle_type', 'vehicle_type_name', 'body_type', 'price_usd', 'price_eur',
+            'mark_name', 'region_name', 'city_name', 'vehicle_type', 'vehicle_type_name', 'body_type',
+            'price_usd', 'price_eur', 'price_uah',
             'phone_views_count', 'favorites_count', 'meta_views_count', 'meta_phone_views_count'
         ]
         # Явно указываем все поля, включая наследуемые от BaseModelSerializer
@@ -451,6 +453,40 @@ class CarAdSerializer(BaseModelSerializer):
             price_eur = amount_uah / float(eur_uah)
             return round(price_eur, 2)
         except Exception:
+            return None
+
+    def get_price_uah(self, obj):
+        """Convert price to UAH using live rates via CurrencyService."""
+        try:
+            if not obj.price:
+                return None
+            amount = float(obj.price)
+            from_currency = (obj.currency or 'USD').upper()
+
+            # If already in UAH, return as is
+            if from_currency == 'UAH':
+                return round(amount, 2)
+
+            # Rates are stored as UAH per 1 unit of currency
+            usd_uah = CurrencyService.get_rate('UAH', 'USD')
+            eur_uah = CurrencyService.get_rate('UAH', 'EUR')
+            if not usd_uah or not eur_uah:
+                print(f"[get_price_uah] Ad {obj.id}: Missing rates - usd_uah={usd_uah}, eur_uah={eur_uah}")
+                return None
+
+            # Convert to UAH
+            if from_currency == 'USD':
+                price_uah = amount * float(usd_uah)
+            elif from_currency == 'EUR':
+                price_uah = amount * float(eur_uah)
+            else:
+                # Unknown currency, return None
+                print(f"[get_price_uah] Ad {obj.id}: Unknown currency {from_currency}")
+                return None
+
+            return round(price_uah, 2)
+        except Exception as e:
+            print(f"[get_price_uah] Ad {obj.id}: Exception - {e}")
             return None
 
     def get_contacts(self, obj):

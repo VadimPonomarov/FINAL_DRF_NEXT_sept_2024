@@ -379,6 +379,13 @@ export default {
     activeAds: "Активних оголошень",
     totalUsers: "Всього користувачів",
     premiumUsers: "Преміум користувачів",
+    dataSource: {
+      cache: "Дані з кешу",
+      fresh: "Свіжі дані з бази",
+      mockFallback: "Тестові дані (помилка завантаження)",
+      errorFallback: "Резервні дані (помилка)",
+      error: "Помилка завантаження даних"
+    },
     whyChoose: "Чому обирають CarHub?",
     benefits: {
       security: {
