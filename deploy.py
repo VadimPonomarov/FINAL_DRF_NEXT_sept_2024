@@ -1289,18 +1289,34 @@ def start_local_frontend_background():
     print("🚀 Запуск локального фронтенда у фоновому режимі...")
 
     try:
-        # Запускаємо фронтенд у фоновому режимі
+        # Підготовка змінних оточення для локального режиму
+        env = os.environ.copy()
+        env['NODE_ENV'] = 'production'
+        env['IS_DOCKER'] = 'false'
+        env['NEXT_PUBLIC_IS_DOCKER'] = 'false'
+        env['NEXT_PUBLIC_BACKEND_URL'] = 'http://localhost:8000'
+        env['BACKEND_URL'] = 'http://localhost:8000'
+        env['REDIS_HOST'] = 'localhost'
+        env['REDIS_URL'] = 'redis://localhost:6379/0'
+
+        print("🔧 Змінні оточення для frontend:")
+        print(f"   NEXT_PUBLIC_BACKEND_URL: {env['NEXT_PUBLIC_BACKEND_URL']}")
+        print(f"   NEXT_PUBLIC_IS_DOCKER: {env['NEXT_PUBLIC_IS_DOCKER']}")
+        print(f"   REDIS_HOST: {env['REDIS_HOST']}")
+
+        # Запускаємо фронтенд у фоновому режимі з правильними змінними оточення
+        # ВАЖЛИВО: НЕ перенаправляємо stdout/stderr в PIPE, щоб бачити помилки
         process = subprocess.Popen(
             "npm run start",
             shell=True,
             cwd=frontend_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            env=env,
             stdin=subprocess.DEVNULL
         )
 
         print(f"✅ Фронтенд запущено (PID: {process.pid})")
         print("🌐 URL: http://localhost:3000")
+        print("📋 Логи frontend будуть показані в консолі")
         return process
 
     except Exception as e:
@@ -1641,9 +1657,38 @@ def main():
             frontend_process = start_local_frontend_background()
 
             if frontend_process:
-                # Чекаємо трохи щоб фронтенд встиг запуститися
-                print("⏳ Очікування запуску фронтенда...")
-                time.sleep(5)
+                # Чекаємо достатньо часу щоб фронтенд встиг повністю запуститися
+                print("⏳ Очікування запуску фронтенда (це може зайняти 15-30 секунд)...")
+                print("   Перевірка готовності кожні 5 секунд...")
+
+                # Перевіряємо готовність frontend з таймаутом
+                max_wait = 60  # Максимум 60 секунд
+                wait_interval = 5  # Перевіряємо кожні 5 секунд
+                waited = 0
+                frontend_ready = False
+
+                while waited < max_wait:
+                    time.sleep(wait_interval)
+                    waited += wait_interval
+
+                    # Перевіряємо чи frontend відповідає
+                    try:
+                        import urllib.request
+                        response = urllib.request.urlopen('http://localhost:3000', timeout=2)
+                        if response.status == 200:
+                            frontend_ready = True
+                            print_success(f"✅ Frontend готовий! (через {waited} секунд)")
+                            break
+                    except:
+                        print(f"   ⏳ Очікування... ({waited}/{max_wait} секунд)")
+                        continue
+
+                if not frontend_ready:
+                    print_warning(f"⚠️ Frontend не відповідає після {max_wait} секунд, але продовжуємо...")
+                    print("   Можливо frontend все ще запускається. Перевірте http://localhost:3000 вручну.")
+
+                # Додаткова пауза для стабілізації
+                time.sleep(3)
 
                 # ВАЖЛИВО: Запускаємо nginx ПІСЛЯ готовності фронтенда
                 print("🌐 Запуск Nginx (reverse proxy) ПІСЛЯ готовності фронтенда...")
