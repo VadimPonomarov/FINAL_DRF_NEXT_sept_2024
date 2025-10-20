@@ -9,12 +9,7 @@ import type { CarAdFormData } from '@/types/autoria';
 async function createTestAdsServer(request: NextRequest, count: number, includeImages: boolean, imageTypes: string[], onProgress?: (progress: number, message: string) => void) {
   console.log(`🚀 Creating ${count} test ads on server...`);
 
-  // Use current session tokens stored in Redis for all backend calls
-  const isAuth = await ServerAuthManager.isAuthenticated(request);
-  if (!isAuth) {
-    onProgress?.(0, 'Не авторизован: войдите через /login');
-    throw new Error('Not authenticated: backend_auth tokens missing');
-  }
+  // Create authenticated fetch function (will auto-refresh tokens if needed)
   const authFetch = (url: string, init?: RequestInit) => ServerAuthManager.authenticatedFetch(request, url, init);
 
   // Уведомляем о начале
@@ -756,11 +751,28 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('❌ API ENDPOINT: Error:', error);
+
+    // Check if it's an authentication error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('No authentication tokens') || errorMessage.includes('backend_auth tokens missing')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'NOT_AUTHENTICATED',
+          message: 'Требуется аутентификация. Пожалуйста, войдите в систему.',
+          requiresAuth: true,
+          redirectTo: '/login',
+          callbackUrl: '/autoria/dashboard'
+        },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       {
         success: false,
         error: 'Test ads generation failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: errorMessage
       },
       { status: 500 }
     );

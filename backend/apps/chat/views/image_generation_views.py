@@ -255,7 +255,7 @@ def generate_car_images(request):
             try:
                 prompt = create_car_image_prompt(car_data, angle, style, car_session_id)
 
-                # Автоматически переводим промпт на английский с помощью LLM для лучшей генерации
+                # КРИТИЧНО: Переводим промпт на английский (простой перевод БЕЗ LLM, чтобы не исказить промпт)
                 english_prompt = translate_prompt_to_english(prompt)
 
                 if G4F_AVAILABLE:
@@ -466,16 +466,48 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 # Translate to English using mock algorithm
                 english_prompt = mock_cmd._simple_translate_to_english(prompt, canonical_data)
 
-                # Generate image URL using pollinations.ai with seed consistency and enhanced realism
-                import urllib.parse
-                # Добавляем негативные промпты для лучшего качества
-                enhanced_prompt = f"{english_prompt}. NEGATIVE: cartoon, anime, drawing, sketch, low quality, blurry, distorted, multiple vehicles, people, text, watermarks"
-                encoded_prompt = urllib.parse.quote(enhanced_prompt)
-                session_id = canonical_data.get('session_id', 'DEFAULT')
-                seed = abs(hash(session_id)) % 1000000
-                image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&model=flux&enhance=true&seed={seed}&nologo=true"
+                # Generate image using OpenAI DALL-E 3
+                import os
+                from openai import OpenAI
 
-                logger.info(f"🔗 [mock_algorithm] Generated URL for {angle}: {image_url[:100]}...")
+                try:
+                    # Initialize OpenAI client
+                    api_key = os.getenv('OPENAI_API_KEY')
+                    if not api_key:
+                        logger.error("❌ [DALL-E] OPENAI_API_KEY not found in environment")
+                        raise ValueError("OPENAI_API_KEY not configured")
+
+                    client = OpenAI(api_key=api_key)
+
+                    # DALL-E 3 has a 4000 character limit for prompts
+                    # Simplify prompt if needed
+                    dalle_prompt = english_prompt[:4000] if len(english_prompt) > 4000 else english_prompt
+
+                    logger.info(f"🎨 [DALL-E] Generating image for {angle} with prompt length: {len(dalle_prompt)}")
+
+                    # Generate image with DALL-E 3
+                    response = client.images.generate(
+                        model="dall-e-3",
+                        prompt=dalle_prompt,
+                        size="1024x1024",  # DALL-E 3 supports: 1024x1024, 1792x1024, 1024x1792
+                        quality="standard",  # "standard" or "hd"
+                        n=1,
+                    )
+
+                    image_url = response.data[0].url
+                    logger.info(f"✅ [DALL-E] Successfully generated image for {angle}: {image_url[:100]}...")
+
+                except Exception as e:
+                    logger.error(f"❌ [DALL-E] Error generating image for {angle}: {e}")
+                    # Fallback to pollinations.ai if DALL-E fails
+                    logger.info(f"🔄 [DALL-E] Falling back to pollinations.ai")
+                    import urllib.parse
+                    enhanced_prompt = f"{english_prompt}. NEGATIVE: cartoon, anime, drawing, sketch, low quality, blurry, distorted, multiple vehicles, people, text, watermarks"
+                    encoded_prompt = urllib.parse.quote(enhanced_prompt)
+                    session_id = canonical_data.get('session_id', 'DEFAULT')
+                    seed = abs(hash(session_id)) % 1000000
+                    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&model=flux&enhance=true&seed={seed}&nologo=true"
+                    logger.info(f"🔗 [Pollinations] Fallback URL for {angle}: {image_url[:100]}...")
 
                 # Create image object
                 image_obj = {
@@ -583,11 +615,24 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
 
     # Reusable consistency cues (avoid changing object between shots)
     consistency_elements = [
-        f"SAME unique vehicle across all images (vehicle ID: CAR-{car_session_id})",
-        "keep identical proportions, trims, and options in every shot",
+        f"SAME EXACT unique vehicle across all images (vehicle ID: CAR-{car_session_id})",
+        "IDENTICAL proportions, trims, and options in every shot",
+        "SAME body type/cabin type in ALL images (if truck - same cabin design, if car - same body style)",
+        "SAME wheel design and size in ALL images",
+        "SAME color shade and finish in ALL images",
         "same lighting conditions and color temperature",
         "same photographic style and post-processing",
-        "single subject, no people, clean set"
+        "single subject, no people, clean set",
+        "DO NOT generate different vehicles or variants - must be THE EXACT SAME vehicle from different angles"
+    ]
+
+    # Realism enforcement (physical correctness)
+    realism_elements = [
+        f"PHYSICALLY CORRECT {vehicle_type} configuration",
+        "realistic and functional vehicle design",
+        "correct number of wheels and steering mechanisms",
+        "NO absurd or impossible features",
+        "professional quality, real-world engineering principles"
     ]
 
     # Styles
@@ -620,9 +665,38 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     }
 
     # Enforce correct type; explicit positives and negatives per type
+    # ULTRA-CRITICAL: MASSIVE prohibition list - AI MUST NOT generate logos
     global_negatives = [
         'no text overlay', 'no watermark', 'no low quality', 'no extra logos',
-        'no people', 'no cropped vehicle', 'no distortion'
+        'no people', 'no cropped vehicle', 'no distortion',
+        # CRITICAL: Multiple repetitions to force AI compliance
+        'NO logo emblems', 'NO logo emblems', 'NO logo emblems',
+        'NO brand logos', 'NO brand logos', 'NO brand logos',
+        'NO brand badges', 'NO brand badges', 'NO brand badges',
+        'NO brand symbols', 'NO brand symbols', 'NO brand symbols',
+        'NO manufacturer logos', 'NO manufacturer logos', 'NO manufacturer logos',
+        # Specific brand prohibitions (repeated 3x each for emphasis)
+        'NO Toyota logo', 'NO Toyota logo', 'NO Toyota logo',
+        'NO Toyota oval', 'NO Toyota oval', 'NO Toyota oval',
+        'NO Toyota emblem', 'NO Toyota emblem', 'NO Toyota emblem',
+        'NO BMW logo', 'NO BMW logo', 'NO BMW logo',
+        'NO BMW roundel', 'NO BMW roundel', 'NO BMW roundel',
+        'NO Mercedes logo', 'NO Mercedes logo', 'NO Mercedes logo',
+        'NO Mercedes star', 'NO Mercedes star', 'NO Mercedes star',
+        'NO Nissan logo', 'NO Nissan logo', 'NO Nissan logo',
+        'NO Honda logo', 'NO Honda logo', 'NO Honda logo',
+        'NO Audi logo', 'NO Audi logo', 'NO Audi logo',
+        'NO VW logo', 'NO VW logo', 'NO VW logo',
+        'NO Ford logo', 'NO Ford logo', 'NO Ford logo',
+        'NO Chevrolet logo', 'NO Chevrolet logo', 'NO Chevrolet logo',
+        'NO Hyundai logo', 'NO Hyundai logo', 'NO Hyundai logo',
+        'NO Kia logo', 'NO Kia logo', 'NO Kia logo',
+        # Shape prohibitions
+        'NO circular badges', 'NO oval badges', 'NO star badges',
+        'NO wing badges', 'NO ring badges',
+        # Final emphasis
+        'blank front grille', 'unmarked grille', 'clean grille surface',
+        'no grille emblem', 'no grille badge', 'no grille logo'
     ]
 
     if vt == 'bus':
@@ -745,36 +819,7 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         'palfinger', 'hiab', 'fassi', 'pm', 'effer', 'atlas crane', 'tadano faun', 'grove crane', 'liebherr crane'
     ]
 
-    # 🚨 CRITICAL DECISION: DISABLE ALL BRANDING TO PREVENT INCORRECT LOGO ASSIGNMENTS
-    # AI image generators frequently assign wrong brand logos (e.g., Toyota logo on Foton truck, VW logo on Dodge)
-    # Better to have NO logos than WRONG logos
-    should_show_branding = False
-    brand_mismatch_reason = "AI logo hallucination prevention - better no logos than wrong logos"
-
-    # Check for brand-vehicle type mismatches (for logging purposes)
-    if brand_lower in special_equipment_brands and vehicle_type_lower in ['car', 'passenger', 'sedan', 'hatchback', 'suv', 'crossover', 'coupe', 'convertible', 'wagon', 'minivan']:
-        brand_mismatch_reason = f"Special equipment brand '{brand}' on passenger vehicle"
-        print(f"[ImageGen] 🚨 MISMATCH DETECTED: {brand_mismatch_reason}")
-    elif brand_lower in automotive_brands and vehicle_type_lower in ['special', 'construction', 'industrial', 'excavator', 'bulldozer', 'crane', 'loader', 'tractor', 'agricultural']:
-        brand_mismatch_reason = f"Automotive brand '{brand}' on special equipment"
-        print(f"[ImageGen] 🚨 MISMATCH DETECTED: {brand_mismatch_reason}")
-    elif not brand or brand.lower() in ['unknown', 'generic', 'other', 'не указано', 'не вказано', '', 'null', 'none']:
-        brand_mismatch_reason = f"Generic or unknown brand '{brand}'"
-        print(f"[ImageGen] ⚠️ NO BRAND: {brand_mismatch_reason}")
-    elif brand_lower not in automotive_brands and brand_lower not in special_equipment_brands:
-        brand_mismatch_reason = f"Unknown brand '{brand}' not in validated lists"
-        print(f"[ImageGen] ⚠️ UNKNOWN BRAND: {brand_mismatch_reason}")
-
-    print(f"[ImageGen] 🚫 BRANDING DISABLED FOR ALL VEHICLES: {brand_mismatch_reason}")
-
-    # ALWAYS disable branding to prevent incorrect logo assignments
-    strict_branding = f"Generic {vt} design without visible brand badges, logos, or manufacturer emblems"
-    print(f"[ImageGen] 🚫 BRANDING DISABLED: No brand badges to prevent incorrect assignments")
-
     # Core object description
-
-
-
     parts = [
         f"Task: generate a {vt}",
         f"Exact vehicle: {brand} {model} {year}",
@@ -791,19 +836,142 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     angle_prompt = angle_descriptions.get(angle_key, f"automotive photography of the same {vt}")
     style_prompt = style_descriptions.get(style, style if style else 'realistic')
     consistency_prompt = ", ".join(consistency_elements + [f"Series ID: CAR-{car_session_id}"])
-    # CRITICAL: Enhanced brand protection - ALWAYS forbid ALL brand logos
-    forbidden_automotive_logos = "BMW, Mercedes-Benz, Audi, Toyota, Honda, Hyundai, Ford, Volkswagen, Nissan, Chevrolet, Kia, Mazda, Subaru, Volvo, Dodge, RAM, GMC, Cadillac, Lexus, Infiniti, Acura, Jeep, Chrysler, Buick, Lincoln, Porsche, Ferrari, Lamborghini, Maserati, Bentley, Rolls-Royce, Jaguar, Land Rover, Mini, Fiat, Alfa Romeo, Lancia, Renault, Peugeot, Citroen, Opel, Skoda, Seat"
-    forbidden_construction_logos = "Caterpillar, CAT, Komatsu, JCB, Volvo Construction, Hitachi, Liebherr, Doosan, Case, New Holland, Bobcat, Kubota, Atlas, Terex, Manitowoc, Tadano, Grove, XCMG, SANY, Zoomlion"
+    realism_prompt = ", ".join(realism_elements)
 
-    brand_protection = f"CRITICAL INSTRUCTION: Do NOT show ANY brand logos, badges, emblems, or manufacturer text on this vehicle. Generate a completely generic {vt} without any branding. ABSOLUTELY FORBIDDEN LOGOS: {forbidden_automotive_logos}, {forbidden_construction_logos}, or ANY other brand logos. No text, no badges, no emblems, no manufacturer markings, no brand names visible anywhere on the vehicle. Clean, generic design only. Reason: {brand_mismatch_reason}. "
+    # 🚨 STRICT BRANDING CONTROL: Prevent incorrect badge assignments
+    # Check if brand matches vehicle type to avoid wrong badges (e.g., Mercedes on Atlas)
+    brand_lower = brand.lower()
+    vehicle_type_lower = vt.lower()
+
+    # Known automotive brands that should ONLY appear on passenger cars
+    automotive_brands = [
+        # German brands
+        'bmw', 'mercedes-benz', 'mercedes', 'audi', 'volkswagen', 'vw', 'porsche', 'opel', 'smart', 'maybach',
+        # Japanese brands
+        'toyota', 'honda', 'nissan', 'mazda', 'subaru', 'mitsubishi', 'lexus', 'infiniti', 'acura', 'suzuki', 'isuzu',
+        # American brands
+        'ford', 'chevrolet', 'gmc', 'cadillac', 'buick', 'lincoln', 'chrysler', 'dodge', 'jeep', 'ram', 'tesla',
+        # Korean brands
+        'hyundai', 'kia', 'genesis', 'daewoo', 'ssangyong',
+        # European brands
+        'volvo', 'peugeot', 'renault', 'citroen', 'fiat', 'abarth', 'alfa romeo', 'lancia', 'skoda', 'seat', 'vauxhall',
+        'saab', 'jaguar', 'land rover', 'mini', 'ferrari', 'lamborghini', 'maserati', 'bentley', 'rolls-royce',
+        'aston martin', 'mclaren', 'bugatti', 'koenigsegg', 'pagani', 'lotus', 'morgan', 'caterham', 'ariel',
+        'noble', 'tvr', 'westfield', 'ginetta', 'radical', 'ultima', 'spyker', 'wiesmann', 'artega', 'melkus',
+        # French brands
+        'ds', 'alpine',
+        # Italian brands
+        'iveco', 'de tomaso', 'lancia delta',
+        # British brands
+        'triumph', 'austin', 'rover', 'mg motor', 'leyland',
+        # Swedish brands
+        'polestar',
+        # Czech brands
+        'tatra',
+        # Romanian brands
+        'dacia',
+        # Russian brands
+        'lada', 'gaz', 'uaz', 'kamaz', 'zil',
+        # Chinese brands
+        'byd', 'geely', 'chery', 'great wall', 'haval', 'mg', 'nio', 'xpeng', 'li auto', 'lynk co',
+        'hongqi', 'dongfeng', 'faw', 'saic', 'changan', 'brilliance', 'lifan', 'roewe', 'wuling',
+        # Indian brands
+        'tata', 'mahindra', 'maruti suzuki', 'bajaj', 'force motors',
+        # Malaysian brands
+        'proton', 'perodua',
+        # Australian brands
+        'holden',
+        # Iranian brands
+        'iran khodro', 'saipa',
+        # Turkish brands
+        'togg', 'otosan'
+    ]
+
+    # Known special equipment brands that should ONLY appear on special vehicles
+    special_equipment_brands = [
+        # Construction equipment
+        'atlas', 'caterpillar', 'cat', 'komatsu', 'liebherr', 'hitachi', 'kobelco', 'doosan', 'case', 'new holland',
+        'jcb', 'bobcat', 'kubota', 'takeuchi', 'yanmar', 'wacker neuson', 'bomag', 'terex', 'grove', 'manitowoc', 'tadano',
+        # Chinese construction brands
+        'sany', 'xcmg', 'zoomlion', 'liugong', 'lonking', 'sdlg', 'shantui',
+        # Agricultural equipment
+        'john deere', 'claas', 'massey ferguson', 'fendt', 'valtra',
+    ]
+
+    # UNSAFE brands - AI doesn't know their logos well and may use Toyota fallback
+    # For these brands, ALWAYS disable branding to prevent wrong logo generation
+    unsafe_brands = [
+        # Rare Chinese brands (AI often confuses with Toyota)
+        'great wall', 'haval', 'dongfeng', 'faw', 'saic', 'changan', 'brilliance', 'lifan', 'roewe', 'wuling',
+        # Rare European brands
+        'morgan', 'caterham', 'ariel', 'noble', 'tvr', 'westfield', 'ginetta', 'radical', 'ultima',
+        'spyker', 'wiesmann', 'artega', 'melkus', 'de tomaso', 'lancia delta',
+        # Rare British brands
+        'triumph', 'austin', 'rover', 'mg motor', 'leyland',
+        # Rare Russian brands
+        'kamaz', 'zil',
+        # Rare Indian brands
+        'maruti suzuki', 'bajaj', 'force motors',
+        # Malaysian brands
+        'proton', 'perodua',
+        # Australian brands
+        'holden',
+        # Iranian brands
+        'iran khodro', 'saipa',
+        # Turkish brands
+        'togg', 'otosan',
+        # Czech brands
+        'tatra',
+    ]
+
+    # 🚫 CRITICAL DECISION: DISABLE ALL BRANDING FOR ALL VEHICLES
+    # Problem: AI IGNORES all negative prompts and still generates logo emblems (Toyota fallback)
+    # Solution: FORCE disable branding for 100% of vehicles - NO EXCEPTIONS
+    should_show_branding = False
+    brand_mismatch_reason = "AI ignores negative prompts and generates wrong logos - FORCE DISABLE for all vehicles"
+
+    print(f"[ImageGen] 🚫 BRANDING FORCE DISABLED FOR ALL VEHICLES: {brand_mismatch_reason}")
+
+    # ULTRA-STRICT APPROACH: FORCE DISABLE ALL BRANDING - AI IGNORES NEGATIVE PROMPTS
+    # Multiple layers of protection to prevent logo generation
+
+    # Layer 1: Strict branding instruction
+    strict_branding = "CRITICAL: Clean vehicle design with BLANK front grille (no logo, no emblem, no badge, no text). Smooth unmarked grille surface. Generic vehicle without manufacturer identification."
+
+    # Layer 2: Multiple explicit prohibitions
+    brand_protection = (
+        "ABSOLUTELY FORBIDDEN - DO NOT GENERATE: "
+        "Toyota oval logo, Toyota emblem, Toyota badge, Toyota symbol, "
+        "BMW roundel, BMW logo, BMW badge, BMW emblem, "
+        "Mercedes star, Mercedes logo, Mercedes badge, Mercedes emblem, "
+        "Nissan circle, Nissan logo, Nissan badge, Nissan emblem, "
+        "Honda wing, Honda logo, Honda badge, Honda emblem, "
+        "Audi rings, Audi logo, Audi badge, Audi emblem, "
+        "Volkswagen VW, VW logo, VW badge, VW emblem, "
+        "Ford oval, Ford logo, Ford badge, Ford emblem, "
+        "Chevrolet bowtie, Chevy logo, Chevy badge, Chevy emblem, "
+        "Hyundai H, Hyundai logo, Hyundai badge, Hyundai emblem, "
+        "Kia oval, Kia logo, Kia badge, Kia emblem, "
+        "Mazda M, Mazda logo, Mazda badge, Mazda emblem, "
+        "Subaru stars, Subaru logo, Subaru badge, Subaru emblem, "
+        "Volvo arrow, Volvo logo, Volvo badge, Volvo emblem, "
+        "ANY brand logo, ANY brand emblem, ANY brand badge, ANY brand symbol, "
+        "ANY circular logo, ANY oval logo, ANY star logo, ANY wing logo, ANY ring logo, "
+        "ANY manufacturer marking, ANY brand identification. "
+        "CRITICAL: Front grille must be COMPLETELY BLANK - no logos, no emblems, no badges, no text, no symbols. "
+        "Clean unmarked surface only. "
+    )
 
     negatives = ", ".join(global_negatives + ([type_negation] if type_negation else []))
 
+    # CRITICAL: Put brand protection at the BEGINNING so AI sees it first
     # Final structured prompt (English translation is applied later)
     final_prompt = (
-        f"{base_prompt}. {strict_branding}. {type_enforcement}. "
+        f"CRITICAL INSTRUCTION: {brand_protection} "
+        f"{strict_branding}. "
+        f"{base_prompt}. {type_enforcement}. "
         f"Angle: {angle_prompt}. Style: {style_prompt}. {consistency_prompt}. "
-        f"{brand_protection}Negative: {negatives}. High resolution, clean background or coherent scene, professional rendering."
+        f"Negative: {negatives}. High resolution, clean background or coherent scene, professional rendering."
     )
 
     # Log branding decision for debugging
@@ -917,42 +1085,60 @@ def get_vehicle_description_backend(vehicle_type, body_type):
 
 def translate_prompt_to_english(prompt):
     """
-    Автоматически переводит промпт на английский с помощью LLM для лучшей генерации изображений.
-    Правило: ВСЕ промпты для генерации изображений ДОЛЖНЫ быть на английском языке.
+    Простой структурированный перевод промпта на английский БЕЗ использования LLM.
+    Правило: ВСЕ промпты для генерации изображений ДОЛЖНЫ быть строго на английском языке.
+
+    ВАЖНО: НЕ используем LLM для перевода, т.к. он может исказить промпт и добавить/убрать логотипы.
+    Вместо этого используем простой словарь и транслитерацию.
     """
     try:
-        from apps.ads.services.llm_service import LLMService
+        # Simple mapping for Ukrainian/Russian colors to English
+        color_mapping = {
+            'червоний': 'red', 'синій': 'blue', 'зелений': 'green',
+            'жовтий': 'yellow', 'білий': 'white', 'чорний': 'black',
+            'сірий': 'gray', 'срібний': 'silver', 'коричневий': 'brown',
+            'помаранчевий': 'orange', 'фіолетовий': 'purple', 'рожевий': 'pink',
+            'бежевий': 'beige', 'золотий': 'gold'
+        }
 
-        translation_prompt = f"""
-ВАЖНОЕ ПРАВИЛО: Все промпты для генерации изображений ДОЛЖНЫ быть строго на английском языке для корректной работы AI-генератора изображений.
+        # Simple word-by-word translation for common terms
+        word_mapping = {
+            'автомобіль': 'car', 'автомобиль': 'car',
+            'вантажівка': 'truck', 'грузовик': 'truck',
+            'мотоцикл': 'motorcycle', 'мотоцикл': 'motorcycle',
+            'автобус': 'bus', 'автобус': 'bus',
+            'спецтехніка': 'special equipment', 'спецтехника': 'special equipment',
+            'екскаватор': 'excavator', 'экскаватор': 'excavator',
+            'навантажувач': 'loader', 'погрузчик': 'loader',
+            'бульдозер': 'bulldozer', 'бульдозер': 'bulldozer',
+            'кран': 'crane', 'кран': 'crane',
+            'передній': 'front', 'передний': 'front',
+            'задній': 'rear', 'задний': 'rear',
+            'боковий': 'side', 'боковой': 'side',
+            'вид': 'view', 'вид': 'view',
+            'ракурс': 'angle', 'ракурс': 'angle',
+            'фото': 'photo', 'фото': 'photo',
+            'зображення': 'image', 'изображение': 'image',
+            'реалістичний': 'realistic', 'реалистичный': 'realistic',
+            'професійний': 'professional', 'профессиональный': 'professional',
+            'високої якості': 'high quality', 'высокого качества': 'high quality',
+            'чисте тло': 'clean background', 'чистый фон': 'clean background',
+            'студійне освітлення': 'studio lighting', 'студийное освещение': 'studio lighting'
+        }
 
-Переведи следующий промпт для генерации изображения транспортного средства на английский язык.
-Сохрани все технические термины, названия брендов и модели как есть.
-Переведи только описательные части.
+        # Translate prompt by replacing known words
+        english_prompt = prompt
+        for ukr_word, eng_word in word_mapping.items():
+            english_prompt = english_prompt.replace(ukr_word, eng_word)
 
-Исходный промпт: {prompt}
+        for ukr_color, eng_color in color_mapping.items():
+            english_prompt = english_prompt.replace(ukr_color, eng_color)
 
-Переведенный промпт на английском:"""
-
-        llm_service = LLMService()
-        response = llm_service.get_completion(translation_prompt)
-
-        if response and response.strip():
-            # Очищаем ответ от лишних символов и возвращаем только английский промпт
-            english_prompt = response.strip()
-            # Убираем возможные префиксы типа "Переведенный промпт:" и т.д.
-            if ':' in english_prompt:
-                english_prompt = english_prompt.split(':', 1)[-1].strip()
-
-
-            logger.info(f"Prompt translated: {prompt[:50]}... -> {english_prompt[:50]}...")
-            return english_prompt
-        else:
-            logger.warning("LLM translation failed, using original prompt")
-            return prompt
+        logger.info(f"✅ Prompt translated (simple): {prompt[:50]}... -> {english_prompt[:50]}...")
+        return english_prompt
 
     except Exception as e:
-        logger.error(f"Error translating prompt: {e}")
+        logger.error(f"❌ Error translating prompt: {e}")
         # В случае ошибки возвращаем оригинальный промпт
         return prompt
 def get_angle_title(angle, car_data):

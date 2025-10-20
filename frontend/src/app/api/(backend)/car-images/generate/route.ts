@@ -164,34 +164,26 @@ function createCarImagePrompt(brand: string, model: string, year: number, color:
     details: 'close-up detail shot, vehicle craftsmanship, design elements, material textures, artistic automotive photography'
   };
 
-  const vehicleDescription = getVehicleDescription(vehicleType, bodyType);
+  const vehicleDescription = getVehicleDescription(vehicleType, bodyType, brand, model);
   const englishColor = translateColorToEnglish(color);
   const basePrompt = `${vehicleInfo} ${vehicleDescription} in ${englishColor} color, ${angleDescriptions[angle as keyof typeof angleDescriptions] || 'professional automotive photography'}`;
 
-  // Enhanced branding control with vehicle type validation
-  const brandLower = brand.toLowerCase();
-  const vehicleTypeLower = vehicleType.toLowerCase();
+  // 🚨 CRITICAL: ALWAYS DISABLE BRANDING TO PREVENT INCORRECT LOGO ASSIGNMENTS
+  // AI frequently assigns wrong logos (Toyota on Foton, VW on Dodge, etc.)
+  // Better to have NO logos than WRONG logos
+  const forbiddenAutomotiveLogos = 'BMW, Mercedes-Benz, Audi, Toyota, Honda, Hyundai, Ford, Volkswagen, Nissan, Chevrolet, Kia, Mazda, Subaru, Volvo, Dodge, RAM, GMC, Cadillac, Lexus, Infiniti, Acura, Jeep, Chrysler, Porsche, Ferrari, Lamborghini';
+  const forbiddenConstructionLogos = 'Caterpillar, CAT, Komatsu, JCB, Volvo Construction, Hitachi, Liebherr, Doosan, Case, New Holland, Bobcat, Kubota, Atlas, Terex, XCMG, SANY';
 
-  // Known automotive brands that should only appear on passenger vehicles
-  const automotiveBrands = ['bmw', 'mercedes-benz', 'mercedes', 'audi', 'toyota', 'honda', 'ford', 'volkswagen', 'vw', 'nissan', 'hyundai', 'kia', 'mazda', 'subaru', 'mitsubishi', 'lexus', 'infiniti', 'acura', 'volvo', 'peugeot', 'renault', 'citroen', 'fiat', 'alfa romeo', 'skoda', 'seat', 'opel', 'jaguar', 'land rover', 'mini', 'smart', 'porsche'];
+  const brandingInstruction = `CRITICAL: Do NOT show ANY brand logos, badges, emblems, or manufacturer text on this vehicle. Generate a completely generic ${vehicleType} without any branding. ABSOLUTELY FORBIDDEN LOGOS: ${forbiddenAutomotiveLogos}, ${forbiddenConstructionLogos}, or ANY other brand logos. No text, no badges, no emblems, no manufacturer markings, no brand names visible anywhere on the vehicle. Clean, generic design only.`;
 
-  // Known special equipment brands
-  const specialBrands = ['atlas', 'caterpillar', 'cat', 'komatsu', 'liebherr', 'hitachi', 'kobelco', 'doosan', 'case', 'new holland', 'jcb', 'bobcat', 'kubota', 'john deere', 'claas'];
+  // Consistency and realism instructions
+  const consistencyInstruction = `SAME EXACT vehicle in all images, IDENTICAL proportions and design, SAME body type/cabin type, SAME wheel design, SAME color shade`;
+  const realismInstruction = `PHYSICALLY CORRECT ${vehicleType} configuration, realistic and functional design, correct number of wheels and steering mechanisms, NO absurd or impossible features, professional quality`;
 
-  let brandingInstruction = '';
+  // Physical impossibilities to avoid
+  const physicalImpossibilities = 'NO motorcycle with 4 wheels, NO car with excavator arm, NO trailer with steering wheel, NO multiple steering wheels, NO floating parts, NO impossible proportions';
 
-  // Check for brand-vehicle type mismatches
-  if (specialBrands.includes(brandLower) && ['car', 'passenger', 'sedan', 'hatchback', 'suv', 'crossover'].includes(vehicleTypeLower)) {
-    brandingInstruction = 'CRITICAL: Do not show any brand logos or badges on this vehicle. Generate a generic vehicle without manufacturer branding.';
-  } else if (automotiveBrands.includes(brandLower) && ['special', 'construction', 'industrial', 'excavator', 'bulldozer', 'crane', 'loader', 'tractor'].includes(vehicleTypeLower)) {
-    brandingInstruction = 'CRITICAL: Do not show any automotive brand logos on this vehicle. Generate a generic industrial vehicle without passenger car branding.';
-  } else if (!brand || ['unknown', 'generic', 'other'].includes(brandLower)) {
-    brandingInstruction = 'Generate a generic vehicle without any brand logos or badges.';
-  } else {
-    brandingInstruction = `Use ONLY authentic ${brand} branding and logos. If ${brand} branding is uncertain, omit all visible logos.`;
-  }
-
-  return `${basePrompt}, photorealistic, high quality, studio lighting, clean white background, commercial photography style, 4K resolution, professional automotive showroom quality, detailed, sharp focus. Vehicle type: ${vehicleType} only. ${brandingInstruction}`;
+  return `${basePrompt}, ${consistencyInstruction}, ${realismInstruction}, photorealistic, high quality, studio lighting, clean white background, commercial photography style, 4K resolution, professional automotive showroom quality, detailed, sharp focus. Vehicle type: ${vehicleType} only. ${brandingInstruction}. NEGATIVE: ${physicalImpossibilities}, cartoon, anime, drawing, low quality, blurry, multiple vehicles, people, text, watermarks`;
 
 /**
  * Переводит цвет на английский для лучшей генерации
@@ -283,7 +275,7 @@ function getNegativePrompts(vehicleType: string): string {
     case 'trailer':
       return `${baseNegatives}, NO tractor head, NO truck cabin, NOT a car`;
     case 'special':
-      return `${baseNegatives}, NOT a passenger car, NOT a van, NOT a bus`;
+      return `${baseNegatives}, ABSOLUTELY NOT a passenger car, NOT a sedan, NOT a hatchback, NOT a coupe, NOT a regular truck, NOT a van, NOT a bus, NO passenger vehicle design, NO car wheels, NO automotive styling`;
     default:
       return baseNegatives;
   }
@@ -292,7 +284,7 @@ function getNegativePrompts(vehicleType: string): string {
 /**
  * Возвращает описание транспортного средства для промпта (на английском для лучшей генерации)
  */
-function getVehicleDescription(vehicleType: string, bodyType: string): string {
+function getVehicleDescription(vehicleType: string, bodyType: string, brand?: string, model?: string): string {
   // Переводим тип кузова на английский если нужно
   const englishBodyType = translateBodyTypeToEnglish(bodyType);
 
@@ -306,7 +298,27 @@ function getVehicleDescription(vehicleType: string, bodyType: string): string {
     case 'bus':
       return `${englishBodyType} bus, passenger transport vehicle, public transport, coach`;
     case 'special':
-      return `${englishBodyType} construction vehicle, special equipment, industrial machinery, work vehicle`;
+      // Определяем конкретный тип спецтехники по марке
+      const brandLower = (brand || '').toLowerCase();
+      const modelLower = (model || '').toLowerCase();
+
+      const excavatorBrands = ['atlas', 'caterpillar', 'cat', 'komatsu', 'hitachi', 'kobelco', 'doosan', 'volvo construction', 'hyundai construction', 'liebherr', 'sany', 'xcmg', 'zoomlion'];
+      const loaderBrands = ['jcb', 'case', 'new holland', 'bobcat', 'kubota', 'takeuchi', 'terex', 'volvo construction', 'caterpillar', 'cat', 'komatsu'];
+      const craneBrands = ['liebherr', 'tadano', 'grove', 'manitowoc', 'terex', 'demag', 'xcmg', 'sany', 'zoomlion'];
+
+      if (excavatorBrands.includes(brandLower)) {
+        return 'HYDRAULIC EXCAVATOR: tracked undercarriage with metal tracks, rotating upper structure (cab), articulated boom arm with bucket attachment, construction equipment proportions, industrial yellow/orange color scheme';
+      } else if (loaderBrands.includes(brandLower)) {
+        if (modelLower.includes('backhoe')) {
+          return 'BACKHOE LOADER: four-wheeled construction vehicle with front bucket loader and rear excavator arm, construction equipment design';
+        } else {
+          return 'WHEEL LOADER: large front bucket, articulated steering frame, four large construction wheels, heavy-duty construction equipment';
+        }
+      } else if (craneBrands.includes(brandLower)) {
+        return 'MOBILE CRANE: telescopic boom, counterweights, outriggers, construction crane equipment';
+      } else {
+        return `${englishBodyType} heavy construction equipment, industrial machinery, construction vehicle with heavy-duty components`;
+      }
     default:
       return `${englishBodyType} passenger car, automobile, vehicle, motor car`;
   }

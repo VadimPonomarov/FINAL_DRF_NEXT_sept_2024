@@ -83,6 +83,23 @@ const AutoRiaMainPage = () => {
         })
       });
 
+      // Handle 401 authentication error
+      if (response.status === 401) {
+        const error = await response.json();
+        toast({
+          title: "❌ Требуется аутентификация",
+          description: error.message || "Пожалуйста, войдите в систему",
+          variant: "destructive",
+        });
+
+        // Redirect to login with callback URL
+        const currentPath = window.location.pathname;
+        setTimeout(() => {
+          window.location.href = `/login?callbackUrl=${encodeURIComponent(currentPath)}`;
+        }, 1000);
+        return;
+      }
+
       if (response.ok) {
         const result = await response.json();
 

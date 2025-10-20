@@ -53,8 +53,9 @@ console.log(`📁 NEXT_PUBLIC_IS_DOCKER: ${process.env.NEXT_PUBLIC_IS_DOCKER || 
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Only use standalone output in production
-  ...(process.env.NODE_ENV === 'production' && { output: 'standalone' }),
+  // DISABLED standalone output - causes data loading issues
+  // Use standard build + start instead
+  // ...(process.env.NODE_ENV === 'production' && { output: 'standalone' }),
 
   // React strict mode off in development to avoid double-invoking effects (faster dev)
   reactStrictMode: process.env.NODE_ENV !== 'development',

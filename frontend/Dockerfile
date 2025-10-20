@@ -1,83 +1,83 @@
 # =============================================================================
-# OPTIMIZED PRODUCTION DOCKERFILE FOR NEXT.JS
-# Multi-stage build for fast deployment
+# STANDARD PRODUCTION DOCKERFILE FOR NEXT.JS
+# Uses npm run build + npm run start for reliable data loading
 # =============================================================================
 
-# =============================================================================
-# STAGE 1: Dependencies
-# =============================================================================
-FROM node:18-alpine AS deps
+FROM node:18-alpine AS base
+WORKDIR /app
+
+# Install dependencies only when needed
+FROM base AS deps
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install only production dependencies first (for better caching)
-RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
-
-# =============================================================================
-# STAGE 2: Builder
-# =============================================================================
-FROM node:18-alpine AS builder
-WORKDIR /app
-
-# Copy package files
-COPY package.json package-lock.json ./
-
-# Install all dependencies (including dev dependencies for build)
+# Install dependencies
 RUN npm ci --legacy-peer-deps
 
-# Copy source code
+# =============================================================================
+# Builder stage - build the application
+# =============================================================================
+FROM base AS builder
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy all source files
 COPY . .
 
-# Build the application for production
+# Build the application
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # =============================================================================
-# STAGE 3: Runner (Optimized Production)
+# Production runner - standard build (NOT standalone)
 # =============================================================================
-FROM node:18-alpine AS runner
-WORKDIR /app
+FROM base AS runner
 
-# Install only essential runtime dependencies
+# Install runtime dependencies
 RUN apk add --no-cache curl dumb-init
 
-# Create non-root user for security
+# Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy production dependencies from deps stage
+# Copy node_modules from deps (includes all dependencies needed for npm start)
 COPY --from=deps /app/node_modules ./node_modules
 
-# Copy built application from builder stage
+# Copy built application and necessary files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/next.config.js ./next.config.js
 COPY --from=builder /app/package.json ./package.json
 
-# Change ownership to non-root user
+# Copy env-config directory if it exists (for environment variables)
+COPY --from=builder /app/../env-config ../env-config 2>/dev/null || true
+
+# Change ownership
 RUN chown -R nextjs:nodejs /app
 
-# Switch to non-root user for security
+# Switch to non-root user
 USER nextjs
 
 EXPOSE 3000
 
-# Optimized production environment variables
+# Production environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Health check for container orchestration
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
 
-# Use dumb-init for proper signal handling in containers
+# Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
+
+# Use npm start (standard Next.js production server)
 CMD ["npm", "start"]
 
 

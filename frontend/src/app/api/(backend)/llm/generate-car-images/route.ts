@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
 /**
  * Generate car images using backend service
  */
-async function generateCarImagesWithBackend(formData: Partial<CarAdFormData>, angles: string[], style: string, carSessionId?: string): Promise<GeneratedCarImage[]> {
+async function generateCarImagesWithBackend(formData: Partial<CarAdFormData>, angles: string[], style: string, carSessionId?: string, request?: NextRequest): Promise<GeneratedCarImage[]> {
   try {
     // Call backend service for car image generation
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
@@ -331,11 +331,36 @@ async function generateCarImagesWithBackend(formData: Partial<CarAdFormData>, an
     console.log('[generateCarImagesWithBackend] 📐 Angles:', angles);
     console.log('[generateCarImagesWithBackend] 🎨 Style:', style);
 
+    // Получаем токены из Redis для аутентификации (если request передан)
+    let authHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (request) {
+      try {
+        const origin = request.nextUrl.origin;
+        const tokenResponse = await fetch(`${origin}/api/auth/token`);
+
+        if (tokenResponse.ok) {
+          const tokenData = await tokenResponse.json();
+          if (tokenData.access) {
+            authHeaders['Authorization'] = `Bearer ${tokenData.access}`;
+            console.log('[generateCarImagesWithBackend] ✅ Added auth token to request');
+          } else {
+            console.warn('[generateCarImagesWithBackend] ⚠️ No access token found, proceeding without auth');
+          }
+        } else {
+          console.warn('[generateCarImagesWithBackend] ⚠️ Failed to get tokens, proceeding without auth');
+        }
+      } catch (tokenError) {
+        console.error('[generateCarImagesWithBackend] ❌ Error getting tokens:', tokenError);
+        // Продолжаем без токенов - endpoint может быть публичным
+      }
+    }
+
     const response = await fetch(`${backendUrl}/api/chat/generate-car-images/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: authHeaders,
       body: JSON.stringify({
         car_data: carData,
         angles,
@@ -533,37 +558,17 @@ function createStructuredCarPrompt(carData: any, angle: string, style: string, c
     'palfinger', 'hiab', 'fassi', 'pm', 'effer', 'atlas crane', 'tadano faun', 'grove crane', 'liebherr crane'
   ];
 
-  let strictBranding = '';
-  let shouldShowBranding = true;
+  // 🚨 CRITICAL: ALWAYS DISABLE BRANDING TO PREVENT INCORRECT LOGO ASSIGNMENTS
+  // AI frequently assigns wrong logos (Toyota on Foton, VW on Dodge, etc.)
+  // Better to have NO logos than WRONG logos
+  const shouldShowBranding = false;
 
-  // Check for brand-vehicle type mismatches
-  if (specialBrands.includes(brandLower) && ['car', 'passenger', 'sedan', 'hatchback', 'suv', 'crossover'].includes(vtLower)) {
-    shouldShowBranding = false;
-    strictBranding = `CRITICAL: Do not show any brand logos or badges on this vehicle. Generate a generic ${vt} without manufacturer branding.`;
-    console.log(`[Image Generator] 🚨 BRANDING DISABLED: Special equipment brand '${brand}' on passenger vehicle`);
-  } else if (automotiveBrands.includes(brandLower) && ['special', 'construction', 'industrial', 'excavator', 'bulldozer', 'crane', 'loader', 'tractor'].includes(vtLower)) {
-    shouldShowBranding = false;
-    strictBranding = `CRITICAL: Do not show any automotive brand logos on this vehicle. Generate a generic ${vt} without passenger car branding.`;
-    console.log(`[Image Generator] 🚨 BRANDING DISABLED: Automotive brand '${brand}' on special equipment`);
-  } else if (!brand || ['unknown', 'generic', 'other', '', 'null', 'none', 'не указано', 'не вказано'].includes(brandLower)) {
-    shouldShowBranding = false;
-    strictBranding = `Generate a generic ${vt} without any brand logos or badges.`;
-    console.log(`[Image Generator] 🚨 BRANDING DISABLED: Generic or unknown brand '${brand}'`);
-  } else if (!automotiveBrands.includes(brandLower) && !specialBrands.includes(brandLower)) {
-    // Unknown brand not in our validated lists - disable branding to prevent hallucination
-    shouldShowBranding = false;
-    strictBranding = `CRITICAL: Generate a generic ${vt} without any brand logos or badges. Unknown brand not validated. DO NOT show any manufacturer logos, emblems, or badges from other brands like BMW, Mercedes, Audi, Toyota, Honda, Hyundai, Ford, Volkswagen, or any other automotive brands.`;
-    console.log(`[Image Generator] 🚨 BRANDING DISABLED: Unknown brand '${brand}' not in validated lists - preventing logo hallucination`);
-  } else {
-    strictBranding = [
-      `Use ONLY authentic ${brand} ${model} ${year} design cues and emblems`,
-      `Show correct ${brand} branding if certain, otherwise omit all visible logos`,
-      `Maintain single-brand consistency across the entire vehicle`,
-      `Do not mix ${brand} with other manufacturer badges`,
-      `CRITICAL: Do not show logos from other brands like ${automotiveBrands.filter(b => b !== brandLower).slice(0, 10).join(', ')}`
-    ].join(', ');
-    console.log(`[Image Generator] ✅ BRANDING ENABLED: Authentic ${brand} branding for ${vt}`);
-  }
+  const forbiddenAutomotiveLogos = 'BMW, Mercedes-Benz, Audi, Toyota, Honda, Hyundai, Ford, Volkswagen, Nissan, Chevrolet, Kia, Mazda, Subaru, Volvo, Dodge, RAM, GMC, Cadillac, Lexus, Infiniti, Acura, Jeep, Chrysler, Porsche, Ferrari, Lamborghini, Maserati, Bentley, Rolls-Royce';
+  const forbiddenConstructionLogos = 'Caterpillar, CAT, Komatsu, JCB, Volvo Construction, Hitachi, Liebherr, Doosan, Case, New Holland, Bobcat, Kubota, Atlas, Terex, Manitowoc, Tadano, Grove, XCMG, SANY, Zoomlion';
+
+  const strictBranding = `CRITICAL: Do NOT show ANY brand logos, badges, emblems, or manufacturer text on this vehicle. Generate a completely generic ${vt} without any branding. ABSOLUTELY FORBIDDEN LOGOS: ${forbiddenAutomotiveLogos}, ${forbiddenConstructionLogos}, or ANY other brand logos. No text, no badges, no emblems, no manufacturer markings, no brand names visible anywhere on the vehicle. Clean, generic design only. Reason: AI logo hallucination prevention - better no logos than wrong logos.`;
+
+  console.log(`[Image Generator] 🚫 BRANDING DISABLED FOR ALL VEHICLES: AI logo hallucination prevention`);
 
   // Принуждение к правильному типу (только позитивные описания)
   let typeEnforcement = '';
@@ -581,7 +586,24 @@ function createStructuredCarPrompt(carData: any, angle: string, style: string, c
   } else if (vt === 'trailer') {
     typeEnforcement = 'Standalone trailer body, hitch coupling, no engine, no driver cabin';
   } else if (vt === 'special') {
-    typeEnforcement = 'Construction/industrial vehicle, heavy attachments (e.g., boom, bucket), tracks or heavy-duty wheels';
+    // Определяем конкретный тип спецтехники по марке
+    const excavatorBrands = ['atlas', 'caterpillar', 'cat', 'komatsu', 'hitachi', 'kobelco', 'doosan', 'volvo construction', 'hyundai construction', 'liebherr', 'sany', 'xcmg', 'zoomlion'];
+    const loaderBrands = ['jcb', 'case', 'new holland', 'bobcat', 'kubota', 'takeuchi', 'terex', 'volvo construction', 'caterpillar', 'cat', 'komatsu'];
+    const craneBrands = ['liebherr', 'tadano', 'grove', 'manitowoc', 'terex', 'demag', 'xcmg', 'sany', 'zoomlion'];
+
+    if (excavatorBrands.includes(brandLower)) {
+      typeEnforcement = 'HYDRAULIC EXCAVATOR: tracked undercarriage with metal tracks, rotating upper structure (cab), articulated boom arm with bucket attachment, construction equipment proportions, industrial yellow/orange color scheme typical for construction machinery';
+    } else if (loaderBrands.includes(brandLower)) {
+      if (model.toLowerCase().includes('backhoe')) {
+        typeEnforcement = 'BACKHOE LOADER: four-wheeled construction vehicle with front bucket loader and rear excavator arm, construction equipment design, industrial proportions';
+      } else {
+        typeEnforcement = 'WHEEL LOADER: large front bucket, articulated steering frame, four large construction wheels, heavy-duty construction equipment proportions';
+      }
+    } else if (craneBrands.includes(brandLower)) {
+      typeEnforcement = 'MOBILE CRANE: telescopic boom, counterweights, outriggers, construction crane equipment';
+    } else {
+      typeEnforcement = 'HEAVY CONSTRUCTION EQUIPMENT: industrial construction machinery with heavy-duty components, construction equipment proportions, industrial design';
+    }
   } else if (vt === 'boat') {
     typeEnforcement = 'Watercraft boat on water, visible hull and deck, no wheels, maritime environment, reflections on water';
   } else {
@@ -610,14 +632,51 @@ function createStructuredCarPrompt(carData: any, angle: string, style: string, c
 
   // Элементы консистентности
   const consistencyElements = [
-    `SAME EXACT vehicle across all images (vehicle ID: CAR-${carSessionId})`,
+    `SAME EXACT unique vehicle across all images (vehicle ID: CAR-${carSessionId})`,
     'IDENTICAL proportions, trims, wheels, and all visual details in every shot',
+    'SAME body type/cabin type in ALL images (if truck - same cabin design, if car - same body style)',
+    'SAME wheel design and size in ALL images',
+    'SAME color shade and finish in ALL images',
     'CONSISTENT vehicle type - if motorcycle then ONLY motorcycle, if car then ONLY car',
     'same lighting conditions and color temperature throughout series',
     'same photographic style and post-processing',
     'single subject, no people, clean neutral background',
-    'maintain exact same vehicle specifications and appearance'
+    'maintain exact same vehicle specifications and appearance',
+    'DO NOT generate different vehicles or variants - must be THE EXACT SAME vehicle from different angles'
   ];
+
+  // Realism enforcement (physical correctness)
+  const realismElements = [
+    `PHYSICALLY CORRECT ${vt} configuration`,
+    'realistic and functional vehicle design',
+    'correct number of wheels and steering mechanisms for this vehicle type',
+    'NO absurd or impossible features',
+    'professional quality, real-world engineering principles'
+  ];
+
+  // Негативные промпты в зависимости от типа ТС + физические невозможности
+  const physicalImpossibilities = [
+    'NO motorcycle with 4 wheels',
+    'NO car with excavator arm',
+    'NO trailer with steering wheel',
+    'NO multiple steering wheels',
+    'NO multiple handlebars',
+    'NO floating parts',
+    'NO impossible angles or proportions',
+    'NO absurd configurations'
+  ];
+
+  let negativePrompt = 'cartoon, anime, drawing, sketch, low quality, blurry, distorted proportions, multiple vehicles, people, text, watermarks, ' + physicalImpossibilities.join(', ');
+
+  if (vt === 'special') {
+    negativePrompt = 'ABSOLUTELY NOT a passenger car, NOT a sedan, NOT a hatchback, NOT a coupe, NOT a regular truck, NOT a van, NOT a bus, NO passenger vehicle design, NO car wheels, NO automotive styling, ' + negativePrompt;
+  } else if (vt === 'truck') {
+    negativePrompt = 'NOT a passenger car, NOT a sedan, NOT a hatchback, NOT a van, NOT a bus, ' + negativePrompt;
+  } else if (vt === 'bus') {
+    negativePrompt = 'NOT a passenger car, NOT a van, NOT a truck, ' + negativePrompt;
+  } else if (vt === 'motorcycle') {
+    negativePrompt = 'NOT a car, NOT 4 wheels, NOT enclosed cabin, NO car body, ' + negativePrompt;
+  }
 
   if (condition) parts.push(`Condition: ${condition}`);
   if (description) parts.push(`Scene: ${description}`);
@@ -626,12 +685,14 @@ function createStructuredCarPrompt(carData: any, angle: string, style: string, c
   const anglePrompt = angleDescriptions[angle] || `automotive photography of the same ${vt}`;
   const stylePrompt = styleDescriptions[style] || style || 'realistic';
   const consistencyPrompt = consistencyElements.concat([`Series ID: CAR-${carSessionId}`]).join(', ');
+  const realismPrompt = realismElements.join(', ');
+
   // Финальный структурированный промпт с усиленным реализмом и консистентностью
   return [
     `${basePrompt}. ${strictBranding}. ${typeEnforcement}.`,
-    `Angle: ${anglePrompt}. Style: ${stylePrompt}. ${consistencyPrompt}.`,
+    `Angle: ${anglePrompt}. Style: ${stylePrompt}. ${consistencyPrompt}. ${realismPrompt}.`,
     `Ultra-realistic, photorealistic quality, high resolution, clean neutral background, professional automotive photography, sharp focus, detailed textures, consistent vehicle appearance across all angles.`,
-    `NEGATIVE: cartoon, anime, drawing, sketch, low quality, blurry, distorted proportions, multiple vehicles, people, text, watermarks`
+    `NEGATIVE: ${negativePrompt}`
   ].join(' ');
 }
 
