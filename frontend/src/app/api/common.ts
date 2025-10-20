@@ -86,13 +86,21 @@ export async function fetchWithDomain<T = any>(
     // This avoids CORS issues and follows the project architecture
     let url: string;
 
-    // Check if endpoint starts with 'api/' - these are direct Next.js API routes
-    // ВАЖНО: api/user/ НЕ является Next.js API route - это backend endpoint!
-    // Только api/auth/ и api/autoria/ являются Next.js API routes
+    // Check if endpoint starts with 'api/' or '/api/' - these are direct Next.js API routes
+    // These are Next.js API routes that should NOT be proxied
     const isDirectApiRoute = endpoint.startsWith('api/auth/') ||
+                             endpoint.startsWith('/api/auth/') ||
                              endpoint.startsWith('api/autoria/') ||
+                             endpoint.startsWith('/api/autoria/') ||
+                             endpoint.startsWith('api/user/') ||
+                             endpoint.startsWith('/api/user/') ||
                              endpoint.startsWith('api/redis') ||
-                             endpoint.startsWith('api/public/');
+                             endpoint.startsWith('/api/redis') ||
+                             endpoint.startsWith('api/public/') ||
+                             endpoint.startsWith('/api/public/');
+
+    // Normalize endpoint to remove leading slash for consistent handling
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
     if (isServer) {
       // Server-side: use absolute URL to Next.js API
@@ -102,19 +110,19 @@ export async function fetchWithDomain<T = any>(
 
       if (isDirectApiRoute) {
         // Direct API route - no proxy needed
-        url = `${baseUrl}/${endpoint}`;
+        url = `${baseUrl}/${normalizedEndpoint}`;
       } else {
         // Backend endpoint - use proxy
-        url = `${baseUrl}/api/proxy/${endpoint}`;
+        url = `${baseUrl}/api/proxy/${normalizedEndpoint}`;
       }
     } else {
       // Client-side: use relative URL
       if (isDirectApiRoute) {
         // Direct API route - no proxy needed
-        url = `/${endpoint}`;
+        url = `/${normalizedEndpoint}`;
       } else {
         // Backend endpoint - use proxy
-        url = `/api/proxy/${endpoint}`;
+        url = `/api/proxy/${normalizedEndpoint}`;
       }
     }
 

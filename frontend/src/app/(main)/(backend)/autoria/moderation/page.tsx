@@ -7,6 +7,7 @@ export const metadata: Metadata = {
 };
 
 const Moderation = () => {
+  // Force recompile
   return <ModerationPage />;
 };
 

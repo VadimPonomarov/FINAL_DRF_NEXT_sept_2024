@@ -3,7 +3,7 @@ import { FC, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Activity, Menu as BurgerIcon, X as CloseIcon } from 'lucide-react';
+import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield } from 'lucide-react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/common/constants/constants';
 import { IMenuItem } from '@/components/All/MenuComponent/menu.interfaces';
@@ -257,6 +257,31 @@ export const MenuMain: FC = () => {
         index: 7,
         provider: AuthProvider.MyBackendDocs,
         tooltip: "AutoRia - система объявлений"
+      },
+      {
+        path: "/autoria/moderation",
+        label: (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="group flex items-center gap-2">
+                  <Shield
+                    size={18}
+                    className="text-foreground group-hover:text-accent-foreground transition-colors"
+                  />
+                  <span className="text-sm">Модерація</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Модерація оголошень (тільки для менеджерів та адміністраторів)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ),
+        disabled: !isAuthenticated,
+        index: 8,
+        provider: AuthProvider.MyBackendDocs,
+        tooltip: "Модерація оголошень"
       }
     ];
 

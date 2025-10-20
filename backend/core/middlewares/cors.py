@@ -18,11 +18,19 @@ class CORSMiddleware:
         origin = request.META.get('HTTP_ORIGIN', '')
         print(f"🔧 CORS: Processing request {request.method} {request.path} from origin: {origin}")
 
-        # Полностью отключаем CORS - разрешаем ВСЕ запросы без исключений
-        # Это безопасно для разработки и упрощает работу с API
-        allow_origin = '*'
-        allow_credentials = 'false'  # ВАЖНО: должно быть 'false' при allow_origin = '*'
-        print(f"🔧 CORS: Allowing ALL origins and methods (CORS fully disabled for development)")
+        # Проверяем, является ли origin разрешенным
+        is_allowed_origin = origin in self.allowed_origins
+
+        # Для разрешенных origins используем конкретный origin и разрешаем credentials
+        # Для остальных используем '*' и запрещаем credentials
+        if is_allowed_origin:
+            allow_origin = origin
+            allow_credentials = 'true'
+            print(f"🔧 CORS: Allowing origin {origin} with credentials")
+        else:
+            allow_origin = '*'
+            allow_credentials = 'false'
+            print(f"🔧 CORS: Allowing ALL origins without credentials")
 
         # Обработка preflight запросов (OPTIONS)
         if request.method == "OPTIONS":

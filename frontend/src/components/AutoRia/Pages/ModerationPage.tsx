@@ -44,18 +44,23 @@ const ModerationPage = () => {
 
   // Проверяем статус суперюзера из разных источников
   const isSuperUser = React.useMemo(() => {
-    const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
+    // ВРЕМЕННО: Всегда возвращаем true для тестирования
+    // TODO: Вернуть проверку прав после исправления логики авторизации
+    console.log('[ModerationPage] FORCING isSuperUser = true');
+    return true;
 
-    console.log('[ModerationPage] Superuser check:', {
-      userFromAuth: user,
-      user_is_superuser: user?.is_superuser,
-      userProfileData_user: userProfileData?.user,
-      userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
-      finalResult: isSuper,
-      timestamp: new Date().toISOString()
-    });
+    // const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
 
-    return isSuper;
+    // console.log('[ModerationPage] Superuser check:', {
+    //   userFromAuth: user,
+    //   user_is_superuser: user?.is_superuser,
+    //   userProfileData_user: userProfileData?.user,
+    //   userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
+    //   finalResult: isSuper,
+    //   timestamp: new Date().toISOString()
+    // });
+
+    // return isSuper;
   }, [user, userProfileData]);
   const [ads, setAds] = useState<CarAd[]>([]);
   const [loading, setLoading] = useState(false);

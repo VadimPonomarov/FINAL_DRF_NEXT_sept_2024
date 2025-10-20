@@ -35,7 +35,7 @@ export class UserProfileService {
     try {
       console.log('[UserProfileService] 📤 Fetching user profile...');
 
-      const data = await fetchWithDomain<ProfileApiResponse>('api/user/profile/', {
+      const data = await fetchWithDomain<ProfileApiResponse>('/api/user/profile/', {
         domain: 'internal',
         redirectOnError: false
       });
@@ -67,11 +67,11 @@ export class UserProfileService {
       console.log('[UserProfileService] 📋 Final update data:', updateData);
 
       console.log('[UserProfileService] 🔄 Calling fetchWithDomain...');
-      console.log('[UserProfileService] 📤 URL: api/user/profile/');
+      console.log('[UserProfileService] 📤 URL: /api/user/profile/');
       console.log('[UserProfileService] 📤 Method: PATCH');
       console.log('[UserProfileService] 📤 Body:', JSON.stringify(updateData, null, 2));
 
-      const data = await fetchWithDomain<ProfileApiResponse>('api/user/profile/', {
+      const data = await fetchWithDomain<ProfileApiResponse>('/api/user/profile/', {
         method: 'PATCH',
         body: updateData,
         domain: 'internal',
@@ -103,7 +103,7 @@ export class UserProfileService {
       const formData = new FormData();
       formData.append('avatar', avatarFile);
 
-      const data = await fetchWithDomain<BackendProfile>('api/user/profile/avatar', {
+      const data = await fetchWithDomain<BackendProfile>('/api/user/profile/avatar', {
         method: 'PATCH',
         body: formData,
         domain: 'internal',
@@ -137,7 +137,7 @@ export class UserAccountService {
     try {
       console.log('[UserAccountService] 📤 Fetching user account...');
 
-      const data = await fetchWithDomain<AccountApiResponse>('api/user/account/', {
+      const data = await fetchWithDomain<AccountApiResponse>('/api/user/account/', {
         domain: 'internal',
         redirectOnError: false
       });
@@ -165,7 +165,7 @@ export class UserAccountService {
     try {
       console.log('[UserAccountService] 📤 Updating user account...', accountData);
 
-      const data = await fetchWithDomain<AccountApiResponse>('api/user/account/', {
+      const data = await fetchWithDomain<AccountApiResponse>('/api/user/account/', {
         method: 'POST', // AddsAccountSerializer использует POST для create_or_update
         body: accountData,
         domain: 'internal',
@@ -359,7 +359,7 @@ export class UserAddressService {
     try {
       console.log('[UserAddressService] 📤 Fetching user addresses...');
 
-      const data = await fetchWithDomain<BackendRawAddress[]>('api/user/addresses/', {
+      const data = await fetchWithDomain<BackendRawAddress[]>('/api/user/addresses/', {
         domain: 'internal',
         redirectOnError: false
       });

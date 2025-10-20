@@ -187,10 +187,12 @@ class UserSerializer(BaseModelSerializer):
 class UserEditSerializer(UserSerializer):
     class Meta(BaseModelSerializer.Meta):
         model = UserModel
-        fields = ("email", "profile")
+        fields = ("id", "email", "is_staff", "is_superuser", "profile")
         extra_kwargs = {
             **BaseModelSerializer.Meta.extra_kwargs,
             "email": {"required": False},
+            "is_staff": {"read_only": True},
+            "is_superuser": {"read_only": True},
         }
 
 

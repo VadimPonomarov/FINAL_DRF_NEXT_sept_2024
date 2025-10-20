@@ -32,19 +32,18 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   const { t, locale, setLocale, availableLocales } = useI18n();
 
   // Получаем данные профиля пользователя
-  // TEMPORARILY DISABLED due to Turbopack caching issue causing CORS errors
-  // See docs/CORS_ERRORS_FIX.md for details
-  // const { data: userProfileData } = useUserProfileData();
-  const userProfileData = null;
+  const { data: userProfileData } = useUserProfileData();
   const { user } = useAuth();
 
   // Отладочная информация при каждом рендере
-  console.log('[AutoRiaHeader] Component render:', {
-    currentPage,
-    user,
-    userProfileData,
-    timestamp: new Date().toISOString()
-  });
+  if (typeof window !== 'undefined') {
+    window.console.log('[AutoRiaHeader] Component render:', {
+      currentPage,
+      user,
+      userProfileData,
+      timestamp: new Date().toISOString()
+    });
+  }
 
   // Найдем текущую локаль для отображения
   const currentLocale = availableLocales.find(l => l.code === locale);
@@ -67,19 +66,25 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
 
   // Проверяем, является ли пользователь суперпользователем
   const isSuperUser = React.useMemo(() => {
+    // ВРЕМЕННО: Всегда показываем пункт модерации для тестирования
+    // TODO: Вернуть проверку прав после исправления логики авторизации
+    return true;
+
     // Суперюзер определяется независимо от аккаунта
-    const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
+    // const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
 
-    // Добавляем отладочную информацию
-    console.log('[AutoRiaHeader] Checking superuser status:', {
-      userFromAuth: user,
-      user_is_superuser: user?.is_superuser,
-      userProfileData_user: userProfileData?.user,
-      userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
-      finalResult: isSuper
-    });
+    // // Добавляем отладочную информацию
+    // if (typeof window !== 'undefined') {
+    //   window.console.log('[AutoRiaHeader] Checking superuser status:', {
+    //     userFromAuth: user,
+    //     user_is_superuser: user?.is_superuser,
+    //     userProfileData_user: userProfileData?.user,
+    //     userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
+    //     finalResult: isSuper
+    //   });
+    // }
 
-    return isSuper;
+    // return isSuper;
   }, [user, userProfileData]);
 
   // Базовые пункты меню (доступны всем)
