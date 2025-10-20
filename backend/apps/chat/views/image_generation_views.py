@@ -644,8 +644,37 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         type_enforcement = 'Standalone trailer body, hitch coupling, no engine, no driver cabin'
         type_negation = 'NO tractor head, NO truck cabin, NOT a car'
     elif vt == 'special':
-        type_enforcement = 'Construction/industrial vehicle, heavy attachments (e.g., boom, bucket), tracks or heavy-duty wheels'
-        type_negation = 'NOT a passenger car, NOT a van, NOT a bus'
+        # Determine specific construction equipment type based on brand
+        brand_lower = brand.lower()
+
+        # Excavator brands
+        excavator_brands = ['atlas', 'caterpillar', 'cat', 'komatsu', 'hitachi', 'kobelco', 'doosan',
+                          'volvo construction', 'hyundai construction', 'liebherr', 'sany', 'xcmg',
+                          'zoomlion', 'liugong', 'lonking', 'sdlg']
+
+        # Loader brands
+        loader_brands = ['jcb', 'case', 'new holland', 'bobcat', 'kubota', 'takeuchi', 'terex']
+
+        # Crane brands
+        crane_brands = ['liebherr', 'tadano', 'grove', 'manitowoc', 'terex', 'demag', 'xcmg', 'sany',
+                      'zoomlion', 'palfinger', 'hiab', 'fassi']
+
+        if brand_lower in excavator_brands:
+            type_enforcement = 'HYDRAULIC EXCAVATOR: tracked undercarriage with metal tracks, rotating upper structure (cab), articulated boom arm with bucket attachment, construction equipment proportions, industrial yellow/orange color scheme typical for construction machinery'
+            type_negation = 'ABSOLUTELY NOT a passenger car, NOT a truck, NOT a van, NOT a bus, NOT a tractor, NO car wheels, NO passenger vehicle design'
+        elif brand_lower in loader_brands:
+            if 'backhoe' in model.lower():
+                type_enforcement = 'BACKHOE LOADER: four-wheeled construction vehicle with front bucket loader and rear excavator arm, construction equipment design, industrial proportions'
+            else:
+                type_enforcement = 'WHEEL LOADER: large front bucket, articulated steering frame, four large construction wheels, heavy-duty construction equipment proportions'
+            type_negation = 'ABSOLUTELY NOT a passenger car, NOT a sedan, NOT a hatchback, NOT a regular truck, NOT a van, NOT a bus'
+        elif brand_lower in crane_brands:
+            type_enforcement = 'MOBILE CRANE: telescopic boom, counterweights, outriggers, crane proportions, construction/industrial design'
+            type_negation = 'ABSOLUTELY NOT a passenger car, NOT a truck, NOT a van, NOT a bus'
+        else:
+            # Generic construction equipment
+            type_enforcement = 'HEAVY CONSTRUCTION EQUIPMENT: industrial construction machinery with heavy-duty components, construction equipment proportions, industrial design elements, heavy attachments (boom, bucket, blade, or similar), tracks or large construction wheels'
+            type_negation = 'ABSOLUTELY NOT a passenger car, NOT a sedan, NOT a hatchback, NOT a coupe, NOT a regular truck, NOT a van, NOT a bus, NO passenger vehicle design'
     else:
         type_enforcement = 'Passenger car proportions'
         type_negation = ''
@@ -716,43 +745,31 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         'palfinger', 'hiab', 'fassi', 'pm', 'effer', 'atlas crane', 'tadano faun', 'grove crane', 'liebherr crane'
     ]
 
-    # Determine if we should show branding at all
-    should_show_branding = True
-    brand_mismatch_reason = ""
+    # 🚨 CRITICAL DECISION: DISABLE ALL BRANDING TO PREVENT INCORRECT LOGO ASSIGNMENTS
+    # AI image generators frequently assign wrong brand logos (e.g., Toyota logo on Foton truck, VW logo on Dodge)
+    # Better to have NO logos than WRONG logos
+    should_show_branding = False
+    brand_mismatch_reason = "AI logo hallucination prevention - better no logos than wrong logos"
 
-    # Check for brand-vehicle type mismatches
+    # Check for brand-vehicle type mismatches (for logging purposes)
     if brand_lower in special_equipment_brands and vehicle_type_lower in ['car', 'passenger', 'sedan', 'hatchback', 'suv', 'crossover', 'coupe', 'convertible', 'wagon', 'minivan']:
-        # Special equipment brand on passenger car - suspicious, disable branding
-        should_show_branding = False
         brand_mismatch_reason = f"Special equipment brand '{brand}' on passenger vehicle"
-        print(f"[ImageGen] 🚨 BRANDING DISABLED: {brand_mismatch_reason}")
+        print(f"[ImageGen] 🚨 MISMATCH DETECTED: {brand_mismatch_reason}")
     elif brand_lower in automotive_brands and vehicle_type_lower in ['special', 'construction', 'industrial', 'excavator', 'bulldozer', 'crane', 'loader', 'tractor', 'agricultural']:
-        # Automotive brand on special equipment - suspicious, disable branding
-        should_show_branding = False
         brand_mismatch_reason = f"Automotive brand '{brand}' on special equipment"
-        print(f"[ImageGen] 🚨 BRANDING DISABLED: {brand_mismatch_reason}")
+        print(f"[ImageGen] 🚨 MISMATCH DETECTED: {brand_mismatch_reason}")
     elif not brand or brand.lower() in ['unknown', 'generic', 'other', 'не указано', 'не вказано', '', 'null', 'none']:
-        # No brand specified or generic brand - disable branding
-        should_show_branding = False
         brand_mismatch_reason = f"Generic or unknown brand '{brand}'"
-        print(f"[ImageGen] 🚨 BRANDING DISABLED: {brand_mismatch_reason}")
+        print(f"[ImageGen] ⚠️ NO BRAND: {brand_mismatch_reason}")
     elif brand_lower not in automotive_brands and brand_lower not in special_equipment_brands:
-        # Unknown brand not in our lists - disable branding to prevent hallucination
-        should_show_branding = False
         brand_mismatch_reason = f"Unknown brand '{brand}' not in validated lists"
-        print(f"[ImageGen] 🚨 BRANDING DISABLED: {brand_mismatch_reason} - preventing logo hallucination")
-    elif brand_lower in special_equipment_brands:
-        # Special equipment brands are prone to AI confusion - disable branding for safety
-        should_show_branding = False
-        brand_mismatch_reason = f"Special equipment brand '{brand}' - AI often confuses with automotive brands"
-        print(f"[ImageGen] 🚨 BRANDING DISABLED: {brand_mismatch_reason} - preventing logo confusion")
+        print(f"[ImageGen] ⚠️ UNKNOWN BRAND: {brand_mismatch_reason}")
 
-    if should_show_branding:
-        strict_branding = f"Use authentic {brand} {model} {year} design elements and branding"
-        print(f"[ImageGen] ✅ BRANDING ENABLED: {brand} branding allowed")
-    else:
-        strict_branding = "Generic vehicle design without visible brand badges or logos"
-        print(f"[ImageGen] ❌ BRANDING DISABLED: No brand badges to prevent incorrect assignments")
+    print(f"[ImageGen] 🚫 BRANDING DISABLED FOR ALL VEHICLES: {brand_mismatch_reason}")
+
+    # ALWAYS disable branding to prevent incorrect logo assignments
+    strict_branding = f"Generic {vt} design without visible brand badges, logos, or manufacturer emblems"
+    print(f"[ImageGen] 🚫 BRANDING DISABLED: No brand badges to prevent incorrect assignments")
 
     # Core object description
 
@@ -774,16 +791,11 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     angle_prompt = angle_descriptions.get(angle_key, f"automotive photography of the same {vt}")
     style_prompt = style_descriptions.get(style, style if style else 'realistic')
     consistency_prompt = ", ".join(consistency_elements + [f"Series ID: CAR-{car_session_id}"])
-    # Enhanced brand protection with specific instructions
-    brand_protection = ""
-    if not should_show_branding:
-        # Enhanced protection against common AI logo hallucinations
-        forbidden_automotive_logos = "BMW, Mercedes-Benz, Audi, Toyota, Honda, Hyundai, Ford, Volkswagen, Nissan, Chevrolet, Kia, Mazda, Subaru, Volvo"
-        brand_protection = f"CRITICAL: Do not show any brand logos, badges, or emblems on this vehicle. Reason: {brand_mismatch_reason}. Generate a completely generic {vt} without any manufacturer branding. ABSOLUTELY FORBIDDEN: Do not show logos from {forbidden_automotive_logos}, or any other automotive brand logos. No text, no badges, no emblems, no manufacturer markings. "
-    else:
-        # Only show the correct brand if it matches the vehicle type
-        other_brands = [b for b in automotive_brands[:10] if b != brand_lower]
-        brand_protection = f"IMPORTANT: Show ONLY authentic {brand} branding and logos. Do not mix with other brands. If {brand} branding is uncertain, omit all visible logos. CRITICAL: Do not show logos from {', '.join(other_brands)}. "
+    # CRITICAL: Enhanced brand protection - ALWAYS forbid ALL brand logos
+    forbidden_automotive_logos = "BMW, Mercedes-Benz, Audi, Toyota, Honda, Hyundai, Ford, Volkswagen, Nissan, Chevrolet, Kia, Mazda, Subaru, Volvo, Dodge, RAM, GMC, Cadillac, Lexus, Infiniti, Acura, Jeep, Chrysler, Buick, Lincoln, Porsche, Ferrari, Lamborghini, Maserati, Bentley, Rolls-Royce, Jaguar, Land Rover, Mini, Fiat, Alfa Romeo, Lancia, Renault, Peugeot, Citroen, Opel, Skoda, Seat"
+    forbidden_construction_logos = "Caterpillar, CAT, Komatsu, JCB, Volvo Construction, Hitachi, Liebherr, Doosan, Case, New Holland, Bobcat, Kubota, Atlas, Terex, Manitowoc, Tadano, Grove, XCMG, SANY, Zoomlion"
+
+    brand_protection = f"CRITICAL INSTRUCTION: Do NOT show ANY brand logos, badges, emblems, or manufacturer text on this vehicle. Generate a completely generic {vt} without any branding. ABSOLUTELY FORBIDDEN LOGOS: {forbidden_automotive_logos}, {forbidden_construction_logos}, or ANY other brand logos. No text, no badges, no emblems, no manufacturer markings, no brand names visible anywhere on the vehicle. Clean, generic design only. Reason: {brand_mismatch_reason}. "
 
     negatives = ", ".join(global_negatives + ([type_negation] if type_negation else []))
 

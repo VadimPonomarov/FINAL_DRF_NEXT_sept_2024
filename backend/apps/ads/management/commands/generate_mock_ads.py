@@ -397,29 +397,71 @@ class Command(BaseCommand):
         # Get detailed vehicle type description
         vehicle_description = self._get_detailed_vehicle_description(vehicle_type, brand, model, year, color)
 
-        # Safe brand handling - use logos only for well-known brands
-        if self._is_safe_brand_for_logos(english_brand):
-            # Use brand-specific prompt for well-known brands
-            negative_brands = self._get_negative_brands_for(english_brand)
-            english_prompt = f"Generate a {vehicle_description} {english_brand} {english_model} {year} model in {english_color} color, {angle_desc}, ONLY {english_brand} brand logos and styling, {negative_brands}, high quality, photorealistic, clean background, studio lighting, series ID {session_id}"
-        else:
-            # Safe mode: no logos for uncertain brands - ENHANCED PROTECTION
-            forbidden_logos = "DO NOT show Toyota, BMW, Mercedes, Audi, Honda, Ford, Chevrolet, Nissan, Hyundai, Volkswagen, or any other automotive brand logos, badges, emblems, or text"
-            english_prompt = f"Generate a {vehicle_description} in {english_color} color, {angle_desc}, clean design, completely generic vehicle, {forbidden_logos}, no visible logos, no brand badges, no manufacturer emblems, no text on vehicle, high quality, photorealistic, clean background, studio lighting, series ID {session_id}"
+        # 🚨 CRITICAL: ALWAYS disable branding to prevent incorrect logo assignments
+        # AI frequently assigns wrong logos (Toyota on Foton, VW on Dodge, etc.)
+        # Better to have NO logos than WRONG logos
+        forbidden_automotive_logos = "Toyota, BMW, Mercedes-Benz, Audi, Honda, Ford, Chevrolet, Nissan, Hyundai, Volkswagen, Dodge, RAM, GMC, Kia, Mazda, Subaru, Volvo, Lexus, Infiniti, Acura, Jeep, Chrysler, Porsche, Ferrari"
+        forbidden_construction_logos = "Caterpillar, CAT, Komatsu, JCB, Volvo Construction, Hitachi, Liebherr, Doosan, Case, New Holland, Bobcat, Kubota, Atlas, Terex, XCMG, SANY"
+
+        forbidden_logos = f"CRITICAL: DO NOT show {forbidden_automotive_logos}, {forbidden_construction_logos}, or ANY other brand logos, badges, emblems, or manufacturer text"
+        english_prompt = f"Generate a {vehicle_description} in {english_color} color, {angle_desc}, completely generic vehicle design, {forbidden_logos}, no visible logos, no brand badges, no manufacturer emblems, no text on vehicle, clean generic styling, high quality, photorealistic, clean background, studio lighting, series ID {session_id}"
 
         return english_prompt
 
     def _get_detailed_vehicle_description(self, vehicle_type, brand, model, year, color):
-        """Get detailed vehicle type description for AI prompt."""
+        """Get detailed vehicle type description for AI prompt with brand-specific equipment types."""
+
+        # For special equipment, determine specific type based on brand
+        if vehicle_type == 'special':
+            brand_lower = (brand or '').lower()
+
+            # Excavator brands
+            excavator_brands = ['atlas', 'caterpillar', 'cat', 'komatsu', 'hitachi', 'kobelco', 'doosan',
+                              'volvo construction', 'hyundai construction', 'liebherr', 'sany', 'xcmg',
+                              'zoomlion', 'liugong', 'lonking', 'sdlg']
+
+            # Bulldozer brands
+            bulldozer_brands = ['caterpillar', 'cat', 'komatsu', 'shantui', 'liebherr', 'case', 'john deere']
+
+            # Loader brands (wheel loaders, backhoe loaders)
+            loader_brands = ['jcb', 'case', 'new holland', 'bobcat', 'kubota', 'takeuchi', 'terex',
+                           'volvo construction', 'caterpillar', 'cat', 'komatsu', 'hitachi']
+
+            # Crane brands
+            crane_brands = ['liebherr', 'tadano', 'grove', 'manitowoc', 'terex', 'demag', 'xcmg', 'sany',
+                          'zoomlion', 'palfinger', 'hiab', 'fassi']
+
+            # Road construction equipment
+            road_equipment_brands = ['bomag', 'dynapac', 'hamm', 'wirtgen', 'vogele', 'kleemann', 'benninghoven']
+
+            # Determine specific equipment type
+            if brand_lower in excavator_brands:
+                return 'hydraulic excavator construction equipment with articulated arm, bucket attachment, tracked undercarriage, rotating cab'
+            elif brand_lower in bulldozer_brands and 'dozer' in model.lower():
+                return 'tracked bulldozer construction equipment with large front blade, ripper attachment, heavy-duty tracks'
+            elif brand_lower in loader_brands:
+                if 'backhoe' in model.lower():
+                    return 'backhoe loader construction equipment with front bucket and rear excavator arm, four wheels'
+                else:
+                    return 'wheel loader construction equipment with large front bucket, articulated steering, four large wheels'
+            elif brand_lower in crane_brands:
+                return 'mobile crane construction equipment with telescopic boom, counterweights, outriggers'
+            elif brand_lower in road_equipment_brands:
+                return 'road construction equipment (roller/paver/milling machine) with heavy-duty construction design'
+            else:
+                # Generic construction equipment
+                return 'heavy construction equipment vehicle with industrial design, construction machinery proportions, heavy-duty components'
+
+        # Standard vehicle type descriptions
         descriptions = {
             'car': 'passenger car vehicle (sedan/hatchback/coupe)',
-            'truck': 'commercial truck vehicle (cargo/freight truck)',
-            'bus': 'passenger bus vehicle (city bus/coach)',
-            'motorcycle': 'motorcycle vehicle (motorbike/scooter)',
-            'trailer': 'trailer vehicle (semi-trailer/cargo trailer)',
-            'special': 'special purpose vehicle (construction/utility equipment)',
-            'agricultural': 'agricultural vehicle (tractor/farming equipment)',
-            'boat': 'watercraft vehicle (boat/yacht/marine vessel)'
+            'truck': 'commercial truck vehicle with cargo bed or box, truck cabin, commercial proportions',
+            'bus': 'passenger bus vehicle with multiple rows of windows, bus doors, high roof, long wheelbase',
+            'motorcycle': 'motorcycle vehicle (motorbike) with two wheels, exposed frame, handlebars',
+            'trailer': 'trailer vehicle (semi-trailer/cargo trailer) without engine or driver cabin',
+            'agricultural': 'agricultural tractor vehicle with large rear wheels, farming equipment design',
+            'boat': 'watercraft vehicle (boat/yacht/marine vessel)',
+            'van': 'van vehicle with boxy proportions, sliding doors, commercial or passenger van design'
         }
         return descriptions.get(vehicle_type, 'motor vehicle')
 
