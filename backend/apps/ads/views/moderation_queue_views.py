@@ -18,22 +18,32 @@ from apps.ads.permissions import IsStaffOrSuperUser, IsSuperUser
 from apps.ads.serializers.car_ad_serializer import CarAdSerializer
 from core.enums.ads import AdStatusEnum
 
+# Import base views
+from core.views import BaseModerationListView
 
-class ModerationQueueView(generics.ListAPIView):
+
+class ModerationQueueView(BaseModerationListView):
     """
     List view for advertisements pending moderation.
     Available only for staff and superuser.
     """
 
     serializer_class = CarAdSerializer
-    permission_classes = [IsAuthenticated, IsStaffOrSuperUser]
+    permission_classes: list = [IsAuthenticated, IsStaffOrSuperUser]
 
     # Filtering and search
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = CarAdFilter
-    search_fields = ["title", "description", "model", "account__user__email"]
-    ordering_fields = ["created_at", "updated_at", "price", "title", "status", "brand", "year"]
-    ordering = ["-created_at"]
+    search_fields: list = ["title", "description", "model", "account__user__email"]
+    ordering_fields: list = [
+        "created_at",
+        "updated_at",
+        "price",
+        "title",
+        "status",
+        "brand",
+        "year",
+    ]
+    ordering: list = ["-created_at"]
 
     @swagger_auto_schema(
         operation_summary="🔍 Moderation Queue",
