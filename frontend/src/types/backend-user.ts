@@ -142,7 +142,11 @@ export interface UserUpdateData {
 
 // Ответ API при получении профиля (UserEditSerializer)
 export interface ProfileApiResponse {
+  id: number;
   email: string;
+  is_staff: boolean;
+  is_superuser: boolean;
+  is_active?: boolean;
   profile: BackendProfile | null;
 }
 

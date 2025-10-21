@@ -505,36 +505,16 @@ export class FullUserDataService {
         console.log('[FullUserDataService] ❌ Failed to load user profile');
         return null;
       }
-      
-      // Получаем данные пользователя из localStorage для is_staff и is_superuser
-      let userFlags = { is_staff: false, is_superuser: false, is_active: true };
-      try {
-        if (typeof window !== 'undefined') {
-          const storedAuth = localStorage.getItem('backend_auth');
-          if (storedAuth) {
-            const authData = JSON.parse(storedAuth);
-            if (authData?.user) {
-              userFlags = {
-                is_staff: authData.user.is_staff || false,
-                is_superuser: authData.user.is_superuser || false,
-                is_active: authData.user.is_active !== undefined ? authData.user.is_active : true
-              };
-              console.log('[FullUserDataService] 🔑 User flags from localStorage:', userFlags);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('[FullUserDataService] ❌ Error getting user flags:', error);
-      }
 
       // Формируем объединенные данные
+      // Флаги is_staff, is_superuser, is_active берутся из ответа API профиля (верхний уровень)
       const fullData: FullUserProfileData = {
         user: {
-          id: profile.profile?.user || 0,
+          id: profile.id || profile.profile?.user || 0,
           email: profile.email,
-          is_active: userFlags.is_active,
-          is_staff: userFlags.is_staff,
-          is_superuser: userFlags.is_superuser,
+          is_active: profile.is_active !== undefined ? profile.is_active : true,
+          is_staff: profile.is_staff || false,
+          is_superuser: profile.is_superuser || false,
           profile: profile.profile,
           created_at: profile.profile?.created_at || '',
           updated_at: profile.profile?.updated_at || ''

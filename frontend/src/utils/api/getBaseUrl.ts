@@ -1,12 +1,9 @@
 export const getBaseUrl = () => {
+  // Use the backend URL from environment configuration
   if (typeof window !== 'undefined') {
-    // Client-side
-    return window.location.origin;
+    // Client-side - use the public backend URL
+    return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   }
-  // Server-side
-  const protocol = process.env.API_SCHEMA || 'http';
-  const host = process.env.API_HOST || 'localhost';
-  const port = process.env.API_PORT || '3000';
-  
-  return `${protocol}://${host}:${port}`;
+  // Server-side - use backend URL for SSR
+  return process.env.BACKEND_URL || 'http://localhost:8000';
 };

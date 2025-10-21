@@ -57,17 +57,6 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
         }
       }
 
-      // Проверяем localStorage для backend авторизации
-      if (typeof window !== 'undefined') {
-        const storedAuth = localStorage.getItem('backend_auth');
-        if (storedAuth) {
-          const authData = JSON.parse(storedAuth);
-          if (authData?.access) {
-            return authData.access;
-          }
-        }
-      }
-
       return null;
     } catch (error) {
       console.error('[useAutoRiaAuth] Error getting token:', error);
