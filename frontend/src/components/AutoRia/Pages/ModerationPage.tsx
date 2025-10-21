@@ -40,7 +40,7 @@ interface ModerationStats {
 
 const ModerationPage = () => {
   const { t, formatDate } = useI18n();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, checkAuth } = useAutoRiaAuth();
   const { data: userProfileData } = useUserProfileData();
   const { toast } = useToast();
 
@@ -80,11 +80,21 @@ const ModerationPage = () => {
   //   }
   // }, [user]);
 
+  // Проверяем аутентификацию при загрузке компонента
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      console.log('[ModerationPage] User not authenticated, checking auth...');
+      checkAuth();
+    }
+  }, [authLoading, isAuthenticated, checkAuth]);
+
   // Загрузка данных
   useEffect(() => {
-    loadModerationQueue();
-    loadModerationStats();
-  }, [statusFilter, searchQuery]);
+    if (isAuthenticated) {
+      loadModerationQueue();
+      loadModerationStats();
+    }
+  }, [statusFilter, searchQuery, isAuthenticated]);
 
   const loadModerationQueue = async () => {
     setLoading(true);
@@ -285,7 +295,8 @@ const ModerationPage = () => {
             <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
               <strong>Статус пользователя:</strong> {user?.email || 'Не авторизован'} |
               <strong> Суперюзер:</strong> {isSuperUser ? '✅ Да' : '❌ Нет'} |
-              <strong> useAuth:</strong> {user?.is_superuser ? '✅' : '❌'} |
+              <strong> isAuthenticated:</strong> {isAuthenticated ? '✅' : '❌'} |
+              <strong> authLoading:</strong> {authLoading ? '⏳' : '✅'} |
               <strong> userProfileData:</strong> {userProfileData?.user?.is_superuser ? '✅' : '❌'}
             </div>
           </div>
