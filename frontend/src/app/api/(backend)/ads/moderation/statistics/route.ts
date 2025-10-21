@@ -46,7 +46,13 @@ export async function GET(request: NextRequest) {
     const data = await backendResponse.json();
     console.log('[Moderation Statistics API] Success:', data);
 
-    return NextResponse.json(data);
+    // Преобразуем формат в ожидаемый frontend формат
+    const responseData = {
+      success: true,
+      data: data
+    };
+
+    return NextResponse.json(responseData);
 
   } catch (error: any) {
     console.error('[Moderation Statistics API] Error:', error);

@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Shield, 
-  Search, 
+import {
+  Shield,
+  Search,
   Filter,
   Eye,
   Check,
@@ -26,6 +26,7 @@ import { CarAd } from '@/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuth } from '@/contexts/AuthProviderContext';
 import { useUserProfileData } from '@/hooks/useUserProfileData';
+import { useToast } from '@/hooks/use-toast';
 
 interface ModerationStats {
   total_ads: number;
@@ -41,6 +42,7 @@ const ModerationPage = () => {
   const { t, formatDate } = useI18n();
   const { user } = useAuth();
   const { data: userProfileData } = useUserProfileData();
+  const { toast } = useToast();
 
   // Проверяем статус суперюзера из разных источников
   const isSuperUser = React.useMemo(() => {
@@ -65,7 +67,7 @@ const ModerationPage = () => {
   const [ads, setAds] = useState<CarAd[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<ModerationStats | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('pending');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAd, setSelectedAd] = useState<CarAd | null>(null);
 
@@ -89,14 +91,48 @@ const ModerationPage = () => {
     try {
       console.log('[Moderation] 📤 Loading moderation queue...');
 
+      // Используем правильные статусы для backend API
+      const statusMapping: { [key: string]: string } = {
+        'all': '',
+        'pending': 'pending',
+        'needs_review': 'needs_review',
+        'rejected': 'rejected',
+        'blocked': 'blocked',
+        'active': 'active'
+      };
+
+      const backendStatus = statusMapping[statusFilter] || '';
+
       const params = new URLSearchParams({
-        status: statusFilter,
         search: searchQuery,
         page: '1',
         page_size: '50'
       });
 
+      // Добавляем статус только если он не 'all'
+      if (backendStatus) {
+        params.append('status', backendStatus);
+      }
+
       const response = await fetch(`/api/ads/moderation/queue?${params}`);
+      
+      // Handle 401 authentication error
+      if (response.status === 401) {
+        const error = await response.json();
+        toast({
+          title: "❌ Требуется аутентификация",
+          description: error.message || "Пожалуйста, войдите в систему",
+          variant: "destructive",
+        });
+
+        // Redirect to login with callback URL
+        const currentPath = window.location.pathname;
+        setTimeout(() => {
+          window.location.href = `/login?callbackUrl=${encodeURIComponent(currentPath)}`;
+        }, 1000);
+        return;
+      }
+      
       const result = await response.json();
 
       if (result.success && result.data) {
@@ -117,6 +153,24 @@ const ModerationPage = () => {
   const loadModerationStats = async () => {
     try {
       const response = await fetch('/api/ads/moderation/statistics');
+      
+      // Handle 401 authentication error
+      if (response.status === 401) {
+        const error = await response.json();
+        toast({
+          title: "❌ Требуется аутентификация",
+          description: error.message || "Пожалуйста, войдите в систему",
+          variant: "destructive",
+        });
+
+        // Redirect to login with callback URL
+        const currentPath = window.location.pathname;
+        setTimeout(() => {
+          window.location.href = `/login?callbackUrl=${encodeURIComponent(currentPath)}`;
+        }, 1000);
+        return;
+      }
+      
       const result = await response.json();
 
       if (result.success) {
@@ -308,12 +362,12 @@ const ModerationPage = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">📋 Все объявления</SelectItem>
                   <SelectItem value="pending">⏳ На модерации</SelectItem>
                   <SelectItem value="needs_review">🔍 Требует проверки</SelectItem>
                   <SelectItem value="rejected">❌ Отклонено</SelectItem>
                   <SelectItem value="blocked">🚫 Заблокировано</SelectItem>
                   <SelectItem value="active">✅ Активные</SelectItem>
-                  <SelectItem value="all">📋 Все статусы</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -379,13 +433,13 @@ const ModerationPage = () => {
                     {getStatusBadge(ad.status)}
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
                   <div className="space-y-4">
                     <p className="text-sm text-gray-600 line-clamp-3">
                       {ad.description}
                     </p>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="text-lg font-bold text-green-600">
                         {formatPrice(ad.price, ad.currency)}
@@ -395,7 +449,7 @@ const ModerationPage = () => {
                         {ad.user?.email}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <Clock className="h-4 w-4" />
                       Создано: {formatDate(new Date(ad.created_at))}

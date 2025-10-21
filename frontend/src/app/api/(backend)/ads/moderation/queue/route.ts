@@ -52,7 +52,16 @@ export async function GET(request: NextRequest) {
       results: data.results?.length || 0
     });
 
-    return NextResponse.json(data);
+    // Преобразуем формат DRF в ожидаемый frontend формат
+    const responseData = {
+      success: true,
+      data: data.results || [],
+      count: data.count || 0,
+      next: data.next,
+      previous: data.previous
+    };
+
+    return NextResponse.json(responseData);
 
   } catch (error: any) {
     console.error('[Moderation Queue API] Error:', error);
