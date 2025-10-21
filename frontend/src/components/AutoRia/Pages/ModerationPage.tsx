@@ -30,6 +30,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
 import { useUserProfileData } from '@/hooks/useUserProfileData';
 import { useToast } from '@/hooks/use-toast';
+import { fetchWithAuth } from '@/utils/fetchWithAuth';
 
 interface ModerationStats {
   total_ads: number;
@@ -131,9 +132,9 @@ const ModerationPage = () => {
         params.append('status', backendStatus);
       }
 
-      const response = await fetch(`/api/ads/moderation/queue?${params}`);
+      const response = await fetchWithAuth(`/api/ads/moderation/queue?${params}`);
       
-      // Handle 401 authentication error
+      // Handle 401 authentication error (only if fetchWithAuth didn't handle it)
       if (response.status === 401) {
         const error = await response.json();
         toast({
@@ -169,9 +170,9 @@ const ModerationPage = () => {
 
   const loadModerationStats = async () => {
     try {
-      const response = await fetch('/api/ads/moderation/statistics');
+      const response = await fetchWithAuth('/api/ads/moderation/statistics');
       
-      // Handle 401 authentication error
+      // Handle 401 authentication error (only if fetchWithAuth didn't handle it)
       if (response.status === 401) {
         const error = await response.json();
         toast({
@@ -520,31 +521,28 @@ const ModerationPage = () => {
 
                     {/* Moderation Actions */}
                     <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedAd(ad)}
-                        className="h-8 px-3 min-w-[80px] flex items-center justify-center text-xs"
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        {t('autoria.moderation.viewDetails')}
-                      </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedAd(ad)}
+                          className="h-8 w-32 flex items-center justify-center text-xs font-medium hover:bg-gray-100 hover:text-gray-900"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />{t('autoria.moderation.viewDetails')}
+                        </Button>
 
                       {ad.status === 'pending' || ad.status === 'needs_review' ? (
                         <>
                           <Button
                             size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 min-w-[80px] flex items-center justify-center text-xs"
+                            className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
                             onClick={() => moderateAd(ad.id, 'approve')}
                           >
-                            <Check className="h-3 w-3 mr-1" />
-                            {t('autoria.moderation.approve')}
+                            <Check className="h-3 w-3 mr-1" />{t('autoria.moderation.approve')}
                           </Button>
 
                           <Button
                             size="sm"
-                            variant="destructive"
-                            className="h-8 px-3 min-w-[80px] flex items-center justify-center text-xs"
+                            className="bg-red-600 hover:bg-red-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
                             onClick={() => {
                               const reason = prompt(t('autoria.moderation.rejectionReasonPrompt'));
                               if (reason) {
@@ -552,8 +550,7 @@ const ModerationPage = () => {
                               }
                             }}
                           >
-                            <X className="h-3 w-3 mr-1" />
-                            {t('autoria.moderation.reject')}
+                            <X className="h-3 w-3 mr-1" />{t('autoria.moderation.reject')}
                           </Button>
                         </>
                       ) : null}
@@ -561,18 +558,18 @@ const ModerationPage = () => {
                       {ad.status === 'rejected' ? (
                         <Button
                           size="sm"
-                          className="bg-blue-600 hover:bg-blue-700 text-white h-8 px-3 min-w-[80px] flex items-center justify-center text-xs"
+                          className="bg-blue-600 hover:bg-blue-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
                           onClick={() => moderateAd(ad.id, 'review')}
+                          style={{ color: 'white' }}
                         >
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          {t('autoria.moderation.review')}
+                          ⚠️{t('autoria.moderation.review')}
                         </Button>
                       ) : null}
 
                       {ad.status === 'active' ? (
                         <Button
                           size="sm"
-                          className="bg-gray-600 hover:bg-gray-700 text-white h-8 px-3 min-w-[80px] flex items-center justify-center text-xs"
+                          className="bg-gray-600 hover:bg-gray-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
                           onClick={() => {
                             const reason = prompt(t('autoria.moderation.blockReason'));
                             if (reason) {
@@ -587,7 +584,7 @@ const ModerationPage = () => {
                       {ad.status === 'blocked' ? (
                         <Button
                           size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 min-w-[80px] flex items-center justify-center text-xs"
+                          className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
                           onClick={() => moderateAd(ad.id, 'activate')}
                         >
                           ✅ {t('autoria.moderation.activate')}
@@ -653,27 +650,24 @@ const ModerationPage = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => setSelectedAd(ad)}
-                            className="h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                            className="h-8 w-32 text-xs font-medium flex items-center justify-center hover:bg-gray-100 hover:text-gray-900"
                           >
-                            <Eye className="h-3 w-3 mr-1" />
-                            {t('autoria.moderation.viewDetails')}
+                            <Eye className="h-3 w-3 mr-1" />{t('autoria.moderation.viewDetails')}
                           </Button>
 
                           {ad.status === 'pending' || ad.status === 'needs_review' ? (
                             <>
                               <Button
                                 size="sm"
-                                className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                                className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
                                 onClick={() => moderateAd(ad.id, 'approve')}
                               >
-                                <Check className="h-3 w-3 mr-1" />
-                                {t('autoria.moderation.approve')}
+                                <Check className="h-3 w-3 mr-1" />{t('autoria.moderation.approve')}
                               </Button>
 
                               <Button
                                 size="sm"
-                                variant="destructive"
-                                className="h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                                className="bg-red-600 hover:bg-red-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
                                 onClick={() => {
                                   const reason = prompt(t('autoria.moderation.rejectionReasonPrompt'));
                                   if (reason) {
@@ -681,8 +675,7 @@ const ModerationPage = () => {
                                   }
                                 }}
                               >
-                                <X className="h-3 w-3 mr-1" />
-                                {t('autoria.moderation.reject')}
+                                <X className="h-3 w-3 mr-1" />{t('autoria.moderation.reject')}
                               </Button>
                             </>
                           ) : null}
@@ -690,18 +683,18 @@ const ModerationPage = () => {
                           {ad.status === 'rejected' ? (
                             <Button
                               size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                              className="bg-blue-600 hover:bg-blue-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
                               onClick={() => moderateAd(ad.id, 'review')}
+                              style={{ color: 'white' }}
                             >
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                              {t('autoria.moderation.review')}
+                              ⚠️{t('autoria.moderation.review')}
                             </Button>
                           ) : null}
 
                           {ad.status === 'active' ? (
                             <Button
                               size="sm"
-                              className="bg-gray-600 hover:bg-gray-700 text-white h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                              className="bg-gray-600 hover:bg-gray-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
                               onClick={() => {
                                 const reason = prompt(t('autoria.moderation.blockReason'));
                                 if (reason) {
@@ -716,7 +709,7 @@ const ModerationPage = () => {
                           {ad.status === 'blocked' ? (
                             <Button
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                              className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
                               onClick={() => moderateAd(ad.id, 'activate')}
                             >
                               ✅ {t('autoria.moderation.activate')}

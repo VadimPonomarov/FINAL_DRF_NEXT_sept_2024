@@ -1,0 +1,31 @@
+/* Глобальные стили для исправления проблем с ховером кнопок */
+
+/* Базовые кнопки с белым текстом */
+button.bg-green-600:hover,
+button.bg-red-600:hover,
+button.bg-blue-600:hover,
+button.bg-gray-600:hover {
+  color: white !important;
+}
+
+/* Кнопки с outline */
+button[class*="variant-outline"]:hover {
+  background-color: rgb(243 244 246) !important; /* gray-100 */
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+/* Принудительное применение белого цвета для всех цветных кнопок при ховере */
+button[class*="bg-green"]:hover,
+button[class*="bg-red"]:hover,
+button[class*="bg-blue"]:hover,
+button[class*="bg-gray"]:hover {
+  color: white !important;
+}
+
+/* Специально для кнопок модерации */
+button[class*="bg-green-600"]:hover,
+button[class*="bg-red-600"]:hover,
+button[class*="bg-blue-600"]:hover,
+button[class*="bg-gray-600"]:hover {
+  color: white !important;
+}

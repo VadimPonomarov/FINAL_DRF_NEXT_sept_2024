@@ -4,6 +4,9 @@
 /* Импорт глобальных стилей чатбота */
 @import '../components/ChatBot/styles/global-chatbot.css';
 
+/* Импорт стилей для исправления ховера кнопок */
+@import '../styles/button-hover-fix.css';
+
 /* Стили для моноширинных шрифтов */
 code, pre, .font-mono {
   font-family: Consolas, Menlo, Monaco, 'Courier New', monospace;
