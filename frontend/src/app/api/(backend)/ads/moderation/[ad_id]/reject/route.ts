@@ -43,7 +43,14 @@ export async function POST(
     const data = await backendResponse.json();
     console.log('[Reject Ad API] Success');
 
-    return NextResponse.json(data);
+    // Преобразуем формат в ожидаемый frontend формат
+    const responseData = {
+      success: true,
+      message: data.message || 'Advertisement rejected successfully',
+      ad: data.ad
+    };
+
+    return NextResponse.json(responseData);
 
   } catch (error: any) {
     console.error('[Reject Ad API] Error:', error);

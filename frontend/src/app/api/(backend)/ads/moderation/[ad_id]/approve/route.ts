@@ -11,7 +11,8 @@ export async function POST(
 ) {
   try {
     const { ad_id } = params;
-    console.log('[Approve Ad API] Approving ad:', ad_id);
+    const body = await request.json();
+    console.log('[Approve Ad API] Approving ad:', ad_id, 'with data:', body);
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     const apiUrl = `${backendUrl}/api/ads/cars/moderation/${ad_id}/approve`;
@@ -24,6 +25,7 @@ export async function POST(
         'Content-Type': 'application/json',
         ...authHeaders,
       },
+      body: JSON.stringify(body),
     });
 
     console.log('[Approve Ad API] Backend response status:', backendResponse.status);
@@ -41,7 +43,14 @@ export async function POST(
     const data = await backendResponse.json();
     console.log('[Approve Ad API] Success');
 
-    return NextResponse.json(data);
+    // Преобразуем формат в ожидаемый frontend формат
+    const responseData = {
+      success: true,
+      message: data.message || 'Advertisement approved successfully',
+      ad: data.ad
+    };
+
+    return NextResponse.json(responseData);
 
   } catch (error: any) {
     console.error('[Approve Ad API] Error:', error);
