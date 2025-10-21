@@ -32,7 +32,7 @@ class ModerationQueueView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = CarAdFilter
     search_fields = ["title", "description", "model", "account__user__email"]
-    ordering_fields = ["created_at", "updated_at", "price", "title"]
+    ordering_fields = ["created_at", "updated_at", "price", "title", "status", "brand", "year"]
     ordering = ["-created_at"]
 
     @swagger_auto_schema(

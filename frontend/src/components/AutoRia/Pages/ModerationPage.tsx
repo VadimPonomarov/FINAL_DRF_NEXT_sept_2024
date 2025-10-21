@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Shield,
   Search,
@@ -20,7 +21,9 @@ import {
   Car,
   User,
   Clock,
-  BarChart3
+  BarChart3,
+  Grid,
+  List
 } from 'lucide-react';
 import { CarAd } from '@/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
@@ -70,6 +73,9 @@ const ModerationPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAd, setSelectedAd] = useState<CarAd | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Проверка прав доступа - временно отключена
   // useEffect(() => {
@@ -94,7 +100,7 @@ const ModerationPage = () => {
       loadModerationQueue();
       loadModerationStats();
     }
-  }, [statusFilter, searchQuery, isAuthenticated]);
+  }, [statusFilter, searchQuery, sortBy, sortOrder, isAuthenticated]);
 
   const loadModerationQueue = async () => {
     setLoading(true);
@@ -116,7 +122,8 @@ const ModerationPage = () => {
       const params = new URLSearchParams({
         search: searchQuery,
         page: '1',
-        page_size: '50'
+        page_size: '50',
+        ordering: sortOrder === 'desc' ? `-${sortBy}` : sortBy
       });
 
       // Добавляем статус только если он не 'all'
@@ -293,11 +300,11 @@ const ModerationPage = () => {
             </p>
             {/* Отладочная информация о пользователе */}
             <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
-              <strong>Статус пользователя:</strong> {user?.email || 'Не авторизован'} |
-              <strong> Суперюзер:</strong> {isSuperUser ? '✅ Да' : '❌ Нет'} |
+              <strong>{t('autoria.moderation.userStatus')}</strong> {user?.email || t('autoria.moderation.noAdsFound')} |
+              <strong> {t('autoria.moderation.superuser')}</strong> {isSuperUser ? '✅ Да' : '❌ Нет'} |
               <strong> useAutoRiaAuth:</strong> {isAuthenticated ? '✅' : '❌'} |
-              <strong> authLoading:</strong> {authLoading ? '⏳' : '✅'} |
-              <strong> userProfileData:</strong> {userProfileData?.user?.is_superuser ? '✅' : '❌'}
+              <strong> {t('autoria.moderation.authLoading')}</strong> {authLoading ? '⏳' : '✅'} |
+              <strong> {t('autoria.moderation.userProfile')}</strong> {userProfileData?.user?.is_superuser ? '✅' : '❌'}
             </div>
           </div>
         </div>
@@ -308,43 +315,43 @@ const ModerationPage = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold">{stats.total_ads}</div>
-                <p className="text-xs text-gray-600">Всего объявлений</p>
+                <p className="text-xs text-gray-600">{t('autoria.moderation.totalAds')}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-yellow-600">{stats.pending_moderation}</div>
-                <p className="text-xs text-gray-600">На модерации</p>
+                <p className="text-xs text-gray-600">{t('autoria.moderation.pendingModeration')}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-orange-600">{stats.needs_review}</div>
-                <p className="text-xs text-gray-600">Требует проверки</p>
+                <p className="text-xs text-gray-600">{t('autoria.moderation.needsReview')}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
-                <p className="text-xs text-gray-600">Отклонено</p>
+                <p className="text-xs text-gray-600">{t('autoria.moderation.rejected')}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-gray-600">{stats.blocked}</div>
-                <p className="text-xs text-gray-600">Заблокировано</p>
+                <p className="text-xs text-gray-600">{t('autoria.moderation.block')}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-                <p className="text-xs text-gray-600">Активных</p>
+                <p className="text-xs text-gray-600">{t('autoria.moderation.active')}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-blue-600">{stats.today_moderated}</div>
-                <p className="text-xs text-gray-600">Сегодня проверено</p>
+                <p className="text-xs text-gray-600">{t('autoria.moderation.todayModerated')}</p>
               </CardContent>
             </Card>
           </div>
@@ -355,14 +362,14 @@ const ModerationPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
-              Фильтры
+              {t('autoria.moderation.filters')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex gap-4">
               <div className="flex-1">
                 <Input
-                  placeholder="Поиск по заголовку, описанию, email..."
+                  placeholder={t('autoria.moderation.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full"
@@ -373,12 +380,12 @@ const ModerationPage = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">📋 Все объявления</SelectItem>
-                  <SelectItem value="pending">⏳ На модерации</SelectItem>
-                  <SelectItem value="needs_review">🔍 Требует проверки</SelectItem>
-                  <SelectItem value="rejected">❌ Отклонено</SelectItem>
-                  <SelectItem value="blocked">🚫 Заблокировано</SelectItem>
-                  <SelectItem value="active">✅ Активные</SelectItem>
+                  <SelectItem value="all">📋 {t('autoria.moderation.allStatuses')}</SelectItem>
+                  <SelectItem value="pending">⏳ {t('autoria.moderation.pendingModeration')}</SelectItem>
+                  <SelectItem value="needs_review">🔍 {t('autoria.moderation.needsReview')}</SelectItem>
+                  <SelectItem value="rejected">❌ {t('autoria.moderation.rejected')}</SelectItem>
+                  <SelectItem value="blocked">🚫 {t('autoria.moderation.block')}</SelectItem>
+                  <SelectItem value="active">✅ {t('autoria.moderation.active')}</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -390,8 +397,53 @@ const ModerationPage = () => {
                 className="flex items-center gap-2"
               >
                 <Search className="h-4 w-4" />
-                Обновить
+                {t('autoria.moderation.refresh')}
               </Button>
+              
+              {/* Sorting */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 hidden sm:inline">{t('autoria.moderation.sortBy')}:</span>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="created_at">{t('autoria.moderation.createdAt')}</SelectItem>
+                    <SelectItem value="title">{t('title')}</SelectItem>
+                    <SelectItem value="price">{t('autoria.moderation.price')}</SelectItem>
+                    <SelectItem value="status">{t('autoria.moderation.status')}</SelectItem>
+                    <SelectItem value="brand">{t('autoria.moderation.brand')}</SelectItem>
+                    <SelectItem value="year">{t('autoria.moderation.year')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  className="flex items-center gap-1"
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </Button>
+              </div>
+              
+              {/* View mode toggle */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 hidden sm:inline">{t('autoria.moderation.view')}:</span>
+                <div className="flex border rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 ${viewMode === 'grid' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 ${viewMode === 'list' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -400,7 +452,7 @@ const ModerationPage = () => {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-            <span className="ml-4">Загрузка...</span>
+            <span className="ml-4">{t('autoria.moderation.loadingModeration')}</span>
           </div>
         ) : ads.length === 0 ? (
           <Card>
@@ -408,15 +460,15 @@ const ModerationPage = () => {
               <div className="text-center py-12">
                 <Shield className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Объявлений не найдено
+                  {t('autoria.moderation.noAdsFound')}
                 </h3>
                 <p className="text-gray-600">
-                  Нет объявлений для модерации с выбранными фильтрами
+                  {t('autoria.moderation.noAdsDescription')}
                 </p>
               </div>
             </CardContent>
           </Card>
-        ) : (
+        ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {ads.map(ad => (
               <Card key={ad.id} className="hover:shadow-lg transition-shadow">
@@ -463,7 +515,7 @@ const ModerationPage = () => {
 
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <Clock className="h-4 w-4" />
-                      Создано: {formatDate(new Date(ad.created_at))}
+                      {t('autoria.moderation.created')}: {formatDate(new Date(ad.created_at))}
                     </div>
 
                     {/* Moderation Actions */}
@@ -472,34 +524,36 @@ const ModerationPage = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => setSelectedAd(ad)}
+                        className="h-9 px-4 min-w-[100px] flex items-center justify-center"
                       >
                         <Eye className="h-4 w-4 mr-1" />
-                        Просмотр
+                        {t('autoria.moderation.viewDetails')}
                       </Button>
 
                       {ad.status === 'pending' || ad.status === 'needs_review' ? (
                         <>
                           <Button
                             size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="bg-green-600 hover:bg-green-700 text-white h-9 px-4 min-w-[100px] flex items-center justify-center"
                             onClick={() => moderateAd(ad.id, 'approve')}
                           >
                             <Check className="h-4 w-4 mr-1" />
-                            Одобрить
+                            {t('autoria.moderation.approve')}
                           </Button>
 
                           <Button
                             size="sm"
                             variant="destructive"
+                            className="h-9 px-4 min-w-[100px] flex items-center justify-center"
                             onClick={() => {
-                              const reason = prompt('Причина отклонения:');
+                              const reason = prompt(t('autoria.moderation.rejectionReasonPrompt'));
                               if (reason) {
                                 moderateAd(ad.id, 'reject', reason);
                               }
                             }}
                           >
                             <X className="h-4 w-4 mr-1" />
-                            Отклонить
+                            {t('autoria.moderation.reject')}
                           </Button>
                         </>
                       ) : null}
@@ -507,36 +561,36 @@ const ModerationPage = () => {
                       {ad.status === 'rejected' ? (
                         <Button
                           size="sm"
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 min-w-[100px] flex items-center justify-center"
                           onClick={() => moderateAd(ad.id, 'review')}
                         >
                           <AlertTriangle className="h-4 w-4 mr-1" />
-                          На проверку
+                          {t('autoria.moderation.review')}
                         </Button>
                       ) : null}
 
                       {ad.status === 'active' ? (
                         <Button
                           size="sm"
-                          className="bg-gray-600 hover:bg-gray-700 text-white"
+                          className="bg-gray-600 hover:bg-gray-700 text-white h-9 px-4 min-w-[100px] flex items-center justify-center"
                           onClick={() => {
-                            const reason = prompt('Причина блокировки:');
+                            const reason = prompt(t('autoria.moderation.blockReason'));
                             if (reason) {
                               moderateAd(ad.id, 'block', reason);
                             }
                           }}
                         >
-                          🚫 Заблокировать
+                          🚫 {t('autoria.moderation.block')}
                         </Button>
                       ) : null}
 
                       {ad.status === 'blocked' ? (
                         <Button
                           size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="bg-green-600 hover:bg-green-700 text-white h-9 px-4 min-w-[100px] flex items-center justify-center"
                           onClick={() => moderateAd(ad.id, 'activate')}
                         >
-                          ✅ Активировать
+                          ✅ {t('autoria.moderation.activate')}
                         </Button>
                       ) : null}
                     </div>
@@ -545,6 +599,137 @@ const ModerationPage = () => {
               </Card>
             ))}
           </div>
+        ) : (
+          /* Table View */
+          <Card>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">ID</TableHead>
+                    <TableHead className="min-w-[200px]">{t('title')}</TableHead>
+                    <TableHead className="w-32">{t('autoria.moderation.brand')}/{t('autoria.moderation.model')}</TableHead>
+                    <TableHead className="w-24">{t('autoria.moderation.year')}</TableHead>
+                    <TableHead className="w-24">{t('autoria.moderation.price')}</TableHead>
+                    <TableHead className="w-32">{t('autoria.moderation.status')}</TableHead>
+                    <TableHead className="w-40">{t('autoria.moderation.user')}</TableHead>
+                    <TableHead className="w-32">{t('autoria.moderation.created')}</TableHead>
+                    <TableHead className="w-48">{t('autoria.moderation.actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ads.map(ad => (
+                    <TableRow key={ad.id} className="hover:bg-gray-50">
+                      <TableCell className="font-mono text-sm">{ad.id}</TableCell>
+                      <TableCell>
+                        <div className="max-w-[200px]">
+                          <div className="font-medium line-clamp-2 mb-1">{ad.title}</div>
+                          <div className="text-xs text-gray-500 line-clamp-2">{ad.description}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium">{ad.brand}</div>
+                          <div className="text-gray-500">{ad.model}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{ad.year}</TableCell>
+                      <TableCell className="text-sm font-medium text-green-600">
+                        {formatPrice(ad.price, ad.currency)}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(ad.status)}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium">{ad.user?.email}</div>
+                          <div className="text-gray-500">{ad.city}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500">
+                        {formatDate(new Date(ad.created_at))}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1 items-center justify-start">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedAd(ad)}
+                            className="h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            {t('autoria.moderation.viewDetails')}
+                          </Button>
+
+                          {ad.status === 'pending' || ad.status === 'needs_review' ? (
+                            <>
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                                onClick={() => moderateAd(ad.id, 'approve')}
+                              >
+                                <Check className="h-3 w-3 mr-1" />
+                                {t('autoria.moderation.approve')}
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                                onClick={() => {
+                                  const reason = prompt(t('autoria.moderation.rejectionReasonPrompt'));
+                                  if (reason) {
+                                    moderateAd(ad.id, 'reject', reason);
+                                  }
+                                }}
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                {t('autoria.moderation.reject')}
+                              </Button>
+                            </>
+                          ) : null}
+
+                          {ad.status === 'rejected' ? (
+                            <Button
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                              onClick={() => moderateAd(ad.id, 'review')}
+                            >
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              {t('autoria.moderation.review')}
+                            </Button>
+                          ) : null}
+
+                          {ad.status === 'active' ? (
+                            <Button
+                              size="sm"
+                              className="bg-gray-600 hover:bg-gray-700 text-white h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                              onClick={() => {
+                                const reason = prompt(t('autoria.moderation.blockReason'));
+                                if (reason) {
+                                  moderateAd(ad.id, 'block', reason);
+                                }
+                              }}
+                            >
+                              🚫 {t('autoria.moderation.block')}
+                            </Button>
+                          ) : null}
+
+                          {ad.status === 'blocked' ? (
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs min-w-[80px] flex items-center justify-center"
+                              onClick={() => moderateAd(ad.id, 'activate')}
+                            >
+                              ✅ {t('autoria.moderation.activate')}
+                            </Button>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
         )}
       </div>
     </div>
