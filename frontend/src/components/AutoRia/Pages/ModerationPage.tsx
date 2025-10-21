@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { CarAd } from '@/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAuth } from '@/contexts/AuthProviderContext';
+import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
 import { useUserProfileData } from '@/hooks/useUserProfileData';
 import { useToast } from '@/hooks/use-toast';
 
@@ -295,7 +295,7 @@ const ModerationPage = () => {
             <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
               <strong>Статус пользователя:</strong> {user?.email || 'Не авторизован'} |
               <strong> Суперюзер:</strong> {isSuperUser ? '✅ Да' : '❌ Нет'} |
-              <strong> isAuthenticated:</strong> {isAuthenticated ? '✅' : '❌'} |
+              <strong> useAutoRiaAuth:</strong> {isAuthenticated ? '✅' : '❌'} |
               <strong> authLoading:</strong> {authLoading ? '⏳' : '✅'} |
               <strong> userProfileData:</strong> {userProfileData?.user?.is_superuser ? '✅' : '❌'}
             </div>
