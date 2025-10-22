@@ -24,6 +24,7 @@ from .base_reference_view import (
     BaseReferenceListCreateView,
     BaseReferenceRetrieveUpdateDestroyView,
 )
+from .health_views import google_maps_api_key, health_check
 
 __all__ = [
     # Base CRUD views
@@ -45,4 +46,7 @@ __all__ = [
     "BaseAdRetrieveUpdateDestroyView",
     # Moderation views
     "BaseModerationListView",
+    # Health and config views
+    "health_check",
+    "google_maps_api_key",
 ]

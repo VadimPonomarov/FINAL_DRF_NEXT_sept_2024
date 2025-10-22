@@ -5,13 +5,13 @@ Handles all business logic related to car advertisements.
 
 from typing import Any, Dict, List, Optional
 
-from apps.ads.enums import AdStatusEnum
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from rest_framework import status
 from rest_framework.response import Response
 
 from apps.ads.models import CarAd
+from core.enums.ads import AdStatusEnum
 
 from .base_crud_service import BaseCRUDService
 
