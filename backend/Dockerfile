@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tcl8.6-dev \
     tk8.6-dev \
     python3-tk \
-    # Playwright dependencies
+    # System utilities
     wget \
     gnupg \
     ca-certificates \
@@ -58,9 +58,51 @@ RUN poetry config repositories.pypi https://pypi.org/simple && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --no-root
 
-# Install Playwright browsers
+# Install Playwright browsers for crawl4ai dynamic content parsing
+# First install chromium browser
 RUN playwright install chromium
-RUN playwright install-deps chromium
+
+# Install minimal system dependencies for Playwright
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libxss1 \
+    libasound2 \
+    libatspi2.0-0 \
+    libgtk-3-0 \
+    libgdk-pixbuf-xlib-2.0-0 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcb-dri3-0 \
+    libxcb-sync1 \
+    libxcb-xfixes0 \
+    libxcb-shape0 \
+    libxcb-randr0 \
+    libxcb-render0 \
+    libxcb-present0 \
+    libxcb-glx0 \
+    libxcb-keysyms1 \
+    libxcb-icccm4 \
+    libxcb-image0 \
+    libxcb-util1 \
+    libxcb-xinerama0 \
+    libxcb-xkb1 \
+    libxcb-cursor0 \
+    libxcb-xrm0 \
+    libxcb-xtest0 \
+    libxcb-xv0 \
+    libxcb-shm0 \
+    libxcb-xf86dri0 \
+    libxcb-dri2-0 \
+    libxcb-ewmh2 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the entire application (this ensures all files are available)
 COPY . .

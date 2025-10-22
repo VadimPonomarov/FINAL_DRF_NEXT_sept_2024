@@ -18,6 +18,9 @@ try:
 except ImportError:
     CRAWL4AI_AVAILABLE = False
     logger.warning("Crawl4AI not available. Install with: pip install crawl4ai")
+except Exception as e:
+    CRAWL4AI_AVAILABLE = False
+    logger.warning(f"Crawl4AI not available due to: {e}")
 
 
 class Crawl4AIService:
