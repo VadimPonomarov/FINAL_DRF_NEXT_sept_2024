@@ -54,13 +54,19 @@ const ImprovedResizableWrapper: FC<ImprovedResizableWrapperProps> = ({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const savedSize = localStorage.getItem(`wrapper-size-${storageKey}`);
+        // Проверяем оба ключа для совместимости
+        let savedSize = localStorage.getItem(`wrapper-size-${storageKey}`);
+        if (!savedSize) {
+          savedSize = localStorage.getItem('chatDialogSize');
+        }
+        
         if (savedSize) {
           const parsed = JSON.parse(savedSize);
           setSize({
             width: Math.max(parsed.width || defaultWidth, minWidth),
             height: Math.max(parsed.height || defaultHeight, minHeight)
           });
+          console.log(`Loaded size: ${parsed.width} x ${parsed.height}`);
         }
       } catch (error) {
         console.warn('Failed to load saved size:', error);
@@ -71,7 +77,10 @@ const ImprovedResizableWrapper: FC<ImprovedResizableWrapperProps> = ({
   // Сохранение размера
   const saveSize = useCallback((newSize: { width: number; height: number }) => {
     try {
+      // Сохраняем в оба ключа для совместимости
       localStorage.setItem(`wrapper-size-${storageKey}`, JSON.stringify(newSize));
+      localStorage.setItem('chatDialogSize', JSON.stringify(newSize));
+      console.log(`Saved size: ${newSize.width} x ${newSize.height}`);
     } catch (error) {
       console.warn('Failed to save size:', error);
     }
@@ -110,6 +119,8 @@ const ImprovedResizableWrapper: FC<ImprovedResizableWrapperProps> = ({
 
     const handleMouseUp = () => {
       setIsResizing(false);
+      
+      // Получаем актуальный размер из state
       const finalSize = { width: size.width, height: size.height };
       saveSize(finalSize);
       

@@ -235,14 +235,19 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
     // Закрываем модальное окно только если клик был по самому фону
     if (e.target === e.currentTarget) {
       if (isHydrated) {
-        const wrapper = document.querySelector('div[data-debug]');
-        if (wrapper) {
-          const width = (wrapper as HTMLElement).style.width || window.getComputedStyle(wrapper).width;
-          const height = (wrapper as HTMLElement).style.height || window.getComputedStyle(wrapper).height;
-          if (width && height) {
-            const size = { width, height };
+        // Сохраняем размер из resizable wrapper
+        const resizableWrapper = document.querySelector('.resizable-wrapper');
+        if (resizableWrapper) {
+          const computedStyle = window.getComputedStyle(resizableWrapper);
+          const wrapperWidth = computedStyle.width;
+          const wrapperHeight = computedStyle.height;
+          if (wrapperWidth && wrapperHeight) {
+            const size = { 
+              width: parseInt(wrapperWidth), 
+              height: parseInt(wrapperHeight) 
+            };
             localStorage.setItem('chatDialogSize', JSON.stringify(size));
-            console.log(`Saved size on backdrop click: ${width} x ${height}`);
+            console.log(`Saved size on backdrop click: ${size.width} x ${size.height}`);
           }
         }
       }
@@ -298,6 +303,22 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
           const size = { width, height };
           localStorage.setItem('chatDialogSize', JSON.stringify(size));
           console.log(`Saved size on close: ${width} x ${height}`);
+        }
+      }
+      
+      // Также сохраняем размер из ImprovedResizableWrapper
+      const resizableWrapper = document.querySelector('.resizable-wrapper');
+      if (resizableWrapper) {
+        const computedStyle = window.getComputedStyle(resizableWrapper);
+        const wrapperWidth = computedStyle.width;
+        const wrapperHeight = computedStyle.height;
+        if (wrapperWidth && wrapperHeight) {
+          const size = { 
+            width: parseInt(wrapperWidth), 
+            height: parseInt(wrapperHeight) 
+          };
+          localStorage.setItem('chatDialogSize', JSON.stringify(size));
+          console.log(`Saved size from resizable wrapper: ${size.width} x ${size.height}`);
         }
       }
     }
