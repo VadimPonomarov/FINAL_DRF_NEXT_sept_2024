@@ -38,6 +38,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tcl8.6-dev \
     tk8.6-dev \
     python3-tk \
+    # Playwright dependencies
+    wget \
+    gnupg \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Install latest Poetry
@@ -53,6 +57,10 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config repositories.pypi https://pypi.org/simple && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --no-root
+
+# Install Playwright browsers
+RUN playwright install chromium
+RUN playwright install-deps chromium
 
 # Copy the entire application (this ensures all files are available)
 COPY . .

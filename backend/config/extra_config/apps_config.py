@@ -89,8 +89,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
 # Internationalization
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = 'uk'  # Украинский язык
+TIME_ZONE = 'Europe/Kiev'  # Киевский часовой пояс (UTC+2/UTC+3)
 USE_I18N = True
 USE_TZ = True
 
