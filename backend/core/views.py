@@ -11,8 +11,9 @@ from core.security.key_manager import key_manager
 
 logger = logging.getLogger(__name__)
 
+
 @swagger_auto_schema(
-    method='get',
+    method="get",
     operation_summary="❤️ Health Check",
     operation_description="""
     Comprehensive health check endpoint for API server monitoring and status verification.
@@ -41,12 +42,12 @@ logger = logging.getLogger(__name__)
     """,
     manual_parameters=[
         openapi.Parameter(
-            'format',
+            "format",
             openapi.IN_QUERY,
             description="Response format preference",
             type=openapi.TYPE_STRING,
-            enum=['json', 'text'],
-            default='json'
+            enum=["json", "text"],
+            default="json",
         )
     ],
     responses={
@@ -55,76 +56,76 @@ logger = logging.getLogger(__name__)
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'status': openapi.Schema(
+                    "status": openapi.Schema(
                         type=openapi.TYPE_STRING,
                         description="Health status indicator",
-                        enum=['healthy', 'ok'],
-                        example='healthy'
+                        enum=["healthy", "ok"],
+                        example="healthy",
                     ),
-                    'timestamp': openapi.Schema(
+                    "timestamp": openapi.Schema(
                         type=openapi.TYPE_STRING,
                         format=openapi.FORMAT_DATETIME,
                         description="Server timestamp when health check was performed",
-                        example='2024-01-15T10:30:00Z'
+                        example="2024-01-15T10:30:00Z",
                     ),
-                    'version': openapi.Schema(
+                    "version": openapi.Schema(
                         type=openapi.TYPE_STRING,
                         description="API version",
-                        example='v1.0.0'
+                        example="v1.0.0",
                     ),
-                    'uptime': openapi.Schema(
+                    "uptime": openapi.Schema(
                         type=openapi.TYPE_INTEGER,
                         description="Server uptime in seconds",
-                        example=86400
-                    )
-                }
+                        example=86400,
+                    ),
+                },
             ),
             examples={
-                'application/json': {
-                    'status': 'healthy',
-                    'timestamp': '2024-01-15T10:30:00Z',
-                    'version': 'v1.0.0',
-                    'uptime': 86400
+                "application/json": {
+                    "status": "healthy",
+                    "timestamp": "2024-01-15T10:30:00Z",
+                    "version": "v1.0.0",
+                    "uptime": 86400,
                 }
-            }
+            },
         ),
         500: openapi.Response(
             description="Server health issues detected",
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'status': openapi.Schema(
+                    "status": openapi.Schema(
                         type=openapi.TYPE_STRING,
                         description="Health status indicator",
-                        enum=['unhealthy', 'error'],
-                        example='unhealthy'
+                        enum=["unhealthy", "error"],
+                        example="unhealthy",
                     ),
-                    'error': openapi.Schema(
+                    "error": openapi.Schema(
                         type=openapi.TYPE_STRING,
-                        description="Error message describing the issue"
+                        description="Error message describing the issue",
                     ),
-                    'timestamp': openapi.Schema(
+                    "timestamp": openapi.Schema(
                         type=openapi.TYPE_STRING,
                         format=openapi.FORMAT_DATETIME,
-                        description="Server timestamp when error occurred"
-                    )
-                }
+                        description="Server timestamp when error occurred",
+                    ),
+                },
             ),
             examples={
-                'application/json': {
-                    'status': 'unhealthy',
-                    'error': 'Database connection failed',
-                    'timestamp': '2024-01-15T10:30:00Z'
+                "application/json": {
+                    "status": "unhealthy",
+                    "error": "Database connection failed",
+                    "timestamp": "2024-01-15T10:30:00Z",
                 }
-            }
-        )
+            },
+        ),
     },
-    tags=['❤️ Health Check']
+    tags=["❤️ Health Check"],
 )
-@api_view(['GET', 'OPTIONS'])
+@api_view(["GET", "OPTIONS"])
 @permission_classes([AllowAny])
 def health_check(request):
-    if request.method == 'OPTIONS':
+    if request.method == "OPTIONS":
         response = Response()
         response["Access-Control-Allow-Origin"] = "http://localhost:3000"
         response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
@@ -135,27 +136,34 @@ def health_check(request):
 
 
 @swagger_auto_schema(
-    method='get',
+    method="get",
     operation_summary="🗺️ Get Google Maps API Key",
     operation_description="Get Google Maps API key for authenticated users to display maps.",
-    tags=['🔧 Configuration'],
+    tags=["🔧 Configuration"],
     responses={
         200: openapi.Response(
             description="Google Maps API key retrieved successfully",
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'api_key': openapi.Schema(type=openapi.TYPE_STRING, description='Google Maps API key'),
-                    'available': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Whether API key is available'),
-                    'message': openapi.Schema(type=openapi.TYPE_STRING, description='Status message'),
-                }
-            )
+                    "api_key": openapi.Schema(
+                        type=openapi.TYPE_STRING, description="Google Maps API key"
+                    ),
+                    "available": openapi.Schema(
+                        type=openapi.TYPE_BOOLEAN,
+                        description="Whether API key is available",
+                    ),
+                    "message": openapi.Schema(
+                        type=openapi.TYPE_STRING, description="Status message"
+                    ),
+                },
+            ),
         ),
         401: "Authentication required",
-        500: "Internal server error"
-    }
+        500: "Internal server error",
+    },
 )
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def google_maps_api_key(request):
     """
@@ -165,31 +173,39 @@ def google_maps_api_key(request):
     This endpoint requires authentication to prevent API key exposure.
     """
     try:
-        logger.info(f"[GoogleMapsAPIKey] User {request.user.id} requesting Google Maps API key")
+        logger.info(
+            f"[GoogleMapsAPIKey] User {request.user.id} requesting Google Maps API key"
+        )
 
         # Get Google Maps API key using key manager
         api_key = key_manager.google_maps_api_key
 
-        if api_key and api_key != 'YOUR_GOOGLE_MAPS_API_KEY_HERE':
+        if api_key and api_key != "YOUR_GOOGLE_MAPS_API_KEY_HERE":
             logger.info("[GoogleMapsAPIKey] ✅ Google Maps API key available")
-            return Response({
-                'api_key': api_key,
-                'available': True,
-                'message': 'Google Maps API key available'
-            })
+            return Response(
+                {
+                    "api_key": api_key,
+                    "available": True,
+                    "message": "Google Maps API key available",
+                }
+            )
         else:
             logger.warning("[GoogleMapsAPIKey] ❌ Google Maps API key not configured")
-            return Response({
-                'api_key': None,
-                'available': False,
-                'message': 'Google Maps API key not configured. Please set ENCRYPTED_GOOGLE_MAPS_API_KEY in environment.'
-            })
+            return Response(
+                {
+                    "api_key": None,
+                    "available": False,
+                    "message": "Google Maps API key not configured. Please set ENCRYPTED_GOOGLE_MAPS_API_KEY in environment.",
+                }
+            )
 
     except Exception as e:
         logger.error(f"[GoogleMapsAPIKey] ❌ Error retrieving Google Maps API key: {e}")
-        return Response({
-            'api_key': None,
-            'available': False,
-            'message': f'Error retrieving Google Maps API key: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)            'message': f'Error retrieving Google Maps API key: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {
+                "api_key": None,
+                "available": False,
+                "message": f"Error retrieving Google Maps API key: {str(e)}",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
