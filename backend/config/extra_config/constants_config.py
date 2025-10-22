@@ -84,7 +84,7 @@ CELERY_CONFIG = {
     'TASK_SERIALIZER': os.getenv('CELERY_TASK_SERIALIZER', 'json'),
     'ACCEPT_CONTENT': os.getenv('CELERY_ACCEPT_CONTENT', 'json').split(','),
     'RESULT_SERIALIZER': os.getenv('CELERY_RESULT_SERIALIZER', 'json'),
-    'TIMEZONE': os.getenv('CELERY_TIMEZONE', 'Europe/Kiev'),
+    'TIMEZONE': os.getenv('CELERY_TIMEZONE', 'Europe/Kyiv'),
     'ENABLE_UTC': os.getenv('CELERY_ENABLE_UTC', 'true').lower() == 'true',
     'TASK_TRACK_STARTED': os.getenv('CELERY_TASK_TRACK_STARTED', 'true').lower() == 'true',
     'TASK_TIME_LIMIT': int(os.getenv('CELERY_TASK_TIME_LIMIT', 30 * 60)),  # 30 minutes
@@ -193,7 +193,7 @@ LIMITS = {
 # =============================================================================
 I18N_CONFIG = {
     'LANGUAGE_CODE': os.getenv('LANGUAGE_CODE', 'uk'),
-    'TIME_ZONE': os.getenv('TIME_ZONE', 'Europe/Kiev'),
+    'TIME_ZONE': os.getenv('TIME_ZONE', 'Europe/Kyiv'),
     'USE_I18N': os.getenv('USE_I18N', 'true').lower() == 'true',
     'USE_TZ': os.getenv('USE_TZ', 'true').lower() == 'true',
     'LANGUAGES': [

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { ChatDialog } from "../ChatDialog";
-import NewResizableWrapper from "@/components/All/ResizableWrapper/NewResizableWrapper";
+import ImprovedResizableWrapper from "@/components/All/ResizableWrapper/ImprovedResizableWrapper";
 import SimpleScrollButtons from "../SimpleScrollButtons";
 import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
@@ -14,6 +14,9 @@ interface ChatBotIconViewProps {
   onBackdropClick: (e: React.MouseEvent) => void;
   onSaveSize: () => void;
   onAuthError: () => void;
+  onResizeStart?: () => void;
+  onResizeEnd?: (size: { width: number; height: number }) => void;
+  chatState?: any;
 }
 
 export const ChatBotIconView: React.FC<ChatBotIconViewProps> = ({
@@ -22,7 +25,10 @@ export const ChatBotIconView: React.FC<ChatBotIconViewProps> = ({
   // onCloseChat, // Не используется
   onBackdropClick,
   onSaveSize,
-  onAuthError
+  onAuthError,
+  onResizeStart,
+  onResizeEnd,
+  chatState
 }) => {
   return (
     <>
@@ -43,7 +49,7 @@ export const ChatBotIconView: React.FC<ChatBotIconViewProps> = ({
             className={unifiedStyles.chatDialogOverlay}
             onClick={onBackdropClick}
           >
-            <NewResizableWrapper
+            <ImprovedResizableWrapper
               storageKey="chat-dialog"
               className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col"
               defaultWidth={900}
@@ -51,9 +57,12 @@ export const ChatBotIconView: React.FC<ChatBotIconViewProps> = ({
               minWidth={320}
               minHeight={450}
               centered={true}
+              resizeTimeout={2000}
+              onResizeStart={onResizeStart}
+              onResizeEnd={onResizeEnd}
             >
               <ChatDialog onAuthError={onAuthError} useResizableSheet={false} />
-            </NewResizableWrapper>
+            </ImprovedResizableWrapper>
           </div>
           <SimpleScrollButtons />
         </>
