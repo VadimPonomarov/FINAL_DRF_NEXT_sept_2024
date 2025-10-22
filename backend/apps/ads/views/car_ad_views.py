@@ -2158,25 +2158,3 @@ def cleanup_all_ads(request):
             'deleted': 0
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            import re
-            match = re.search(r'удалено (\d+)', output)
-            if match:
-                deleted_count = int(match.group(1))
-
-        logger.info(f"✅ Cleanup completed via management command: {deleted_count} ads deleted")
-
-        return Response({
-            'success': True,
-            'deleted': deleted_count,
-            'output': output,
-            'message': f'Successfully deleted {deleted_count} car advertisements'
-        }, status=status.HTTP_200_OK)
-
-    except Exception as e:
-        logger.error(f"❌ Error during cleanup: {str(e)}")
-        return Response({
-            'success': False,
-            'error': str(e),
-            'deleted': 0
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-

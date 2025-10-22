@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ChatBotIconView } from './ChatBotIconView';
-import { useImprovedChatBotIconLogic } from './ImprovedChatBotIconLogic';
+import { useChatBotIconLogic } from './ChatBotIconLogic';
 import { ChatBotIconProps } from './types';
 
 export const ChatBotIcon: React.FC<ChatBotIconProps> = (props) => {
@@ -18,8 +18,8 @@ export const ChatBotIcon: React.FC<ChatBotIconProps> = (props) => {
     handleAuthError,
     handleResizeStart,
     handleResizeEnd,
-    chatState
-  } = useImprovedChatBotIconLogic(props);
+    resizeTimeout
+  } = useChatBotIconLogic(props);
 
   console.log('[ChatBotIcon] shouldShowChat:', shouldShowChat);
 
@@ -40,7 +40,7 @@ export const ChatBotIcon: React.FC<ChatBotIconProps> = (props) => {
       onAuthError={handleAuthError}
       onResizeStart={handleResizeStart}
       onResizeEnd={handleResizeEnd}
-      chatState={chatState}
+      resizeTimeout={resizeTimeout}
     />
   );
 };

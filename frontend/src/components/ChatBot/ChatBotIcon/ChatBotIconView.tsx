@@ -16,7 +16,7 @@ interface ChatBotIconViewProps {
   onAuthError: () => void;
   onResizeStart?: () => void;
   onResizeEnd?: (size: { width: number; height: number }) => void;
-  chatState?: any;
+  resizeTimeout?: NodeJS.Timeout | null;
 }
 
 export const ChatBotIconView: React.FC<ChatBotIconViewProps> = ({
@@ -28,7 +28,7 @@ export const ChatBotIconView: React.FC<ChatBotIconViewProps> = ({
   onAuthError,
   onResizeStart,
   onResizeEnd,
-  chatState
+  resizeTimeout
 }) => {
   return (
     <>

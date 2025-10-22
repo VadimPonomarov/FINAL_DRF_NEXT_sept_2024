@@ -220,8 +220,18 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
     }
   };
 
-  // Обработчик клика по фону
+  // Таймаут для предотвращения случайного закрытия
+  const [resizeTimeout, setResizeTimeout] = useState<NodeJS.Timeout | null>(null);
+  const RESIZE_TIMEOUT = 2000; // 2 секунды
+
+  // Обработчик клика по фону с улучшенной логикой
   const handleBackdropClick = (e: React.MouseEvent) => {
+    // Не закрываем если есть активный таймаут изменения размера
+    if (resizeTimeout) {
+      console.log('Resize timeout active, not closing chat');
+      return;
+    }
+
     // Закрываем модальное окно только если клик был по самому фону
     if (e.target === e.currentTarget) {
       if (isHydrated) {
@@ -242,6 +252,39 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
       disconnect(true);
       setIsOpen(false);
     }
+  };
+
+  // Функция для начала изменения размера
+  const handleResizeStart = () => {
+    // Очищаем предыдущий таймаут
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+    }
+    
+    // Устанавливаем новый таймаут
+    const timeout = setTimeout(() => {
+      setResizeTimeout(null);
+    }, RESIZE_TIMEOUT);
+    
+    setResizeTimeout(timeout);
+    console.log('Resize started, timeout set');
+  };
+
+  // Функция для окончания изменения размера
+  const handleResizeEnd = (newSize: { width: number; height: number }) => {
+    // Сохраняем размер
+    if (isHydrated) {
+      localStorage.setItem('chatDialogSize', JSON.stringify(newSize));
+      console.log(`Saved size on resize end: ${newSize.width} x ${newSize.height}`);
+    }
+    
+    // Очищаем таймаут
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+      setResizeTimeout(null);
+    }
+    
+    console.log('Resize ended, timeout cleared');
   };
 
   // Обработчик сохранения размеров перед закрытием
@@ -369,6 +412,9 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
     handleCloseChat,
     handleBackdropClick,
     handleSaveSize,
-    handleAuthError
+    handleAuthError,
+    handleResizeStart,
+    handleResizeEnd,
+    resizeTimeout
   };
 };
