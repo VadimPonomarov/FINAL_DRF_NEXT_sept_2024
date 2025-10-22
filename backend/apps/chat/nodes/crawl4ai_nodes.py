@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 try:
     from crawl4ai import AsyncWebCrawler
     from crawl4ai.extraction_strategy import LLMExtractionStrategy
+    from crawl4ai.llm_config import LLMConfig
+    import g4f
+    from g4f.client import Client
     CRAWL4AI_AVAILABLE = True
 except ImportError:
     CRAWL4AI_AVAILABLE = False
@@ -62,11 +65,22 @@ class Crawl4AIService:
                 
                 # Add extraction strategy if provided
                 if extraction_strategy:
-                    crawl_params["extraction_strategy"] = LLMExtractionStrategy(
-                        provider="openai/gpt-4o-mini",
-                        api_token=None,  # Will use default or environment
-                        instruction=extraction_strategy
-                    )
+                    try:
+                        # Create LLM config with g4f provider
+                        llm_config = LLMConfig(
+                            provider="g4f",
+                            model="gpt-4o",
+                            api_key=None,  # g4f doesn't need API key
+                            instruction=extraction_strategy
+                        )
+                        
+                        crawl_params["extraction_strategy"] = LLMExtractionStrategy(
+                            llm_config=llm_config
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to create LLM strategy: {e}")
+                        # Fallback to basic extraction
+                        crawl_params["extraction_strategy"] = None
                 
                 result = await crawler.arun(**crawl_params)
                 
