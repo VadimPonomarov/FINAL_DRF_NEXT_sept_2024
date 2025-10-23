@@ -347,24 +347,62 @@ class EnhancedChatConsumer(AsyncWebsocketConsumer):
                 # Handle list of messages format
                 if response.get("response"):
                     for msg in response.get("response", []):
-                        await self.send(text_data=json.dumps({
+                        message_data = {
                             "type": "message",
                             "message": msg["content"],
                             "role": msg["role"],
                             "timestamp": msg.get("timestamp", datetime.now().isoformat()),
                             "metadata": msg.get("metadata", {}),
                             "session_id": self.session_id
-                        }))
+                        }
+                        
+                        # Add image_url if present in msg directly OR in metadata
+                        if msg.get("image_url"):
+                            message_data["image_url"] = msg["image_url"]
+                        elif msg.get("metadata", {}).get("image_url"):
+                            message_data["image_url"] = msg["metadata"]["image_url"]
+                        
+                        # Add table data if present
+                        if msg.get("table_html"):
+                            message_data["table_html"] = msg["table_html"]
+                        if msg.get("table_data"):
+                            message_data["table_data"] = msg["table_data"]
+                        
+                        await self.send(text_data=json.dumps(message_data))
+
                 # Handle single result format (from agent)
                 elif response.get("result"):
-                    await self.send(text_data=json.dumps({
+                    message_data = {
                         "type": "message",
                         "message": response["result"],
                         "role": "assistant",
                         "timestamp": datetime.now().isoformat(),
                         "metadata": response.get("metadata", {}),
                         "session_id": self.session_id
-                    }))
+                    }
+                    
+                    # Add image_url if present in response
+                    if response.get("image_url"):
+                        message_data["image_url"] = response["image_url"]
+                    
+                    # Add table data if present (for price tables, etc.)
+                    if response.get("table_html"):
+                        message_data["table_html"] = response["table_html"]
+                    if response.get("table_data"):
+                        message_data["table_data"] = response["table_data"]
+                    
+                    await self.send(text_data=json.dumps(message_data))
+
+                    # Send images if present in state
+                    if response.get("images"):
+                        for image_url in response["images"]:
+                            await self.send(text_data=json.dumps({
+                                "type": "image",
+                                "image_url": image_url,
+                                "timestamp": datetime.now().isoformat(),
+                                "metadata": response.get("metadata", {}),
+                                "session_id": self.session_id
+                            }))
 
                 # Send metadata if present
                 if response.get("metadata"):

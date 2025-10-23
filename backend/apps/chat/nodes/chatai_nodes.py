@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 def _translate_to_english(text: str) -> str:
     """
-    Translate text to English using ChatAI for better image generation.
+    Translate text to English using simple dictionary for better image generation.
+    Избегаем использования g4f.ChatCompletion т.к. требует логин.
 
     Args:
         text: Text to translate
@@ -26,33 +27,51 @@ def _translate_to_english(text: str) -> str:
         if _is_english(text):
             return text
 
-        # Create translation prompt
-        translation_prompt = f"""Translate the following text to English for image generation.
-        Keep it concise and descriptive for AI image generation:
-
-        Text: {text}
-
-        English translation:"""
-
-        response = g4f.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": translation_prompt}],
-            stream=False
-        )
-
-        # Clean up the response
-        english_text = str(response).strip()
-        # Remove common prefixes
-        prefixes_to_remove = ["English translation:", "Translation:", "English:"]
-        for prefix in prefixes_to_remove:
-            if english_text.startswith(prefix):
-                english_text = english_text[len(prefix):].strip()
-
-        logger.info(f"Translated '{text}' -> '{english_text}'")
+        # Простой словарь для базовых переводов (без API)
+        ru_to_en_dict = {
+            'создай': 'create', 'сгенерируй': 'generate', 'нарисуй': 'draw',
+            'портрет': 'portrait', 'изображение': 'image', 'картинку': 'picture',
+            'в стиле': 'in style of', 'реалистичный': 'realistic', 'реализм': 'photorealistic',
+            'карикатура': 'caricature', 'карикатурный': 'caricature style',
+            'дональда трампа': 'Donald Trump', 'трампа': 'Trump',
+            'человека': 'person', 'мужчины': 'man', 'женщины': 'woman',
+            'кота': 'cat', 'собаки': 'dog', 'пейзаж': 'landscape',
+            'абстрактный': 'abstract', 'минимализм': 'minimalism',
+        }
+        
+        # Переводим по словам
+        words = text.lower().split()
+        translated_words = []
+        
+        i = 0
+        while i < len(words):
+            # Пытаемся найти фразу из 2-3 слов
+            found = False
+            for phrase_len in [3, 2, 1]:
+                if i + phrase_len <= len(words):
+                    phrase = ' '.join(words[i:i+phrase_len])
+                    if phrase in ru_to_en_dict:
+                        translated_words.append(ru_to_en_dict[phrase])
+                        i += phrase_len
+                        found = True
+                        break
+            if not found:
+                # Слово не найдено в словаре - оставляем как есть
+                translated_words.append(words[i])
+                i += 1
+        
+        english_text = ' '.join(translated_words).strip()
+        
+        # Если перевод почти не изменился или пустой, возвращаем оригинал
+        if not english_text or len(english_text) < 3:
+            logger.warning(f"⚠️ Translation too short, using original: '{text}'")
+            return text
+        
+        logger.info(f"✅ Translated (dict): '{text}' -> '{english_text}'")
         return english_text
 
     except Exception as e:
-        logger.warning(f"Translation failed: {e}, using original text")
+        logger.warning(f"⚠️ Translation failed: {e}, using original text")
         return text
 
 
@@ -139,22 +158,15 @@ def _detect_language(text: str) -> str:
 
 
 def _generate_image_response(original_prompt: str, english_prompt: str, image_url: str, user_language: str) -> str:
-    """Generate image response message in the user's language."""
+    """Generate image response message in the user's language - MINIMAL TEXT, image is the main content."""
     try:
-        # Create response based on detected language
+        # МИНИМАЛЬНЫЙ текст - картинка говорит сама за себя
         if user_language == 'ru':
-            if original_prompt != english_prompt:
-                response = f"Я создал изображение по вашему запросу: {original_prompt}\n\nАнглийский промпт: {english_prompt}\n\nСсылка на изображение: {image_url}"
-            else:
-                response = f"Я создал изображение по вашему запросу: {original_prompt}\n\nСсылка на изображение: {image_url}"
+            response = f"🎨 {original_prompt}"
         else:
-            # Default to English
-            if original_prompt != english_prompt:
-                response = f"I've generated an image based on your request: {original_prompt}\n\nEnglish prompt used: {english_prompt}\n\nImage URL: {image_url}"
-            else:
-                response = f"I've generated an image based on your request: {original_prompt}\n\nImage URL: {image_url}"
+            response = f"🎨 {original_prompt}"
 
-        logger.info(f"Generated response in {user_language}: {response[:100]}...")
+        logger.info(f"Generated minimal response: {response[:100]}...")
         return response
 
     except Exception as e:
@@ -206,24 +218,31 @@ class ChatAIService:
             raise
     
     def generate_image(self, prompt: str, model: Optional[str] = None) -> str:
-        """Generate image using ChatAI flux-schnell."""
+        """Generate image using pollinations.ai with flux model - always free, no auth required."""
         try:
-            # Use the client for image generation
-            response = self.client.images.generate(
-                model=model or self.image_model,
-                prompt=prompt,
-                response_format="url"
-            )
+            import urllib.parse
+            import time
             
-            if hasattr(response, 'data') and response.data:
-                return response.data[0].url
-            else:
-                # Fallback for different response formats
-                return str(response)
+            logger.info(f"🎨 Generating image with pollinations.ai flux model: {prompt[:50]}...")
+            
+            # Создаем уникальный seed для каждого изображения
+            seed = abs(hash(f"{prompt}_{int(time.time())}")) % 1000000
+            
+            # Кодируем промпт для URL
+            encoded_prompt = urllib.parse.quote(prompt)
+            
+            # Генерируем URL изображения через pollinations.ai с flux моделью
+            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&model=flux&enhance=true&seed={seed}&nologo=true"
+            
+            logger.info(f"✅ Image URL generated: {image_url[:100]}...")
+            return image_url
                 
         except Exception as e:
-            logger.error(f"ChatAI image generation error: {e}")
-            raise
+            logger.error(f"❌ Image generation error: {e}")
+            # Даже при ошибке возвращаем URL (pollinations.ai очень надежный)
+            import urllib.parse
+            encoded_prompt = urllib.parse.quote(prompt)
+            return f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&model=flux&nologo=true"
 
 
 # Global service instance
@@ -328,6 +347,14 @@ def chatai_image_node(state: AgentState) -> AgentState:
 
         # Generate image
         image_url = chatai_service.generate_image(english_prompt)
+        
+        # КРИТИЧЕСКАЯ ПРОВЕРКА
+        if not image_url or image_url.strip() == "":
+            logger.error(f"❌ Image URL is EMPTY! Prompt was: '{english_prompt}'")
+            image_url = chatai_service.generate_image(original_prompt)  # Попытка с оригинальным промптом
+            logger.warning(f"⚠️ Retry with original prompt, URL: {image_url[:100] if image_url else 'STILL EMPTY'}")
+        
+        logger.info(f"✅ Generated image URL: {image_url[:150] if image_url else 'EMPTY!!!'}")
 
         # Store image URL
         state.images.append(image_url)
@@ -340,6 +367,7 @@ def chatai_image_node(state: AgentState) -> AgentState:
         
         return state.model_copy(update={
             "result": response,
+            "image_url": image_url,  # Add image_url directly to state
             "images": state.images,
             "metadata": {
                 **state.metadata,
@@ -347,7 +375,8 @@ def chatai_image_node(state: AgentState) -> AgentState:
                 "original_prompt": original_prompt,
                 "english_prompt": english_prompt,
                 "user_language": user_language,
-                "translation_used": original_prompt != english_prompt
+                "translation_used": original_prompt != english_prompt,
+                "image_url": image_url  # Also add to metadata for backwards compatibility
             }
         })
         

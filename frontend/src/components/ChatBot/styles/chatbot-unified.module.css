@@ -829,6 +829,8 @@
   background: rgba(0, 0, 0, 0.7);
   border-radius: 6px;
   padding: 4px;
+  z-index: 100;
+  pointer-events: auto;
 }
 
 .imageControlButton {

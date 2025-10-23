@@ -2,11 +2,12 @@
 Enhanced types and state for multi-tool chat agent with ChatAI integration.
 """
 
-from typing import Optional, List, Dict, Any, Union
-from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+
 import pandas as pd
+from pydantic import BaseModel, Field
 
 
 class DataMode(str, Enum):
@@ -41,6 +42,7 @@ class Intent(str, Enum):
 
     # Utility
     DATETIME = "datetime"                   # Date/time queries
+    MATHEMATICS = "mathematics"             # Mathematical calculations and operations
 
 
 class ChatMessage(BaseModel):
@@ -98,6 +100,11 @@ class AgentState(BaseModel):
     df: Optional[pd.DataFrame] = Field(default=None, description="Structured data")
     html: Optional[str] = Field(default=None, description="HTML content")
     images: List[str] = Field(default_factory=list, description="Image URLs or paths")
+    image_url: Optional[str] = Field(default=None, description="Primary image URL for current response")
+    
+    # Table data for beautiful rendering
+    table_html: Optional[str] = Field(default=None, description="HTML table for rendering")
+    table_data: Optional[List[Dict[str, Any]]] = Field(default=None, description="Raw table data (list of dicts)")
 
     # Error handling
     error: Optional[str] = Field(default=None, description="Error message")

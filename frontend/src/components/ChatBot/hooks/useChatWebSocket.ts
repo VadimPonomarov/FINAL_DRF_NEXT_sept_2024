@@ -33,6 +33,8 @@ export const useChatWebSocket = ({
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 3;
+  const lastReconnectTime = useRef<number>(0);
+  const reconnectDelay = useRef<number>(1000); // Начальная задержка 1 секунда
 
   // Track connection attempts and welcome messages to prevent duplicates
   const connectionAttemptRef = useRef<string | null>(null);
@@ -118,6 +120,48 @@ export const useChatWebSocket = ({
           wsLogger.info(
             "Forcing token refresh due to auth error or explicit request",
           );
+
+          // ✅ КРИТИЧНО: Проверяем наличие refresh токена в Redis ПЕРЕД попыткой refresh
+          try {
+            const redisCheckResponse = await fetch("/api/redis?key=backend_auth");
+            if (redisCheckResponse.ok) {
+              const redisData = await redisCheckResponse.json();
+              
+              // Если токенов вообще нет в Redis - редирект на логин
+              if (!redisData.exists || !redisData.value) {
+                wsLogger.error("No tokens in Redis - redirecting to login");
+                console.log("[Token Refresh] No tokens in Redis - redirecting to login");
+                redirectToLogin("Authentication required. Please login.");
+                return null;
+              }
+              
+              // Парсим токены
+              const tokenData = typeof redisData.value === 'string' 
+                ? JSON.parse(redisData.value) 
+                : redisData.value;
+              
+              // Если нет refresh токена - не можем обновить, редирект на логин
+              if (!tokenData.refresh) {
+                wsLogger.error("No refresh token found in Redis - redirecting to login");
+                console.log("[Token Refresh] No refresh token - redirecting to login");
+                redirectToLogin("Session expired. Please login again.");
+                return null;
+              }
+              
+              // Refresh токен есть - продолжаем попытку обновления
+              wsLogger.info("Refresh token found in Redis - proceeding with token refresh");
+            } else {
+              // Не можем прочитать Redis - редирект на логин
+              wsLogger.error("Could not check Redis - redirecting to login");
+              redirectToLogin("Authentication error. Please login again.");
+              return null;
+            }
+          } catch (redisError) {
+            wsLogger.error("Error checking Redis tokens", redisError);
+            // При ошибке проверки Redis - редирект на логин
+            redirectToLogin("Authentication error. Please login again.");
+            return null;
+          }
 
           // Проверяем, не превысили ли мы максимальное количество попыток
           if (tokenRefreshAttemptsRef.current >= MAX_TOKEN_REFRESH_ATTEMPTS) {
@@ -335,6 +379,19 @@ export const useChatWebSocket = ({
         return;
       }
 
+      // Проверяем, прошло ли достаточно времени с последней попытки
+      const now = Date.now();
+      const timeSinceLastReconnect = now - lastReconnectTime.current;
+      
+      if (timeSinceLastReconnect < reconnectDelay.current) {
+        const waitTime = reconnectDelay.current - timeSinceLastReconnect;
+        wsLogger.info(`Rate limiting: waiting ${waitTime}ms before reconnect attempt`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+      
+      // Обновляем время последней попытки
+      lastReconnectTime.current = Date.now();
+
       // If already connected to the same channel, do nothing
       if (
         socketRef.current &&
@@ -426,24 +483,18 @@ export const useChatWebSocket = ({
           token = await getAccessToken(true); // Принудительное обновление
         }
 
+        // ✅ КРИТИЧНО: Токен обязателен для подключения
         if (!token) {
-          wsLogger.error("Failed to get access token after all attempts");
+          wsLogger.error("No access token available - cannot connect to WebSocket");
+          console.log("[WebSocket] No token - cannot connect, redirecting to login");
           setIsConnecting(false);
-
-          if (tokenRefreshAttemptsRef.current >= MAX_TOKEN_REFRESH_ATTEMPTS) {
-            handleTokenFailure();
-          } else {
-            // Еще одна попытка через некоторое время
-            setTimeout(() => {
-              connect(targetChannelId, sendGreeting);
-            }, 2000);
-          }
+          
+          // Редирект на логин
+          redirectToLogin("Authentication required. Please login to use chat.");
           return;
         }
 
-        // Эта проверка уже не нужна, так как обработана выше
-
-        // Используем serviceUrlResolver для правильного определения WebSocket URL
+        // Используем serviceUrlResolver для правильного определения WebSocket URL с токеном
         const baseUrl = await resolveServiceUrl('backend', `/api/chat/${targetChannelId}/?token=${token}`);
         const wsUrl = baseUrl.replace(/^http/, 'ws');
 
@@ -499,6 +550,7 @@ export const useChatWebSocket = ({
           // Сбрасываем счетчики при успешном подключении
           tokenRefreshAttemptsRef.current = 0;
           reconnectAttempts.current = 0;
+          reconnectDelay.current = 1000; // Сбрасываем задержку к начальному значению
 
           // Dispatch event for connection established
           window.dispatchEvent(
@@ -626,6 +678,14 @@ export const useChatWebSocket = ({
             wsLogger.info('Not reconnecting: chat is hidden or explicitly disconnected');
             return;
           }
+
+          // Увеличиваем счетчик попыток переподключения
+          reconnectAttempts.current += 1;
+          
+          // Увеличиваем задержку экспоненциально (1s -> 2s -> 4s)
+          reconnectDelay.current = Math.min(reconnectDelay.current * 2, 5000);
+          
+          wsLogger.info(`Reconnect attempt ${reconnectAttempts.current}/${maxReconnectAttempts}, delay: ${reconnectDelay.current}ms`);
 
           // Обрабатываем ошибки авторизации
           if (event.code === 1008 || event.code === 4001) {

@@ -5,7 +5,7 @@ import React from 'react';
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
-export type MessageType = 'chat_message' | 'system_message' | 'error_message' | 'response_end' | 'file_message';
+export type MessageType = 'chat_message' | 'system_message' | 'error_message' | 'response_end' | 'file_message' | 'image';
 
 export interface FileAttachment {
   file_id: string;

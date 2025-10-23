@@ -107,7 +107,10 @@ class EnhancedChatAgent:
                 metadata={
                     "intent": final_state.intent.value if final_state.intent else None,
                     "data_mode": final_state.data_mode.value if final_state.data_mode else None,
-                    "processing_time": processing_time
+                    "processing_time": processing_time,
+                    "image_url": final_state.image_url,  # Save image_url for history
+                    "table_html": final_state.table_html,  # Save table for history
+                    "table_data": final_state.table_data   # Save table data for history
                 }
             )
             self.chat_history.append(assistant_message)
@@ -154,7 +157,7 @@ class EnhancedChatAgent:
     def _create_success_response(self, result: str, state: AgentState,
                                processing_time: int) -> Dict[str, Any]:
         """Create structured success response for frontend."""
-        return {
+        response_data = {
             "success": True,
             "response": [
                 {
@@ -178,7 +181,22 @@ class EnhancedChatAgent:
                 "agent_version": "enhanced_v1.0"
             }
         }
-
+        
+        # Add image_url if present in state
+        if state.image_url:
+            response_data["image_url"] = state.image_url
+            response_data["response"][0]["image_url"] = state.image_url
+        
+        # Add table data if present in state  
+        if state.table_html:
+            response_data["table_html"] = state.table_html
+            response_data["response"][0]["table_html"] = state.table_html
+        if state.table_data:
+            response_data["table_data"] = state.table_data
+            response_data["response"][0]["table_data"] = state.table_data
+        
+        return response_data
+        
     def _create_error_response(self, error_message: str,
                              processing_time: Optional[int] = None) -> Dict[str, Any]:
         """Create structured error response for frontend."""
@@ -206,15 +224,27 @@ class EnhancedChatAgent:
 
     def get_chat_history(self) -> List[Dict[str, Any]]:
         """Get formatted chat history for frontend."""
-        return [
-            {
+        history = []
+        for msg in self.chat_history:
+            msg_dict = {
                 "role": msg.role,
                 "content": msg.content,
                 "timestamp": msg.timestamp.isoformat(),
-                "metadata": msg.metadata
+                "metadata": msg.metadata or {}
             }
-            for msg in self.chat_history
-        ]
+            
+            # Extract image_url and table data from metadata if present
+            if msg.metadata:
+                if "image_url" in msg.metadata and msg.metadata["image_url"]:
+                    msg_dict["image_url"] = msg.metadata["image_url"]
+                if "table_html" in msg.metadata and msg.metadata["table_html"]:
+                    msg_dict["table_html"] = msg.metadata["table_html"]
+                if "table_data" in msg.metadata and msg.metadata["table_data"]:
+                    msg_dict["table_data"] = msg.metadata["table_data"]
+            
+            history.append(msg_dict)
+        
+        return history
 
     def clear_history(self) -> None:
         """Clear chat history."""

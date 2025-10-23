@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bot, User, Trash2, Download, ZoomIn, ZoomOut, Maximize, Minimize, AlertTriangle } from "lucide-react";
+import { Bot, User, Trash2, Download, ZoomIn, ZoomOut, Maximize, Minimize, AlertTriangle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from 'next/image';
 import { ImageSkeleton } from "../ImageSkeleton";
@@ -35,6 +35,7 @@ interface ChatMessageViewProps {
   onZoomOut: () => void;
   onDownload: () => void;
   onToggleFullscreen: () => void;
+  onResetSize?: () => void;
   // New context props
   contextInfo?: {
     threadId: string;
@@ -70,6 +71,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
   onZoomOut,
   onDownload,
   onToggleFullscreen,
+  onResetSize,
   contextInfo,
   onThreadClick,
   showContext,
@@ -188,52 +190,63 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
                   }}
                   onLoad={onImageLoad}
                   onError={onImageError}
-                  className={`rounded-lg ${imageState.loaded ? 'opacity-100 z-20' : 'opacity-0 z-10'} transition-opacity duration-300`}
+                  className={`rounded-lg ${imageState.loaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
                   loading="eager"
                   decoding="async"
                   crossOrigin="anonymous"
                 />
               </div>
 
-            {/* Элементы управления изображением */}
-            <div className={unifiedStyles.imageControls}>
-              <Button
-                variant="secondary"
-                size="icon"
-                onClick={onZoomOut}
-                title="Уменьшить"
-                className={`${unifiedStyles.imageControlButton} h-8 w-8`}
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                onClick={onZoomIn}
-                title="Увеличить"
-                className={`${unifiedStyles.imageControlButton} h-8 w-8`}
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                onClick={onDownload}
-                title="Скачать"
-                className={`${unifiedStyles.imageControlButton} h-8 w-8`}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                onClick={onToggleFullscreen}
-                title={imageState.isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
-                className={`${unifiedStyles.imageControlButton} h-8 w-8`}
-              >
-                {imageState.isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-              </Button>
-            </div>
+              {/* Элементы управления изображением - НИЖЕ изображения */}
+              <div className="flex justify-center gap-2 mt-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onZoomOut}
+                  title="Уменьшить"
+                  className="h-9 w-9 bg-white hover:bg-gray-100 border-2"
+                >
+                  <ZoomOut className="h-4 w-4 text-gray-700" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onZoomIn}
+                  title="Увеличить"
+                  className="h-9 w-9 bg-white hover:bg-gray-100 border-2"
+                >
+                  <ZoomIn className="h-4 w-4 text-gray-700" />
+                </Button>
+                {onResetSize && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onResetSize}
+                    title="Сбросить размер"
+                    className="h-9 w-9 bg-white hover:bg-gray-100 border-2"
+                  >
+                    <RotateCcw className="h-4 w-4 text-gray-700" />
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onDownload}
+                  title="Скачать"
+                  className="h-9 w-9 bg-white hover:bg-gray-100 border-2"
+                >
+                  <Download className="h-4 w-4 text-gray-700" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onToggleFullscreen}
+                  title={imageState.isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
+                  className="h-9 w-9 bg-white hover:bg-gray-100 border-2"
+                >
+                  {imageState.isFullscreen ? <Minimize className="h-4 w-4 text-gray-700" /> : <Maximize className="h-4 w-4 text-gray-700" />}
+                </Button>
+              </div>
           </div>
         )}
 

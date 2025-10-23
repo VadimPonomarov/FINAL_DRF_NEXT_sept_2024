@@ -4,12 +4,13 @@ LangChain-based intent classifier with structured output parsing.
 
 import logging
 from typing import Optional
-from pydantic import BaseModel, Field
-from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from apps.chat.types.types import Intent, DataMode, AgentState
+
 import g4f
+from langchain.output_parsers import PydanticOutputParser
+from langchain.prompts import PromptTemplate
+from pydantic import BaseModel, Field
+
+from apps.chat.types.types import AgentState, DataMode, Intent
 
 logger = logging.getLogger(__name__)
 
@@ -27,25 +28,161 @@ class LangChainIntentClassifier:
     """LangChain-based intent classifier with structured output parsing."""
     
     def __init__(self):
+        self.classification_examples = self._build_classification_examples()
         self.parser = PydanticOutputParser(pydantic_object=IntentClassificationResult)
         self.prompt = self._create_prompt_template()
         self.chain = self._create_classification_chain()
+
+    def _build_classification_examples(self) -> str:
+        """Build comprehensive examples for few-shot learning."""
+        examples = []
+
+        # FACTUAL_SEARCH + REALTIME examples (current information)
+        realtime_examples = [
+            ("кто президент сша на сегодня", "Current political figures require up-to-date information"),
+            ("who is the current president of the united states", "Questions about active leaders"),
+            ("who is the president of usa", "Current US president information"),
+            ("who is president of united states", "Current US political leadership"),
+            ("current president usa", "Current US president"),
+            ("who is the president of the united states right now", "Current US president"),
+            ("какие последние новости в мире", "Recent news and developments"),
+            ("what are the recent political developments", "Current events and changes"),
+            ("кто выиграл последние выборы в США", "Recent elections and appointments"),
+            ("who won the recent US elections", "Political changes and outcomes"),
+            ("кто является текущим президентом Украины", "Current government positions"),
+            ("what is the current stock price of Apple", "Real-time market data"),
+            ("current weather in New York", "Live conditions and updates"),
+            ("what is happening now", "Current events and real-time updates"),
+            ("who is the current CEO of Google", "Current business leadership"),
+            ("latest sports scores", "Live sports information"),
+            ("who is president of russia", "Current Russian president"),
+            ("who is president of ukraine", "Current Ukrainian president"),
+            ("who is president of germany", "Current German president"),
+            ("who is president of france", "Current French president"),
+            ("who is prime minister of uk", "Current UK prime minister"),
+            ("who is chancellor of germany", "Current German chancellor")
+        ]
+
+        examples.append("FACTUAL_SEARCH + REALTIME (current information needed):")
+        for query, explanation in realtime_examples:
+            examples.append(f"- \"{query}\" → {explanation}")
+
+        # GENERAL_CHAT + HISTORICAL examples (general knowledge)
+        general_examples = [
+            ("привет как дела", "Casual conversation and greetings"),
+            ("hello how are you", "Social interaction"),
+            ("расскажи о погоде", "General questions without time sensitivity"),
+            ("tell me a joke", "Entertainment and casual talk"),
+            ("как приготовить борщ", "Instructions and recipes"),
+            ("how to cook borscht", "General knowledge and procedures"),
+            ("что такое машинное обучение", "Educational content and explanations"),
+            ("what is machine learning", "Conceptual understanding"),
+            ("explain quantum physics", "Theoretical knowledge"),
+            ("how does photosynthesis work", "Scientific explanations")
+        ]
+
+        examples.append("\nGENERAL_CHAT + HISTORICAL (general knowledge):")
+        for query, explanation in general_examples:
+            examples.append(f"- \"{query}\" → {explanation}")
+
+        # MATHEMATICS examples
+        math_examples = [
+            ("сколько будет 2+2", "Mathematical calculations"),
+            ("what is 15 * 23", "Arithmetic operations"),
+            ("вычисли квадратный корень из 144", "Mathematical functions"),
+            ("calculate the square root of 144", "Numerical computations"),
+            ("реши уравнение x^2 = 16", "Equations and problem solving"),
+            ("what is 2 to the power of 8", "Exponents and powers")
+        ]
+
+        examples.append("\nMATHEMATICS + HISTORICAL (calculations and equations):")
+        for query, explanation in math_examples:
+            examples.append(f"- \"{query}\" → {explanation}")
+
+        # Creative and generation examples
+        creative_examples = [
+            ("нарисуй красивый пейзаж", "Creative image requests"),
+            ("draw a beautiful landscape", "Visual content creation"),
+            ("создай изображение кота в шляпе", "Imaginative artwork"),
+            ("create an image of a cat in a hat", "Artistic generation"),
+            ("создай портрет кота в стиле карикатура", "Portrait generation"),
+            ("create portrait Donald Trump caricature style", "Celebrity portrait requests"),
+            ("нарисуй портрет трампа", "Portrait drawing requests"),
+            ("draw a portrait of", "Portrait creation"),
+            ("создай картинку", "Image creation requests"),
+            ("generate an image", "Image generation"),
+            ("сгенерируй изображение", "Image synthesis"),
+            ("make a picture", "Picture creation"),
+            ("напиши стихотворение о море", "Creative TEXT writing - not image"),
+            ("write a poem about the ocean", "Literary TEXT creation - not image")
+        ]
+
+        examples.append("\nIMAGE_GENERATION + HISTORICAL (creative visualization - NOT text):")
+        for query, explanation in creative_examples:
+            examples.append(f"- \"{query}\" → {explanation}")
+
+        # Technical examples
+        technical_examples = [
+            ("выполни этот код на python", "Running specific code"),
+            ("execute this python script", "Code execution requests"),
+            ("запустить программу на JavaScript", "Programming language tasks"),
+            ("debug this function", "Code analysis and debugging")
+        ]
+
+        examples.append("\nCODE_EXECUTION + HISTORICAL (programming tasks):")
+        for query, explanation in technical_examples:
+            examples.append(f"- \"{query}\" → {explanation}")
+
+        # Time examples
+        time_examples = [
+            ("который час сейчас", "Current time requests"),
+            ("what time is it now", "Live temporal information"),
+            ("какое сегодня число", "Current date queries"),
+            ("what day is it", "Current day information")
+        ]
+
+        examples.append("\nDATETIME + REALTIME (time-sensitive):")
+        for query, explanation in time_examples:
+            examples.append(f"- \"{query}\" → {explanation}")
+
+        return '\n'.join(examples)
+
+    def add_classification_example(self, query: str, intent: Intent, data_mode: DataMode, explanation: str):
+        """Add new example to improve future classifications."""
+        # Rebuild examples with the new addition
+        self.classification_examples = self._build_classification_examples()
+
+        # Log the new learning
+        logger.info(f"Added new classification example: '{query}' → {intent.value} + {data_mode.value} ({explanation})")
+
+    def get_classification_patterns(self) -> dict:
+        """Get current classification patterns for analysis."""
+        return {
+            "examples_count": len(self.classification_examples.split('\n')),
+            "fallback_rules": [
+                "Current state questions (president + today/current) → FACTUAL_SEARCH + REALTIME",
+                "Mathematical expressions (operators + numbers) → MATHEMATICS + HISTORICAL",
+                "Time questions (today, now, current) → DATETIME + REALTIME",
+                "General conversation patterns → GENERAL_CHAT + HISTORICAL"
+            ]
+        }
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create prompt template for intent classification."""
-        
+
         intent_descriptions = {
             Intent.GENERAL_CHAT: "General conversation, greetings, casual questions, or requests that don't fit other categories",
             Intent.TEXT_GENERATION: "Requests for creative writing, text generation, or content creation",
             Intent.IMAGE_GENERATION: "Requests to create, generate, draw, or produce images, pictures, or visual content",
             Intent.FACTUAL_SEARCH: "Questions about current events, recent information, or requests to search for factual data",
             Intent.WEB_CRAWLING: "Requests to analyze, extract, or get information from specific websites or URLs",
-            Intent.CODE_EXECUTION: "Requests to run, execute, or test code, including mathematical calculations",
+            Intent.CODE_EXECUTION: "Requests to run, execute, or test code",
             Intent.DATA_ANALYSIS: "Requests to analyze data, create charts, graphs, or perform statistical analysis",
             Intent.FILE_READ: "Requests to read, open, or view file contents",
             Intent.FILE_WRITE: "Requests to save, write, or create files",
             Intent.FILE_ANALYSIS: "Requests to analyze, review, or examine file contents",
-            Intent.DATETIME: "Questions about current time, date, or temporal information"
+            Intent.DATETIME: "Questions about current time, date, or temporal information",
+            Intent.MATHEMATICS: "Mathematical calculations, equations, expressions, or numerical problems"
         }
         
         data_mode_descriptions = {
@@ -56,18 +193,21 @@ class LangChainIntentClassifier:
         template = f"""You are an expert intent classifier for a multi-modal AI assistant.
 Your task is to analyze user queries and classify them into the appropriate intent and data mode.
 
-AVAILABLE INTENTS:
-{chr(10).join(f"- {intent.value}: {desc}" for intent, desc in intent_descriptions.items())}
+CLASSIFICATION EXAMPLES (use these patterns to understand context):
 
-DATA MODES:
-{chr(10).join(f"- {mode.value}: {desc}" for mode, desc in data_mode_descriptions.items())}
+{self.classification_examples}
 
-CLASSIFICATION RULES:
-1. Choose the most specific intent that matches the user's request
-2. If the request mentions "current", "latest", "recent", "now", "today", or asks about news/events, use REALTIME mode
-3. If the request is about general knowledge, creative tasks, or doesn't need current data, use HISTORICAL mode
-4. Provide a confidence score (0.0-1.0) based on how certain you are about the classification
-5. Give a brief reasoning for your decision
+CLASSIFICATION GUIDELINES:
+1. Analyze the query context and semantic meaning, not just keywords
+2. Consider what type of information would best answer the query
+3. Determine if the information needs to be current/real-time or historical/general
+4. Use the examples above as patterns for understanding query types
+5. When in doubt, prefer REALTIME for questions about current states, people, or events
+6. Look for semantic patterns: questions about "who is" + current status usually need REALTIME
+7. Questions about "what happened" + recent timeframes usually need REALTIME
+8. Creative requests (draw, create, write) are usually HISTORICAL
+9. Mathematical calculations are always HISTORICAL
+10. Learn from the patterns shown in the examples above
 
 {{format_instructions}}
 
@@ -82,8 +222,7 @@ User query: {{query}}"""
     def _create_classification_chain(self):
         """Create LangChain classification chain with proper chaining."""
         try:
-            from langchain_core.runnables import RunnableLambda
-            from langchain_core.output_parsers import PydanticOutputParser
+            from langchain.runnables import RunnableLambda
 
             # Create G4F LLM wrapper
             def g4f_llm(prompt_value):
@@ -122,84 +261,108 @@ User query: {{query}}"""
             return self._fallback_chain
     
     def _fallback_chain(self, inputs):
-        """Fallback classification when main chain fails."""
+        """Minimal semantic fallback when LLM classification fails completely."""
         query = inputs["query"].lower().strip()
+        # Only basic semantic pattern recognition (no rigid keywords)
 
-        # Enhanced heuristics for better classification
-        # Image generation keywords
-        image_keywords = [
-            "image", "picture", "draw", "create", "generate", "make", "paint", "sketch",
-            "картинк", "изображени", "нарисуй", "создай", "сгенерируй", "портрет"
+        # 1. Current events/political queries (REALTIME needed) - CHECK FIRST
+        current_state_patterns = [
+            # Leadership and political positions (current state questions)
+            (any(word in query for word in ['president', 'президент', 'leader', 'лидер', 'minister', 'министр', 'prime minister', 'премьер']) and
+             any(word in query for word in ['who is', 'кто является', 'кто есть', 'who are', 'current', 'текущий', 'now', 'сейчас', 'today', 'сегодня', 'right now', 'сейчас'])),
+            # Recent events (what happened recently)
+            (any(word in query for word in ['won', 'выиграл', 'became', 'стал', 'happened', 'произошло', 'elected', 'избран', 'appointed', 'назначен']) and
+             any(word in query for word in ['recent', 'недавно', 'latest', 'последние', 'recently', 'недавнее'])),
+            # Status questions (what is the current state)
+            (query.startswith(('what is', 'что такое', 'какой', 'which', 'what are')) and
+             any(word in query for word in ['current', 'текущий', 'now', 'сейчас', 'today', 'сегодня', 'latest', 'последние'])),
+            # Direct current state questions
+            (any(word in query for word in ['president', 'президент']) and
+             any(word in query for word in ['сша', 'usa', 'russia', 'россии', 'украины', 'ukraine', 'германии', 'germany', 'франции', 'france', 'британии', 'uk']) and
+             any(word in query for word in ['today', 'сегодня', 'current', 'текущий', 'now', 'сейчас'])),
+            # Simple president queries
+            (any(word in query for word in ['president', 'президент']) and
+             any(word in query for word in ['usa', 'сша', 'america', 'америки', 'russia', 'россии', 'ukraine', 'украины', 'germany', 'германии', 'france', 'франции'])),
+            # Current leadership queries
+            (any(word in query for word in ['who is', 'кто']) and
+             any(word in query for word in ['president', 'президент', 'minister', 'министр', 'chancellor', 'канцлер', 'prime minister', 'премьер']) and
+             any(word in query for word in ['usa', 'сша', 'russia', 'россии', 'ukraine', 'украины', 'germany', 'германии', 'france', 'франции', 'uk', 'британии']))
         ]
-        if any(word in query for word in image_keywords):
+
+        if any(current_state_patterns):
+            return IntentClassificationResult(
+                intent=Intent.FACTUAL_SEARCH,
+                data_mode=DataMode.REALTIME,
+                confidence=0.7,
+                reasoning="Fallback: current state/event pattern detected"
+            )
+
+        # 2. Web crawling requests
+        web_crawling_patterns = [
+            # Explicit crawling words + URL indicators
+            any(word in query for word in ['parse', 'парсинг', 'парсь', 'спарсь', 'crawl', 'скрапинг', 'extract', 'извлечь', 'analyze', 'анализ']) and
+            any(word in query for word in ['website', 'сайт', 'url', 'page', 'страница', 'http', 'https']),
+            # Direct URL patterns (any http/https link)
+            'http://' in query or 'https://' in query,
+            # Explicit crawling commands
+            query.startswith(('parse this', 'парсинг этого', 'crawl this', 'скрапинг этого', 'спарсь', 'парсь')),
+            'parse this website:' in query or 'парсинг этого сайта:' in query
+        ]
+        
+        if any(web_crawling_patterns):
+            return IntentClassificationResult(
+                intent=Intent.WEB_CRAWLING,
+                data_mode=DataMode.REALTIME,
+                confidence=0.8,
+                reasoning="Fallback: web crawling pattern detected"
+            )
+
+        # 3. Image generation requests
+        query_words = query.split()
+        image_generation_patterns = [
+            # Команды рисования САМИ по себе указывают на генерацию изображений
+            any(word in query_words for word in ['нарисуй', 'нарисовать', 'draw', 'сгенерируй', 'сгенерировать']),
+            # Команды создания + слово про изображение
+            any(word in query for word in ['generate', 'создать', 'create', 'создай', 'make', 'сделать', 'сделай']) and
+            any(word in query for word in ['image', 'изображение', 'picture', 'картинку', 'картинка', 'photo', 'фото', 'art', 'искусство', 'drawing', 'рисунок', 'портрет', 'portrait']),
+            # Стартует с команды генерации
+            query.startswith(('generate an image', 'создать изображение', 'draw a', 'draw ', 'нарисовать', 'нарисуй', 'create a picture', 'создать картинку', 'создай портрет', 'сгенерируй')),
+            # Содержит явные слова про изображение
+            'image of' in query or 'изображение' in query or 'портрет' in query
+        ]
+        
+        if any(image_generation_patterns):
             return IntentClassificationResult(
                 intent=Intent.IMAGE_GENERATION,
                 data_mode=DataMode.HISTORICAL,
                 confidence=0.8,
-                reasoning="Fallback: detected image generation keywords"
+                reasoning="Fallback: image generation pattern detected"
             )
-        elif any(word in query for word in ["search", "find", "news", "latest", "поиск", "найди", "новости"]):
+
+        # 4. Mathematical expressions (highest priority for math)
+        if any(char in query for char in ['+', '-', '*', '/', '=', '^', '√', '(', ')']) and any(char.isdigit() for char in query):
             return IntentClassificationResult(
-                intent=Intent.FACTUAL_SEARCH,
-                data_mode=DataMode.REALTIME,
-                confidence=0.6,
-                reasoning="Fallback: detected search-related keywords"
-            )
-        elif any(word in query for word in ["http", "www", "site", "website", "сайт"]):
-            return IntentClassificationResult(
-                intent=Intent.WEB_CRAWLING,
-                data_mode=DataMode.REALTIME,
-                confidence=0.6,
-                reasoning="Fallback: detected URL or website reference"
-            )
-        elif any(word in query for word in ["execute", "run", "code", "python", "выполни", "код"]):
-            return IntentClassificationResult(
-                intent=Intent.CODE_EXECUTION,
-                data_mode=DataMode.HISTORICAL,
-                confidence=0.6,
-                reasoning="Fallback: detected code execution keywords"
-            )
-        elif any(word in query for word in ["который час", "сколько время", "какое время", "what time", "какое сегодня число", "какая дата", "what date", "today", "киевскому времени", "kiev time", "kyiv time"]):
-            return IntentClassificationResult(
-                intent=Intent.DATETIME,
-                data_mode=DataMode.REALTIME,
-                confidence=0.8,
-                reasoning="Fallback: detected datetime-related keywords"
-            )
-        # File operations - only if specific path mentioned
-        elif any(word in query for word in ["file", "файл", "read", "прочитай", "открой"]):
-            # Check if there's a specific path or file extension
-            path_indicators = ["/", "\\", ".txt", ".py", ".json", ".csv", ".md", "path", "путь"]
-            if any(indicator in query for indicator in path_indicators):
-                return IntentClassificationResult(
-                    intent=Intent.FILE_READ,
-                    data_mode=DataMode.HISTORICAL,
-                    confidence=0.8,
-                    reasoning="Fallback: detected file operation with specific path"
-                )
-            else:
-                # General question about files without specific path
-                return IntentClassificationResult(
-                    intent=Intent.GENERAL_CHAT,
-                    data_mode=DataMode.HISTORICAL,
-                    confidence=0.9,
-                    reasoning="Fallback: general question about files without specific path"
-                )
-        else:
-            return IntentClassificationResult(
-                intent=Intent.GENERAL_CHAT,
+                intent=Intent.MATHEMATICS,
                 data_mode=DataMode.HISTORICAL,
                 confidence=0.9,
-                reasoning="Fallback: general conversation"
+                reasoning="Fallback: mathematical expression pattern detected"
             )
-    
+
+        # 5. Default fallback - general chat
+        return IntentClassificationResult(
+            intent=Intent.GENERAL_CHAT,
+            data_mode=DataMode.HISTORICAL,
+            confidence=0.5,
+            reasoning="Fallback: no specific pattern detected"
+        )
+
     def classify_query(self, query: str) -> IntentClassificationResult:
         """
-        Classify user query using LangChain with structured output.
-        
+        Classify user query using LangChain with structured output and example-based learning.
+
         Args:
             query: User query to classify
-            
+
         Returns:
             IntentClassificationResult with intent, data_mode, confidence, and reasoning
         """
@@ -210,22 +373,32 @@ User query: {{query}}"""
                 confidence=1.0,
                 reasoning="Empty query defaults to general chat"
             )
-        
+
         try:
-            # Try LangChain classification first
+            # Try LangChain classification with examples first
             result = self.chain.invoke({"query": query.strip()})
 
+            # Check if result is valid
+            if result is None:
+                logger.warning("Chain returned None, using fallback")
+                # Use semantic fallback
+                return self._fallback_chain({"query": query})
+
             logger.info(
-                f"LangChain classification: '{query}' -> {result.intent.value} "
+                f"LLM classification: '{query}' -> {result.intent.value} "
                 f"({result.data_mode.value}) with confidence {result.confidence:.2f}. "
                 f"Reasoning: {result.reasoning}"
             )
 
+            # Log successful classification for learning analysis
+            if result.confidence > 0.8:
+                logger.debug(f"High confidence classification: {query} -> {result.intent.value}")
+
             return result
 
         except Exception as e:
-            logger.warning(f"LangChain classification failed: {e}, using fallback")
-            # Use fallback
+            logger.warning(f"LangChain classification failed: {e}, using semantic fallback")
+            # Use semantic fallback
             return self._fallback_chain({"query": query})
     
     def classify(self, state: AgentState) -> AgentState:
@@ -241,7 +414,17 @@ User query: {{query}}"""
         try:
             # Classify the query
             classification_result = self.classify_query(state.query)
-            
+
+            # Check if classification result is valid
+            if classification_result is None:
+                logger.warning("Classification returned None, using fallback")
+                classification_result = IntentClassificationResult(
+                    intent=Intent.GENERAL_CHAT,
+                    data_mode=DataMode.HISTORICAL,
+                    confidence=0.5,
+                    reasoning="Fallback: classification returned None"
+                )
+
             # Update state with classification results
             return state.model_copy(update={
                 "intent": classification_result.intent,
@@ -254,7 +437,7 @@ User query: {{query}}"""
                     "classification_reasoning": classification_result.reasoning
                 }
             })
-            
+
         except Exception as e:
             logger.error(f"Error in LangChain intent classification: {e}", exc_info=True)
             return state.model_copy(update={
