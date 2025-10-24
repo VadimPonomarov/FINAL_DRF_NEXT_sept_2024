@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 import { useAuthProvider } from './AuthProviderContext';
 import { AuthProvider as AuthProviderEnum } from '@/common/constants/constants';
 
@@ -33,7 +33,8 @@ export const RedisAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [redisAuth, setRedisAuth] = useState<RedisAuthData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRedisAuth = async () => {
+  // Мемоизируем функцию загрузки данных
+  const fetchRedisAuth = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -67,7 +68,7 @@ export const RedisAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [provider]);
 
   // Загружаем данные при монтировании и смене провайдера
   useEffect(() => {
@@ -96,14 +97,15 @@ export const RedisAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   }, []);
 
+  // Мемоизируем context value
+  const contextValue = useMemo(() => ({
+    redisAuth,
+    isLoading,
+    refreshRedisAuth: fetchRedisAuth
+  }), [redisAuth, isLoading, fetchRedisAuth]);
+
   return (
-    <RedisAuthContext.Provider 
-      value={{ 
-        redisAuth, 
-        isLoading,
-        refreshRedisAuth: fetchRedisAuth 
-      }}
-    >
+    <RedisAuthContext.Provider value={contextValue}>
       {children}
     </RedisAuthContext.Provider>
   );

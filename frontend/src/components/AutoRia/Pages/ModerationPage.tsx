@@ -27,10 +27,10 @@ import {
 } from 'lucide-react';
 import { CarAd } from '@/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
-import { useUserProfileData } from '@/hooks/useUserProfileData';
+import { useRedisAuth } from '@/contexts/RedisAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import ModerationAdCard from './ModerationAdCard';
 
 interface ModerationStats {
   total_ads: number;
@@ -43,26 +43,36 @@ interface ModerationStats {
 }
 
 const ModerationPage = () => {
+  console.log('🎯 [ModerationPage] Component mounted/rendered!');
+  
   const { t, formatDate } = useI18n();
-  const { user, isAuthenticated, isLoading: authLoading, checkAuth } = useAutoRiaAuth();
-  const { data: userProfileData } = useUserProfileData();
+  const { redisAuth, isLoading: authLoading } = useRedisAuth();
   const { toast } = useToast();
 
-  // Проверяем статус суперюзера из разных источников
+  // Проверяем статус суперюзера напрямую из Redis (тот же источник, что и бейдж)
   const isSuperUser = React.useMemo(() => {
-    const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
+    const isSuper = redisAuth?.user?.is_superuser || false;
 
-    console.log('[ModerationPage] Superuser check:', {
-      userFromAuth: user,
-      user_is_superuser: user?.is_superuser,
-      userProfileData_user: userProfileData?.user,
-      userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
+    console.log('[ModerationPage] 🔍 Superuser check from Redis:', {
+      authLoading,
+      redisAuth,
+      user: redisAuth?.user,
+      is_superuser: redisAuth?.user?.is_superuser,
       finalResult: isSuper,
       timestamp: new Date().toISOString()
     });
 
     return isSuper;
-  }, [user, userProfileData]);
+  }, [redisAuth, authLoading]);
+  
+  const isAuthenticated = !!redisAuth?.user;
+  
+  console.log('[ModerationPage] 📊 Current state:', {
+    authLoading,
+    isAuthenticated,
+    isSuperUser,
+    userEmail: redisAuth?.user?.email
+  });
   const [ads, setAds] = useState<CarAd[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<ModerationStats | null>(null);
@@ -75,8 +85,13 @@ const ModerationPage = () => {
 
   // Проверка прав доступа - ТОЛЬКО суперюзеры
   useEffect(() => {
+    console.log('[ModerationPage] 🔐 Access check useEffect:', { authLoading, isSuperUser });
+    
     // Ждем загрузки данных пользователя
-    if (authLoading) return;
+    if (authLoading) {
+      console.log('[ModerationPage] ⏳ Still loading auth data...');
+      return;
+    }
 
     // Если пользователь не суперюзер - редирект на главную
     if (!isSuperUser) {
@@ -91,25 +106,29 @@ const ModerationPage = () => {
       setTimeout(() => {
         window.location.href = '/';
       }, 1000);
+    } else {
+      console.log('[ModerationPage] ✅ Access granted - user is superuser');
     }
   }, [isSuperUser, authLoading, toast]);
 
-  // Проверяем аутентификацию при загрузке компонента
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      console.log('[ModerationPage] User not authenticated, checking auth...');
-      checkAuth();
-    }
-  }, [authLoading, isAuthenticated, checkAuth]);
-
   // Загрузка данных
   useEffect(() => {
-    // Используем isSuperUser вместо isAuthenticated, так как он уже установлен в true
-    if (isSuperUser) {
+    console.log('[ModerationPage] 📥 Data loading useEffect:', { 
+      isSuperUser, 
+      authLoading,
+      statusFilter, 
+      searchQuery 
+    });
+    
+    // Загружаем данные только если пользователь - суперюзер и загрузка завершена
+    if (isSuperUser && !authLoading) {
+      console.log('[ModerationPage] 🚀 Starting data load...');
       loadModerationQueue();
       loadModerationStats();
+    } else {
+      console.log('[ModerationPage] ⏸️ Data load skipped:', { isSuperUser, authLoading });
     }
-  }, [statusFilter, searchQuery, sortBy, sortOrder, isSuperUser]);
+  }, [statusFilter, searchQuery, sortBy, sortOrder, isSuperUser, authLoading]);
 
   const loadModerationQueue = async () => {
     setLoading(true);
@@ -160,13 +179,35 @@ const ModerationPage = () => {
       }
       
       const result = await response.json();
+      console.log('[Moderation] 📦 Backend response:', result);
 
-      if (result.success && result.data) {
-        console.log('[Moderation] ✅ Loaded ads:', result.data.length);
+      // Backend возвращает DRF paginated response: {count, next, previous, results}
+      if (result.results && Array.isArray(result.results)) {
+        console.log('[Moderation] ✅ Loaded ads:', result.results.length, 'из', result.count);
+        console.log('[Moderation] 📋 First ad:', result.results[0]);
+        console.log('[Moderation] 📋 All ads IDs:', result.results.map((ad: any) => ad.id));
+        setAds(result.results);
+        
+        // Показываем toast с информацией
+        toast({
+          title: `✅ Загружено ${result.results.length} объявлений из ${result.count}`,
+          description: `IDs: ${result.results.map((ad: any) => ad.id).join(', ')}`,
+          duration: 5000,
+        });
+      } else if (result.success && result.data) {
+        // Альтернативный формат для обратной совместимости
+        console.log('[Moderation] ✅ Loaded ads (legacy format):', result.data.length);
         setAds(result.data);
       } else {
-        console.log('[Moderation] ⚠️ No ads found');
+        console.log('[Moderation] ⚠️ No ads found, result:', result);
         setAds([]);
+        
+        toast({
+          title: "⚠️ Объявления не найдены",
+          description: `Response: ${JSON.stringify(result).substring(0, 100)}`,
+          variant: "destructive",
+          duration: 5000,
+        });
       }
     } catch (error) {
       console.error('[Moderation] ❌ Failed to load queue:', error);
@@ -175,6 +216,19 @@ const ModerationPage = () => {
       setLoading(false);
     }
   };
+
+  // Мемоизируем функции для предотвращения перерисовок
+  const handleModerateAd = React.useCallback(async (
+    adId: number, 
+    action: 'approve' | 'reject' | 'review' | 'block' | 'activate', 
+    reason?: string
+  ) => {
+    await moderateAd(adId, action, reason);
+  }, []);
+
+  const handleSelectAd = React.useCallback((ad: CarAd) => {
+    setSelectedAd(ad);
+  }, []);
 
   const loadModerationStats = async () => {
     try {
@@ -198,8 +252,13 @@ const ModerationPage = () => {
       }
       
       const result = await response.json();
+      console.log('[Moderation] 📊 Stats response:', result);
 
-      if (result.success) {
+      // Backend возвращает stats напрямую (без обертки)
+      if (result.total_ads !== undefined) {
+        setStats(result);
+      } else if (result.success && result.data) {
+        // Альтернативный формат для обратной совместимости
         setStats(result.data);
       }
     } catch (error) {
@@ -219,7 +278,7 @@ const ModerationPage = () => {
         },
         body: JSON.stringify({
           reason: reason || '',
-          moderator_notes: `Модерировано суперюзером: ${user?.email || 'unknown'}`
+          moderator_notes: `Модерировано суперюзером: ${redisAuth?.user?.email || 'unknown'}`
         })
       });
 
@@ -237,15 +296,37 @@ const ModerationPage = () => {
           activate: 'активировано'
         };
 
-        alert(`Объявление ${actionMessages[action]}!`);
+        toast({
+          title: `✅ Объявление ${actionMessages[action]}`,
+          description: `ID: ${adId}`,
+          duration: 3000,
+        });
 
-        // Refresh the queue
-        loadModerationQueue();
+        // Оптимизация: обновляем только конкретное объявление, а не весь список
+        if (result.ad) {
+          // Backend возвращает обновленное объявление в result.ad
+          setAds(prevAds => 
+            prevAds.map(ad => ad.id === adId ? { ...ad, ...result.ad } : ad)
+          );
+          console.log(`[Moderation] 🔄 Updated ad ${adId} locally (no full reload)`);
+        } else {
+          // Fallback: если backend не вернул объявление, перезагружаем список
+          console.log(`[Moderation] ⚠️ No ad in response, reloading full list`);
+          loadModerationQueue();
+        }
+
+        // Обновляем только статистику (легкий запрос)
         loadModerationStats();
         setSelectedAd(null);
       } else {
         console.error(`[Moderation] ❌ Failed to ${action} ad:`, result.message);
-        alert(`Ошибка: ${result.message}`);
+        
+        toast({
+          title: `❌ Ошибка при ${action}`,
+          description: result.message || 'Неизвестная ошибка',
+          variant: 'destructive',
+          duration: 5000,
+        });
       }
     } catch (error) {
       console.error(`[Moderation] ❌ Failed to ${action} ad:`, error);
@@ -309,11 +390,11 @@ const ModerationPage = () => {
             </p>
             {/* Отладочная информация о пользователе */}
             <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
-              <strong>{t('autoria.moderation.userStatus')}</strong> {user?.email || t('autoria.moderation.noAdsFound')} |
+              <strong>{t('autoria.moderation.userStatus')}</strong> {redisAuth?.user?.email || t('autoria.moderation.noAdsFound')} |
               <strong> {t('autoria.moderation.superuser')}</strong> {isSuperUser ? '✅ Да' : '❌ Нет'} |
-              <strong> useAutoRiaAuth:</strong> {isAuthenticated ? '✅' : '❌'} |
+              <strong> Redis Auth:</strong> {isAuthenticated ? '✅' : '❌'} |
               <strong> {t('autoria.moderation.authLoading')}</strong> {authLoading ? '⏳' : '✅'} |
-              <strong> {t('autoria.moderation.userProfile')}</strong> {userProfileData?.user?.is_superuser ? '✅' : '❌'}
+              <strong> Superuser from Redis:</strong> {redisAuth?.user?.is_superuser ? '✅' : '❌'}
             </div>
           </div>
         </div>
@@ -480,128 +561,12 @@ const ModerationPage = () => {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {ads.map(ad => (
-              <Card key={ad.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-2 mb-2">
-                        {ad.title}
-                      </CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <Car className="h-4 w-4" />
-                          {ad.brand} {ad.model}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {ad.year}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {ad.city}
-                        </span>
-                      </div>
-                    </div>
-                    {getStatusBadge(ad.status)}
-                  </div>
-                </CardHeader>
-
-                <CardContent>
-                  <div className="space-y-4">
-                    <p className="text-sm text-gray-600 line-clamp-3">
-                      {ad.description}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="text-lg font-bold text-green-600">
-                        {formatPrice(ad.price, ad.currency)}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <User className="h-4 w-4" />
-                        {ad.user?.email}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <Clock className="h-4 w-4" />
-                      {t('autoria.moderation.created')}: {formatDate(new Date(ad.created_at))}
-                    </div>
-
-                    {/* Moderation Actions */}
-                    <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedAd(ad)}
-                          className="h-8 w-32 flex items-center justify-center text-xs font-medium hover:bg-gray-100 hover:text-gray-900"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />{t('autoria.moderation.viewDetails')}
-                        </Button>
-
-                      {ad.status === 'pending' || ad.status === 'needs_review' ? (
-                        <>
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
-                            onClick={() => moderateAd(ad.id, 'approve')}
-                          >
-                            <Check className="h-3 w-3 mr-1" />{t('autoria.moderation.approve')}
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            className="bg-red-600 hover:bg-red-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
-                            onClick={() => {
-                              const reason = prompt(t('autoria.moderation.rejectionReasonPrompt'));
-                              if (reason) {
-                                moderateAd(ad.id, 'reject', reason);
-                              }
-                            }}
-                          >
-                            <X className="h-3 w-3 mr-1" />{t('autoria.moderation.reject')}
-                          </Button>
-                        </>
-                      ) : null}
-
-                      {ad.status === 'rejected' ? (
-                        <Button
-                          size="sm"
-                          className="bg-blue-600 hover:bg-blue-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
-                          onClick={() => moderateAd(ad.id, 'review')}
-                          style={{ color: 'white' }}
-                        >
-                          ⚠️{t('autoria.moderation.review')}
-                        </Button>
-                      ) : null}
-
-                      {ad.status === 'active' ? (
-                        <Button
-                          size="sm"
-                          className="bg-gray-600 hover:bg-gray-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
-                          onClick={() => {
-                            const reason = prompt(t('autoria.moderation.blockReason'));
-                            if (reason) {
-                              moderateAd(ad.id, 'block', reason);
-                            }
-                          }}
-                        >
-                          🚫 {t('autoria.moderation.block')}
-                        </Button>
-                      ) : null}
-
-                      {ad.status === 'blocked' ? (
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
-                          onClick={() => moderateAd(ad.id, 'activate')}
-                        >
-                          ✅ {t('autoria.moderation.activate')}
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <ModerationAdCard
+                key={ad.id}
+                ad={ad}
+                onModerate={handleModerateAd}
+                onSelectAd={handleSelectAd}
+              />
             ))}
           </div>
         ) : (

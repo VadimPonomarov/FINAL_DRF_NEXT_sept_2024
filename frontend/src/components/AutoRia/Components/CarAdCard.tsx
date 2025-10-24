@@ -25,7 +25,11 @@ interface CarAdCardProps {
   onCountersUpdate?: (adId: number, counters: { favorites_count: number; phone_views_count: number }) => void;
 }
 
-const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
+/**
+ * Мемоизированный компонент карточки объявления
+ * Перерисовывается только при изменении данных объявления
+ */
+const CarAdCard: React.FC<CarAdCardProps> = React.memo(({ ad, onCountersUpdate }) => {
   const { t, locale } = useI18n();
   const router = useRouter();
   const { currency } = useCurrency();
@@ -53,29 +57,24 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       favoritesCount: initialFavCount,
       phoneViewsCount: ad.phone_views_count || 0
     });
-  }, [ad.id]);
+  }, [ad.id, ad.is_favorite, ad.favorites_count, ad.phone_views_count]);
 
-  // Удалена локальная функция formatPrice - используем импортированную formatCardPrice
-
-  /**
-   * Получает цену в выбранной валюте
-   * Backend всегда рассчитывает price_usd, price_eur и price_uah для всех объявлений
-   */
-  const getPriceInCurrency = (): { price: number | null; currency: string } => {
+  // Мемоизируем вычисление цены в выбранной валюте
+  const priceInCurrency = React.useMemo((): { price: number | null; currency: string } => {
     switch (currency) {
       case 'USD':
         return { price: ad.price_usd || ad.price, currency: 'USD' };
       case 'EUR':
         return { price: ad.price_eur || ad.price, currency: 'EUR' };
       case 'UAH':
-        // Используем price_uah из backend (всегда рассчитывается)
         return { price: ad.price_uah || ad.price, currency: 'UAH' };
       default:
         return { price: ad.price, currency: ad.currency || 'USD' };
     }
-  };
+  }, [currency, ad.price_usd, ad.price_eur, ad.price_uah, ad.price, ad.currency]);
 
-  const refreshCountersFromServer = async () => {
+  // Мемоизируем функцию обновления счетчиков
+  const refreshCountersFromServer = React.useCallback(async () => {
     try {
       const r = await fetch(`/api/autoria/cars/${ad.id}`);
       if (r.ok) {
@@ -91,9 +90,10 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     } catch (err) {
       console.warn('[CarAdCard] Failed to refresh counters:', err);
     }
-  };
+  }, [ad.id, isFavorite, onCountersUpdate]);
 
-  const handleFavoriteToggle = async (e: React.MouseEvent) => {
+  // Мемоизируем обработчик лайка
+  const handleFavoriteToggle = React.useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -158,9 +158,10 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     } finally {
       setIsTogglingFavorite(false);
     }
-  };
+  }, [ad.id, isFavorite, favoritesCount, phoneViewsCount, onCountersUpdate, refreshCountersFromServer]);
 
-  const handlePhoneClick = async (e: React.MouseEvent) => {
+  // Мемоизируем обработчик клика по телефону
+  const handlePhoneClick = React.useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -196,10 +197,10 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     } catch (error) {
       console.error('❌ Error tracking phone view:', error);
     }
-  };
+  }, [ad.id, ad.seller?.phone, phoneViewsCount, favoritesCount, onCountersUpdate]);
 
-  // Helper function to get image URL
-  const getImageUrl = () => {
+  // Мемоизируем функцию получения URL изображения
+  const imageUrl = React.useMemo(() => {
     if (!ad.images || (Array.isArray(ad.images) && ad.images.length === 0)) {
       return '/api/placeholder/400/300';
     }
@@ -242,17 +243,17 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     }
 
     return '/api/placeholder/400/300';
-  };
+  }, [ad.images, ad.main_image]);
 
-  // Handle card click to navigate to ad details
-  const handleCardClick = (e: React.MouseEvent) => {
+  // Мемоизируем обработчик клика по карточке
+  const handleCardClick = React.useCallback((e: React.MouseEvent) => {
     // Don't navigate if clicking on buttons or interactive elements
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('a')) {
       return;
     }
     router.push(`/autoria/ad/${ad.id}`);
-  };
+  }, [ad.id, router]);
 
   return (
     <Card
@@ -262,7 +263,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       {/* 🖼️ Изображение */}
       <div className="relative">
         <img
-          src={getImageUrl()}
+          src={imageUrl}
           alt={ad.title}
           className="w-full h-48 object-cover"
           onError={(e) => {
@@ -311,7 +312,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
         {/* 💰 Цена */}
         <div className="text-2xl font-bold text-green-600 mb-3">
           {(() => {
-            const { price, currency: displayCurrency } = getPriceInCurrency();
+            const { price, currency: displayCurrency } = priceInCurrency;
             return formatCardPrice(price, displayCurrency);
           })()}
         </div>
@@ -376,6 +377,22 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       </CardContent>
     </Card>
   );
-};
+}, (prevProps, nextProps) => {
+  // Кастомный компаратор - перерисовываем только при изменении ключевых данных
+  return (
+    prevProps.ad.id === nextProps.ad.id &&
+    prevProps.ad.title === nextProps.ad.title &&
+    prevProps.ad.price === nextProps.ad.price &&
+    prevProps.ad.price_usd === nextProps.ad.price_usd &&
+    prevProps.ad.price_eur === nextProps.ad.price_eur &&
+    prevProps.ad.price_uah === nextProps.ad.price_uah &&
+    prevProps.ad.is_favorite === nextProps.ad.is_favorite &&
+    prevProps.ad.favorites_count === nextProps.ad.favorites_count &&
+    prevProps.ad.phone_views_count === nextProps.ad.phone_views_count &&
+    prevProps.ad.main_image === nextProps.ad.main_image
+  );
+});
+
+CarAdCard.displayName = 'CarAdCard';
 
 export default CarAdCard;

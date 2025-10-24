@@ -49,19 +49,12 @@ export async function GET(request: NextRequest) {
     const data = await backendResponse.json();
     console.log('[Moderation Queue API] Success:', {
       count: data.count || 0,
-      results: data.results?.length || 0
+      results: data.results?.length || 0,
+      fullData: data
     });
 
-    // Преобразуем формат DRF в ожидаемый frontend формат
-    const responseData = {
-      success: true,
-      data: data.results || [],
-      count: data.count || 0,
-      next: data.next,
-      previous: data.previous
-    };
-
-    return NextResponse.json(responseData);
+    // Возвращаем данные как есть (DRF paginated format)
+    return NextResponse.json(data);
 
   } catch (error: any) {
     console.error('[Moderation Queue API] Error:', error);

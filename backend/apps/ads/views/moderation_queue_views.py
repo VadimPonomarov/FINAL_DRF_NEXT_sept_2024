@@ -60,19 +60,36 @@ class ModerationQueueView(generics.ListAPIView):
 
     def get_queryset(self):
         """Get ALL ads for moderation - moderators can see everything."""
+        print(f"\n{'='*80}")
+        print(f"[ModerationQueueView] 🔍 get_queryset called")
+        print(f"[ModerationQueueView] 📋 Request GET params: {dict(self.request.GET)}")
+        print(f"[ModerationQueueView] 👤 User: {self.request.user}")
+        print(f"[ModerationQueueView] 🛡️ Is superuser: {self.request.user.is_superuser if self.request.user.is_authenticated else False}")
+        
         # Модераторы видят ВСЕ объявления, включая черновики и тестовые
         queryset = CarAd.objects.select_related(
             "account", "account__user", "mark", "moderated_by"
         ).order_by("-created_at")
+        
+        print(f"[ModerationQueueView] 📊 Initial queryset count: {queryset.count()}")
+        print(f"[ModerationQueueView] 📝 Statuses in queryset: {list(queryset.values_list('status', flat=True).distinct())}")
 
         # Если указан статус-фильтр, применяем его
         status_filter = self.request.GET.get("status")
         if status_filter:
+            print(f"[ModerationQueueView] 🔎 Applying status filter: {status_filter}")
             queryset = queryset.filter(status=status_filter)
+            print(f"[ModerationQueueView] 📊 After status filter count: {queryset.count()}")
+        else:
+            print(f"[ModerationQueueView] ✅ No status filter - returning ALL ads")
         
         # ВАЖНО: Без фильтра возвращаем ВСЕ объявления
         # Модератор должен видеть абсолютно все: DRAFT, PENDING, ACTIVE, REJECTED, etc.
         # Логика модерации: все что есть в поиске, должно быть в модерации
+        
+        print(f"[ModerationQueueView] 🎯 Final queryset count BEFORE filter_backends: {queryset.count()}")
+        print(f"[ModerationQueueView] 📋 IDs: {list(queryset.values_list('id', flat=True)[:20])}")
+        print(f"{'='*80}\n")
 
         return queryset
 
@@ -118,7 +135,11 @@ def approve_advertisement(request, ad_id):
 
     serializer = CarAdSerializer(ad)
     return Response(
-        {"message": "Advertisement approved successfully", "ad": serializer.data}
+        {
+            "success": True,
+            "message": "Advertisement approved successfully", 
+            "ad": serializer.data
+        }
     )
 
 
@@ -175,7 +196,11 @@ def block_advertisement(request, ad_id):
 
     serializer = CarAdSerializer(ad)
     return Response(
-        {"message": "Advertisement blocked successfully", "ad": serializer.data}
+        {
+            "success": True,
+            "message": "Advertisement blocked successfully", 
+            "ad": serializer.data
+        }
     )
 
 
@@ -221,7 +246,11 @@ def activate_advertisement(request, ad_id):
 
     serializer = CarAdSerializer(ad)
     return Response(
-        {"message": "Advertisement activated successfully", "ad": serializer.data}
+        {
+            "success": True,
+            "message": "Advertisement activated successfully", 
+            "ad": serializer.data
+        }
     )
 
 
@@ -275,7 +304,11 @@ def reject_advertisement(request, ad_id):
 
     serializer = CarAdSerializer(ad)
     return Response(
-        {"message": "Advertisement rejected successfully", "ad": serializer.data}
+        {
+            "success": True,
+            "message": "Advertisement rejected successfully", 
+            "ad": serializer.data
+        }
     )
 
 
@@ -319,7 +352,11 @@ def request_review(request, ad_id):
 
     serializer = CarAdSerializer(ad)
     return Response(
-        {"message": "Advertisement marked for review", "ad": serializer.data}
+        {
+            "success": True,
+            "message": "Advertisement marked for review", 
+            "ad": serializer.data
+        }
     )
 
 

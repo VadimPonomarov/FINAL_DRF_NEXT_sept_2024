@@ -14,8 +14,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { useUserProfileData } from '@/hooks/useUserProfileData';
-import { useAuth } from '@/contexts/AuthContext';
+import { useRedisAuth } from '@/contexts/RedisAuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,16 +30,15 @@ interface AutoRiaHeaderProps {
 const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   const { t, locale, setLocale, availableLocales } = useI18n();
 
-  // Получаем данные профиля пользователя
-  const { data: userProfileData } = useUserProfileData();
-  const { user } = useAuth();
+  // Получаем данные из Redis (тот же источник, что и бейдж)
+  const { redisAuth } = useRedisAuth();
 
   // Отладочная информация при каждом рендере
   if (typeof window !== 'undefined') {
     window.console.log('[AutoRiaHeader] Component render:', {
       currentPage,
-      user,
-      userProfileData,
+      redisAuth,
+      user: redisAuth?.user,
       timestamp: new Date().toISOString()
     });
   }
@@ -48,44 +46,32 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   // Найдем текущую локаль для отображения
   const currentLocale = availableLocales.find(l => l.code === locale);
 
+  // Проверяем, является ли пользователь суперпользователем (из Redis, как в бейдже)
+  const isSuperUser = React.useMemo(() => {
+    const isSuper = redisAuth?.user?.is_superuser || false;
+
+    // Добавляем отладочную информацию
+    if (typeof window !== 'undefined') {
+      window.console.log('[AutoRiaHeader] Checking superuser status from Redis:', {
+        redisAuth,
+        user: redisAuth?.user,
+        is_superuser: redisAuth?.user?.is_superuser,
+        finalResult: isSuper
+      });
+    }
+
+    return isSuper;
+  }, [redisAuth]);
+
   // Проверяем, является ли пользователь премиум или суперпользователем
   const isPremiumUser = React.useMemo(() => {
     // Суперпользователи имеют доступ к аналитике независимо от аккаунта
-    const isSuperUser = user?.is_superuser || userProfileData?.user?.is_superuser || false;
     if (isSuperUser) return true;
 
-    // Для обычных пользователей проверяем аккаунт
-    if (!userProfileData?.account) return false;
-
-    // Проверяем тип аккаунта
-    const accountType = userProfileData.account.account_type;
-    const isPremium = accountType === 'PREMIUM' || accountType === 'premium';
-
-    return isPremium;
-  }, [user, userProfileData]);
-
-  // Проверяем, является ли пользователь суперпользователем
-  const isSuperUser = React.useMemo(() => {
-    // ВРЕМЕННО: Всегда показываем пункт модерации для тестирования
-    // TODO: Вернуть проверку прав после исправления логики авторизации
+    // Для обычных пользователей - временно считаем что все премиум
+    // TODO: Добавить проверку типа аккаунта когда будет доступно
     return true;
-
-    // Суперюзер определяется независимо от аккаунта
-    // const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
-
-    // // Добавляем отладочную информацию
-    // if (typeof window !== 'undefined') {
-    //   window.console.log('[AutoRiaHeader] Checking superuser status:', {
-    //     userFromAuth: user,
-    //     user_is_superuser: user?.is_superuser,
-    //     userProfileData_user: userProfileData?.user,
-    //     userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
-    //     finalResult: isSuper
-    //   });
-    // }
-
-    // return isSuper;
-  }, [user, userProfileData]);
+  }, [isSuperUser]);
 
   // Базовые пункты меню (доступны всем)
   const baseNavigationItems = [

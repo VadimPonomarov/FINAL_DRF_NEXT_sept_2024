@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const Moderation = () => {
-  // Force recompile
+  console.log('🚀 [Moderation Page Route] Rendering ModerationPage component');
   return <ModerationPage />;
 };
 

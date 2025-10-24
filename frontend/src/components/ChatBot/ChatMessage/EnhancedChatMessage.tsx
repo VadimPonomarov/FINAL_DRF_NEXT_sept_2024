@@ -24,7 +24,11 @@ interface ImageState {
 // Ключ для localStorage
 const IMAGE_STATE_KEY = 'chatbot_image_states';
 
-export const EnhancedChatMessage: React.FC<ChatMessageProps> = ({
+/**
+ * Мемоизированный компонент сообщения чата
+ * Перерисовывается только при изменении данных сообщения
+ */
+export const EnhancedChatMessage: React.FC<ChatMessageProps> = React.memo(({
   message,
   onDelete,
   messageContext,
@@ -223,5 +227,18 @@ export const EnhancedChatMessage: React.FC<ChatMessageProps> = ({
       timestamp={message.timestamp}
     />
   );
-};
+}, (prevProps, nextProps) => {
+  // Кастомный компаратор - перерисовываем только при изменении ключевых данных
+  return (
+    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.message === nextProps.message.message &&
+    prevProps.message.imageUrl === nextProps.message.imageUrl &&
+    prevProps.message.image_url === nextProps.message.image_url &&
+    prevProps.message.table_html === nextProps.message.table_html &&
+    prevProps.message.tableHtml === nextProps.message.tableHtml &&
+    prevProps.showContext === nextProps.showContext
+  );
+});
+
+EnhancedChatMessage.displayName = 'EnhancedChatMessage';
 

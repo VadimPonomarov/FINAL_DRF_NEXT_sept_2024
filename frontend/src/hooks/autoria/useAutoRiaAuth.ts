@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
+import { useRedisAuth } from '@/contexts/RedisAuthContext';
 import { getAuthTokens, refreshAccessToken } from '@/services/auth/tokenService';
 import { AuthProvider } from '@/common/constants/constants';
 
@@ -24,10 +25,12 @@ export interface AutoRiaAuthActions {
 /**
  * Хук для работы с авторизацией в AutoRia
  * Интегрируется с существующей системой токенов и Redis
+ * Использует RedisAuthContext для получения данных пользователя
  */
 export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
   const { data: session, status } = useSession();
   const { provider } = useAuthProvider();
+  const { redisAuth, isLoading: redisLoading } = useRedisAuth();
   
   const [state, setState] = useState<AutoRiaAuthState>({
     isAuthenticated: false,
@@ -102,11 +105,13 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
   // Проверка авторизации
   const checkAuth = useCallback(async (): Promise<boolean> => {
     try {
+      console.log('[useAutoRiaAuth] Checking auth...');
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
       const token = await getToken();
       
       if (!token) {
+        console.log('[useAutoRiaAuth] No token found');
         setState(prev => ({ 
           ...prev, 
           isAuthenticated: false,
@@ -117,17 +122,17 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
         return false;
       }
 
-      // Получаем информацию о пользователе
+      // Получаем информацию о пользователе из Redis через RedisAuthContext
       let user = null;
-      if (session?.user) {
+      if (redisAuth?.user) {
+        user = redisAuth.user;
+        console.log('[useAutoRiaAuth] User from Redis:', user);
+      } else if (session?.user) {
         user = session.user;
-      } else if (typeof window !== 'undefined') {
-        const storedAuth = localStorage.getItem('backend_auth');
-        if (storedAuth) {
-          const authData = JSON.parse(storedAuth);
-          user = authData?.user;
-        }
+        console.log('[useAutoRiaAuth] User from session:', user);
       }
+
+      console.log('[useAutoRiaAuth] Final user:', user);
 
       setState(prev => ({
         ...prev,
@@ -151,7 +156,7 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
       }));
       return false;
     }
-  }, [getToken, session]);
+  }, [getToken, session, redisAuth]);
 
   // Выход из системы
   const logout = useCallback(() => {
@@ -162,19 +167,16 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
       user: null,
       error: null
     });
-
-    // Очищаем localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('backend_auth');
-    }
   }, []);
 
   // Инициализация при монтировании компонента
   useEffect(() => {
-    if (status !== 'loading') {
+    // Ждем пока загрузятся и NextAuth, и Redis
+    if (status !== 'loading' && !redisLoading) {
+      console.log('[useAutoRiaAuth] Status ready, checking auth...', { status, redisLoading, redisUser: redisAuth?.user });
       checkAuth();
     }
-  }, [status, provider, session, checkAuth]);
+  }, [status, provider, session, redisAuth, redisLoading, checkAuth]);
 
   // Автоматическое обновление токена при изменении провайдера
   useEffect(() => {

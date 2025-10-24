@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import {
   Locale,
   LocaleConfig,
@@ -58,8 +58,8 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
     }
   }, [initialLocale]);
 
-  // Функция для изменения языка
-  const setLocale = (newLocale: Locale) => {
+  // Мемоизируем функцию изменения языка
+  const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
     setStoredLocale(newLocale);
     
@@ -67,40 +67,72 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
     if (typeof document !== 'undefined') {
       document.documentElement.lang = newLocale;
     }
-  };
+  }, []);
 
-  // Функция перевода
-  // Accept either a params object or a fallback string as the second argument
-  const t: any = (key: string, paramsOrFallback?: any) => {
+  // Мемоизируем функцию перевода
+  const t: any = useCallback((key: string, paramsOrFallback?: any) => {
     try {
       return getTranslation(locale, key, paramsOrFallback);
     } catch (error) {
       console.error('Error in translation function:', error, 'key:', key, 'locale:', locale);
-      return typeof paramsOrFallback === 'string' ? paramsOrFallback : key; // Fallback to provided text or key
+      return typeof paramsOrFallback === 'string' ? paramsOrFallback : key;
     }
-  };
+  }, [locale]);
 
-  // Локализованные функции форматирования
-  const localizedFormatNumber = (value: number, options?: Intl.NumberFormatOptions) => {
+  // Мемоизируем функции форматирования
+  const localizedFormatNumber = useCallback((value: number, options?: Intl.NumberFormatOptions) => {
     return formatNumber(value, locale, options);
-  };
+  }, [locale]);
 
-  const localizedFormatDate = (date: Date | string, options?: Intl.DateTimeFormatOptions) => {
+  const localizedFormatDate = useCallback((date: Date | string, options?: Intl.DateTimeFormatOptions) => {
     return formatDate(date, locale, options);
-  };
+  }, [locale]);
 
-  const localizedFormatCurrency = (amount: number, currency: 'USD' | 'EUR' | 'UAH') => {
+  const localizedFormatCurrency = useCallback((amount: number, currency: 'USD' | 'EUR' | 'UAH') => {
     return formatCurrency(amount, currency, locale);
-  };
+  }, [locale]);
 
-  // Получение конфигурации текущего языка
-  const localeConfig = getLocaleConfig(locale);
+  // Мемоизируем конфигурацию текущего языка
+  const localeConfig = useMemo(() => getLocaleConfig(locale), [locale]);
 
-  // Список доступных языков с их конфигурациями
-  const availableLocales = LOCALES.map(locale => ({
-    code: locale,
-    ...getLocaleConfig(locale)
-  }));
+  // Мемоизируем список доступных языков (не зависит от locale, вычисляется один раз)
+  const availableLocales = useMemo(() => LOCALES.map(loc => ({
+    code: loc,
+    ...getLocaleConfig(loc)
+  })), []);
+
+  // Мемоизируем context value для предотвращения ненужных ререндеров
+  // ВАЖНО: Должен быть ПЕРЕД любыми условными return
+  const contextValue: I18nContextType = useMemo(() => {
+    try {
+      return {
+        locale,
+        localeConfig,
+        setLocale,
+        t,
+        formatNumber: localizedFormatNumber,
+        formatDate: localizedFormatDate,
+        formatCurrency: localizedFormatCurrency,
+        availableLocales,
+      };
+    } catch (error) {
+      console.error('Error creating I18n context value:', error);
+      // Create a minimal fallback context
+      return {
+        locale: DEFAULT_LOCALE,
+        localeConfig: getLocaleConfig(DEFAULT_LOCALE),
+        setLocale: () => {},
+        t: (key: string) => key,
+        formatNumber: (value: number) => value.toString(),
+        formatDate: (date: Date | string) => date.toString(),
+        formatCurrency: (amount: number, currency: string) => `${currency}${amount}`,
+        availableLocales: LOCALES.map(locale => ({
+          code: locale,
+          ...getLocaleConfig(locale)
+        })),
+      };
+    }
+  }, [locale, localeConfig, setLocale, t, localizedFormatNumber, localizedFormatDate, localizedFormatCurrency, availableLocales]);
 
   // Показываем загрузку до инициализации
   if (!isInitialized) {
@@ -109,36 +141,6 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
-  }
-
-  let contextValue: I18nContextType;
-  try {
-    contextValue = {
-      locale,
-      localeConfig,
-      setLocale,
-      t,
-      formatNumber: localizedFormatNumber,
-      formatDate: localizedFormatDate,
-      formatCurrency: localizedFormatCurrency,
-      availableLocales,
-    };
-  } catch (error) {
-    console.error('Error creating I18n context value:', error);
-    // Create a minimal fallback context
-    contextValue = {
-      locale: DEFAULT_LOCALE,
-      localeConfig: getLocaleConfig(DEFAULT_LOCALE),
-      setLocale: () => {},
-      t: (key: string) => key,
-      formatNumber: (value: number) => value.toString(),
-      formatDate: (date: Date | string) => date.toString(),
-      formatCurrency: (amount: number, currency: string) => `${currency}${amount}`,
-      availableLocales: LOCALES.map(locale => ({
-        code: locale,
-        ...getLocaleConfig(locale)
-      })),
-    };
   }
 
   return (

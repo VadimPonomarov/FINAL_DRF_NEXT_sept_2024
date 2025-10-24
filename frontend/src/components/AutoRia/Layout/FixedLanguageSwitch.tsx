@@ -66,7 +66,7 @@ const FixedLanguageSwitch: React.FC = () => {
           <Button
             variant="ghost"
             onClick={() => setIsExpanded(true)}
-            className="h-6 px-2 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-gray-700 text-[10px] transition-all duration-200"
+            className="h-6 px-2 flex items-center gap-1.5 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-gray-700 dark:hover:text-gray-100 text-[10px] transition-all duration-200"
             title={`${t('Language')}: ${currentLocale?.nativeName}`}
           >
             <span className="text-xs">{currentLocale?.flag}</span>

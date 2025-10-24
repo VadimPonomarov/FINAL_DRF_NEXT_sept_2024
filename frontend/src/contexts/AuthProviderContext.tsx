@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useMemo,
 } from "react";
 import { toast } from "@/hooks/use-toast";
 import { AuthProvider as AuthProviderEnum, TOAST_DURATION } from "@/common/constants/constants";
@@ -168,17 +169,29 @@ export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [provider]);
 
+  // Мемоизируем context value
+  const contextValue = useMemo(() => ({
+    provider,
+    setProvider
+  }), [provider, setProvider]);
+
+  // Мемоизируем loading context value
+  const loadingContextValue = useMemo(() => ({
+    provider: AuthProviderEnum.MyBackendDocs,
+    setProvider: () => {}
+  }), []);
+
   // Показываем loading состояние во время инициализации
   if (!isInitialized) {
     return (
-      <AuthProviderContext.Provider value={{ provider: AuthProviderEnum.MyBackendDocs, setProvider: () => {} }}>
+      <AuthProviderContext.Provider value={loadingContextValue}>
         {children}
       </AuthProviderContext.Provider>
     );
   }
 
   return (
-    <AuthProviderContext.Provider value={{ provider, setProvider }}>
+    <AuthProviderContext.Provider value={contextValue}>
       {children}
     </AuthProviderContext.Provider>
   );
