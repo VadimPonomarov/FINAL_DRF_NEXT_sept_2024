@@ -1,12 +1,13 @@
 """
 Unified crawler nodes (REFACTORED).
-Объединенная версия crawl4ai_nodes.py и improved_crawl4ai_nodes.py.
+Universal LLM-based crawler - NO hardcoding, ONLY AI intelligence.
 """
 
 import logging
 from typing import Dict, Any
 from apps.chat.types.types import AgentState
 from apps.chat.services.crawler_service import crawler_service
+from apps.chat.services.universal_crawler_service import universal_crawler_service
 from apps.chat.config.crawler_config import DEEP_CRAWL_CONFIG
 from apps.chat.config.llm_config import call_llm
 from apps.chat.utils.url_utils import extract_urls
@@ -132,9 +133,9 @@ def crawl4ai_extract_node(state: AgentState) -> AgentState:
 
 def crawl4ai_ask_node(state: AgentState) -> AgentState:
     """
-    Crawl URL and answer questions about the content.
-    Supports deep crawling for price extraction.
-    Simplified version delegating to service layer.
+    Universal crawler using LLM-based intelligent extraction.
+    NO hardcoded patterns - ONLY AI intelligence.
+    Works with ANY website, ANY data type.
     """
     try:
         # Initialize table variables
@@ -148,55 +149,84 @@ def crawl4ai_ask_node(state: AgentState) -> AgentState:
         
         if not urls:
             return state.model_copy(update={
-                "result": "No valid URLs found. Please provide a URL.",
+                "result": "URL не найден в запросе. Пожалуйста, предоставьте URL для анализа.",
                 "metadata": {**state.metadata, "crawl4ai_error": "no_urls"}
             })
         
         url = urls[0]
         
-        # Check if deep crawl is needed
+        # Check if deep crawl is needed using LLM
         needs_deep = _needs_deep_crawl(state.query)
         
         import asyncio
         
         if needs_deep:
-            logger.info(f"🔄 Deep crawl requested for: {url}")
+            logger.info(f"🤖 Universal LLM-based deep crawl for: {url}")
+            logger.info(f"📝 Query: {state.query}")
             
-            # Perform deep crawl
-            deep_result = asyncio.run(
-                crawler_service.crawl_deep(
-                    url,
+            # Use universal crawler with LLM extraction
+            result = asyncio.run(
+                universal_crawler_service.crawl_with_llm_extraction(
+                    url=url,
+                    query=state.query,
                     max_depth=DEEP_CRAWL_CONFIG['max_depth'],
                     max_links=DEEP_CRAWL_CONFIG['max_links']
                 )
             )
             
-            # Process results (pass query for currency detection)
-            processed_data = crawler_service.process_crawl_results(deep_result, query=state.query)
+            if not result['success']:
+                return state.model_copy(update={
+                    "result": f"❌ Не удалось извлечь данные с {url}: {result.get('error', 'Unknown error')}",
+                    "metadata": {**state.metadata, "crawl4ai_error": "extraction_failed"}
+                })
             
-            # Format response with table data
-            formatted = crawler_service.format_response(processed_data)
+            # Extract results from LLM extraction
+            extracted_data = result.get('extracted_data', {})
+            items = extracted_data.get('items', [])
+            data_type = extracted_data.get('data_type', 'unknown')
+            summary = extracted_data.get('summary', '')
             
-            # Extract components
-            response = formatted['result']
-            table_html = formatted.get('table_html')
-            table_data = formatted.get('table_data')
+            # Build response
+            if items:
+                response = f"**🎯 Универсальное извлечение данных с {url}**\n\n"
+                response += f"📊 **Тип данных:** {data_type}\n"
+                response += f"✅ **Найдено элементов:** {len(items)}\n\n"
+                response += f"**Сводка:** {summary}\n\n"
+                
+                # Add first few items as preview
+                response += "**📦 Данные (первые элементы):**\n\n"
+                for item in items[:5]:
+                    response += "• "
+                    response += " | ".join([f"**{k}:** {v}" for k, v in item.items()])
+                    response += "\n"
+                
+                if len(items) > 5:
+                    response += f"\n_...и еще {len(items) - 5} элементов_\n"
+                
+                response += f"\n**🌐 Просканировано:** {result.get('total_pages', 1)} страниц"
+            else:
+                response = f"**⚠️ Данные не найдены на {url}**\n\n"
+                response += f"Сводка: {summary}\n\n"
+                response += "Возможно, сайт использует сложную защиту от краулинга или данные загружаются динамически."
             
-            # Add intermediate result
-            state.add_intermediate_result("deep_crawl_result", deep_result)
+            # Extract table data
+            table_html = result.get('table_html')
+            table_data = result.get('table_data')
             
             metadata = {
                 **state.metadata,
                 "analyzed_url": url,
-                "crawl_method": "deep",
-                "total_pages": processed_data.get('total_pages', 0),
-                "prices_found": len(processed_data.get('prices_found', [])),
-                "has_table": table_html is not None
+                "crawl_method": "universal_llm",
+                "total_pages": result.get('total_pages', 1),
+                "items_found": len(items),
+                "data_type": data_type,
+                "has_table": table_html is not None,
+                "universal_extraction": True
             }
         else:
-            logger.info(f"📄 Single page crawl: {url}")
+            logger.info(f"📄 Simple single page crawl: {url}")
             
-            # Perform single page crawl
+            # For simple queries, just return the content
             result = asyncio.run(crawler_service.crawl_url(url))
             
             if not result.get('success'):
@@ -228,7 +258,7 @@ def crawl4ai_ask_node(state: AgentState) -> AgentState:
             "metadata": metadata
         }
         
-        # Add table data if available (deep crawl with prices)
+        # Add table data if available (from LLM extraction)
         if needs_deep:
             if table_html is not None:
                 update_dict["table_html"] = table_html
@@ -238,8 +268,8 @@ def crawl4ai_ask_node(state: AgentState) -> AgentState:
         return state.model_copy(update=update_dict)
         
     except Exception as e:
-        error_msg = f"Crawl error: {str(e)}"
-        logger.error(error_msg)
+        error_msg = f"Universal crawler error: {str(e)}"
+        logger.error(error_msg, exc_info=True)
         return state.model_copy(update={"error": error_msg})
 
 
