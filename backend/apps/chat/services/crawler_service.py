@@ -180,21 +180,29 @@ class CrawlerService:
     
     def process_crawl_results(
         self, 
-        deep_result: Dict[str, Any]
+        deep_result: Dict[str, Any],
+        query: str = ""
     ) -> Dict[str, Any]:
         """
-        Process deep crawl results: extract prices, clean content, deduplicate.
+        Process deep crawl results: extract prices/currency rates, clean content, deduplicate.
         
         Args:
             deep_result: Results from crawl_deep
+            query: User query for context (to detect currency rates vs prices)
             
         Returns:
-            Processed data with prices and content
+            Processed data with prices/currency rates and content
         """
+        from .currency_parser_service import currency_parser_service
+        
         url = deep_result.get('base_url', '')
         all_content = []
         prices_found = []
+        currency_rates_found = []
         seen_urls = {}
+        
+        # Detect if this is currency rates query
+        is_currency_query = self._is_currency_query(query, url)
         
         for item in deep_result.get("results", []):
             result = item.get("result", {})
@@ -211,12 +219,19 @@ class CrawlerService:
             # Remove base64 images
             content = remove_base64_images(raw_content)
             
-            # Extract prices
-            price_data = price_parser_service.extract_prices_from_content(content, page_url)
-            if price_data.get('items'):
-                # Limit items per page
-                price_data['items'] = price_data['items'][:DEEP_CRAWL_CONFIG['max_items_per_page']]
-                prices_found.append(price_data)
+            # Extract currency rates OR prices based on query
+            if is_currency_query:
+                # Extract currency rates
+                currency_data = currency_parser_service.extract_currency_rates(content, page_url)
+                if currency_data.get('rates'):
+                    currency_rates_found.append(currency_data)
+            else:
+                # Extract prices
+                price_data = price_parser_service.extract_prices_from_content(content, page_url)
+                if price_data.get('items'):
+                    # Limit items per page
+                    price_data['items'] = price_data['items'][:DEEP_CRAWL_CONFIG['max_items_per_page']]
+                    prices_found.append(price_data)
             
             # Save cleaned content
             clean_content = content[:800].strip()
@@ -228,13 +243,38 @@ class CrawlerService:
         return {
             'url': url,
             'prices_found': prices_found,
+            'currency_rates_found': currency_rates_found,
             'all_content': all_content,
             'total_pages': len(deep_result.get('results', []))
         }
     
+    def _is_currency_query(self, query: str, url: str) -> bool:
+        """Detect if query/URL is about currency exchange rates."""
+        query_lower = query.lower()
+        url_lower = url.lower()
+        
+        currency_keywords = [
+            'курс', 'валют', 'currency', 'exchange', 'обмен', 'обмін',
+            'долар', 'доллар', 'dollar', 'євро', 'евро', 'euro'
+        ]
+        
+        currency_urls = ['kurs.', 'exchange', 'currency', 'minfin']
+        
+        # Check query
+        for keyword in currency_keywords:
+            if keyword in query_lower:
+                return True
+        
+        # Check URL
+        for keyword in currency_urls:
+            if keyword in url_lower:
+                return True
+        
+        return False
+    
     def format_response(self, processed_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Format crawl results with structured table data.
+        Format crawl results with structured table data (prices or currency rates).
         
         Args:
             processed_data: Processed crawl data
@@ -242,39 +282,66 @@ class CrawlerService:
         Returns:
             Dict with 'result' (text), 'table_html', 'table_data'
         """
+        from .currency_parser_service import currency_parser_service
+        
         url = processed_data.get('url', '')
         prices_found = processed_data.get('prices_found', [])
+        currency_rates_found = processed_data.get('currency_rates_found', [])
         all_content = processed_data.get('all_content', [])
         total_pages = processed_data.get('total_pages', 0)
         
-        # Format prices as structured table data
-        table_result = price_parser_service.format_prices_as_structured_data(
-            prices_found, 
-            include_url=False  # Don't clutter with URLs in simple case
-        )
-        
-        # Build text response with item list (fallback for frontend without table support)
-        response_text = f"**🔍 Анализ {url}**\n\n"
-        
-        if table_result.get('table_html'):
-            # Add statistics summary
-            response_text += table_result.get('summary', '') + "\n\n"
+        # Check if this is currency rates or prices
+        if currency_rates_found:
+            # Format currency rates
+            table_result = currency_parser_service.format_rates_as_table(currency_rates_found)
             
-            # Add detailed item list (fallback for frontends without table rendering)
-            response_text += "**📦 Найденные товары:**\n\n"
-            for item in table_result.get('table_data', []):
-                name = item.get('Товар', 'Неизвестно')
-                price = item.get('Цена (грн)', '0')
-                response_text += f"• {name} — **{price} грн**\n"
-            response_text += "\n"
+            # Build text response for currency rates
+            response_text = f"**💱 Курсы валют - {url}**\n\n"
+            
+            if table_result.get('table_html'):
+                # Add summary
+                response_text += table_result.get('summary', '') + "\n\n"
+                
+                # Add detailed rates list
+                response_text += "**💵 Курсы обмена:**\n\n"
+                for rate in table_result.get('table_data', []):
+                    currency = rate.get('Валюта', '')
+                    buy = rate.get('Покупка', '')
+                    sell = rate.get('Продажа', '')
+                    response_text += f"• {currency}: **{buy}** / **{sell}**\n"
+                response_text += "\n"
+            else:
+                response_text += "⚠️ Курсы валют не найдены\n\n"
+        
         else:
-            response_text += "⚠️ Цены не найдены\n\n"
+            # Format prices as structured table data
+            table_result = price_parser_service.format_prices_as_structured_data(
+                prices_found, 
+                include_url=False  # Don't clutter with URLs in simple case
+            )
+            
+            # Build text response with item list (fallback for frontend without table support)
+            response_text = f"**🔍 Анализ {url}**\n\n"
+            
+            if table_result.get('table_html'):
+                # Add statistics summary
+                response_text += table_result.get('summary', '') + "\n\n"
+                
+                # Add detailed item list (fallback for frontends without table rendering)
+                response_text += "**📦 Найденные товары:**\n\n"
+                for item in table_result.get('table_data', []):
+                    name = item.get('Товар', 'Неизвестно')
+                    price = item.get('Цена (грн)', '0')
+                    response_text += f"• {name} — **{price} грн**\n"
+                response_text += "\n"
+            else:
+                response_text += "⚠️ Цены не найдены\n\n"
         
         # Add crawl summary
         response_text += f"**🌐 Просканировано:** {total_pages} страниц"
         
-        # Add content preview if no prices found
-        if not prices_found and all_content:
+        # Add content preview if nothing found
+        if not prices_found and not currency_rates_found and all_content:
             combined_content = "\n\n".join(all_content)
             response_text += f"\n\n**📝 Фрагмент контента:**\n{combined_content[:1000]}"
             if len(combined_content) > 1000:

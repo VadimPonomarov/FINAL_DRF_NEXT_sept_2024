@@ -171,8 +171,8 @@ def crawl4ai_ask_node(state: AgentState) -> AgentState:
                 )
             )
             
-            # Process results
-            processed_data = crawler_service.process_crawl_results(deep_result)
+            # Process results (pass query for currency detection)
+            processed_data = crawler_service.process_crawl_results(deep_result, query=state.query)
             
             # Format response with table data
             formatted = crawler_service.format_response(processed_data)
