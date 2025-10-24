@@ -36,10 +36,10 @@ def get_rest_framework_config():
             'rest_framework.throttling.UserRateThrottle'
         ],
         'DEFAULT_THROTTLE_RATES': {
-            'anon': os.getenv('DRF_ANON_RATE', '100/hour'),
-            'user': os.getenv('DRF_USER_RATE', '1000/hour'),
-            'login': os.getenv('DRF_LOGIN_RATE', '5/min'),
-            'register': os.getenv('DRF_REGISTER_RATE', '3/min'),
+            'anon': os.getenv('DRF_ANON_RATE', '10000/hour'),  # Увеличено для WebSocket
+            'user': os.getenv('DRF_USER_RATE', '100000/hour'),  # Увеличено для WebSocket
+            'login': os.getenv('DRF_LOGIN_RATE', '50/min'),  # Увеличено для dev
+            'register': os.getenv('DRF_REGISTER_RATE', '30/min'),  # Увеличено для dev
         },
         'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
         'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',

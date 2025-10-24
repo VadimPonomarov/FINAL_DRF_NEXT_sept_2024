@@ -20,7 +20,7 @@ except ImportError:
 from .views import LogoutView
 from .views.token_form_view import TokenFormView
 from .docs.swagger_schemas import auth_login_schema, auth_refresh_schema
-from .serializers import CustomTokenObtainPairSerializer
+from .serializers import CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer
 from core.services.security_logger import log_login_success, log_login_failed
 
 
@@ -62,27 +62,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             raise
 
 
-class CustomTokenRefreshSerializer(TokenRefreshSerializer):
-    """
-    Custom refresh serializer that returns both access and refresh tokens
-    when ROTATE_REFRESH_TOKENS is enabled.
-    """
-    def validate(self, attrs):
-        # Call parent validation first
-        data = super().validate(attrs)
-
-        # Check if token rotation is enabled in settings
-        from django.conf import settings
-        simple_jwt_settings = getattr(settings, 'SIMPLE_JWT', {})
-        rotate_refresh_tokens = simple_jwt_settings.get('ROTATE_REFRESH_TOKENS', False)
-
-        if rotate_refresh_tokens:
-            # When rotation is enabled, include the new refresh token
-            # The refresh token is available as self.token after parent validation
-            if hasattr(self, 'token') and self.token:
-                data['refresh'] = str(self.token)
-
-        return data
 
 
 @conditional_ratelimit('10/m')

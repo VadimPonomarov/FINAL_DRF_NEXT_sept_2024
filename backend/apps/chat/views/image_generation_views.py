@@ -474,8 +474,17 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                     # Initialize OpenAI client
                     api_key = os.getenv('OPENAI_API_KEY')
                     if not api_key:
-                        logger.error("❌ [DALL-E] OPENAI_API_KEY not found in environment")
-                        raise ValueError("OPENAI_API_KEY not configured")
+                        logger.warning("⚠️ [DALL-E] OPENAI_API_KEY not found in environment, using fallback")
+                        # Use fallback image generation instead of raising error
+                        fallback_url = generate_placeholder_url(english_prompt)
+                        logger.info(f"🔄 [Fallback] Using placeholder for {angle}: {fallback_url}")
+                        return {
+                            'url': fallback_url,
+                            'angle': angle,
+                            'title': f"{car_data.get('brand', 'Car')} {car_data.get('model', 'Model')} - {angle.title()}",
+                            'fallback': True,
+                            'message': 'OPENAI_API_KEY not configured, using placeholder'
+                        }
 
                     client = OpenAI(api_key=api_key)
 

@@ -28,6 +28,31 @@ const LoginPage: FC = () => {
     // Check if running in Docker
     const isDocker = process.env.NEXT_PUBLIC_IS_DOCKER === 'true';
 
+    // Clear refresh attempts counter on login page mount
+    useEffect(() => {
+        const clearRefreshAttempts = async () => {
+            try {
+                const { apiSetRedis, apiGetRedis } = await import('@/app/api/helpers');
+                const key = 'backend_auth';
+                const redisData = await apiGetRedis(key);
+                if (redisData) {
+                    const parsedData = typeof redisData === 'string' ? JSON.parse(redisData) : redisData;
+                    await apiSetRedis(key, JSON.stringify({
+                        ...parsedData,
+                        refreshAttempts: 0,
+                        lastRefreshFailed: false,
+                        lastRefreshTime: 0
+                    }));
+                    console.log('[LoginPage] Cleared refresh attempts counter on mount');
+                }
+            } catch (error) {
+                console.error('[LoginPage] Failed to clear refresh attempts:', error);
+            }
+        };
+
+        clearRefreshAttempts();
+    }, []); // Run only on mount
+
     // Show toast notifications for messages
     useEffect(() => {
         if (error === 'backend_auth_required' || alert === 'backend_auth_required') {

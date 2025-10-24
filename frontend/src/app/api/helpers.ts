@@ -37,6 +37,25 @@ async function apiSetRedis(key: string, value: string): Promise<boolean> {
   }
 }
 
+// Функция для очистки счетчика попыток refresh перед редиректом
+async function clearRefreshAttempts(key: string = "backend_auth"): Promise<void> {
+  try {
+    const redisData = await apiGetRedis(key);
+    if (redisData) {
+      const parsedData = typeof redisData === 'string' ? JSON.parse(redisData) : redisData;
+      await apiSetRedis(key, JSON.stringify({
+        ...parsedData,
+        refreshAttempts: 0,
+        lastRefreshFailed: false,
+        lastRefreshTime: 0
+      }));
+      console.log(`[clearRefreshAttempts] Cleared refresh attempts for key: ${key}`);
+    }
+  } catch (error) {
+    console.error(`[clearRefreshAttempts] Failed to clear refresh attempts:`, error);
+  }
+}
+
 // Centralized error handler with improved retry logic
 const handleFetchErrors = async (response: Response, key: string = "backend_auth") => {
   if (!response.ok) {
@@ -49,6 +68,10 @@ const handleFetchErrors = async (response: Response, key: string = "backend_auth
         const refreshResult = await fetchRefresh(key);
         if (!refreshResult) {
           console.log("[handleFetchErrors] Refresh failed after all attempts, redirecting to login...");
+          // Очищаем счетчик попыток перед редиректом (важно await!)
+          await clearRefreshAttempts(key);
+          // Добавляем небольшую задержку для гарантии записи в Redis
+          await new Promise(resolve => setTimeout(resolve, 100));
           redirect("/login");
         }
         console.log("[handleFetchErrors] Refresh successful, returning null to trigger retry");
@@ -58,6 +81,10 @@ const handleFetchErrors = async (response: Response, key: string = "backend_auth
 
       case 403:
         console.log("Error 403: Access denied. Redirecting...");
+        // Очищаем счетчик попыток перед редиректом (важно await!)
+        await clearRefreshAttempts(key);
+        // Добавляем небольшую задержку для гарантии записи в Redis
+        await new Promise(resolve => setTimeout(resolve, 100));
         redirect("/login");
         break;
 

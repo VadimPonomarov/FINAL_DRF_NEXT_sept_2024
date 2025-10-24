@@ -5,7 +5,7 @@
 This is a complete rewrite of the chat system using **LangGraph + LangChain** for intelligent conversation processing. The new architecture provides:
 
 - **Multi-modal AI capabilities** with ChatAI for text and image generation
-- **Real-time information retrieval** with Tavily Search
+- **Real-time information retrieval** with DuckDuckGo Search
 - **Web scraping and analysis** with Crawl4AI
 - **Code execution** in safe environments
 - **File operations** for reading, writing, and analyzing files
@@ -38,7 +38,7 @@ The system automatically classifies user intents:
 
 - **GENERAL_CHAT**: Regular conversation
 - **IMAGE_GENERATION**: Create images with ChatAI flux-schnell
-- **FACTUAL_SEARCH**: Search current information with Tavily
+- **FACTUAL_SEARCH**: Search current information with DuckDuckGo
 - **WEB_CRAWLING**: Scrape and analyze web content with Crawl4AI
 - **CODE_EXECUTION**: Execute Python code safely
 - **FILE_READ/WRITE/ANALYSIS**: File operations
@@ -51,10 +51,10 @@ The system automatically classifies user intents:
 - `chatai_image_node`: Image generation with flux-schnell
 - `chatai_enhanced_text_node`: Context-aware text generation
 
-#### Search Nodes (`tavily_nodes.py`)
-- `tavily_search_node`: Basic web search
-- `tavily_enhanced_search_node`: Search + AI synthesis
-- `tavily_context_node`: Context extraction for other nodes
+#### Search Nodes (`duckduckgo_nodes.py`)
+- `duckduckgo_search_node`: Basic web search
+- `duckduckgo_enhanced_search_node`: Search + AI synthesis
+- `duckduckgo_context_node`: Context extraction for other nodes
 
 #### Web Scraping Nodes (`crawl4ai_nodes.py`)
 - `crawl4ai_extract_node`: Extract content from URLs
@@ -96,8 +96,8 @@ Frontend ← Response Formatting ← Agent Processing ← Node Execution
 ### Environment Variables
 
 ```bash
-# Tavily Search (optional)
-TAVILY_API_KEY=your_tavily_api_key
+# DuckDuckGo Search (no API key required)
+# DuckDuckGo works without API keys for basic search
 
 # File operations directory
 CHAT_FILES_DIR=/app/temp

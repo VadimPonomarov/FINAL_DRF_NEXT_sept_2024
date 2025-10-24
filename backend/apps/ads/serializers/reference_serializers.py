@@ -55,6 +55,10 @@ class VehicleTypeChoiceSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'name', 'slug']
 
 
+# Alias for backward compatibility
+VehicleTypeSerializer = VehicleTypeListSerializer
+
+
 # Car Mark Serializers
 class CarMarkListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for car marks list."""

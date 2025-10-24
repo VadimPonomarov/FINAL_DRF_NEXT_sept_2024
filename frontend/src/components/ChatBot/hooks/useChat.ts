@@ -152,11 +152,16 @@ export const useChat = ({ onAuthError, autoConnect = true }: UseChatProps = {}):
                                  processedMsg.message &&
                                  processedMsg.message.trim().length > 0;
 
+            // Проверяем, является ли это изображением
+            const isImageMessage = processedMsg.type === 'image' ||
+                                 processedMsg.image_url ||
+                                 (processedMsg.message && processedMsg.message.includes('Ссылка на изображение'));
+
             // Проверяем, есть ли ошибка
             const hasError = processedMsg.type === 'error' ||
                            (processedMsg.message && processedMsg.message.toLowerCase().includes('ошибка'));
 
-            if (isFinalMessage || hasError) {
+            if (isFinalMessage || hasError || isImageMessage) {
               console.log('[useChat] Final assistant message or error received');
 
               // Отмечаем это сообщение как последнее от ассистента
@@ -349,7 +354,9 @@ export const useChat = ({ onAuthError, autoConnect = true }: UseChatProps = {}):
                       lastMessage.type !== 'system_message' &&
                       !lastMessage.message?.includes('Запрос занял слишком много времени') &&
                       !lastMessage.message?.includes('An error occurred') &&
-                      lastMessage.message?.trim().length > 0;
+                      (lastMessage.message?.trim().length > 0 ||
+                       lastMessage.image_url ||
+                       lastMessage.type === 'image');
 
     if (shouldHide) {
       console.log('[useChat] shouldHideSkeletonBasedOnHistory: true - last message is a valid assistant response');
@@ -776,19 +783,22 @@ export const useChat = ({ onAuthError, autoConnect = true }: UseChatProps = {}):
 
   // Function to connect to WebSocket
   const connect = useCallback(async () => {
-    if (currentChunk?.id && !isConnected && !isConnecting) {
-      await wsConnect(currentChunk.id, false); // false означает, что это не новый чат
-    } else if (isConnected || isConnecting) {
+    if (isConnected || isConnecting) {
       console.log("Already connected or connecting to WebSocket");
-    } else {
-      console.log("Not connecting to WebSocket: no current chunk");
-      toast({
-        title: "Нет активного чата",
-        description: "Создайте новый чат или выберите существующий",
-        duration: 3000
-      });
+      return;
     }
-  }, [wsConnect, currentChunk, toast, isConnected, isConnecting]);
+
+    if (!currentChunk?.id) {
+      console.log("No current chunk, creating new chat first...");
+      // Создаем новый чат автоматически
+      await startNewChat();
+      // После создания нового чата он автоматически подключится через useEffect
+      return;
+    }
+
+    // Подключаемся к существующему чату
+    await wsConnect(currentChunk.id, false); // false означает, что это не новый чат
+  }, [wsConnect, currentChunk, isConnected, isConnecting, startNewChat]);
 
   // Override cancelCurrentTask to reset isWaitingForAssistantResponse
   const cancelCurrentTaskWithReset = useCallback(() => {

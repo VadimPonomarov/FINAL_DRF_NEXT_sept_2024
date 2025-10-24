@@ -52,12 +52,13 @@ def get_swagger_config():
             'drf_yasg.inspectors.CoreAPICompatInspector',
         ],
         'DEFAULT_PAGINATOR_INSPECTORS': [
-            'drf_yasg.inspectors.DjangoRestResponsePagination',
             'drf_yasg.inspectors.CoreAPICompatInspector',
         ],
         'REFETCH_SCHEMA_WITH_AUTH': True,
         'REFETCH_SCHEMA_ON_LOGOUT': True,
         'DEFAULT_API_URL': os.getenv('SWAGGER_DEFAULT_API_URL', 'http://localhost:8000'),
+        'SUPPRESS_WARNINGS': True,  # Suppress DRF-YASG warnings
+        'LOG_LEVEL': 'ERROR',  # Only show errors, not warnings
     }
 
 

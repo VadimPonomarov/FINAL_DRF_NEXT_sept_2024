@@ -60,7 +60,12 @@ class LangChainIntentClassifier:
             ("who is president of germany", "Current German president"),
             ("who is president of france", "Current French president"),
             ("who is prime minister of uk", "Current UK prime minister"),
-            ("who is chancellor of germany", "Current German chancellor")
+            ("who is chancellor of germany", "Current German chancellor"),
+            ("найди информацию в Wikipedia о квантовой физике", "Wikipedia factual search"),
+            ("search Wikipedia for quantum physics", "Wikipedia knowledge retrieval"),
+            ("расскажи о квантовой физике из Wikipedia", "Wikipedia information requests"),
+            ("tell me about quantum mechanics from Wikipedia", "Wikipedia educational content"),
+            ("что говорит Wikipedia о машинном обучении", "Wikipedia reference queries")
         ]
 
         examples.append("FACTUAL_SEARCH + REALTIME (current information needed):")
@@ -143,6 +148,26 @@ class LangChainIntentClassifier:
 
         examples.append("\nDATETIME + REALTIME (time-sensitive):")
         for query, explanation in time_examples:
+            examples.append(f"- \"{query}\" → {explanation}")
+
+        # WEB_CRAWLING examples (parsing, scraping, extracting structured data)
+        crawling_examples = [
+            ("спарси курсы валют с сайта", "Parsing structured data from websites"),
+            ("parse currency rates from website", "Extracting specific data structures"),
+            ("спарсить цены с https://example.com", "Scraping prices and tabular data"),
+            ("извлеки таблицу с этого сайта", "Table extraction requests"),
+            ("get data from this website", "Generic data extraction"),
+            ("crawl this site and extract prices", "Price scraping"),
+            ("собери информацию с сайта", "Website data collection"),
+            ("найди на сайте курсы валют", "Finding specific data on pages"),
+            ("extract table from URL", "Structured data extraction"),
+            ("какие цены на https://example.com", "Price information requests"),
+            ("покажи данные с сайта в виде таблицы", "Table formatting requests"),
+            ("parse https://bank.gov.ua/NBUStatService", "API/data endpoint parsing")
+        ]
+
+        examples.append("\nWEB_CRAWLING + REALTIME (web scraping and data extraction):")
+        for query, explanation in crawling_examples:
             examples.append(f"- \"{query}\" → {explanation}")
 
         return '\n'.join(examples)

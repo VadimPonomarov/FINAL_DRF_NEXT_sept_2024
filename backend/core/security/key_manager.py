@@ -18,20 +18,14 @@ class KeyManager:
     """
     
     def __init__(self):
-        self._cache: Dict[str, Optional[str]] = {}
         self._encrypted_keys = {
             # Google Services - только зашифрованные ключи
             'GOOGLE_MAPS_API_KEY': 'ENCRYPTED_GOOGLE_MAPS_API_KEY',
             'GOOGLE_API_KEY': 'ENCRYPTED_GOOGLE_API_KEY',
             'GOOGLE_CLIENT_SECRET': 'ENCRYPTED_GOOGLE_CLIENT_SECRET',
-            'TAVILY_API_KEY': 'ENCRYPTED_TAVILY_API_KEY',
-            
+
             # Microsoft Services - direct variable names
             'BING_API_KEY': 'BING_API_KEY',
-
-            # Other APIs - direct variable names (не зашифрованы)
-            'RIZA_API_KEY': 'RIZA_API_KEY',
-            'OPENAI_API_KEY': 'OPENAI_API_KEY',
 
             # Email Services - зашифрованные для backend
             'EMAIL_HOST_PASSWORD': 'ENCRYPTED_EMAIL_HOST_PASSWORD',
@@ -43,6 +37,9 @@ class KeyManager:
             'TWITTER_API_SECRET': 'TWITTER_API_SECRET',
             'GITHUB_CLIENT_SECRET': 'GITHUB_CLIENT_SECRET',
         }
+
+        # Initialize cache for decrypted keys
+        self._cache: Dict[str, Optional[str]] = {}
     
     def get_key(self, key_name: str, fallback_to_plain: bool = True) -> Optional[str]:
         """

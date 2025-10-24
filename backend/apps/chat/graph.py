@@ -5,25 +5,26 @@ Enhanced configuration and assembly of the multi-tool chat agent graph.
 import logging
 from langgraph.graph import StateGraph
 from .types.types import AgentState, Intent, DataMode
-from .classifiers.langchain_classifier import langchain_intent_classifier
+from .classifiers.intelligent_classifier import intelligent_classifier
 
 logger = logging.getLogger(__name__)
 
-# Import all node modules
+# TEMPORARY ROLLBACK: Using old nodes until refactored are fully tested
 from .nodes.chatai_nodes import (
     chatai_text_node,
     chatai_image_node,
     chatai_enhanced_text_node
 )
-from .nodes.tavily_nodes import (
-    tavily_search_node,
-    tavily_enhanced_search_node,
-    tavily_context_node
+from .nodes.duckduckgo_nodes import (
+    duckduckgo_search_node,
+    duckduckgo_enhanced_search_node,
+    duckduckgo_context_node
 )
-from .nodes.crawl4ai_nodes import (
-    crawl4ai_extract_node,
-    crawl4ai_ask_node,
-    crawl4ai_multi_url_node
+# Use improved crawler (it was working)
+from .nodes.improved_crawl4ai_nodes import (
+    improved_crawl4ai_extract_node as crawl4ai_extract_node,
+    improved_crawl4ai_ask_node as crawl4ai_ask_node,
+    improved_crawl4ai_multi_url_node as crawl4ai_multi_url_node
 )
 from .nodes.file_nodes import (
     file_read_node,
@@ -40,10 +41,21 @@ from .nodes.utility_nodes import (
     final_output_node
 )
 
+# Import math nodes
+from .nodes.math_nodes import (
+    math_node,
+    advanced_math_node
+)
+
+# Import data analysis nodes
+from .nodes.data_analysis_nodes import (
+    pandas_analysis_node
+)
+
 
 def classify_intent_node(state: AgentState) -> AgentState:
-    """LLM-based classification node for intent and data mode."""
-    return langchain_intent_classifier.classify(state)
+    """Intelligent LLM-based classification node for intent and data mode."""
+    return intelligent_classifier.classify_state(state)
 
 
 class EnhancedAgentGraph:
@@ -94,8 +106,8 @@ class EnhancedAgentGraph:
             "chatai_enhanced": chatai_enhanced_text_node,
 
             # Search and crawling nodes
-            "tavily_search": tavily_search_node,
-            "tavily_enhanced": tavily_enhanced_search_node,
+            "duckduckgo_search": duckduckgo_search_node,
+            "duckduckgo_enhanced": duckduckgo_enhanced_search_node,
             "crawl4ai_extract": crawl4ai_extract_node,
             "crawl4ai_ask": crawl4ai_ask_node,
 
@@ -108,6 +120,13 @@ class EnhancedAgentGraph:
             # Code execution nodes
             "codegen": codegen_node,
             "riza_exec": riza_exec_node,
+
+            # Math nodes
+            "math": math_node,
+            "advanced_math": advanced_math_node,
+
+            # Data analysis nodes
+            "data_analysis": pandas_analysis_node,
 
             # Output node
             "output": final_output_node
@@ -137,12 +156,14 @@ class EnhancedAgentGraph:
                 Intent.GENERAL_CHAT: "chatai_enhanced",
                 Intent.TEXT_GENERATION: "chatai_text",
                 Intent.IMAGE_GENERATION: "chatai_image",
-                Intent.FACTUAL_SEARCH: "tavily_enhanced",
+                Intent.FACTUAL_SEARCH: "duckduckgo_enhanced",
                 Intent.WEB_CRAWLING: "crawl4ai_ask",
                 Intent.CODE_EXECUTION: "codegen",
                 Intent.FILE_READ: "file_read",
                 Intent.FILE_WRITE: "file_write",
                 Intent.FILE_ANALYSIS: "file_analysis",
+                Intent.MATHEMATICS: "math",
+                Intent.DATA_ANALYSIS: "data_analysis",
                 Intent.DATETIME: "output"
             }
         )
@@ -151,8 +172,8 @@ class EnhancedAgentGraph:
         graph.add_edge("chatai_text", "output")
         graph.add_edge("chatai_image", "output")
         graph.add_edge("chatai_enhanced", "output")
-        graph.add_edge("tavily_search", "output")
-        graph.add_edge("tavily_enhanced", "output")
+        graph.add_edge("duckduckgo_search", "output")
+        graph.add_edge("duckduckgo_enhanced", "output")
         graph.add_edge("crawl4ai_extract", "output")
         graph.add_edge("crawl4ai_ask", "output")
         graph.add_edge("file_read", "output")
@@ -163,6 +184,13 @@ class EnhancedAgentGraph:
         # Code execution chain
         graph.add_edge("codegen", "riza_exec")
         graph.add_edge("riza_exec", "output")
+
+        # Math nodes
+        graph.add_edge("math", "output")
+        graph.add_edge("advanced_math", "output")
+
+        # Data analysis nodes
+        graph.add_edge("data_analysis", "output")
 
         # Set finish point
         graph.set_finish_point("output")

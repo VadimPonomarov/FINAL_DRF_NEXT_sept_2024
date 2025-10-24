@@ -14,6 +14,7 @@ interface ImprovedResizableWrapperProps extends React.HTMLAttributes<HTMLDivElem
   onResizeStart?: () => void;
   onResizeEnd?: (size: { width: number; height: number }) => void;
   resizeTimeout?: number; // Таймаут для предотвращения случайного закрытия
+  onDragStateChange?: (isDragging: boolean) => void; // Новый callback для отслеживания состояния drag
 }
 
 const ImprovedResizableWrapper: FC<ImprovedResizableWrapperProps> = ({
@@ -28,7 +29,8 @@ const ImprovedResizableWrapper: FC<ImprovedResizableWrapperProps> = ({
   defaultHeight = 300,
   onResizeStart,
   onResizeEnd,
-  resizeTimeout = 2000
+  resizeTimeout = 2000,
+  onDragStateChange
 }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -93,6 +95,14 @@ const ImprovedResizableWrapper: FC<ImprovedResizableWrapperProps> = ({
     
     setIsResizing(true);
     
+    // Уведомляем о начале drag
+    onDragStateChange?.(true);
+    
+    // Добавляем глобальный флаг для предотвращения закрытия модальных окон
+    if (typeof window !== 'undefined') {
+      window.isResizing = true;
+    }
+    
     // Очищаем предыдущий таймаут
     if (resizeTimeoutRef.current) {
       clearTimeout(resizeTimeoutRef.current);
@@ -120,6 +130,16 @@ const ImprovedResizableWrapper: FC<ImprovedResizableWrapperProps> = ({
     const handleMouseUp = () => {
       setIsResizing(false);
       
+      // Уведомляем об окончании drag
+      onDragStateChange?.(false);
+      
+      // Сбрасываем глобальный флаг с небольшой задержкой для предотвращения гонки событий
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          window.isResizing = false;
+        }, 100); // 100ms задержка для предотвращения случайного закрытия
+      }
+      
       // Получаем актуальный размер из state
       const finalSize = { width: size.width, height: size.height };
       saveSize(finalSize);
@@ -146,7 +166,7 @@ const ImprovedResizableWrapper: FC<ImprovedResizableWrapperProps> = ({
     
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [size, minWidth, minHeight, saveSize, onResizeStart, onResizeEnd, resizeTimeout]);
+  }, [size, minWidth, minHeight, saveSize, onResizeStart, onResizeEnd, resizeTimeout, onDragStateChange]);
 
   // Очистка таймаута при размонтировании
   useEffect(() => {

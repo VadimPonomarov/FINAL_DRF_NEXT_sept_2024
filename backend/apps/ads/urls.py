@@ -14,6 +14,7 @@ from .views.reference_views import (
     CarModelListCreateView, CarModelRetrieveUpdateDestroyView,
     CarColorListCreateView, CarColorRetrieveUpdateDestroyView,
     RegionListView, CityListView,
+    VehicleTypeListView, VehicleTypeChoicesView,
     car_marks_popular, car_marks_choices, car_models_by_mark,
     car_colors_popular, car_colors_choices, cities_by_region
 )
@@ -77,9 +78,10 @@ urlpatterns = [
 
     # Марки автомобилей (BMW, Toyota, Daewoo и т.д.)
     path('reference/marks/', CarMarkListCreateView.as_view(), name='car-marks-list'),
+    path('reference/marks/choices', car_marks_choices, name='marks-choices'),  # Frontend compatibility
     path('reference/car-marks/<int:pk>/', CarMarkRetrieveUpdateDestroyView.as_view(), name='car-marks-detail'),
     path('reference/car-marks/popular', car_marks_popular, name='car-marks-popular'),
-    path('reference/car-marks/choices', car_marks_choices, name='car-marks-choices'),
+    path('reference/car-marks/choices', car_marks_choices, name='car-marks-choices'),  # Legacy
 
     # Модели автомобилей (X5, Camry, Lanos и т.д.)
     path('reference/car-models/', CarModelListCreateView.as_view(), name='car-models-list'),
@@ -87,15 +89,24 @@ urlpatterns = [
     path('reference/car-models/by-mark', car_models_by_mark, name='car-models-by-mark'),
 
     # Цвета автомобилей
-    path('reference/car-colors/', CarColorListCreateView.as_view(), name='car-colors-list'),
+    path('reference/colors/', CarColorListCreateView.as_view(), name='colors-list'),  # Frontend compatibility
+    path('reference/colors/choices', car_colors_choices, name='colors-choices'),  # Frontend compatibility
+    path('reference/car-colors/', CarColorListCreateView.as_view(), name='car-colors-list'),  # Legacy
     path('reference/car-colors/<int:pk>/', CarColorRetrieveUpdateDestroyView.as_view(), name='car-colors-detail'),
     path('reference/car-colors/popular', car_colors_popular, name='car-colors-popular'),
-    path('reference/car-colors/choices', car_colors_choices, name='car-colors-choices'),
+    path('reference/car-colors/choices', car_colors_choices, name='car-colors-choices'),  # Legacy
 
     # Регионы и города Украины
     path('reference/regions/', RegionListView.as_view(), name='regions-list'),
     path('reference/cities/', CityListView.as_view(), name='cities-list'),
     path('reference/cities/by-region', cities_by_region, name='cities-by-region'),
+
+    # Типы транспортных средств (легковые, грузовые, мотоциклы и т.д.)
+    path('reference/vehicle-types/', VehicleTypeListView.as_view(), name='vehicle-types-list'),
+    path('reference/vehicle-types/choices', VehicleTypeChoicesView.as_view(), name='vehicle-types-choices'),
+
+    # Бренды автомобилей (алиас для marks для совместимости с frontend)
+    path('reference/brands/', CarMarkListCreateView.as_view(), name='brands-list'),
 
     # =============================================================================
     # АНАЛИТИКА И ТРЕКИНГ

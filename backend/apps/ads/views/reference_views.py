@@ -47,7 +47,7 @@ class CarMarkListCreateView(generics.ListCreateAPIView):
     permission_classes = [ReadOnlyOrStaffWrite]
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['is_popular']
+    filterset_fields = ['is_popular', 'vehicle_type']
     search_fields = ['name']
     ordering_fields = ['name', 'created_at', 'is_popular']
     ordering = ['name']

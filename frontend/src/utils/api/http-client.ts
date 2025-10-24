@@ -101,6 +101,27 @@ export class HttpClient {
   }
 
   /**
+   * Очистка счетчика попыток refresh перед редиректом
+   */
+  private static async clearRefreshAttempts(tokenKey: string): Promise<void> {
+    try {
+      const tokenData = await RedisClient.get(tokenKey);
+      if (tokenData) {
+        const parsedData = JSON.parse(tokenData);
+        await RedisClient.set(tokenKey, JSON.stringify({
+          ...parsedData,
+          refreshAttempts: 0,
+          lastRefreshFailed: false,
+          lastRefreshTime: 0
+        }));
+        console.log(`[HttpClient] Cleared refresh attempts for key: ${tokenKey}`);
+      }
+    } catch (error) {
+      console.error(`[HttpClient] Failed to clear refresh attempts:`, error);
+    }
+  }
+
+  /**
    * Обработка ответа с автоматическим обновлением токенов
    */
   private static async handleResponse(response: Response, tokenKey: string): Promise<any> {
@@ -114,6 +135,9 @@ export class HttpClient {
           const refreshResult = await AuthClient.refreshTokens(tokenKey);
           if (!refreshResult) {
             console.log("[HttpClient] Refresh failed after all attempts, redirecting to login...");
+            await this.clearRefreshAttempts(tokenKey);
+            // Добавляем небольшую задержку для гарантии записи в Redis
+            await new Promise(resolve => setTimeout(resolve, 100));
             redirect("/login");
           }
           console.log("[HttpClient] Refresh successful, returning null to trigger retry");
@@ -122,6 +146,9 @@ export class HttpClient {
 
         case 403:
           console.log("Error 403: Access denied. Redirecting...");
+          await this.clearRefreshAttempts(tokenKey);
+          // Добавляем небольшую задержку для гарантии записи в Redis
+          await new Promise(resolve => setTimeout(resolve, 100));
           redirect("/login");
           break;
 

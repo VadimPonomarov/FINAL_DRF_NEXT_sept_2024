@@ -169,7 +169,9 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
 
         {/* Отображаем изображение, если оно есть */}
         {imageUrl && (
-          <div className={imageState.isFullscreen ? unifiedStyles.imageFullscreen : unifiedStyles.imageContainer}>
+          <div className="w-full">
+            {/* Блок с изображением */}
+            <div className={imageState.isFullscreen ? unifiedStyles.imageFullscreen : unifiedStyles.imageContainer}>
               {/* Показываем скелетон во время загрузки изображения */}
               {imageState.isLoading && !imageState.loaded && !imageState.error && (
                 <ImageSkeleton message="Загрузка изображения..." />
@@ -196,9 +198,10 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
                   crossOrigin="anonymous"
                 />
               </div>
+            </div>
 
-              {/* Элементы управления изображением - НИЖЕ изображения */}
-              <div className="flex justify-center gap-2 mt-3">
+            {/* Элементы управления изображением - ЗА ПРЕДЕЛАМИ блока с изображением */}
+            <div className="flex justify-center gap-2 mt-3">
                 <Button
                   variant="outline"
                   size="icon"
@@ -246,7 +249,7 @@ export const ChatMessageView: React.FC<ChatMessageViewProps> = ({
                 >
                   {imageState.isFullscreen ? <Minimize className="h-4 w-4 text-gray-700" /> : <Maximize className="h-4 w-4 text-gray-700" />}
                 </Button>
-              </div>
+            </div>
           </div>
         )}
 

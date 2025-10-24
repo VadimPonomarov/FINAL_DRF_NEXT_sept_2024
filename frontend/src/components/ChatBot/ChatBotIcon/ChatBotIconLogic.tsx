@@ -222,6 +222,7 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
 
   // Таймаут для предотвращения случайного закрытия
   const [resizeTimeout, setResizeTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isDragging, setIsDragging] = useState(false); // Флаг для отслеживания drag состояния
   const RESIZE_TIMEOUT = 2000; // 2 секунды
 
   // Обработчик клика по фону с улучшенной логикой
@@ -229,6 +230,18 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
     // Не закрываем если есть активный таймаут изменения размера
     if (resizeTimeout) {
       console.log('Resize timeout active, not closing chat');
+      return;
+    }
+
+    // Не закрываем если происходит drag операция (локальный флаг)
+    if (isDragging) {
+      console.log('Drag operation active, not closing chat');
+      return;
+    }
+
+    // Не закрываем если происходит resize операция (глобальный флаг)
+    if (typeof window !== 'undefined' && window.isResizing) {
+      console.log('Global resize operation active, not closing chat');
       return;
     }
 
@@ -290,6 +303,12 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
     }
     
     console.log('Resize ended, timeout cleared');
+  };
+
+  // Функция для обработки изменения состояния drag
+  const handleDragStateChange = (dragging: boolean) => {
+    setIsDragging(dragging);
+    console.log('Drag state changed:', dragging);
   };
 
   // Обработчик сохранения размеров перед закрытием

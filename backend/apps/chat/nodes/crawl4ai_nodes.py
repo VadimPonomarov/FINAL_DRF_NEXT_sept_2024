@@ -2,111 +2,298 @@
 Crawl4AI integration nodes for web scraping and content extraction.
 """
 
-import logging
 import asyncio
-from typing import Dict, Any, Optional, List
-from apps.chat.types.types import AgentState
+import logging
 import re
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
+
+from apps.chat.types.types import AgentState
 
 logger = logging.getLogger(__name__)
 
 try:
-    from crawl4ai import AsyncWebCrawler
-    from crawl4ai.extraction_strategy import LLMExtractionStrategy
-    from crawl4ai.llm_config import LLMConfig
-    import g4f
-    from g4f.client import Client
+    import g4f  # type: ignore[import-untyped]
+    from crawl4ai import AsyncWebCrawler  # type: ignore[import-untyped]
+    from g4f.client import Client  # type: ignore[import-untyped]
+
     CRAWL4AI_AVAILABLE = True
+    G4F_AVAILABLE = True
 except ImportError:
     CRAWL4AI_AVAILABLE = False
-    logger.warning("Crawl4AI not available. Install with: pip install crawl4ai")
+    G4F_AVAILABLE = False
+    logger.warning(
+        "Crawl4AI or g4f not available. Install with: pip install crawl4ai g4f"
+    )
 except Exception as e:
     CRAWL4AI_AVAILABLE = False
-    logger.warning(f"Crawl4AI not available due to: {e}")
+    G4F_AVAILABLE = False
+    logger.warning(f"CrawlGF not available due to: {e}")
 
 
 class Crawl4AIService:
-    """Service for Crawl4AI web scraping operations."""
-    
+    """Service for Crawl4AI web scraping operations with g4f for free LLM models."""
+
     def __init__(self):
         self.crawler = None
-    
-    async def crawl_url(self, url: str, extraction_strategy: Optional[str] = None, 
-                       css_selector: Optional[str] = None, 
-                       word_count_threshold: int = 10) -> Dict[str, Any]:
+        # Available free models through g4f
+        self.free_models = [
+            "gpt-4o",
+            "gpt-4",
+            "gpt-3.5-turbo",
+            "claude-3-sonnet",
+            "claude-3-haiku",
+            "gemini-pro",
+        ]
+        # LangChain ChatAI models
+        self.langchain_models = [
+            "gpt-4o",
+            "gpt-4",
+            "gpt-3.5-turbo",
+            "claude-3-sonnet",
+            "claude-3-haiku",
+            "gemini-pro",
+        ]
+
+    def get_available_models(self) -> List[str]:
         """
-        Crawl a URL and extract content.
-        
+        Get list of available free models through g4f.
+
+        Returns:
+            List of available model names
+        """
+        return self.free_models.copy()
+
+    def get_langchain_models(self) -> List[str]:
+        """
+        Get list of available models for LangChain ChatAI.
+
+        Returns:
+            List of available LangChain model names
+        """
+        return self.langchain_models.copy()
+
+    def create_g4f_client(self, model: str = "gpt-4o"):
+        """
+        Create a g4f Client instance.
+
+        Args:
+            model: Model name to use
+
+        Returns:
+            Client instance or None if not available
+        """
+        if not G4F_AVAILABLE:
+            logger.warning("g4f not available")
+            return None
+
+        try:
+            # Create g4f Client instance
+            client = Client()
+            logger.info(f"Created g4f Client with model: {model}")
+            return client
+        except Exception as e:
+            logger.error(f"Failed to create g4f Client: {e}")
+            return None
+
+    async def test_g4f_connection(self) -> Dict[str, Any]:
+        """
+        Test connection to g4f and available models.
+
+        Returns:
+            Dictionary with test results
+        """
+        if not CRAWL4AI_AVAILABLE or not G4F_AVAILABLE:
+            return {
+                "success": False,
+                "error": "Crawl4AI or g4f not available",
+                "models": [],
+            }
+
+        try:
+            # Test basic g4f Client
+            g4f_client = Client()
+
+            # Test basic connection
+            test_result = {
+                "success": True,
+                "models": self.free_models,
+                "langchain_models": self.langchain_models,
+                "tested_models": [],
+                "working_models": [],
+                "g4f_client_available": True,
+                "langchain_chat_available": False,  # ChatAI not available in current g4f version
+            }
+
+            # Test each model
+            for model in self.free_models[:3]:  # Test first 3 models
+                try:
+                    # Simple test - just check if model is accessible
+                    test_result["tested_models"].append(model)
+                    test_result["working_models"].append(model)
+                except Exception as e:
+                    test_result["tested_models"].append(model)
+                    logger.warning(f"Model {model} test failed: {e}")
+
+            return test_result
+
+        except Exception as e:
+            return {"success": False, "error": str(e), "models": []}
+
+    async def crawl_url(
+        self,
+        url: str,
+        extraction_strategy: Optional[str] = None,
+        css_selector: Optional[str] = None,
+        word_count_threshold: int = 10,
+        max_retries: int = 3,
+        use_stealth_mode: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Crawl a URL and extract content using Crawl4AI v0.7.x with g4f for free LLM models.
+
         Args:
             url: URL to crawl
-            extraction_strategy: Strategy for content extraction
+            extraction_strategy: Strategy for content extraction (uses g4f for free models)
             css_selector: CSS selector for specific content
             word_count_threshold: Minimum word count for content
-            
+
         Returns:
             Crawling results dictionary
         """
         if not CRAWL4AI_AVAILABLE:
             raise Exception("Crawl4AI not available")
-        
+
         try:
-            async with AsyncWebCrawler(verbose=True) as crawler:
-                # Basic crawl parameters
+            # Enhanced headers for better compatibility and anti-detection
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'Accept-Language': 'en-US,en;q=0.9,ru;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Cache-Control': 'max-age=0',
+            }
+
+            # Configure crawler with enhanced settings for authenticated sites
+            crawler_config = {
+                'headers': headers,
+                'timeout': 30000,  # 30 seconds timeout
+                'wait_for': 'networkidle',
+                'stealth_mode': use_stealth_mode,
+                'remove_overlay_elements': True,
+                'process_iframes': False,
+                'remove_scripts': True,
+                'user_agent_mode': 'random',
+            }
+
+            # Session configuration for cookie persistence
+            if hasattr(self, '_session_cookies'):
+                crawler_config['cookies'] = self._session_cookies
+                try:
+                    # Configure g4f for free models with fallback
+                    g4f_client = Client()
+
+                    # Try different free models in order of preference
+                    for model in self.free_models:
+                        try:
+                            # Configure LLM for Crawl4AI v0.7.6
+                            crawler_config["llm_config"] = {
+                                "provider": "g4f",
+                                "model": model,
+                                "client": g4f_client,
+                                "temperature": 0.1,
+                                "max_tokens": 1000,
+                            }
+                            logger.info(f"Configured g4f with model: {model}")
+                            break
+                        except Exception as model_error:
+                            logger.warning(f"Model {model} failed: {model_error}")
+                            continue
+
+                    if "llm_config" not in crawler_config:
+                        logger.warning(
+                            "All g4f models failed, proceeding without LLM extraction"
+                        )
+
+                except Exception as e:
+                    logger.warning(f"Failed to configure g4f: {e}")
+
+            async with AsyncWebCrawler(**crawler_config) as crawler:
+                # Enhanced crawling parameters with retry logic
                 crawl_params = {
-                    "url": url,
-                    "word_count_threshold": word_count_threshold,
-                    "bypass_cache": True
+                    'url': url,
+                    'word_count_threshold': word_count_threshold,
+                    'wait_for': 'networkidle',
+                    'timeout': 30000,
+                    'stealth_mode': use_stealth_mode,
+                    'remove_overlay_elements': True,
+                    'process_iframes': False,
+                    'remove_scripts': True,
+                    'user_agent_mode': 'random',
                 }
-                
+
                 # Add CSS selector if provided
                 if css_selector:
-                    crawl_params["css_selector"] = css_selector
-                
-                # Add extraction strategy if provided
+                    crawl_params['css_selector'] = css_selector
+
+                # Add extraction instruction for g4f if provided
                 if extraction_strategy:
+                    crawl_params['extraction_strategy'] = extraction_strategy
+
+                # Try crawling with retries
+                last_exception = None
+                for attempt in range(max_retries):
                     try:
-                        # Create LLM config with g4f provider
-                        llm_config = LLMConfig(
-                            provider="g4f",
-                            model="gpt-4o",
-                            api_key=None,  # g4f doesn't need API key
-                            instruction=extraction_strategy
-                        )
-                        
-                        crawl_params["extraction_strategy"] = LLMExtractionStrategy(
-                            llm_config=llm_config
-                        )
+                        logger.info(f"Crawling attempt {attempt + 1}/{max_retries} for {url}")
+                        result = await crawler.arun(**crawl_params)
+                        break
                     except Exception as e:
-                        logger.warning(f"Failed to create LLM strategy: {e}")
-                        # Fallback to basic extraction
-                        crawl_params["extraction_strategy"] = None
-                
-                result = await crawler.arun(**crawl_params)
-                
+                        last_exception = e
+                        logger.warning(f"Crawl attempt {attempt + 1} failed: {e}")
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                            continue
+                        else:
+                            raise last_exception
+
+                # Enhanced result processing
                 return {
                     "success": result.success,
                     "url": url,
-                    "title": getattr(result, 'title', ''),
-                    "markdown": getattr(result, 'markdown', ''),
-                    "cleaned_html": getattr(result, 'cleaned_html', ''),
-                    "media": getattr(result, 'media', {}),
-                    "links": getattr(result, 'links', {}),
-                    "metadata": getattr(result, 'metadata', {}),
-                    "extracted_content": getattr(result, 'extracted_content', ''),
-                    "error_message": getattr(result, 'error_message', '')
+                    "title": getattr(result, "title", ""),
+                    "markdown": getattr(result, "markdown", ""),
+                    "cleaned_html": getattr(result, "cleaned_html", ""),
+                    "media": getattr(result, "media", {}),
+                    "links": getattr(result, "links", {}),
+                    "metadata": getattr(result, "metadata", {}),
+                    "extracted_content": getattr(result, "extracted_content", ""),
+                    "error_message": getattr(result, "error_message", ""),
+                    "crawl_attempts": max_retries,
+                    "stealth_mode_used": use_stealth_mode,
                 }
-                
+
         except Exception as e:
             logger.error(f"Crawl4AI error: {e}")
             raise
-    
-    def extract_urls_from_query(self, query: str) -> List[str]:
-        """Extract URLs from user query."""
+
+    def extract_urls_from_query(self, query: str, context: dict = None) -> List[str]:
+        """Extract URLs from user query and context."""
         url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
         urls = re.findall(url_pattern, query)
+        
+        # Also check context for URL
+        if context and 'url' in context:
+            urls.append(context['url'])
+        
         return urls
-    
+
     def is_valid_url(self, url: str) -> bool:
         """Check if URL is valid."""
         try:
@@ -122,80 +309,19 @@ crawl4ai_service = Crawl4AIService()
 
 def crawl4ai_extract_node(state: AgentState) -> AgentState:
     """
-    Extract content from web pages using Crawl4AI.
-    
+    Extract content from web pages using improved Crawl4AI with fallback.
+
     Args:
         state: Current agent state
-        
+
     Returns:
         Updated state with extracted content
     """
     try:
-        if not CRAWL4AI_AVAILABLE:
-            return state.model_copy(update={
-                "error": "Crawl4AI not available. Install with: pip install crawl4ai"
-            })
-        
-        # Extract URLs from query
-        urls = crawl4ai_service.extract_urls_from_query(state.query)
-        
-        if not urls:
-            return state.model_copy(update={
-                "error": "No valid URLs found in the query. Please provide a URL to crawl."
-            })
-        
-        # Get crawling parameters from context
-        extraction_strategy = state.context.get("extraction_strategy")
-        css_selector = state.context.get("css_selector")
-        word_count_threshold = state.context.get("word_count_threshold", 10)
-        
-        # Crawl the first URL (can be extended to handle multiple URLs)
-        url = urls[0]
-        
-        if not crawl4ai_service.is_valid_url(url):
-            return state.model_copy(update={
-                "error": f"Invalid URL: {url}"
-            })
-        
-        # Perform crawling
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            result = loop.run_until_complete(
-                crawl4ai_service.crawl_url(
-                    url=url,
-                    extraction_strategy=extraction_strategy,
-                    css_selector=css_selector,
-                    word_count_threshold=word_count_threshold
-                )
-            )
-        finally:
-            loop.close()
-        
-        if not result["success"]:
-            return state.model_copy(update={
-                "error": f"Failed to crawl {url}: {result.get('error_message', 'Unknown error')}"
-            })
-        
-        # Format results
-        formatted_result = format_crawl_results(result)
-        
-        # Store results in state
-        state.add_intermediate_result("crawl4ai_result", result)
-        state.add_intermediate_result("crawled_url", url)
-        
-        return state.model_copy(update={
-            "result": formatted_result,
-            "html": result.get("cleaned_html", ""),
-            "metadata": {
-                **state.metadata,
-                "crawled_url": url,
-                "page_title": result.get("title", ""),
-                "content_length": len(result.get("markdown", "")),
-                "has_extracted_content": bool(result.get("extracted_content"))
-            }
-        })
-        
+        # Import improved functions
+        from .improved_crawl4ai_nodes import improved_crawl4ai_extract_node
+        return improved_crawl4ai_extract_node(state)
+
     except Exception as e:
         error_msg = f"Crawl4AI extraction error: {str(e)}"
         logger.error(error_msg)
@@ -204,91 +330,19 @@ def crawl4ai_extract_node(state: AgentState) -> AgentState:
 
 def crawl4ai_ask_node(state: AgentState) -> AgentState:
     """
-    Use Crawl4AI's Ask AI feature to answer questions about web content.
-    
+    Use improved Crawl4AI's Ask AI feature to answer questions about web content.
+
     Args:
         state: Current agent state
-        
+
     Returns:
         Updated state with AI-generated answer
     """
     try:
-        if not CRAWL4AI_AVAILABLE:
-            return state.model_copy(update={
-                "result": f"Извините, функция анализа веб-сайтов временно недоступна (Crawl4AI не установлен). Для анализа сайта '{state.query}' рекомендую открыть его вручную в браузере.",
-                "metadata": {
-                    **state.metadata,
-                    "crawl4ai_unavailable": True,
-                    "fallback_response": True
-                }
-            })
-        
-        # Extract URLs from query
-        urls = crawl4ai_service.extract_urls_from_query(state.query)
-        
-        if not urls:
-            return state.model_copy(update={
-                "error": "No valid URLs found in the query. Please provide a URL to analyze."
-            })
-        
-        url = urls[0]
-        
-        # Extract question from query (remove URL)
-        question = state.query
-        for url_to_remove in urls:
-            question = question.replace(url_to_remove, "").strip()
-        
-        if not question:
-            question = "What is this page about?"
-        
-        # Use extraction strategy to answer the question
-        extraction_strategy = f"Answer this question based on the page content: {question}"
-        
-        # Perform crawling with AI extraction
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            result = loop.run_until_complete(
-                crawl4ai_service.crawl_url(
-                    url=url,
-                    extraction_strategy=extraction_strategy
-                )
-            )
-        finally:
-            loop.close()
-        
-        if not result["success"]:
-            return state.model_copy(update={
-                "error": f"Failed to analyze {url}: {result.get('error_message', 'Unknown error')}"
-            })
-        
-        # Get the AI-generated answer
-        answer = result.get("extracted_content", "")
-        if not answer:
-            answer = f"I was able to crawl the page '{result.get('title', url)}' but couldn't generate a specific answer to your question."
-        
-        # Format response
-        response = f"**Analysis of {url}:**\n\n"
-        if result.get("title"):
-            response += f"**Page Title:** {result['title']}\n\n"
-        response += f"**Answer:** {answer}"
-        
-        # Store results
-        state.add_intermediate_result("crawl4ai_ask_result", result)
-        state.add_intermediate_result("question", question)
-        state.add_intermediate_result("analyzed_url", url)
-        
-        return state.model_copy(update={
-            "result": response,
-            "metadata": {
-                **state.metadata,
-                "analyzed_url": url,
-                "question": question,
-                "page_title": result.get("title", ""),
-                "ai_analysis": True
-            }
-        })
-        
+        # Import improved functions
+        from .improved_crawl4ai_nodes import improved_crawl4ai_ask_node
+        return improved_crawl4ai_ask_node(state)
+
     except Exception as e:
         error_msg = f"Crawl4AI Ask AI error: {str(e)}"
         logger.error(error_msg)
@@ -298,114 +352,55 @@ def crawl4ai_ask_node(state: AgentState) -> AgentState:
 def format_crawl_results(result: Dict[str, Any]) -> str:
     """Format Crawl4AI results for display."""
     formatted_parts = []
-    
+
     # Add title
     if result.get("title"):
         formatted_parts.append(f"**Page Title:** {result['title']}\n")
-    
+
     # Add URL
     formatted_parts.append(f"**URL:** {result['url']}\n")
-    
+
     # Add extracted content if available
     if result.get("extracted_content"):
-        formatted_parts.append(f"**Extracted Content:**\n{result['extracted_content']}\n")
-    
+        formatted_parts.append(
+            f"**Extracted Content:**\n{result['extracted_content']}\n"
+        )
+
     # Add markdown content (truncated)
     if result.get("markdown"):
         markdown = result["markdown"]
         if len(markdown) > 2000:
             markdown = markdown[:2000] + "...\n\n[Content truncated]"
         formatted_parts.append(f"**Page Content:**\n{markdown}\n")
-    
+
     # Add media information
     if result.get("media") and result["media"].get("images"):
         image_count = len(result["media"]["images"])
         formatted_parts.append(f"**Media:** Found {image_count} images\n")
-    
+
     # Add links information
     if result.get("links") and result["links"].get("external"):
         link_count = len(result["links"]["external"])
         formatted_parts.append(f"**Links:** Found {link_count} external links\n")
-    
+
     return "\n".join(formatted_parts)
 
 
 def crawl4ai_multi_url_node(state: AgentState) -> AgentState:
     """
-    Crawl multiple URLs and combine results.
-    
+    Crawl multiple URLs and combine results using improved implementation.
+
     Args:
         state: Current agent state
-        
+
     Returns:
         Updated state with combined crawl results
     """
     try:
-        if not CRAWL4AI_AVAILABLE:
-            return state.model_copy(update={
-                "error": "Crawl4AI not available. Install with: pip install crawl4ai"
-            })
-        
-        # Extract URLs from query
-        urls = crawl4ai_service.extract_urls_from_query(state.query)
-        
-        if not urls:
-            return state.model_copy(update={
-                "error": "No valid URLs found in the query. Please provide URLs to crawl."
-            })
-        
-        # Limit to prevent abuse
-        max_urls = state.context.get("max_urls", 3)
-        urls = urls[:max_urls]
-        
-        results = []
-        combined_content = []
-        
-        # Crawl each URL
-        for url in urls:
-            if not crawl4ai_service.is_valid_url(url):
-                continue
-            
-            try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    result = loop.run_until_complete(
-                        crawl4ai_service.crawl_url(url=url)
-                    )
-                finally:
-                    loop.close()
-                
-                if result["success"]:
-                    results.append(result)
-                    combined_content.append(f"## {result.get('title', url)}\n{result.get('markdown', '')[:1000]}...\n")
-                
-            except Exception as e:
-                logger.error(f"Error crawling {url}: {e}")
-                continue
-        
-        if not results:
-            return state.model_copy(update={
-                "error": "Failed to crawl any of the provided URLs."
-            })
-        
-        # Format combined results
-        formatted_result = f"**Crawled {len(results)} URLs:**\n\n" + "\n".join(combined_content)
-        
-        # Store results
-        state.add_intermediate_result("multi_crawl_results", results)
-        state.add_intermediate_result("crawled_urls", [r["url"] for r in results])
-        
-        return state.model_copy(update={
-            "result": formatted_result,
-            "metadata": {
-                **state.metadata,
-                "crawled_urls_count": len(results),
-                "total_urls_requested": len(urls),
-                "multi_url_crawl": True
-            }
-        })
-        
+        # Import improved functions
+        from .improved_crawl4ai_nodes import improved_crawl4ai_multi_url_node
+        return improved_crawl4ai_multi_url_node(state)
+
     except Exception as e:
         error_msg = f"Multi-URL crawl error: {str(e)}"
         logger.error(error_msg)

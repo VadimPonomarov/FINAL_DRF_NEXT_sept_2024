@@ -65,6 +65,25 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
   if (typeof window !== 'undefined') {
     console.log('[fetchWithAuth] 🔄 Redirecting to login page...');
 
+    // Очищаем счетчик попыток refresh перед редиректом
+    try {
+      const { apiSetRedis, apiGetRedis } = await import('@/app/api/helpers');
+      const key = 'backend_auth';
+      const redisData = await apiGetRedis(key);
+      if (redisData) {
+        const parsedData = typeof redisData === 'string' ? JSON.parse(redisData) : redisData;
+        await apiSetRedis(key, JSON.stringify({
+          ...parsedData,
+          refreshAttempts: 0,
+          lastRefreshFailed: false,
+          lastRefreshTime: 0
+        }));
+        console.log('[fetchWithAuth] Cleared refresh attempts before redirect');
+      }
+    } catch (error) {
+      console.error('[fetchWithAuth] Failed to clear refresh attempts:', error);
+    }
+
     // Динамически импортируем toast для показа уведомления
     import('@/hooks/use-toast').then(({ toast }) => {
       toast({
@@ -77,7 +96,7 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
       console.error('[fetchWithAuth] Failed to show toast:', err);
     });
 
-    // Небольшая задержка для показа toast перед редиректом
+    // Небольшая задержка для показа toast и гарантии записи в Redis
     setTimeout(() => {
       const callback = encodeURIComponent(window.location.pathname + window.location.search);
       window.location.href = `/login?callbackUrl=${callback}&message=${encodeURIComponent('Ваша сессия истекла. Пожалуйста, войдите снова.')}`;

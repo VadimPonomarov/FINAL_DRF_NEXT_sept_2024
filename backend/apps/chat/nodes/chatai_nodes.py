@@ -27,16 +27,42 @@ def _translate_to_english(text: str) -> str:
         if _is_english(text):
             return text
 
-        # Простой словарь для базовых переводов (без API)
+        # Расширенный словарь для базовых переводов (без API)
         ru_to_en_dict = {
-            'создай': 'create', 'сгенерируй': 'generate', 'нарисуй': 'draw',
+            # Команды
+            'создай': 'create', 'сгенерируй': 'generate', 'нарисуй': 'draw', 'изобрази': 'depict',
+            
+            # Объекты и существа
             'портрет': 'portrait', 'изображение': 'image', 'картинку': 'picture',
+            'человека': 'person', 'мужчины': 'man', 'женщины': 'woman',
+            'кота': 'cat', 'собаки': 'dog', 'собаку': 'dog', 'кошку': 'cat',
+            'пейзаж': 'landscape', 'природу': 'nature', 'город': 'city',
+            
+            # Транспорт
+            'мотоцикл': 'motorcycle', 'мотоцикла': 'motorcycle',
+            'спортивный мотоцикл': 'sport motorcycle', 'гоночный мотоцикл': 'racing motorcycle',
+            'автомобиль': 'car', 'машину': 'car', 'самолет': 'airplane',
+            
+            # Цвета
+            'красный': 'red', 'синий': 'blue', 'зеленый': 'green', 'желтый': 'yellow',
+            'черный': 'black', 'белый': 'white', 'серый': 'gray', 'оранжевый': 'orange',
+            'фиолетовый': 'purple', 'розовый': 'pink', 'коричневый': 'brown',
+            'голубой': 'light blue', 'темно-синий': 'dark blue',
+            
+            # Стили
             'в стиле': 'in style of', 'реалистичный': 'realistic', 'реализм': 'photorealistic',
             'карикатура': 'caricature', 'карикатурный': 'caricature style',
+            'абстрактный': 'abstract', 'минимализм': 'minimalism', 'минималистичный': 'minimalist',
+            'современный': 'modern', 'классический': 'classic', 'винтажный': 'vintage',
+            'аниме': 'anime', 'комикс': 'comic', 'мультяшный': 'cartoon',
+            
+            # Характеристики
+            'спортивный': 'sport', 'спортивная': 'sport', 'спортивное': 'sport',
+            'красивый': 'beautiful', 'красивая': 'beautiful', 'большой': 'big',
+            'маленький': 'small', 'быстрый': 'fast', 'мощный': 'powerful',
+            
+            # Известные личности
             'дональда трампа': 'Donald Trump', 'трампа': 'Trump',
-            'человека': 'person', 'мужчины': 'man', 'женщины': 'woman',
-            'кота': 'cat', 'собаки': 'dog', 'пейзаж': 'landscape',
-            'абстрактный': 'abstract', 'минимализм': 'minimalism',
         }
         
         # Переводим по словам
@@ -157,25 +183,51 @@ def _detect_language(text: str) -> str:
     return 'en'
 
 
-def _generate_image_response(original_prompt: str, english_prompt: str, image_url: str, user_language: str) -> str:
-    """Generate image response message in the user's language - MINIMAL TEXT, image is the main content."""
+def _enhance_image_prompt(english_prompt: str) -> str:
+    """
+    Enhance the English prompt with system prompt for better image quality.
+    Adds quality modifiers and clear instructions for the image generation model.
+    
+    Args:
+        english_prompt: Basic English prompt
+        
+    Returns:
+        Enhanced prompt with quality modifiers
+    """
     try:
-        # МИНИМАЛЬНЫЙ текст - картинка говорит сама за себя
-        if user_language == 'ru':
-            response = f"🎨 {original_prompt}"
-        else:
-            response = f"🎨 {original_prompt}"
+        # Системный промпт для улучшения качества
+        # Добавляем модификаторы качества только если их еще нет
+        quality_keywords = ['high quality', 'detailed', '4k', '8k', 'professional', 'masterpiece']
+        has_quality = any(keyword in english_prompt.lower() for keyword in quality_keywords)
+        
+        # Базовое улучшение промпта
+        enhanced = english_prompt.strip()
+        
+        # Добавляем модификаторы качества в конец
+        if not has_quality:
+            enhanced += ", high quality, detailed, professional photograph"
+        
+        logger.info(f"🎨 Enhanced prompt: '{english_prompt}' -> '{enhanced}'")
+        return enhanced
+        
+    except Exception as e:
+        logger.error(f"Error enhancing prompt: {e}")
+        return english_prompt
 
-        logger.info(f"Generated minimal response: {response[:100]}...")
+
+def _generate_image_response(original_prompt: str, english_prompt: str, image_url: str, user_language: str) -> str:
+    """Generate image response message in the user's language - NO TEXT, only image."""
+    try:
+        # Только изображение без текста - картинка говорит сама за себя
+        response = " "  # Пустое место для изображения
+        
+        logger.info(f"Generated image response without text prompt")
         return response
 
     except Exception as e:
         logger.error(f"Error generating image response: {e}")
-        # Fallback to English
-        if original_prompt != english_prompt:
-            return f"I've generated an image based on your request: {original_prompt}\n\nEnglish prompt used: {english_prompt}\n\nImage URL: {image_url}"
-        else:
-            return f"I've generated an image based on your request: {original_prompt}\n\nImage URL: {image_url}"
+        # Fallback - минимальный текст
+        return " "
 
 
 def _create_search_enhanced_prompt(original_query: str, search_context: str, user_language: str) -> str:
@@ -339,11 +391,14 @@ def chatai_image_node(state: AgentState) -> AgentState:
         # Translate prompt to English for better image generation
         english_prompt = _translate_to_english(original_prompt)
 
-        # Enhance prompt if needed
+        # Enhance prompt with quality modifiers
+        english_prompt = _enhance_image_prompt(english_prompt)
+
+        # Add custom style if specified
         if state.context.get("image_style"):
             english_prompt = f"{english_prompt}, {state.context['image_style']}"
 
-        logger.info(f"Image generation: '{original_prompt}' -> '{english_prompt}' (user_lang: {user_language})")
+        logger.info(f"🎨 Image generation: '{original_prompt}' -> '{english_prompt}' (user_lang: {user_language})")
 
         # Generate image
         image_url = chatai_service.generate_image(english_prompt)
