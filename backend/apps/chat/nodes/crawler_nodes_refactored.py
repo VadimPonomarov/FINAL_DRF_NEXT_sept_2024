@@ -32,14 +32,26 @@ Query: "{query}"
 
 Deep crawl is needed when:
 - User asks to parse/extract prices, products, or structured data
-- User mentions currency rates, exchange rates, catalogs
+- User mentions currency rates, exchange rates, курсы валют, курс, цены
 - Query implies extracting multiple items or comparing data
-- Keywords like "all", "list of", "compare" are present
+- Keywords like "all", "list of", "compare", "спарс", "парс" are present
+- User wants data in table format or structured format
+- User wants to extract specific information from a site
 
 Simple crawl is sufficient when:
 - User asks general questions about a page
 - User wants to read/summarize content
 - No data extraction or parsing is mentioned
+
+Examples of DEEP:
+- "спарсь курсы валют" → DEEP
+- "extract prices from" → DEEP
+- "parse currency rates" → DEEP
+- "покажи в таблице" → DEEP
+
+Examples of SIMPLE:
+- "what is this page about" → SIMPLE
+- "summarize the article" → SIMPLE
 
 Respond with ONLY "DEEP" or "SIMPLE" (one word)."""
 
