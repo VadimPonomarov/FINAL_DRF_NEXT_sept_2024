@@ -1,41 +1,22 @@
 "use client";
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
 import AuthBadge from '@/components/All/AuthBadge/AuthBadge';
-import FixedLanguageSwitch from '@/components/AutoRia/Layout/FixedLanguageSwitch';
+import { RedisUserBadge } from '@/components/All/RedisUserBadge';
 
 /**
- * Компонент для управления элементами в правом верхнем углу
- * Условный рендеринг в зависимости от страницы
+ * Компактный компонент для управления элементами в правом верхнем углу
+ * Уменьшенная версия в 2 раза
  */
 const TopRightControls: React.FC = () => {
-  const pathname = usePathname();
-
-  // На страницах /autoria тоже показываем переключатель языка
-  if (pathname?.startsWith('/autoria')) {
-    return (
-      <>
-        <div className="fixed top-[60px] right-2 z-[99998]">
-          <AuthBadge />
-        </div>
-        <div className="fixed top-[100px] right-2 z-[99998]">
-          <FixedLanguageSwitch />
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
-      {/* Auth Badge */}
-      <div className="fixed top-[60px] right-2 z-[99998]">
-        <AuthBadge />
-      </div>
-
-      {/* Language Selector - отдельно с большим отступом */}
-      <div className="fixed top-[100px] right-2 z-[99998]">
-        <FixedLanguageSwitch />
+      {/* Компактная карточка с бейджами */}
+      <div className="fixed top-[60px] right-4 z-[99998]">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-1.5 space-y-1 min-w-[160px] backdrop-blur-sm bg-opacity-95">
+          <AuthBadge />
+          <RedisUserBadge />
+        </div>
       </div>
     </>
   );

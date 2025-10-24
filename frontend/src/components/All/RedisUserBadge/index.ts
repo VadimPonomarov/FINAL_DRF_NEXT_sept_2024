@@ -1,0 +1,2 @@
+export { RedisUserBadge } from './RedisUserBadge';
+

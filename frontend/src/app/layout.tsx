@@ -14,6 +14,7 @@ import { ChatBotIcon } from "@/components/ChatBot/ChatBotIcon";
 import { ThemeControls } from "@/components/ui/theme-controls.tsx";
 import { Toaster } from "@/components/ui/toaster";
 import TopRightControls from "@/components/All/TopRightControls/TopRightControls";
+import BottomRightControls from "@/components/All/BottomRightControls";
 import GlobalProviderToggle from "@/components/All/GlobalProviderToggle/GlobalProviderToggle";
 
 import { Geist, Geist_Mono } from "next/font/google";
@@ -62,7 +63,9 @@ export default function RootLayout({
             {children}
           </main>
           <Toaster />
+          {/* Bottom Right Controls - Chat + Language */}
           <ChatBotIcon />
+          <BottomRightControls />
         </RootProvider>
       </body>
     </html>

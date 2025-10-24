@@ -4,6 +4,7 @@ import { useCallback, useRef, useState, useEffect } from "react";
 import { wsLogger } from "@/utils/chat/logger";
 import { WebSocketMessage } from "@/utils/chat/chatTypes";
 import { useToast } from "@/hooks/use-toast";
+import { handleWebSocketClose } from "@/utils/errors/unifiedErrorHandler";
 
 interface UseChatWebSocketProps {
   channelId: string;
@@ -242,30 +243,30 @@ export const useChatWebSocket = ({
           reason: event.reason 
         });
         
-        // Handle authentication errors (codes 1008 and 4001)
-        if (event.code === 1008 || event.code === 4001) {
-          wsLogger.warn(`WebSocket authentication error (code ${event.code}), attempting token refresh...`);
+        // Используем универсальный обработчик для ВСЕХ кодов закрытия WebSocket
+        const canReconnect = await handleWebSocketClose(event, {
+          source: 'ChatBot WebSocket',
+          currentPath: typeof window !== 'undefined' ? window.location.pathname : undefined,
+          showToast: true
+        });
+        
+        if (canReconnect) {
+          wsLogger.info('Error handled, reconnecting...');
+          toast({
+            title: "Переподключение",
+            description: "Переподключаемся к чату...",
+            duration: 2000
+          });
           
-          const refreshSuccess = await handleTokenRefresh();
-          
-          if (refreshSuccess) {
-            wsLogger.info('Token refreshed successfully, attempting reconnection...');
-            toast({
-              title: "Переподключение",
-              description: "Токен обновлен, переподключаемся...",
-              duration: 2000
-            });
-            
-            // Retry connection with new token
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                connect(targetChannelId, isNewChat);
-              }
-            }, 1000);
-          } else {
-            wsLogger.error('Token refresh failed, calling onAuthError');
-            onAuthError?.();
-          }
+          // Retry connection
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              connect(targetChannelId, isNewChat);
+            }
+          }, 1000);
+        } else {
+          wsLogger.error('Cannot reconnect, calling onAuthError');
+          onAuthError?.();
         }
       };
 

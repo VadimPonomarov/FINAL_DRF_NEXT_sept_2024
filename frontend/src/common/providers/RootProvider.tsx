@@ -2,7 +2,9 @@
 import React, { FC, useEffect } from "react";
 import { SessionProvider, signOut } from "next-auth/react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, AuthProviderProvider } from "@/contexts/AuthProviderContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProviderProvider } from "@/contexts/AuthProviderContext";
+import { RedisAuthProvider } from "@/contexts/RedisAuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { ChatContextProvider } from "@/components/ChatBot/providers/ChatContextProvider";
@@ -86,12 +88,14 @@ const RootProvider: FC<IProps> = ({ children }) => {
             <AuthProvider>
               <NotificationProvider>
                 <AuthProviderProvider>
-                  <ChatProvider>
-                    <ChatContextProvider>
-                      <GlobalApiErrorHandler />
-                      {children}
-                    </ChatContextProvider>
-                  </ChatProvider>
+                  <RedisAuthProvider>
+                    <ChatProvider>
+                      <ChatContextProvider>
+                        <GlobalApiErrorHandler />
+                        {children}
+                      </ChatContextProvider>
+                    </ChatProvider>
+                  </RedisAuthProvider>
                 </AuthProviderProvider>
               </NotificationProvider>
             </AuthProvider>

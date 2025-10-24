@@ -26,7 +26,7 @@ import { useSession, signOut, getSession } from 'next-auth/react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/common/constants/constants';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAuth } from '@/contexts/AuthProviderContext';
+import { useAuth } from '@/contexts/AuthContext';
 import AnimatedPlatformStatsWidget from '@/components/AutoRia/Statistics/AnimatedPlatformStatsWidget';
 import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
 

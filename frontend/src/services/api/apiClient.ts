@@ -1,6 +1,7 @@
 "use client";
 
-import { AuthProvider } from "@/common/constants/constants";
+import { tokenManager } from './tokenManager';
+import { unifiedErrorHandler } from '@/utils/errors/unifiedErrorHandler';
 
 interface ApiClientOptions {
   baseUrl?: string;
@@ -16,6 +17,10 @@ interface RequestOptions {
   skipRetry?: boolean;
 }
 
+/**
+ * HTTP клиент для работы с API
+ * Отвечает за: выполнение HTTP запросов, автоматическую авторизацию, retry логику
+ */
 class ApiClient {
   private baseUrl: string;
   private timeout: number;
@@ -23,62 +28,13 @@ class ApiClient {
   private useProxy: boolean;
 
   constructor(options: ApiClientOptions = {}) {
-    // Use environment variable for backend URL
     const defaultBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    this.useProxy = false; // Direct backend requests
+    this.useProxy = false;
     this.baseUrl = options.baseUrl || defaultBaseUrl;
     this.timeout = options.timeout || 15000;
     this.retries = options.retries || 1;
 
     console.log(`[ApiClient] Initialized with baseUrl: ${this.baseUrl}`);
-  }
-
-  /**
-   * Получает токены из Redis
-   */
-  private async getTokens(): Promise<{ access?: string; refresh?: string } | null> {
-    try {
-      const response = await fetch('/api/redis?key=backend_auth');
-      if (!response.ok) return null;
-
-      const data = await response.json();
-      if (!data?.value) return null;
-
-      const authData = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-      return {
-        access: authData.access,
-        refresh: authData.refresh
-      };
-    } catch (error) {
-      console.error('[ApiClient] Error getting tokens:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Обновляет токены через API
-   */
-  private async refreshTokens(): Promise<boolean> {
-    try {
-      console.log('[ApiClient] Refreshing tokens...');
-      
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (!response.ok) {
-        console.error('[ApiClient] Token refresh failed:', response.status);
-        return false;
-      }
-
-      const data = await response.json();
-      console.log('[ApiClient] Token refresh successful');
-      return !!data.access;
-    } catch (error) {
-      console.error('[ApiClient] Error refreshing tokens:', error);
-      return false;
-    }
   }
 
   /**
@@ -99,9 +55,9 @@ class ApiClient {
       ...headers
     };
 
-    // Добавляем токен авторизации (если не пропускаем авторизацию)
+    // Добавляем токен авторизации
     if (!skipAuth) {
-      const tokens = await this.getTokens();
+      const tokens = await tokenManager.getTokens();
       if (tokens?.access) {
         requestHeaders['Authorization'] = `Bearer ${tokens.access}`;
       }
@@ -128,49 +84,83 @@ class ApiClient {
 
       clearTimeout(timeoutId);
 
-      // Если получили 401 и не пропускаем повтор, пытаемся обновить токены
-      if (response.status === 401 && !skipAuth && !skipRetry) {
-        console.log('[ApiClient] Got 401, attempting token refresh...');
+      // Если запрос успешен - возвращаем данные
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
 
-        const refreshSuccess = await this.refreshTokens();
-        if (refreshSuccess) {
-          console.log('[ApiClient] Token refreshed, retrying request...');
-          // Повторяем запрос с новыми токенами
-          return this.request<T>(endpoint, { ...options, skipRetry: true });
-        } else {
-          console.error('[ApiClient] Token refresh failed, redirecting to login');
+      // Используем универсальный обработчик для ВСЕХ ошибок
+      if (!skipRetry) {
+        console.log(`[ApiClient] Got error ${response.status}, delegating to unified error handler...`);
 
-          // Редирект на страницу логина с сохранением текущего URL
-          if (typeof window !== 'undefined') {
-            const currentUrl = window.location.pathname + window.location.search;
-            window.location.href = `/login?callbackUrl=${encodeURIComponent(currentUrl)}&error=session_expired`;
-          }
+        const result = await unifiedErrorHandler.handleHttpError(response, {
+          retryCallback: async () => {
+            // Retry запроса с skipRetry, чтобы избежать бесконечной рекурсии
+            const retryResponse = await fetch(url, {
+              method,
+              headers: requestHeaders,
+              body: body ? JSON.stringify(body) : undefined,
+            });
+            return retryResponse;
+          },
+          source: 'ApiClient',
+          currentPath: typeof window !== 'undefined' ? window.location.pathname : undefined,
+          showToast: true,
+          maxRetries: response.status >= 500 ? 2 : 1
+        });
 
-          throw new Error('Authentication failed - session expired');
+        // Если retry успешен - возвращаем данные
+        if (result.retryResult && result.retryResult.ok) {
+          const data = await result.retryResult.json();
+          return data;
+        }
+
+        // Если retry неуспешен - пробрасываем ошибку
+        if (result.shouldAbort) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
       }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[ApiClient] Request failed: ${response.status} ${errorText}`);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      return data;
+      // Fallback для skipRetry
+      const errorText = await response.text();
+      console.error(`[ApiClient] Request failed: ${response.status} ${errorText}`);
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
 
     } catch (error) {
       clearTimeout(timeoutId);
       
+      // Обработка timeout ошибок
       if (error instanceof Error && error.name === 'AbortError') {
+        await unifiedErrorHandler.handleNetworkError(
+          new Error('Request timeout'),
+          {
+            source: 'ApiClient',
+            showToast: true,
+            customMessage: 'Превышено время ожидания запроса'
+          }
+        );
         throw new Error('Request timeout');
+      }
+      
+      // Обработка сетевых ошибок
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        await unifiedErrorHandler.handleNetworkError(
+          error,
+          {
+            source: 'ApiClient',
+            showToast: true
+          }
+        );
       }
       
       throw error;
     }
   }
 
-  // Удобные методы для разных HTTP методов
+  // === УДОБНЫЕ HTTP МЕТОДЫ ===
+
   async get<T>(endpoint: string, options?: Omit<RequestOptions, 'method'>): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
@@ -192,13 +182,13 @@ class ApiClient {
     return this.request<T>('/api/auth/login', {
       method: 'POST',
       body: credentials,
-      skipAuth: true // Не добавляем токены для запроса аутентификации
+      skipAuth: true
     });
   }
 }
 
-// Создаем единственный экземпляр клиента
+// Singleton instance
 export const apiClient = new ApiClient();
 
-// Экспортируем класс для создания дополнительных экземпляров при необходимости
+// Экспортируем класс для создания дополнительных экземпляров
 export default ApiClient;

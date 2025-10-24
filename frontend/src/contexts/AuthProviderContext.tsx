@@ -8,104 +8,16 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useSession, signOut } from "next-auth/react";
 import { toast } from "@/hooks/use-toast";
 import { AuthProvider as AuthProviderEnum, TOAST_DURATION } from "@/common/constants/constants";
-import { User } from "@/common/interfaces/user.interface";
-import { IAuthContext, IAuthProviderContext } from "@/common/interfaces/authContext.interface";
+import { IAuthProviderContext } from "@/common/interfaces/authContext.interface";
 
-// ============================================================================
-// 1. КОНТЕКСТ ДЛЯ СОСТОЯНИЯ АУТЕНТИФИКАЦИИ (КТО ПОЛЬЗОВАТЕЛЬ)
-// ============================================================================
-
-const AuthContext = createContext<IAuthContext | undefined>(undefined);
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { data: session, status } = useSession();
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const isLoading = status === "loading";
-
-  const checkUserStatus = useCallback(() => {
-    // Priority 1: Next-Auth Session
-    if (session?.user) {
-      setUser(session.user as User);
-      setIsAuthenticated(true);
-      return;
-    }
-
-    // Priority 2: Custom Backend Auth from localStorage
-    try {
-      const storedAuth = localStorage.getItem("backend_auth");
-      if (storedAuth) {
-        const authData = JSON.parse(storedAuth);
-        if (authData?.user && authData?.access) {
-          setUser(authData.user);
-          setIsAuthenticated(true);
-          return;
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse backend_auth from localStorage", e);
-      // Clear corrupted data
-      localStorage.removeItem("backend_auth");
-    }
-
-    // If no valid auth found
-    setUser(null);
-    setIsAuthenticated(false);
-  }, [session]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      checkUserStatus();
-    }
-  }, [session, status, isLoading]); // Убираем checkUserStatus из зависимостей
-
-  const logout = useCallback(async () => {
-    setIsAuthenticated(false);
-    setUser(null);
-    await signOut({ redirect: false }); // next-auth logout
-    localStorage.removeItem("backend_auth");
-    toast({ title: "Logged out successfully." });
-    // Redirect to NextAuth signin page
-    window.location.href = '/api/auth/signin';
-  }, []);
-  
-  const login = useCallback((user: User, accessToken: string, refreshToken: string) => {
-      const authPayload = {
-          access: accessToken,
-          refresh: refreshToken,
-          user: user,
-      };
-      localStorage.setItem('backend_auth', JSON.stringify(authPayload));
-      setUser(user);
-      setIsAuthenticated(true);
-  }, []);
-
-
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, logout, login }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
-
-// ============================================================================
-// 2. КОНТЕКСТ ДЛЯ ВЫБОРА ПРОВАЙДЕРА АУТЕНТИФИКАЦИИ (КАК ВХОДИТЬ)
-// ============================================================================
-
-const AuthProviderContext = createContext<IAuthProviderContext | undefined>(
-  undefined,
-);
+/**
+ * Контекст для управления выбором провайдера аутентификации
+ * Отвечает за: provider, setProvider
+ * Сохраняет выбор провайдера в Redis
+ */
+const AuthProviderContext = createContext<IAuthProviderContext | undefined>(undefined);
 
 export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
   const [provider, setProviderState] = useState<AuthProviderEnum>(
@@ -113,61 +25,81 @@ export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
   );
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize initial value from Redis (only once)
+  // Инициализация провайдера из Redis (только один раз)
   useEffect(() => {
-    if (isInitialized) return; // Предотвращаем повторную инициализацию
+    if (isInitialized) return;
 
     const initProvider = async () => {
       try {
-        console.log("[AuthProvider] Initializing auth provider from Redis...");
+        console.log("[AuthProviderContext] Initializing auth provider from Redis...");
 
-        // Set default provider immediately to prevent hydration issues
+        // Устанавливаем провайдер по умолчанию для предотвращения проблем с гидратацией
         setProviderState(AuthProviderEnum.MyBackendDocs);
 
-        // Only try to fetch from Redis if we're in the browser
+        // Только в браузере пытаемся загрузить из Redis
         if (typeof window === 'undefined') {
-          console.log("[AuthProvider] Server-side rendering, using default provider");
+          console.log("[AuthProviderContext] Server-side rendering, using default provider");
           return;
         }
 
-        // Check if we're in Docker environment
+        // Проверяем Docker окружение
         const isDocker = process.env.NEXT_PUBLIC_IS_DOCKER === 'true';
-        console.log(`[AuthProvider] Environment: ${isDocker ? 'Docker' : 'Local'}`);
+        console.log(`[AuthProviderContext] Environment: ${isDocker ? 'Docker' : 'Local'}`);
 
         const response = await fetch(`/api/redis?key=auth_provider`);
 
         if (!response.ok) {
-          console.warn(`[AuthProvider] Redis API returned ${response.status}: ${response.statusText}`);
-          console.log("[AuthProvider] Using default provider:", AuthProviderEnum.MyBackendDocs);
+          console.warn(`[AuthProviderContext] Redis API returned ${response.status}: ${response.statusText}`);
+          console.log("[AuthProviderContext] Using default provider:", AuthProviderEnum.MyBackendDocs);
           return;
         }
 
         const data = await response.json();
-        console.log("[AuthProvider] Redis response:", data);
+        console.log("[AuthProviderContext] Redis response:", data);
 
         if (data.value && Object.values(AuthProviderEnum).includes(data.value)) {
           setProviderState(data.value as AuthProviderEnum);
-          console.log("[AuthProvider] Successfully loaded provider from Redis:", data.value);
+          console.log("[AuthProviderContext] Successfully loaded provider from Redis:", data.value);
         } else {
-          console.log("[AuthProvider] No valid provider found in Redis, keeping default:", AuthProviderEnum.MyBackendDocs);
+          console.log("[AuthProviderContext] No valid provider found in Redis, keeping default:", AuthProviderEnum.MyBackendDocs);
         }
       } catch (error) {
-        console.error("[AuthProvider] Error fetching initial auth provider:", error);
-        console.log("[AuthProvider] Falling back to default provider:", AuthProviderEnum.MyBackendDocs);
-
-        // Ensure we always have a valid provider
+        console.error("[AuthProviderContext] Error fetching initial auth provider:", error);
+        console.log("[AuthProviderContext] Falling back to default provider:", AuthProviderEnum.MyBackendDocs);
         setProviderState(AuthProviderEnum.MyBackendDocs);
       } finally {
-        setIsInitialized(true); // Помечаем как инициализированный
+        setIsInitialized(true);
       }
     };
 
     initProvider();
-  }, []); // Убираем provider из зависимостей, чтобы избежать цикла
+  }, [isInitialized]);
 
   const setProvider = useCallback(async (newProvider: AuthProviderEnum) => {
     try {
-      console.log(`[AuthProvider] Changing provider to: ${newProvider}`);
+      console.log(`[AuthProviderContext] Changing provider from ${provider} to: ${newProvider}`);
+      
+      // При смене провайдера очищаем Redis от токенов старого провайдера
+      if (provider !== AuthProviderEnum.Select && provider !== newProvider) {
+        const oldRedisKey = provider === AuthProviderEnum.Dummy ? 'dummy_auth' : 'backend_auth';
+        console.log(`[AuthProviderContext] Clearing old provider data from Redis: ${oldRedisKey}`);
+        
+        try {
+          const deleteResponse = await fetch(`/api/redis?key=${encodeURIComponent(oldRedisKey)}`, {
+            method: 'DELETE'
+          });
+          
+          if (deleteResponse.ok) {
+            console.log(`[AuthProviderContext] ✅ Successfully deleted ${oldRedisKey} from Redis`);
+          } else {
+            console.warn(`[AuthProviderContext] ⚠️ Failed to delete ${oldRedisKey}:`, deleteResponse.status);
+          }
+        } catch (error) {
+          console.error(`[AuthProviderContext] ⚠️ Error deleting ${oldRedisKey}:`, error);
+        }
+      }
+      
+      console.log(`[AuthProviderContext] Setting new provider: ${newProvider}`);
 
       toast({
         title: "Provider Change",
@@ -186,32 +118,22 @@ export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[AuthProvider] Redis API error: ${response.status} ${response.statusText}`, errorText);
+        console.error(`[AuthProviderContext] Redis API error: ${response.status} ${response.statusText}`, errorText);
         
-        // Update state immediately for better UX, even if Redis fails
+        // Обновляем состояние локально даже при ошибке Redis
         setProviderState(newProvider);
-        console.log("[AuthProvider] Updated provider locally despite Redis error");
-
-        // Убираем toast для лучшего UX - пользователь не должен видеть технические ошибки
-        // toast({
-        //   variant: "destructive",
-        //   title: "Provider Change Warning",
-        //   description: "Provider changed locally, but may not persist across sessions",
-        //   duration: TOAST_DURATION.ERROR,
-        // });
-
-        // Don't throw error to prevent UI from breaking
+        console.log("[AuthProviderContext] Updated provider locally despite Redis error");
         return;
       }
 
       const responseData = await response.json();
-      console.log("[AuthProvider] Redis save response:", responseData);
+      console.log("[AuthProviderContext] Redis save response:", responseData);
 
-      // Update state immediately for better UX
+      // Обновляем состояние
       setProviderState(newProvider);
-      console.log("[AuthProvider] Auth provider changed to:", newProvider);
+      console.log("[AuthProviderContext] Auth provider changed to:", newProvider);
 
-      // Show appropriate success message based on storage type
+      // Показываем сообщение об успехе
       const storageType = responseData.storage || 'unknown';
       const successMessage = storageType === 'redis' 
         ? `Auth provider changed to ${newProvider}`
@@ -223,18 +145,19 @@ export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
         duration: TOAST_DURATION.MEDIUM,
       });
 
-      // Trigger event to update components
+      // Отправляем события для обновления компонентов
+      window.dispatchEvent(new CustomEvent("authDataChanged")); // Обновляем RedisUserBadge
       window.dispatchEvent(
         new CustomEvent("authProviderChanged", {
           detail: { provider: newProvider },
         }),
       );
     } catch (error) {
-      console.error("[AuthProvider] Error saving auth provider to Redis:", error);
+      console.error("[AuthProviderContext] Error saving auth provider to Redis:", error);
 
-      // Still update the state locally even if Redis fails
+      // Обновляем состояние локально даже при ошибке
       setProviderState(newProvider);
-      console.log("[AuthProvider] Updated provider locally despite Redis error");
+      console.log("[AuthProviderContext] Updated provider locally despite Redis error");
 
       toast({
         variant: "destructive",
@@ -242,13 +165,10 @@ export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
         description: "Provider changed locally, but may not persist across sessions",
         duration: TOAST_DURATION.ERROR,
       });
-
-      // Don't throw error to prevent UI from breaking
-      // throw error;
     }
-  }, []);
+  }, [provider]);
 
-  // Show loading state during initialization to prevent hydration mismatches
+  // Показываем loading состояние во время инициализации
   if (!isInitialized) {
     return (
       <AuthProviderContext.Provider value={{ provider: AuthProviderEnum.MyBackendDocs, setProvider: () => {} }}>
@@ -273,8 +193,3 @@ export const useAuthProvider = () => {
   }
   return context;
 };
-
-// Проверяем наличие объекта window перед использованием
-if (typeof window !== 'undefined') {
-  window.location.pathname.split("/");
-}

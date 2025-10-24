@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useUserProfileData } from '@/hooks/useUserProfileData';
-import { useAuth } from '@/contexts/AuthProviderContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,7 +112,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
     badge: <Badge variant="secondary" className="ml-1 text-xs premium-badge">{t('autoria.premium')}</Badge>
   };
 
-  // Пункт модерации (только для суперпользователей)
+  // Пункт модерации (только для суперпользователей и модераторов)
   const moderationItem = {
     href: '/autoria/moderation',
     label: 'Модерация',
@@ -133,7 +133,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   const navigationItems = [
     ...baseNavigationItems,
     analyticsItem, // Временно доступна всем
-    ...(isSuperUser ? [moderationItem] : []), // Только для суперюзеров
+    ...(isSuperUser ? [moderationItem] : []), // Только для суперюзеров и модераторов
     profileItem
   ];
 

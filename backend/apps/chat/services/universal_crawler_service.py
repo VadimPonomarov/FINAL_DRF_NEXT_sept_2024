@@ -41,6 +41,30 @@ class UniversalCrawlerService:
             'browser_type': 'chromium',
             'page_timeout': 60000,
             'verbose': False,
+            # Anti-detection: hide automation, incognito, webdriver
+            'magic': True,  # Enable stealth mode
+        }
+        
+        # Realistic browser headers to bypass detection
+        self.realistic_headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7,ru;q=0.6',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
+        }
+        
+        # Viewport sizes (realistic desktop)
+        self.viewport = {
+            'width': 1920,
+            'height': 1080,
         }
     
     async def crawl_with_llm_extraction(
@@ -116,8 +140,37 @@ class UniversalCrawlerService:
             # Enhanced JavaScript to wait for dynamic content
             wait_js = """
             async function waitForContent() {
-                // Wait for any pending network requests
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Hide incognito/automation detection
+                Object.defineProperty(navigator, 'webdriver', {get: () => false});
+                Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+                Object.defineProperty(navigator, 'languages', {get: () => ['uk-UA', 'uk', 'en-US', 'en']});
+                
+                // Simulate human-like behavior with random delay
+                const randomDelay = 3000 + Math.floor(Math.random() * 2000); // 3-5 sec
+                await new Promise(resolve => setTimeout(resolve, randomDelay));
+                
+                // Wait for specific currency rate elements (try different selectors)
+                const waitForCurrencyRates = async () => {
+                    const maxAttempts = 20; // 10 seconds max
+                    for (let i = 0; i < maxAttempts; i++) {
+                        // Check for currency-related elements
+                        const hasCurrencyData = document.body.innerText.includes('USD') || 
+                                               document.body.innerText.includes('EUR') ||
+                                               document.body.innerText.includes('курс') ||
+                                               document.querySelector('[class*="rate"]') ||
+                                               document.querySelector('[class*="currency"]') ||
+                                               document.querySelector('[class*="exchange"]');
+                        
+                        if (hasCurrencyData) {
+                            console.log('Currency data found!');
+                            break;
+                        }
+                        
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                };
+                
+                await waitForCurrencyRates();
                 
                 // Auto-scroll to trigger lazy loading
                 await new Promise((resolve) => {
@@ -130,8 +183,8 @@ class UniversalCrawlerService:
                         
                         if (totalHeight >= scrollHeight) {
                             clearInterval(timer);
-                            // Wait a bit more for content to load
-                            setTimeout(resolve, 1000);
+                            // Wait more for content to load after scrolling
+                            setTimeout(resolve, 2000);
                         }
                     }, 100);
                 });
@@ -151,13 +204,25 @@ class UniversalCrawlerService:
                 visited.add(current_url)
                 logger.info(f"  📄 Краулинг (глубина {depth}): {current_url}")
                 
+                # Add realistic cookies
+                cookies = [
+                    {'name': 'lang', 'value': 'ru', 'domain': current_url.split('/')[2]},
+                    {'name': 'currency', 'value': 'UAH', 'domain': current_url.split('/')[2]},
+                ]
+                
                 async with AsyncWebCrawler(**self.default_config) as crawler:
                     result = await crawler.arun(
                         url=current_url,
                         bypass_cache=True,
                         js_code=wait_js,
                         wait_for='networkidle',
-                        delay_before_return_html=3.0,
+                        delay_before_return_html=7.0,  # Increased to 7 seconds for heavy JS sites
+                        headers=self.realistic_headers,  # Bypass bot detection
+                        viewport_width=self.viewport['width'],
+                        viewport_height=self.viewport['height'],
+                        # Simulate real user behavior
+                        simulate_user=True,
+                        override_navigator=True,  # Hide automation indicators
                     )
                     
                     if result.success:

@@ -18,7 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAuth } from '@/contexts/AuthProviderContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ModerationNotification {
   id: number;

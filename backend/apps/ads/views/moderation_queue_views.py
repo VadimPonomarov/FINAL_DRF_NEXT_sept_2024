@@ -59,26 +59,20 @@ class ModerationQueueView(generics.ListAPIView):
         return self.list(request, *args, **kwargs)
 
     def get_queryset(self):
-        """Get ads that need moderation or are in moderation-related states."""
+        """Get ALL ads for moderation - moderators can see everything."""
+        # Модераторы видят ВСЕ объявления, включая черновики и тестовые
         queryset = CarAd.objects.select_related(
             "account", "account__user", "mark", "moderated_by"
         ).order_by("-created_at")
 
-        # Если статус не указан, возвращаем все объявления для модерации
+        # Если указан статус-фильтр, применяем его
         status_filter = self.request.GET.get("status")
         if status_filter:
             queryset = queryset.filter(status=status_filter)
-        else:
-            # По умолчанию показываем все объявления, которые могут быть отмодерированы
-            queryset = queryset.filter(
-                status__in=[
-                    AdStatusEnum.PENDING,
-                    AdStatusEnum.NEEDS_REVIEW,
-                    AdStatusEnum.REJECTED,
-                    AdStatusEnum.BLOCKED,
-                    AdStatusEnum.ACTIVE,
-                ]
-            )
+        
+        # ВАЖНО: Без фильтра возвращаем ВСЕ объявления
+        # Модератор должен видеть абсолютно все: DRAFT, PENDING, ACTIVE, REJECTED, etc.
+        # Логика модерации: все что есть в поиске, должно быть в модерации
 
         return queryset
 

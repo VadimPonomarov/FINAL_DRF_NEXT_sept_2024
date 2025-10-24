@@ -50,23 +50,18 @@ const ModerationPage = () => {
 
   // Проверяем статус суперюзера из разных источников
   const isSuperUser = React.useMemo(() => {
-    // ВРЕМЕННО: Всегда возвращаем true для тестирования
-    // TODO: Вернуть проверку прав после исправления логики авторизации
-    console.log('[ModerationPage] FORCING isSuperUser = true');
-    return true;
+    const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
 
-    // const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
+    console.log('[ModerationPage] Superuser check:', {
+      userFromAuth: user,
+      user_is_superuser: user?.is_superuser,
+      userProfileData_user: userProfileData?.user,
+      userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
+      finalResult: isSuper,
+      timestamp: new Date().toISOString()
+    });
 
-    // console.log('[ModerationPage] Superuser check:', {
-    //   userFromAuth: user,
-    //   user_is_superuser: user?.is_superuser,
-    //   userProfileData_user: userProfileData?.user,
-    //   userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
-    //   finalResult: isSuper,
-    //   timestamp: new Date().toISOString()
-    // });
-
-    // return isSuper;
+    return isSuper;
   }, [user, userProfileData]);
   const [ads, setAds] = useState<CarAd[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,14 +73,26 @@ const ModerationPage = () => {
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Проверка прав доступа - временно отключена
-  // useEffect(() => {
-  //   if (!user || !user.is_superuser) {
-  //     // Redirect to home if not authorized - только суперюзеры могут модерировать
-  //     window.location.href = '/';
-  //     return;
-  //   }
-  // }, [user]);
+  // Проверка прав доступа - ТОЛЬКО суперюзеры
+  useEffect(() => {
+    // Ждем загрузки данных пользователя
+    if (authLoading) return;
+
+    // Если пользователь не суперюзер - редирект на главную
+    if (!isSuperUser) {
+      console.error('[ModerationPage] ❌ Access denied - user is not superuser');
+      toast({
+        title: "❌ Доступ запрещен",
+        description: "Только суперюзеры могут модерировать объявления",
+        variant: "destructive",
+      });
+      
+      // Редирект на главную через 1 секунду
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    }
+  }, [isSuperUser, authLoading, toast]);
 
   // Проверяем аутентификацию при загрузке компонента
   useEffect(() => {
@@ -97,11 +104,12 @@ const ModerationPage = () => {
 
   // Загрузка данных
   useEffect(() => {
-    if (isAuthenticated) {
+    // Используем isSuperUser вместо isAuthenticated, так как он уже установлен в true
+    if (isSuperUser) {
       loadModerationQueue();
       loadModerationStats();
     }
-  }, [statusFilter, searchQuery, sortBy, sortOrder, isAuthenticated]);
+  }, [statusFilter, searchQuery, sortBy, sortOrder, isSuperUser]);
 
   const loadModerationQueue = async () => {
     setLoading(true);

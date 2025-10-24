@@ -12,7 +12,8 @@ import { IDummyAuth } from "@/common/interfaces/dummy.interfaces";
 import { IBackendAuthCredentials } from "@/common/interfaces/auth.interfaces";
 import { ISession } from "@/common/interfaces/session.interfaces";
 import { User } from "@/common/interfaces/user.interface";
-import { useAuthProvider, useAuth } from "@/contexts/AuthProviderContext";
+import { useAuthProvider } from "@/contexts/AuthProviderContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { redirectManager } from "@/utils/auth/redirectManager";
 
 import { backendSchema, dummySchema } from "./index.joi";
@@ -275,6 +276,10 @@ export const useLoginForm = () => {
           });
 
           setMessage("Authentication successful!");
+
+          // Отправляем событие для обновления RedisUserBadge
+          console.log('[LoginForm] Dispatching authDataChanged event');
+          window.dispatchEvent(new CustomEvent('authDataChanged'));
 
           // Определяем URL для редиректа
           const redirectUrl = rawCallbackUrl || callbackUrl || '/';

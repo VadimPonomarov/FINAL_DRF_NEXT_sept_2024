@@ -3,7 +3,7 @@ import { FC, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield } from 'lucide-react';
+import { Activity, Menu as BurgerIcon, X as CloseIcon } from 'lucide-react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/common/constants/constants';
 import { IMenuItem } from '@/components/All/MenuComponent/menu.interfaces';
@@ -12,7 +12,6 @@ import { ThemeControls } from '@/components/ui/theme-controls';
 import { FaBook, FaSignOutAlt, FaServer, FaDatabase, FaNetworkWired, FaCar } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MagicBackButton } from '@/components/ui/magicBackButton';
-import AuthBadge from '@/components/All/AuthBadge/AuthBadge';
 
 export const MenuMain: FC = () => {
   const { provider } = useAuthProvider();
@@ -257,31 +256,6 @@ export const MenuMain: FC = () => {
         index: 7,
         provider: AuthProvider.MyBackendDocs,
         tooltip: "AutoRia - система объявлений"
-      },
-      {
-        path: "/autoria/moderation",
-        label: (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="group flex items-center gap-2">
-                  <Shield
-                    size={18}
-                    className="text-foreground group-hover:text-accent-foreground transition-colors"
-                  />
-                  <span className="text-sm">Модерація</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Модерація оголошень (тільки для менеджерів та адміністраторів)</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ),
-        disabled: !isAuthenticated,
-        index: 8,
-        provider: AuthProvider.MyBackendDocs,
-        tooltip: "Модерація оголошень"
       }
     ];
 
@@ -363,25 +337,67 @@ export const MenuMain: FC = () => {
           ),
           disabled: false,
           cb: async function() {
-            console.log('Logout callback called');
-            console.log('signOut type:', typeof signOut);
-            console.log('signOut function:', signOut);
+            console.log('[Logout] Full logout initiated');
             try {
-              if (typeof signOut === 'function') {
-                console.log('Calling signOut with redirect: false...');
-                // ВАЖНО: используем redirect: false, чтобы избежать редиректа на /signin
-                await signOut({ redirect: false });
-                console.log('SignOut successful, redirecting to /api/auth/signin...');
-                // Вручную редиректим на страницу входа
-                window.location.href = '/api/auth/signin';
-              } else {
-                console.error('signOut function is not available');
-                // Fallback to manual logout
-                window.location.href = '/api/auth/signout';
+              // 1. Определяем ключ токенов текущего провайдера
+              const redisKey = currentProvider === AuthProvider.Dummy ? 'dummy_auth' : 'backend_auth';
+              console.log(`[Logout] Clearing Redis key: ${redisKey}`);
+
+              // 2. Очищаем токены из Redis
+              try {
+                const deleteResponse = await fetch(`/api/redis?key=${encodeURIComponent(redisKey)}`, {
+                  method: 'DELETE'
+                });
+                
+                if (deleteResponse.ok) {
+                  console.log(`[Logout] ✅ Successfully deleted ${redisKey} from Redis`);
+                } else {
+                  console.error(`[Logout] ⚠️ Failed to delete ${redisKey} from Redis:`, deleteResponse.status);
+                }
+              } catch (error) {
+                console.error(`[Logout] ⚠️ Error deleting ${redisKey} from Redis:`, error);
               }
+
+              // 3. Очищаем ключ провайдера из Redis
+              try {
+                const providerResponse = await fetch('/api/redis?key=auth_provider', {
+                  method: 'DELETE'
+                });
+                
+                if (providerResponse.ok) {
+                  console.log('[Logout] ✅ Successfully deleted auth_provider from Redis');
+                } else {
+                  console.error('[Logout] ⚠️ Failed to delete auth_provider from Redis');
+                }
+              } catch (error) {
+                console.error('[Logout] ⚠️ Error deleting auth_provider from Redis:', error);
+              }
+
+              // 4. Очищаем сессию через signOut
+              if (typeof signOut === 'function') {
+                console.log('[Logout] Calling signOut...');
+                await signOut({ redirect: false });
+                console.log('[Logout] ✅ SignOut successful');
+              } else {
+                console.warn('[Logout] signOut function not available');
+              }
+
+              // 5. Диспатчим события для обновления UI
+              window.dispatchEvent(new CustomEvent('authDataChanged'));
+              window.dispatchEvent(new CustomEvent('authProviderChanged', { 
+                detail: { provider: AuthProvider.Select } 
+              }));
+
+              console.log('[Logout] ✅ Full logout completed, redirecting...');
+              
+              // 6. Редирект на страницу входа
+              setTimeout(() => {
+                window.location.href = '/login';
+              }, 500);
+
             } catch (error) {
-              console.error('Error during signOut:', error);
-              // Fallback to manual logout
+              console.error('[Logout] ❌ Error during logout:', error);
+              // Fallback: редирект на signout даже при ошибках
               window.location.href = '/api/auth/signout';
             }
           },
@@ -464,8 +480,8 @@ export const MenuMain: FC = () => {
         </>
       )}
 
-      {/* Theme Controls - позиционируем левее, чтобы не накладывались на другие элементы */}
-      <div className="absolute right-[120px] top-1/2 -translate-y-1/2 z-[99999] flex items-center gap-2">
+      {/* Theme Controls */}
+      <div className="absolute right-[120px] top-1/2 -translate-y-1/2 z-[99999]">
         <ThemeControls />
       </div>
     </div>

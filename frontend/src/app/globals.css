@@ -1119,3 +1119,14 @@ textarea::placeholder {
         @apply py-3 px-4 text-sm;
     }
 }
+
+/* Tooltip z-index - всплывают поверх ВСЕГО */
+[role="tooltip"],
+[data-radix-popper-content-wrapper] {
+  z-index: 9999999 !important;
+}
+
+/* Портал для tooltip'ов */
+body > [id^="radix-"] {
+  z-index: 9999999 !important;
+}

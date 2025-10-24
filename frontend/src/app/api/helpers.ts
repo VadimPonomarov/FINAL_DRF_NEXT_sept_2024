@@ -326,21 +326,26 @@ export const fetchAuth = async (
 
     const data = await response.json();
 
-    // Сохраняем токены в Redis с обнулением счетчика попыток
+    // Сохраняем токены и информацию о пользователе в Redis с обнулением счетчика попыток
     const redisKey = isUsingDummyAuth ? "dummy_auth" : "backend_auth";
     const tokenData = isUsingDummyAuth
       ? {
           access: data.accessToken,
           refresh: data.refreshToken,
+          user: data, // Сохраняем всю информацию о пользователе из DummyJSON
           refreshAttempts: 0
         }
       : {
           access: data.access,
           refresh: data.refresh,
+          user: data.user, // Сохраняем информацию о пользователе из backend
           refreshAttempts: 0
         };
 
-    console.log(`[fetchAuth] Saving tokens to Redis with key: ${redisKey}`);
+    console.log(`[fetchAuth] Saving tokens and user data to Redis with key: ${redisKey}`, {
+      hasUser: !!tokenData.user,
+      userKeys: tokenData.user ? Object.keys(tokenData.user) : []
+    });
 
     // Get absolute URL for Redis API (server-side needs absolute URLs)
     const isServerSide = typeof window === 'undefined';

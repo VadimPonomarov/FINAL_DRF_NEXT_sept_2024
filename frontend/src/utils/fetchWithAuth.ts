@@ -1,108 +1,70 @@
+import { unifiedErrorHandler } from './errors/unifiedErrorHandler';
+
 /**
- * Centralized auth-aware fetch with automatic token refresh and user notifications
+ * Centralized fetch with automatic error handling for ALL error codes
+ * Использует универсальный обработчик ошибок для всего сайта
  *
- * Workflow:
- * 1. Makes initial request
- * 2. If 401 (Unauthorized), attempts to refresh tokens via /api/auth/refresh
- * 3. If refresh succeeds, retries the original request
- * 4. If refresh fails or second request returns 401, shows toast and redirects to /login
+ * Обрабатывает:
+ * - 401 → refresh токенов + retry
+ * - 403 → toast "Доступ запрещен"
+ * - 404 → toast "Не найдено"
+ * - 500/502/503 → toast "Ошибка сервера" + retry
+ * - Network errors → toast "Проблемы с сетью"
  *
  * Usage: await fetchWithAuth('/api/autoria/favorites/toggle', { method: 'POST', body: JSON.stringify({ car_ad_id }) })
  */
 export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   console.log('[fetchWithAuth] Making request to:', input);
 
-  const resp = await fetch(input, {
-    ...init,
-    // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
-    // credentials: 'include' вызывает CORS ошибку с Access-Control-Allow-Origin: *
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init.headers || {})
-    },
-    cache: 'no-store'
-  });
+  const makeRequest = async () => {
+    return fetch(input, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init.headers || {})
+      },
+      cache: 'no-store'
+    });
+  };
 
-  if (resp.status !== 401) {
-    console.log('[fetchWithAuth] Request successful, status:', resp.status);
-    return resp;
-  }
-
-  console.log('[fetchWithAuth] ⚠️ Received 401 Unauthorized, attempting token refresh...');
-
-  // Try to refresh once via internal API
   try {
-    const origin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const refresh = await fetch(`${origin}/api/auth/refresh`, { method: 'POST', cache: 'no-store' });
+    const resp = await makeRequest();
 
-    if (refresh.ok) {
-      console.log('[fetchWithAuth] ✅ Token refresh successful, retrying original request...');
-
-      const retry = await fetch(input, {
-        ...init,
-        // НЕ используем credentials: 'include'
-        headers: {
-          'Content-Type': 'application/json',
-          ...(init.headers || {})
-        },
-        cache: 'no-store'
-      });
-
-      if (retry.status !== 401) {
-        console.log('[fetchWithAuth] ✅ Retry successful, status:', retry.status);
-        return retry;
-      }
-
-      console.log('[fetchWithAuth] ❌ Retry still returned 401, tokens are invalid');
-    } else {
-      console.log('[fetchWithAuth] ❌ Token refresh failed, status:', refresh.status);
-    }
-  } catch (error) {
-    console.error('[fetchWithAuth] ❌ Error during token refresh:', error);
-  }
-
-  // Still unauthorized: show toast and redirect to /login with callback
-  if (typeof window !== 'undefined') {
-    console.log('[fetchWithAuth] 🔄 Redirecting to login page...');
-
-    // Очищаем счетчик попыток refresh перед редиректом
-    try {
-      const { apiSetRedis, apiGetRedis } = await import('@/app/api/helpers');
-      const key = 'backend_auth';
-      const redisData = await apiGetRedis(key);
-      if (redisData) {
-        const parsedData = typeof redisData === 'string' ? JSON.parse(redisData) : redisData;
-        await apiSetRedis(key, JSON.stringify({
-          ...parsedData,
-          refreshAttempts: 0,
-          lastRefreshFailed: false,
-          lastRefreshTime: 0
-        }));
-        console.log('[fetchWithAuth] Cleared refresh attempts before redirect');
-      }
-    } catch (error) {
-      console.error('[fetchWithAuth] Failed to clear refresh attempts:', error);
+    // Если запрос успешен - возвращаем ответ
+    if (resp.ok) {
+      console.log('[fetchWithAuth] Request successful, status:', resp.status);
+      return resp;
     }
 
-    // Динамически импортируем toast для показа уведомления
-    import('@/hooks/use-toast').then(({ toast }) => {
-      toast({
-        title: "Требуется авторизация",
-        description: "Ваша сессия истекла. Пожалуйста, войдите снова для доступа к ресурсам.",
-        variant: "destructive",
-        duration: 5000,
-      });
-    }).catch(err => {
-      console.error('[fetchWithAuth] Failed to show toast:', err);
+    // Обрабатываем ошибку через универсальный обработчик
+    console.log(`[fetchWithAuth] ⚠️ Received error ${resp.status}, delegating to unified error handler...`);
+
+    const result = await unifiedErrorHandler.handleHttpError(resp, {
+      retryCallback: makeRequest,
+      source: 'fetchWithAuth',
+      currentPath: typeof window !== 'undefined' ? window.location.pathname + window.location.search : undefined,
+      showToast: true,
+      maxRetries: resp.status >= 500 ? 2 : 1 // Для server errors пытаемся 2 раза
     });
 
-    // Небольшая задержка для показа toast и гарантии записи в Redis
-    setTimeout(() => {
-      const callback = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = `/login?callbackUrl=${callback}&message=${encodeURIComponent('Ваша сессия истекла. Пожалуйста, войдите снова.')}`;
-    }, 500);
-  }
+    if (result.retryResult) {
+      return result.retryResult;
+    }
 
-  return resp; // Return the 401 response for callers on the server side
+    return resp;
+  } catch (error) {
+    // Обрабатываем сетевые ошибки
+    console.error('[fetchWithAuth] ❌ Network error:', error);
+    
+    await unifiedErrorHandler.handleNetworkError(
+      error instanceof Error ? error : new Error('Network request failed'),
+      {
+        source: 'fetchWithAuth',
+        showToast: true
+      }
+    );
+
+    throw error;
+  }
 }
 
