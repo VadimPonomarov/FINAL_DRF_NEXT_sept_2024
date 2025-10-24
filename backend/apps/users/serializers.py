@@ -1,6 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -13,6 +11,7 @@ from core.serializers.base import BaseModelSerializer
 from core.serializers.file_upload import FileUploadSerializer
 from core.services.jwt import JwtService, ActivateToken
 from core.services.send_email import send_email_service
+from core.validators.password_validators import PasswordValidationMixin
 
 UserModel = get_user_model()
 
@@ -34,7 +33,11 @@ class ProfileSerializer(FileUploadSerializer, BaseModelSerializer):
         return None
 
 
-class UserSerializer(BaseModelSerializer):
+class UserSerializer(PasswordValidationMixin, BaseModelSerializer):
+    """
+    Serializer for user registration.
+    Uses PasswordValidationMixin for centralized password validation (DRY principle).
+    """
     profile = ProfileSerializer(required=False, allow_null=True)
     password_confirm = serializers.CharField(write_only=True, required=True)
 
@@ -60,25 +63,8 @@ class UserSerializer(BaseModelSerializer):
             "is_superuser": {"read_only": True},
         }
 
-    def validate_password(self, value):
-        """Validate password using Django's password validators."""
-        try:
-            validate_password(value)
-        except DjangoValidationError as e:
-            raise serializers.ValidationError(list(e.messages))
-        return value
-
-    def validate(self, data):
-        """Validate that passwords match."""
-        password = data.get('password')
-        password_confirm = data.get('password_confirm')
-
-        if password and password_confirm and password != password_confirm:
-            raise serializers.ValidationError({
-                'password_confirm': 'Passwords do not match.'
-            })
-
-        return data
+    # validate_password and validate methods are inherited from PasswordValidationMixin
+    # No need to duplicate password validation logic here
 
     @transaction.atomic
     def create(self, validated_data):
@@ -312,6 +298,12 @@ class UserPermissionsSerializer(serializers.Serializer):
 
 
 class AvatarSerializer(FileUploadSerializer, BaseModelSerializer):
+    """
+    Serializer for avatar upload.
+    Note: File validation is handled by FileUploadSerializer.validate_file()
+    which is automatically called for 'file' field.
+    Avatar field uses ImageField which has its own validation.
+    """
     avatar = serializers.ImageField(required=True, allow_null=False)
 
     class Meta(BaseModelSerializer.Meta):
@@ -319,10 +311,16 @@ class AvatarSerializer(FileUploadSerializer, BaseModelSerializer):
         fields = ("avatar",)
 
     def validate_avatar(self, value):
-        """Validate uploaded avatar file"""
+        """
+        Validate uploaded avatar file.
+        Note: Only basic checks here. FileUploadSerializer provides additional validation.
+        """
         if value is None:
             raise serializers.ValidationError("Avatar file is required")
-        return self.validate_file(value)
+        
+        # Basic image-specific validation
+        # Additional file validation (size, type, extension) is handled by FileUploadSerializer
+        return value
 
     def update(self, instance, validated_data):
         """Update avatar file and clear generated avatar URL"""

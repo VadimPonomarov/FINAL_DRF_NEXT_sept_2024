@@ -3,12 +3,14 @@ from rest_framework import serializers
 from ..models import AddsAccountContact
 from core.serializers.base import BaseModelSerializer
 from core.enums.ads import ContactTypeEnum
+from core.validators.contact_validators import ContactSerializerMixin
 
 
-class AddsAccountContactSerializer(BaseModelSerializer):
+class AddsAccountContactSerializer(ContactSerializerMixin, BaseModelSerializer):
     """
     Serializer for the AddsAccountContact model.
     Handles serialization and deserialization of contact data for accounts.
+    Uses ContactSerializerMixin for centralized validation (DRY principle).
     """
     class Meta(BaseModelSerializer.Meta):
         model = AddsAccountContact
@@ -20,44 +22,15 @@ class AddsAccountContactSerializer(BaseModelSerializer):
             "value": {"required": True}
         }
 
-    def validate(self, data):
+    def validate_type(self, value):
         """
-        Validate the contact data.
-        
-        Args:
-            data: The contact data to validate.
-            
-        Returns:
-            The validated data.
-            
-        Raises:
-            serializers.ValidationError: If the data is invalid.
+        Validate contact type against ContactTypeEnum.
         """
-        # Ensure the contact type is valid
-        contact_type = data.get('type')
-        if contact_type not in ContactTypeEnum.values:
-            raise serializers.ValidationError({
-                'type': f'Invalid contact type. Must be one of: {list(ContactTypeEnum.values)}'
-            })
-        
-        # Ensure the value is provided
-        value = data.get('value')
-        if not value:
-            raise serializers.ValidationError({
-                'value': 'This field is required.'
-            })
-        
-        # Additional validation based on contact type
-        if contact_type == 'email':
-            if '@' not in value:
-                raise serializers.ValidationError({
-                    'value': 'Enter a valid email address.'
-                })
-        elif contact_type == 'phone':
-            # Simple phone number validation - can be enhanced
-            if not value.replace(' ', '').replace('-', '').replace('+', '').isdigit():
-                raise serializers.ValidationError({
-                    'value': 'Enter a valid phone number.'
-                })
-        
-        return data
+        if value not in ContactTypeEnum.values:
+            raise serializers.ValidationError(
+                f'Invalid contact type. Must be one of: {list(ContactTypeEnum.values)}'
+            )
+        return value
+    
+    # validate_value and validate methods are inherited from ContactSerializerMixin
+    # Email and phone validation is centralized - no duplication needed

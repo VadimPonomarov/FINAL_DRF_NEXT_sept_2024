@@ -4,12 +4,14 @@ from django.utils.translation import gettext_lazy as _
 from ..models import AdContact
 from core.serializers.base import BaseModelSerializer
 from core.enums.ads import ContactTypeEnum
+from core.validators.contact_validators import ContactSerializerMixin
 
 
-class AdContactSerializer(BaseModelSerializer):
+class AdContactSerializer(ContactSerializerMixin, BaseModelSerializer):
     """
     Serializer for AdContact model.
     Handles serialization and deserialization of contact data for advertisements.
+    Uses ContactSerializerMixin for centralized validation (DRY principle).
     """
     
     class Meta(BaseModelSerializer.Meta):
@@ -35,7 +37,7 @@ class AdContactSerializer(BaseModelSerializer):
 
     def validate_type(self, value):
         """
-        Validate contact type.
+        Validate contact type against ContactTypeEnum.
         """
         if value not in dict(ContactTypeEnum.choices):
             raise serializers.ValidationError(
@@ -44,38 +46,9 @@ class AdContactSerializer(BaseModelSerializer):
                 )
             )
         return value
-
-    def validate_value(self, value):
-        """
-        Validate contact value based on type.
-        """
-        if not value or not value.strip():
-            raise serializers.ValidationError(_('Contact value is required.'))
-        
-        return value.strip()
-
-    def validate(self, data):
-        """
-        Cross-field validation.
-        """
-        contact_type = data.get('type')
-        contact_value = data.get('value', '')
-
-        # Валидация в зависимости от типа контакта
-        if contact_type == ContactTypeEnum.EMAIL:
-            if '@' not in contact_value:
-                raise serializers.ValidationError({
-                    'value': _('Enter a valid email address.')
-                })
-        elif contact_type == ContactTypeEnum.PHONE:
-            # Простая валидация телефона
-            cleaned_phone = contact_value.replace(' ', '').replace('-', '').replace('+', '')
-            if not cleaned_phone.isdigit():
-                raise serializers.ValidationError({
-                    'value': _('Enter a valid phone number.')
-                })
-
-        return data
+    
+    # validate_value and validate methods are inherited from ContactSerializerMixin
+    # No need to duplicate email/phone validation logic here
 
     def create(self, validated_data):
         """
