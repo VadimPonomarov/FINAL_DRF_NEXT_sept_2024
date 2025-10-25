@@ -18,8 +18,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -152,6 +150,12 @@ bower_components
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
+
+# Python lib directories only (NOT frontend/src/lib)
+/backend/lib/
+/backend/lib64/
+/celery-service/lib/
+/mailing/lib/
 
 # Dependency directories
 node_modules/
@@ -296,6 +300,6 @@ $RECYCLE.BIN/
 *.log
 logs/
 log/
-/docs/
-/frontend/docs/
+# /docs/  # Uncommented - docs are needed for deployment
+# /frontend/docs/  # Uncommented - frontend docs are needed
 /rabbitmq/

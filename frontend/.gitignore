@@ -39,4 +39,4 @@ yarn-error.log*
 /generate-react-cli.json
 /.idea/
 /templates/
-/scripts/
+# /scripts/  # Uncommented - scripts are needed for development and deployment
