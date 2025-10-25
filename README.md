@@ -97,19 +97,18 @@
 git clone https://github.com/VadimPonomarov/FINAL_DRF_NEXT_sept_2024.git
 cd FINAL_DRF_NEXT_sept_2024
 
-# 2. Налаштувати environment variables
-cp env-config/.env.base.example env-config/.env.base
-cp env-config/.env.secrets.example env-config/.env.secrets
-# Відредагувати файли з вашими ключами
-
-# 3. Запустити через Docker Compose
+# 2. Запустити проект (все налаштовано "out of the box")
 docker-compose up -d
 
-# 4. Застосувати міграції та створити тестові дані
-docker-compose exec app python manage.py migrate
-docker-compose exec app python manage.py create_test_users
-docker-compose exec app python manage.py create_mock_system --quick
+# Готово! Проект автоматично:
+# ✅ Застосує міграції
+# ✅ Створить тестових користувачів (admin@autoria.com / 12345678)
+# ✅ Наповнить БД даними (brands, models, regions)
+# ✅ Створить тестові оголошення
 ```
+
+> **🎓 Навчальний проект**: Всі `.env` файли вже включені в репозиторій для швидкого старту.  
+> ⚠️ У production використовуйте власні секрети!
 
 ### Альтернативний запуск (без Docker)
 
