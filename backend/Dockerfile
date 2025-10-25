@@ -44,18 +44,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install latest Poetry
-RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.3 python3 -
+# Install latest Poetry (2.0+)
+RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=2.0.1 python3 -
 
 # Add Poetry to PATH
 ENV PATH="/root/.local/bin:$PATH"
 
+# Configure Poetry for Docker
+RUN poetry config virtualenvs.create false
+
 # Copy dependency files
 COPY pyproject.toml poetry.lock ./
 
-# Install ALL dependencies (full installation)
+# Install dependencies (only main dependencies, no dev)
 # Note: virtualenvs.create is already false by default in Docker
-RUN poetry install --no-interaction --no-ansi --no-root
+RUN poetry install --no-interaction --no-ansi --no-root --only main
 
 # Install Playwright browsers for crawl4ai dynamic content parsing
 # First install chromium browser
