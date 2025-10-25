@@ -14,27 +14,103 @@
 
 ## 🎯 Варіанти Встановлення
 
-### Варіант 1: Docker Compose (Рекомендовано) 🐳
+### Варіант 1: Автоматичний деплой через `deploy.py` (Найлегший) 🚀
 
-**Найпростіший спосіб для швидкого старту**
+**Рекомендовано для початківців - автоматизує весь процес**
 
 ```bash
 # 1. Клонувати репозиторій
 git clone https://github.com/VadimPonomarov/FINAL_DRF_NEXT_sept_2024.git
 cd FINAL_DRF_NEXT_sept_2024
 
-# 2. Налаштувати environment (див. ENV_SETUP.md)
-cp env-config/.env.base.example env-config/.env.base
-# Відредагувати .env.base з вашими налаштуваннями
+# 2. Запустити інтерактивний деплой
+python deploy.py
+```
 
-# 3. Запустити всі сервіси
-docker-compose up -d
+**Скрипт автоматично:**
+- ✅ Обирає режим деплою (швидкий/повна переустановка)
+- ✅ Вибирає де запускати frontend (Docker/локально)
+- ✅ Збирає та запускає всі сервіси
+- ✅ Перевіряє здоров'я backend перед запуском frontend
+- ✅ В production режимі: `npm run build` → `npm run start`
 
-# 4. Перевірити статус
+**Таймаути та дефолти:**
+- Після 10 секунд без вибору: автоматичний вибір
+- Дефолт: Повна переустановка + Frontend локально (production)
+
+---
+
+### Варіант 2: Docker Compose (Ручний) 🐳
+
+**Для досвідчених користувачів - повний контроль**
+
+#### 2.1 Backend в Docker + Frontend локально (Production)
+
+```bash
+# 1. Клонувати репозиторій
+git clone https://github.com/VadimPonomarov/FINAL_DRF_NEXT_sept_2024.git
+cd FINAL_DRF_NEXT_sept_2024
+
+# 2. Запустити backend сервіси з повною перебудовою
+docker-compose up --build -d
+
+# 3. Дочекатися готовності backend
+# PowerShell:
+do { Start-Sleep -Seconds 3; $response = Invoke-WebRequest -Uri "http://localhost:8000/health" -UseBasicParsing -ErrorAction SilentlyContinue } while ($null -eq $response -or $response.StatusCode -ne 200)
+Write-Host "✅ Backend ready!"
+
+# Bash/Linux:
+until curl -f http://localhost:8000/health > /dev/null 2>&1; do sleep 3; done
+echo "✅ Backend ready!"
+
+# 4. Збудувати frontend в production режимі
+cd frontend
+npm install
+npm run build
+
+# 5. Запустити frontend в production
+npm run start
+```
+
+**Доступ:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- Swagger Docs: http://localhost:8000/api/schema/swagger/
+
+#### 2.2 Повний Docker (Backend + Frontend в контейнерах)
+
+```bash
+# Клонувати та запустити ВСІ сервіси в Docker
+git clone https://github.com/VadimPonomarov/FINAL_DRF_NEXT_sept_2024.git
+cd FINAL_DRF_NEXT_sept_2024
+docker-compose up --build -d
+
+# Перевірити статус
 docker-compose ps
 
-# 5. Переглянути логи (опціонально)
+# Переглянути логи
+docker-compose logs -f frontend
 docker-compose logs -f app
+```
+
+**Доступ:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+
+#### 2.3 Backend в Docker + Frontend в dev режимі (для розробки)
+
+```bash
+# 1. Запустити backend
+docker-compose up --build -d
+
+# 2. Створити frontend/.env.local (ОБОВ'ЯЗКОВО!)
+# Використайте шаблон: docs/ENV_TEMPLATE.local
+cp docs/ENV_TEMPLATE.local frontend/.env.local
+
+# 3. Встановити залежності та запустити dev server
+cd frontend
+npm install
+npm run dev
 ```
 
 **Що запуститься автоматично:**
@@ -49,9 +125,9 @@ docker-compose logs -f app
 - Swagger Docs: http://localhost:8000/api/doc/
 - Frontend: http://localhost:3000 (якщо налаштовано)
 
-### Варіант 2: Локальне Встановлення (Manual) 💻
+### Варіант 3: Локальне Встановлення без Docker (Manual) 💻
 
-**Для розробки з повним контролем**
+**Для розробки з повним контролем та налаштування**
 
 #### Крок 1: Backend Setup
 

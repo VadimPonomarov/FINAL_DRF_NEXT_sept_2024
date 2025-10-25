@@ -476,15 +476,10 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                     if not api_key:
                         logger.warning("⚠️ [DALL-E] OPENAI_API_KEY not found in environment, using fallback")
                         # Use fallback image generation instead of raising error
-                        fallback_url = generate_placeholder_url(english_prompt)
-                        logger.info(f"🔄 [Fallback] Using placeholder for {angle}: {fallback_url}")
-                        return {
-                            'url': fallback_url,
-                            'angle': angle,
-                            'title': f"{car_data.get('brand', 'Car')} {car_data.get('model', 'Model')} - {angle.title()}",
-                            'fallback': True,
-                            'message': 'OPENAI_API_KEY not configured, using placeholder'
-                        }
+                        image_url = generate_placeholder_url(english_prompt)
+                        logger.info(f"🔄 [Fallback] Using placeholder for {angle}: {image_url}")
+                        # Don't return here - continue to create image_obj below
+                        raise Exception("OPENAI_API_KEY not configured - using fallback")
 
                     client = OpenAI(api_key=api_key)
 
@@ -572,10 +567,14 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
 
 def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     """
-    Create a structured, enforceable prompt for FLUX that:
-    - First, makes the LLM understand the required vehicle TYPE
-    - Then injects brand, model, year, color, condition, scene description
-    - Enforces SAME vehicle across a series using a stable ID and repeated cues
+    Create a LOGO-ENHANCED structured prompt for FLUX that:
+    - INCLUDES brand name and model for authenticity
+    - DETAILED description of brand logo/badge (shape, color, placement)
+    - Instructs AI to generate CORRECT brand emblem
+    - Enforces SAME vehicle across a series using a stable ID
+    
+    🎯 NEW APPROACH: Generate AUTHENTIC brand logos by detailed descriptions.
+    AI generates cars with CORRECT logos by understanding exact logo specifications.
     """
     brand = (car_data.get('brand') or '').strip()
     model = (car_data.get('model') or '').strip()
@@ -585,7 +584,64 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     condition = (car_data.get('condition') or '').strip()
     scene_desc = (car_data.get('description') or '').strip()
     vehicle_type_name = (car_data.get('vehicle_type_name') or '').strip().lower()
+    
+    # 🆕 ПІДХІД 1: Web Search + Реальні Фото для максимальної точності
+    from apps.chat.utils.brand_logo_search import create_smart_logo_prompt
+    
+    try:
+        # Спроба з web search + реальними фото
+        smart_prompt, reference_photo = create_smart_logo_prompt(
+            brand=brand,
+            model=model,
+            year=year,
+            color=color,
+            body_type=body_type,
+            angle=angle
+        )
+        
+        logger.info(f"[ImageGen] ✅ Using WEB-SEARCH + REAL PHOTOS approach for {brand} {model}")
+        logger.info(f"[ImageGen] 📝 Smart prompt: {smart_prompt[:200]}...")
+        
+        if reference_photo:
+            logger.info(f"[ImageGen] 🖼️ Reference photo found:")
+            logger.info(f"[ImageGen]   - URL: {reference_photo.get('url', '')[:100]}...")
+            logger.info(f"[ImageGen]   - Title: {reference_photo.get('title', 'N/A')}")
+            # Референсне фото може бути використане для img2img або для кращого промпту
+        else:
+            logger.info(f"[ImageGen] ⚠️ No reference photo (using text-only approach)")
+        
+        return smart_prompt
+        
+    except Exception as e:
+        logger.warning(f"[ImageGen] ⚠️ Web search approach failed: {e}")
+        import traceback
+        logger.debug(f"[ImageGen] Traceback: {traceback.format_exc()}")
+    
+    # 🆕 ПІДХІД 2: Локальна база описів логотипів (fallback)
+    from apps.chat.utils.brand_logo_descriptions import create_logo_enhanced_prompt, get_brand_logo_description
+    
+    try:
+        logo_enhanced_prompt = create_logo_enhanced_prompt(
+            brand=brand,
+            model=model,
+            year=year,
+            color=color,
+            vehicle_type=vehicle_type_name or 'car',
+            body_type=body_type,
+            angle=angle
+        )
+        
+        logger.info(f"[ImageGen] ✅ Using LOCAL-DATABASE approach for {brand} {model}")
+        logger.info(f"[ImageGen] 📝 Logo-enhanced prompt: {logo_enhanced_prompt[:200]}...")
+        
+        return logo_enhanced_prompt
+        
+    except Exception as e:
+        logger.warning(f"[ImageGen] ⚠️ Logo-enhanced approach failed, falling back to legacy: {e}")
+        # Fallback на старий підхід якщо щось пішло не так
+        pass
 
+    # === LEGACY FALLBACK CODE (only used if brand-agnostic fails) ===
     # ❌ FALLBACK DISABLED: Use ONLY real vehicle_type_name from API data
     # NO OVERRIDES, NO HEURISTICS, NO LLM FALLBACKS
     vehicle_type = None
