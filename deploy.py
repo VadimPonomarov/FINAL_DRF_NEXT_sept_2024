@@ -81,6 +81,55 @@ def show_step_progress(step, total_steps, step_name):
     show_progress_bar(step, total_steps, f"Етап {step}/{total_steps}: {step_name}")
     print(f"{Colors.OKBLUE}{'='*60}{Colors.ENDC}")
 
+def input_with_timeout(prompt, timeout=10, default="0"):
+    """Input з timeout - якщо юзер не вводить, використовується default"""
+    import select
+    
+    print(f"{prompt} ", end='', flush=True)
+    
+    # Windows не підтримує select для stdin, використаємо threading
+    if os.name == 'nt':
+        import msvcrt
+        start_time = time.time()
+        user_input = []
+        
+        while True:
+            if msvcrt.kbhit():
+                char = msvcrt.getwche()
+                if char == '\r':  # Enter
+                    print()
+                    return ''.join(user_input) if user_input else default
+                elif char == '\x08':  # Backspace
+                    if user_input:
+                        user_input.pop()
+                        print('\b \b', end='', flush=True)
+                else:
+                    user_input.append(char)
+            
+            if time.time() - start_time > timeout:
+                print(f"\n⏱️  Час вийшов! Використовую значення за замовчуванням: {default}")
+                return default
+            
+            time.sleep(0.1)
+    else:
+        # Unix/Linux
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError()
+        
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(timeout)
+        
+        try:
+            user_input = input()
+            signal.alarm(0)
+            return user_input if user_input else default
+        except TimeoutError:
+            signal.alarm(0)
+            print(f"\n⏱️  Час вийшов! Використовую значення за замовчуванням: {default}")
+            return default
+
 def show_service_selection_menu():
     """Показує меню вибору сервісів для збірки та режиму frontend"""
     services = [
@@ -113,13 +162,11 @@ def show_service_selection_menu():
     print("  1,3,4 - вибрані сервіси (наприклад: app+pg+redis)")
     print("  0/00 - швидкий вибір всіх режимів")
     print()
-    print("🎯 За замовчуванням: 0 (Backend в Docker + Frontend локально)")
+    print("🎯 За замовчуванням (10 сек): 0 (Backend в Docker + Frontend локально)")
 
     while True:
         try:
-            choice = input("\nВаш вибір [0]: ").strip()
-            if not choice:  # Если пользователь просто нажал Enter
-                choice = "0"
+            choice = input_with_timeout("\nВаш вибір [0]:", timeout=10, default="0").strip()
 
             if choice == "0":
                 # Backend в Docker + Frontend локально
@@ -1336,17 +1383,18 @@ def check_services():
         return False
 
 def choose_deploy_mode():
-    """Выбор режима деплоя"""
+    """Выбор режима деплоя с таймаутом и дефолтом"""
     print("🔧 РЕЖИМ ДЕПЛОЯ")
     print("=" * 50)
     print("1. 🔄 Быстрый перезапуск (использовать существующие образы)")
-    print("2. 🏗️  Полная переустановка (пересобрать все образы)")
+    print("2. 🏗️  Полная переустановка (пересобрать все образы) [РЕКОМЕНДОВАНО]")
     print("3. 🎯 Выборочная переустановка (выбрать сервисы для пересборки)")
     print("=" * 50)
+    print("🎯 За замовчуванням (10 сек): 2 (Повна переустановка)")
 
     while True:
         try:
-            choice = input("Выберите режим (1-3): ").strip()
+            choice = input_with_timeout("Выберите режим [2]:", timeout=10, default="2").strip()
             if choice == "1":
                 return "restart", []
             elif choice == "2":
@@ -1649,6 +1697,34 @@ def main():
         if frontend_mode == "local":
             print()
             print_success("Всі Docker сервіси запущені!")
+
+            # ОЧІКУВАННЯ ГОТОВНОСТІ BACKEND перед запуском Frontend
+            print("⏳ Очікування готовності Backend API (/health endpoint)...")
+            backend_ready = False
+            max_wait_backend = 120  # 2 хвилини максимум
+            wait_interval_backend = 5
+            waited_backend = 0
+
+            while waited_backend < max_wait_backend:
+                try:
+                    import urllib.request
+                    response = urllib.request.urlopen('http://localhost:8000/health', timeout=3)
+                    if response.status == 200:
+                        backend_ready = True
+                        print_success(f"✅ Backend API готовий! (/health → 200 OK) після {waited_backend} секунд")
+                        break
+                except Exception as e:
+                    print(f"   ⏳ Backend ще не готовий... ({waited_backend}/{max_wait_backend} сек)")
+                    time.sleep(wait_interval_backend)
+                    waited_backend += wait_interval_backend
+
+            if not backend_ready:
+                print_error(f"❌ Backend не відповідає після {max_wait_backend} секунд!")
+                print("   Перевірте логи: docker-compose logs app")
+                response = input_with_timeout("Продовжити запуск frontend? (y/N):", timeout=10, default="N").strip().lower()
+                if response not in ['y', 'yes']:
+                    print("❌ Розгортання скасовано")
+                    sys.exit(1)
 
             # ФІНАЛЬНИЙ ЕТАП: Запуск оптимізованого локального фронтенда
             print("ФІНАЛЬНИЙ ЕТАП: Запуск оптимізованого локального фронтенда...")

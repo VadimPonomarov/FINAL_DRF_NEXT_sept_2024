@@ -53,9 +53,9 @@ ENV PATH="/root/.local/bin:$PATH"
 # Copy dependency files
 COPY pyproject.toml poetry.lock ./
 
-# Configure Poetry and install ALL dependencies (full installation)
-RUN poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi --no-root
+# Install ALL dependencies (full installation)
+# Note: virtualenvs.create is already false by default in Docker
+RUN poetry install --no-interaction --no-ansi --no-root
 
 # Install Playwright browsers for crawl4ai dynamic content parsing
 # First install chromium browser
