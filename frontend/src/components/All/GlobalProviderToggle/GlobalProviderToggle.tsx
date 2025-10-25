@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/common/constants/constants';
 
@@ -13,6 +14,7 @@ import { AuthProvider } from '@/common/constants/constants';
 const GlobalProviderToggle: React.FC = () => {
   const { data: session, status } = useSession();
   const { provider, setProvider } = useAuthProvider();
+  const router = useRouter();
 
   // Показываем только для авторизованных пользователей
   if (status !== 'authenticated' || !session) {
@@ -24,6 +26,11 @@ const GlobalProviderToggle: React.FC = () => {
     console.log('[GlobalProviderToggle] Switching provider from', provider, 'to', newProvider);
     await setProvider(newProvider);
     console.log('[GlobalProviderToggle] Provider switched successfully');
+    
+    // Редиректим на главную страницу после переключения провайдера
+    const homePage = newProvider === AuthProvider.Dummy ? '/' : '/autoria';
+    console.log('[GlobalProviderToggle] Redirecting to:', homePage);
+    router.push(homePage);
   };
 
   return (
