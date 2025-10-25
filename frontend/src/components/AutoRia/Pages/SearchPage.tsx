@@ -73,7 +73,7 @@ const SearchPage = () => {
   const searchParams = useSearchParams();
 
   // Хук для авторизации
-  const { user, isAuthenticated } = useAutoRiaAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAutoRiaAuth();
 
   // Хук для конвертации цен
   const { formatPrice: formatPriceInSelectedCurrency } = usePriceConverter();
@@ -91,6 +91,40 @@ const SearchPage = () => {
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Проверка авторизации - НЕ редиректим сразу, даем время на загрузку Redis токенов
+  useEffect(() => {
+    console.log('[SearchPage] 🔐 Auth check:', { authLoading, isAuthenticated, user });
+    
+    // Ждем завершения загрузки
+    if (authLoading) {
+      console.log('[SearchPage] ⏳ Still loading auth data...');
+      return;
+    }
+
+    // Даем дополнительное время (2 секунды) на загрузку Redis данных после NextAuth
+    if (!isAuthenticated || !user) {
+      console.warn('[SearchPage] ⚠️ No Redis auth yet, waiting additional time...');
+      
+      const timeoutId = setTimeout(() => {
+        // Проверяем еще раз после задержки
+        if (!isAuthenticated && !user) {
+          console.error('[SearchPage] ❌ Still no Redis auth after wait - redirecting to login');
+          
+          const currentPath = window.location.pathname + window.location.search;
+          const loginUrl = `/login?callbackUrl=${encodeURIComponent(currentPath)}`;
+          
+          window.location.href = loginUrl;
+        } else {
+          console.log('[SearchPage] ✅ Auth loaded after wait');
+        }
+      }, 2000); // Даем 2 секунды на загрузку Redis
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      console.log('[SearchPage] ✅ User authenticated:', user.email);
+    }
+  }, [isAuthenticated, user, authLoading]);
 
   // Быстрые фильтры
   const [quickFilters, setQuickFilters] = useState({
@@ -211,7 +245,8 @@ const SearchPage = () => {
       const searchParams: any = {
         page: currentPage,
         page_size: filters.page_size,
-        ordering: ordering
+        ordering: ordering,
+        status: 'active'  // 🔒 По умолчанию показываем только активные объявления
       };
 
       console.log('🔍 Search params before API call:', searchParams);

@@ -72,19 +72,19 @@ export const RedisAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   // Загружаем данные при монтировании и смене провайдера
   useEffect(() => {
-    console.log(`[RedisAuthContext] Provider changed to: ${provider}`);
+    console.log(`[RedisAuthContext] 🔄 Provider changed to: ${provider} - loading auth data...`);
     fetchRedisAuth();
-  }, [provider]);
+  }, [provider, fetchRedisAuth]);  // Додаємо fetchRedisAuth в залежності
 
   // Слушаем события изменения данных аутентификации
   useEffect(() => {
     const handleAuthDataChange = () => {
-      console.log('[RedisAuthContext] Auth data changed event received');
+      console.log('[RedisAuthContext] 📡 Auth data changed event received - reloading...');
       fetchRedisAuth();
     };
 
     const handleAuthProviderChange = () => {
-      console.log('[RedisAuthContext] Auth provider changed event received');
+      console.log('[RedisAuthContext] 📡 Auth provider changed event received - reloading...');
       fetchRedisAuth();
     };
 
@@ -95,7 +95,7 @@ export const RedisAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
       window.removeEventListener('authDataChanged', handleAuthDataChange);
       window.removeEventListener('authProviderChanged', handleAuthProviderChange);
     };
-  }, []);
+  }, [fetchRedisAuth]);  // Додаємо fetchRedisAuth в залежності
 
   // Мемоизируем context value
   const contextValue = useMemo(() => ({

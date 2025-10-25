@@ -29,10 +29,10 @@ function loadEnvFile(filePath) {
 const envConfigDir = path.resolve(__dirname, '../env-config');
 const baseEnv = loadEnvFile(path.join(envConfigDir, '.env.base'));
 const secretsEnv = loadEnvFile(path.join(envConfigDir, '.env.secrets'));
-const localEnv = loadEnvFile(path.join(envConfigDir, '.env.local'));
+// NOTE: .env.local больше не используется в env-config/ - Next.js автоматически загружает frontend/.env.local
 
 // Объединяем переменные (поздние перезаписывают ранние)
-const allEnv = { ...baseEnv, ...secretsEnv, ...localEnv };
+const allEnv = { ...baseEnv, ...secretsEnv };
 
 // Устанавливаем переменные в process.env
 Object.entries(allEnv).forEach(([key, value]) => {

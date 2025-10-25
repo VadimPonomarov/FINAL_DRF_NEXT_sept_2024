@@ -49,21 +49,29 @@ const ModerationPage = () => {
   const { redisAuth, isLoading: authLoading } = useRedisAuth();
   const { toast } = useToast();
 
-  // Проверяем статус суперюзера напрямую из Redis (тот же источник, что и бейдж)
+  // Проверяем права доступа из Redis (модераторы + суперюзеры)
   const isSuperUser = React.useMemo(() => {
     const isSuper = redisAuth?.user?.is_superuser || false;
-
     console.log('[ModerationPage] 🔍 Superuser check from Redis:', {
-      authLoading,
-      redisAuth,
-      user: redisAuth?.user,
-      is_superuser: redisAuth?.user?.is_superuser,
-      finalResult: isSuper,
+      is_superuser: isSuper,
       timestamp: new Date().toISOString()
     });
-
     return isSuper;
   }, [redisAuth, authLoading]);
+
+  const isModerator = React.useMemo(() => {
+    const isMod = redisAuth?.user?.is_staff || false;
+    console.log('[ModerationPage] 🔍 Moderator check from Redis:', {
+      is_staff: isMod,
+      timestamp: new Date().toISOString()
+    });
+    return isMod;
+  }, [redisAuth, authLoading]);
+
+  // Доступ: модераторы (is_staff) + суперюзеры (is_superuser)
+  const hasAccess = React.useMemo(() => {
+    return isSuperUser || isModerator;
+  }, [isSuperUser, isModerator]);
   
   const isAuthenticated = !!redisAuth?.user;
   
@@ -71,6 +79,8 @@ const ModerationPage = () => {
     authLoading,
     isAuthenticated,
     isSuperUser,
+    isModerator,
+    hasAccess,
     userEmail: redisAuth?.user?.email
   });
   const [ads, setAds] = useState<CarAd[]>([]);
@@ -83,9 +93,14 @@ const ModerationPage = () => {
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Проверка прав доступа - ТОЛЬКО суперюзеры
+  // Проверка прав доступа - модераторы (is_staff) + суперюзеры (is_superuser)
   useEffect(() => {
-    console.log('[ModerationPage] 🔐 Access check useEffect:', { authLoading, isSuperUser });
+    console.log('[ModerationPage] 🔐 Access check useEffect:', { 
+      authLoading, 
+      isSuperUser, 
+      isModerator,
+      hasAccess 
+    });
     
     // Ждем загрузки данных пользователя
     if (authLoading) {
@@ -93,12 +108,12 @@ const ModerationPage = () => {
       return;
     }
 
-    // Если пользователь не суперюзер - редирект на главную
-    if (!isSuperUser) {
-      console.error('[ModerationPage] ❌ Access denied - user is not superuser');
+    // Если пользователь не модератор и не суперюзер - редирект на главную
+    if (!hasAccess) {
+      console.error('[ModerationPage] ❌ Access denied - user is not moderator/superuser');
       toast({
-        title: "❌ Доступ запрещен",
-        description: "Только суперюзеры могут модерировать объявления",
+        title: "❌ Доступ заборонено",
+        description: "Тільки модератори та суперюзери можуть переглядати модерацію",
         variant: "destructive",
       });
       
@@ -107,28 +122,38 @@ const ModerationPage = () => {
         window.location.href = '/';
       }, 1000);
     } else {
-      console.log('[ModerationPage] ✅ Access granted - user is superuser');
+      const role = isSuperUser ? 'superuser' : 'moderator';
+      console.log(`[ModerationPage] ✅ Access granted - user is ${role}`);
+      toast({
+        title: `✅ Доступ дозволено`,
+        description: isSuperUser 
+          ? "Ви можете переглядати та змінювати статус оголошень"
+          : "Ви можете переглядати оголошення (тільки читання)",
+        duration: 3000,
+      });
     }
-  }, [isSuperUser, authLoading, toast]);
+  }, [hasAccess, isSuperUser, isModerator, authLoading, toast]);
 
   // Загрузка данных
   useEffect(() => {
     console.log('[ModerationPage] 📥 Data loading useEffect:', { 
+      hasAccess,
       isSuperUser, 
+      isModerator,
       authLoading,
       statusFilter, 
       searchQuery 
     });
     
-    // Загружаем данные только если пользователь - суперюзер и загрузка завершена
-    if (isSuperUser && !authLoading) {
+    // Загружаем данные только если пользователь имеет доступ и загрузка завершена
+    if (hasAccess && !authLoading) {
       console.log('[ModerationPage] 🚀 Starting data load...');
       loadModerationQueue();
       loadModerationStats();
     } else {
-      console.log('[ModerationPage] ⏸️ Data load skipped:', { isSuperUser, authLoading });
+      console.log('[ModerationPage] ⏸️ Data load skipped:', { hasAccess, authLoading });
     }
-  }, [statusFilter, searchQuery, sortBy, sortOrder, isSuperUser, authLoading]);
+  }, [statusFilter, searchQuery, sortBy, sortOrder, hasAccess, authLoading]);
 
   const loadModerationQueue = async () => {
     setLoading(true);

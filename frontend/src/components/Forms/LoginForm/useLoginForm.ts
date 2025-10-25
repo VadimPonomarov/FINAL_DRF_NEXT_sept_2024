@@ -79,15 +79,14 @@ export const useLoginForm = () => {
   const callbackUrl = redirectManager.getRedirectUrl({
     callbackUrl: rawCallbackUrl,
     provider: provider,
-    fallbackUrl: '/'
+    fallbackUrl: '/autoria'  // По умолчанию идем на главную AutoRia, а не на /
   });
 
   // Логируем callbackUrl для отладки
-  console.log('[useLoginForm] CallbackUrl from searchParams:', {
+  console.log('[useLoginForm] 🔗 CallbackUrl resolution:', {
     rawCallbackUrl,
-    callbackUrl: searchParams.get("callbackUrl"),
-    returnUrl: searchParams.get("returnUrl"),
     finalCallbackUrl: callbackUrl,
+    willRedirectTo: rawCallbackUrl || callbackUrl || '/autoria',
     allSearchParams: Object.fromEntries(searchParams.entries())
   });
 
@@ -278,17 +277,22 @@ export const useLoginForm = () => {
           setMessage("Authentication successful!");
 
           // Отправляем событие для обновления RedisUserBadge
-          console.log('[LoginForm] Dispatching authDataChanged event');
+          console.log('[LoginForm] 📡 Dispatching authDataChanged event');
           window.dispatchEvent(new CustomEvent('authDataChanged'));
 
-          // Определяем URL для редиректа
-          const redirectUrl = rawCallbackUrl || callbackUrl || '/';
-          console.log(`[Auth] Redirecting to: ${redirectUrl}`);
+          // КРИТИЧНО: Определяем URL для редиректа - приоритет callbackUrl!
+          const redirectUrl = rawCallbackUrl || callbackUrl || '/autoria';
+          console.log(`[Auth] 🎯 Final redirect decision:`, {
+            rawCallbackUrl,
+            callbackUrl,
+            chosen: redirectUrl
+          });
 
           // Используем window.location.href для полной перезагрузки
           setTimeout(() => {
+            console.log(`[Auth] ✈️ Executing redirect to: ${redirectUrl}`);
             window.location.href = redirectUrl;
-          }, 1500);
+          }, 1000);  // Уменьшаем задержку до 1 секунды
         } else {
           console.error('[LoginForm] ❌ Tokens were NOT saved to Redis');
 

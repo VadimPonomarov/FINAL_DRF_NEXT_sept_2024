@@ -22,10 +22,52 @@ env-config/               # 🎯 Централізовані конфігура
 
 frontend/
 └── .env.local           # Frontend-specific (Next.js) ✅ В Git (навчальні)
+                         # ⚠️ КРИТИЧНО: Обов'язковий для локального запуску frontend!
 
 redis/
 └── redis.conf           # Redis конфігурація ✅ В Git
 ```
+
+### ⚠️ ВАЖЛИВО: frontend/.env.local
+
+Цей файл **обов'язковий** для локального запуску Next.js frontend. Без нього API routes не зможуть підключитися до backend!
+
+**⚠️ КРИТИЧНО:** Змінні з префіксом `NEXT_PUBLIC_` потрібні для client-side коду!
+
+**Повний набір змінних** (використовуйте шаблон з `docs/ENV_TEMPLATE.local`):
+
+```env
+# Backend Connection (КРИТИЧНО!)
+BACKEND_URL=http://localhost:8000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000          # ✅ Client-side
+
+# Redis Connection (ОБИ варіанти обов'язкові!)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_URL=redis://localhost:6379/0
+NEXT_PUBLIC_REDIS_HOST=localhost                       # ✅ Client-side
+NEXT_PUBLIC_REDIS_PORT=6379                            # ✅ Client-side
+NEXT_PUBLIC_REDIS_URL=redis://localhost:6379/0         # ✅ Client-side
+
+# NextAuth (КРИТИЧНО!)
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL_INTERNAL=http://localhost:3000
+NEXTAUTH_SECRET=your-nextauth-secret-key-min-32-characters
+
+# Environment Flags
+IS_DOCKER=false
+NEXT_PUBLIC_IS_DOCKER=false                            # ✅ Client-side
+
+# Frontend URL
+FRONTEND_URL=http://localhost:3000
+NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
+
+# Node Environment
+NODE_ENV=development
+```
+
+**📋 Checklist:** Див. детальний перелік в [`docs/ENV_VARIABLES_CHECKLIST.md`](docs/ENV_VARIABLES_CHECKLIST.md)
 
 **Принцип роботи:**
 - **Docker-сервіси** (backend, postgres, redis, celery, nginx): Використовують ТІЛЬКИ файли з `env-config/`
