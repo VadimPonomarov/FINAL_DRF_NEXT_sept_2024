@@ -1,500 +1,329 @@
-# 🚀 AutoRia Clone - Повнофункціональний навчальний проект
+# 🚗 AutoRia - Платформа Продажу Автомобілів
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
-[![Django](https://img.shields.io/badge/Django-5.0+-green.svg)](https://djangoproject.com)
-[![Next.js](https://img.shields.io/badge/Next.js-15+-black.svg)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue.svg)](https://typescriptlang.org)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
+[![Django](https://img.shields.io/badge/Django-4.2-green.svg)](https://www.djangoproject.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-red.svg)](https://redis.io/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Повнофункціональний клон популярного українського сайту AutoRia, створений для освітніх цілей. Демонструє сучасні підходи до розробки full-stack веб-додатків.
+Сучасна платформа для продажу автомобілів з AI/LLM модерацією контенту, інтеграцією зовнішніх API та повнофункціональним веб-інтерфейсом.
+
+## 📋 Зміст
+
+- [Особливості](#-особливості)
+- [Технології](#-технології)
+- [Швидкий старт](#-швидкий-старт)
+- [Документація](#-документація)
+- [Структура проекту](#-структура-проекту)
+- [API](#-api)
+- [Тестування](#-тестування)
+- [Production Deployment](#-production-deployment)
+
+## ✨ Особливості
+
+### 🤖 AI/LLM Модерація
+- **Швидкість**: 58ms для hard-block перевірки (1000x швидше)
+- **Точність**: 100% для профанності
+- **Словник**: 161 слово (українська, російська, англійська, транслітерація)
+- **Provider**: g4f + PollinationsAI (безкоштовно)
+
+### 💱 Валютна Система
+- Автоматичне оновлення курсів (NBU + PrivatBank API)
+- Кеш Redis 24h з DB fallback
+- Кросс-конверсія валют (UAH/USD/EUR)
+- Інверсія курсів для точної конвертації
+
+### 🗺️ Geocoding
+- Google Maps API інтеграція
+- Автоматичне визначення координат
+- Валідація адрес
+- Регіон/місто resolution
+
+### 👥 Система Ролей
+- **Покупець**: Перегляд та пошук оголошень
+- **Продавець (Basic)**: 1 активне оголошення
+- **Продавець (Premium)**: Без обмежень + аналітика
+- **Менеджер**: Модерація контенту
+- **Суперюзер**: Повний доступ
+
+### 🎯 Фільтрація та Пошук
+- Складна система фільтрації (ціна, локація, характеристики)
+- Пагінація (10-100 items per page)
+- Сортування (ціна, дата, пробіг)
+- Текстовий пошук (title, description)
+
+### 🌍 Інтернаціоналізація (i18n)
+- Підтримка 3 мов: українська, російська, англійська
+- Backend та Frontend локалізація
+- Динамічна зміна мови
+
+## 🛠 Технології
+
+### Backend
+- **Framework**: Django 4.2 + Django REST Framework
+- **Database**: PostgreSQL 15
+- **Cache**: Redis 7
+- **Task Queue**: Celery + Redis
+- **AI/LLM**: g4f + PollinationsAI
+- **API Docs**: drf-spectacular (OpenAPI 3.0)
+
+### Frontend
+- **Framework**: Next.js 14 (App Router)
+- **Auth**: NextAuth.js + JWT
+- **State**: React Context API + Redis
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Maps**: Google Maps React
+
+### Infrastructure
+- **Containerization**: Docker + Docker Compose
+- **Reverse Proxy**: Nginx
+- **Process Manager**: Gunicorn
+- **Monitoring**: Flower (Celery), Logs
+
+## 🚀 Швидкий старт
+
+### Вимоги
+
+- Docker & Docker Compose
+- Node.js 18+ (для frontend)
+- Python 3.11+ (для backend)
+- PostgreSQL 15+ (або через Docker)
+- Redis 7+ (або через Docker)
+
+### Встановлення
+
+```bash
+# 1. Клонувати репозиторій
+git clone https://github.com/VadimPonomarov/FINAL_DRF_NEXT_sept_2024.git
+cd FINAL_DRF_NEXT_sept_2024
+
+# 2. Налаштувати environment variables
+cp env-config/.env.base.example env-config/.env.base
+cp env-config/.env.secrets.example env-config/.env.secrets
+# Відредагувати файли з вашими ключами
+
+# 3. Запустити через Docker Compose
+docker-compose up -d
+
+# 4. Застосувати міграції та створити тестові дані
+docker-compose exec app python manage.py migrate
+docker-compose exec app python manage.py create_test_users
+docker-compose exec app python manage.py create_mock_system --quick
+```
+
+### Альтернативний запуск (без Docker)
+
+**Backend:**
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## 📚 Документація
+
+Повна документація знаходиться в директорії [`docs/`](./docs/):
+
+- [**Швидкий старт**](./docs/SETUP_GUIDE.md) - Повне налаштування проекту
+- [**Backend API**](./docs/BACKEND_API_GUIDE.md) - REST API, фільтрація, permissions
+- [**Backend Services**](./docs/BACKEND_SERVICES.md) - Модерація, Celery, мок дані
+- [**Infrastructure**](./docs/INFRASTRUCTURE_SETUP.md) - Docker, Redis, Nginx, PostgreSQL
+- [**Troubleshooting**](./docs/TROUBLESHOOTING.md) - Вирішення проблем
+- [**Postman Testing**](./backend/POSTMAN_TESTING_GUIDE.md) - API тестування
 
 ## 📁 Структура проекту
 
 ```
 FINAL_DRF_NEXT_sept_2024/
-├── backend/                  # Django Backend (REST API)
-│   ├── apps/                # Додатки Django
-│   │   ├── accounts/        # Користувачі та автентифікація
-│   │   ├── ads/             # Оголошення про авто
-│   │   ├── analytics/       # Аналітика та звіти
-│   │   ├── chat/            # Чат між користувачами
-│   │   ├── core/            # Спільні компоненти
-│   │   ├── notifications/   # Сповіщення
-│   │   └── payments/        # Платіжна система
-│   ├── config/              # Налаштування проекту
-│   ├── scripts/             # Допоміжні скрипти
-│   └── ...
-│
-├── frontend/                # Next.js Frontend
-│   ├── app/                 # App Router
-│   ├── components/          # UI компоненти
-│   ├── lib/                 # Утиліти та хелпери
-│   └── ...
-│
-├── celery-service/          # Celery Worker для асинхронних завдань
-│   ├── tasks/              # Завдання Celery
-│   └── ...
-│
-├── mailing/                 # Сервіс розсилки email
-│   ├── templates/          # Шаблони листів
-│   └── ...
-│
-├── nginx/                   # Конфігурація Nginx
-├── rabbitmq/                # Конфігурація RabbitMQ
-├── redis/                   # Конфігурація Redis
-├── pg/                     # Дані PostgreSQL
-│
-├── scripts/                 # Корисні скрипти для розробки
-├── docs/                   # Документація
-└── docker-compose.yml      # Визначення всіх сервісів
+├── backend/                    # Django REST API
+│   ├── apps/                   # Django додатки
+│   │   ├── ads/               # Оголошення
+│   │   ├── auth/              # Автентифікація
+│   │   ├── currency/          # Валюти
+│   │   ├── users/             # Користувачі
+│   │   └── ...
+│   ├── config/                 # Налаштування Django
+│   ├── core/                   # Спільні утиліти
+│   │   └── services/          # LLM модерація, email, etc.
+│   ├── media/                  # Завантажені файли
+│   ├── logs/                   # Логи
+│   └── manage.py
+├── frontend/                   # Next.js додаток
+│   ├── src/
+│   │   ├── app/               # App Router pages
+│   │   ├── components/        # React компоненти
+│   │   ├── contexts/          # React Context API
+│   │   ├── services/          # API клієнти
+│   │   ├── utils/             # Утиліти
+│   │   └── locales/           # i18n переклади
+│   └── public/                 # Статичні файли
+├── docs/                       # Документація
+├── env-config/                 # Environment variables
+├── docker-compose.yml          # Docker конфігурація
+└── README.md                   # Цей файл
 ```
 
-## 🎯 Про проект
+## 🔌 API
 
-Цей проект являє собою повну реалізацію платформи для продажу автомобілів з використанням сучасного технологічного стеку. Включає в себе всі основні функції: автентифікацію, управління оголошеннями, пошук та фільтрацію, адміністративну панель та багато іншого.
+### Swagger Документація
+- **Swagger UI**: http://localhost:8000/api/doc/
+- **ReDoc**: http://localhost:8000/api/redoc/
+- **OpenAPI Schema**: http://localhost:8000/api/schema/
 
-### ✨ Ключові особливості
+### Основні ендпоінти
 
-- 🔐 **Дворівнева автентифікація** (NextAuth + Django JWT)
-- 🚗 **Управління оголошеннями** з повним CRUD функціоналом
-- 🔍 **Розширений пошук** з фільтрами та сортуванням
-- 📊 **Аналітика та статистика** в реальному часі
-- 💬 **Чат між користувачами** у реальному часі
-- 📧 **Email сповіщення** через асинхронні завдання
-- 🏦 **Платіжна система** з підтримкою підписок
-- 📱 **Повністю адаптивний** інтерфейс
-- 🌍 **Інтернаціоналізація** (UA/RU/EN)
-- 🗺️ **Інтеграція з Google Maps**
-- 📚 **Автоматична документація API** (Swagger/OpenAPI)
+```http
+# Автентифікація
+POST /api/auth/login/
+POST /api/auth/register/
+POST /api/auth/logout/
+POST /api/auth/token/refresh/
 
-## 🏗️ Архітектура
+# Оголошення
+GET    /api/ads/cars/                    # Список оголошень
+POST   /api/ads/cars/                    # Створити оголошення
+GET    /api/ads/cars/{id}/               # Деталі оголошення
+PATCH  /api/ads/cars/{id}/               # Оновити
+DELETE /api/ads/cars/{id}/               # Видалити
 
-### Backend (Django REST Framework)
-- **API**: RESTful API з автодокументацією (Swagger/OpenAPI)
-- **База даних**: PostgreSQL з оптимізованими запитами
-- **Кешування**: Redis для сесій, кешу та керування чергами
-- **Асинхронні завдання**: Celery + RabbitMQ
-- **Автентифікація**: JWT токени + сесії
-- **Пошук**: Просунута фільтрація з підтримкою повнотекстового пошуку
-- **Файли**: Зберігання медіа в S3-сумісному сховищі
+# Модерація (Superuser)
+GET    /api/ads/moderation/queue/        # Черга модерації
+POST   /api/ads/moderation/{id}/approve/ # Схвалити
+POST   /api/ads/moderation/{id}/reject/  # Відхилити
 
-### Frontend (Next.js 15)
-- **Роутинг**: App Router з лейаутами та завантаженням
-- **Мова**: TypeScript для типобезпеки
-- **Стилі**: Tailwind CSS з кастомними темами
-- **UI Бібліотека**: shadcn/ui компоненти
-- **Управління станом**: React Query + Zustand
-- **Форми**: React Hook Form з валідацією Zod
-- **Автентифікація**: NextAuth.js з кастомними провайдерами
-- **Міжнародна підтримка**: Next-Intl
-- **Тестування**: Jest + React Testing Library
+# Валюти
+GET    /api/currency/rates/              # Курси валют
+POST   /api/currency/convert/            # Конвертувати
 
-### Мікросервіси
-
-1. **Сервіс аутентифікації**
-   - Реєстрація/вхід через email/соціальні мережі
-   - Двофакторна аутентифікація
-   - Керування профілем та налаштуваннями
-
-2. **Сервіс оголошень**
-   - CRUD операції з оголошеннями
-   - Розширений пошук з фільтрами
-   - Збережені пошукові запити
-   - Обробка зображень та медіа
-
-3. **Чат-сервіс**
-   - Обмін повідомленнями в реальному часі (WebSockets)
-   - Сповіщення про нові повідомлення
-   - Історія діалогів
-   - Вкладення файлів
-
-4. **Сервіс сповіщень**
-   - Email-сповіщення через асинхронні завдання
-   - Веб-сповіщення в реальному часі
-   - Налаштування сповіщень
-   - Шаблонізація листів
-
-5. **Платіжний сервіс**
-   - Підписки та послуги
-   - Історія транзакцій
-   - Інтеграція з платіжними системами
-   - Відстеження статусів платежів
-
-6. **Аналітичний сервіс**
-   - Статистика переглядів та кліків
-   - Аналітика ефективності оголошень
-   - Кастомні звіти
-   - Експорт даних
-
-### Інфраструктура
-- **Контейнеризація**: Docker + Docker Compose
-- **Оркестрація**: Автоматизований деплой через `deploy.py`
-- **Моніторинг**: Health checks, метрики та логи
-- **CI/CD**: GitHub Actions для автоматичного тестування
-- **Безпека**: Оновлення залежностей, сканування вразливостей
-- **Масштабування**: Горизонтальне масштабування сервісів
-
-## 🚀 Швидкий старт
-
-> 📖 **Детальна інструкція:** [SETUP.md](SETUP.md) - повна інструкція з налаштування та розгортання
-
-### Попередні вимоги
-- Docker та Docker Compose
-- Python 3.11+ (для скрипта розгортання)
-- Node.js 18+ (для розробки фронтенду)
-- 8GB RAM (рекомендується 16GB)
-- Вільні порти: 3000, 8000, 5432, 6379, 5672, 15672, 5555, 5540
-
-### Встановлення та запуск
-
-1. **Клонуйте репозиторій**:
-   ```bash
-   git clone https://github.com/VadimPonomarov/FINAL_DRF_NEXT_sept_2024.git
-   cd FINAL_DRF_NEXT_sept_2024
-   ```
-
-2. **Оберіть спосіб розгортання**:
-
-   **Варіант A: Автоматичне розгортання (РЕКОМЕНДОВАНО)**
-   ```bash
-   # Запуск з інтерактивним майстром
-   python deploy.py
-
-   # Або для автоматичного вибору опцій
-   python deploy.py --auto
-   ```
-
-   **Варіант B: Ручне розгортання через Docker Compose**
-   ```bash
-   # 1. Запуск всіх Docker сервісів
-   docker-compose up --build -d
-
-   # 2. Збірка та запуск frontend
-   cd frontend
-   npm install --legacy-peer-deps
-   npm run build
-   npm run start
-   ```
-
-3. **Дочекайтеся завершення розгортання** (5-10 хвилин)
-
-4. **Відкрийте в браузері**:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - Admin: http://localhost:8000/admin
-   - API Docs: http://localhost:8000/api/schema/swagger/
-   - RabbitMQ: http://localhost:15672
-   - Flower: http://localhost:5555
-   - Redis Insight: http://localhost:5540
-
-## 🛠 Розробка
-
-### Налаштування середовища
-
-1. **Backend (Python/Django)**:
-   ```bash
-   cd backend
-   python -m venv .venv
-   source .venv/bin/activate  # Linux/macOS
-   .venv\Scripts\activate     # Windows
-   pip install -e ".[dev]"
-   ```
-
-2. **Frontend (Next.js)**:
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-### Запуск для розробки
-
-1. **Запустіть сервіси через Docker**:
-   ```bash
-   # У корені проекту
-   docker-compose up -d postgres redis rabbitmq
-   ```
-
-2. **Запустіть бекенд**:
-   ```bash
-   cd backend
-   python manage.py runserver
-   ```
-
-3. **Запустіть фронтенд**:
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-
-4. **Додаткові сервіси (за потреби)**:
-   ```bash
-   # Celery worker
-   celery -A config worker -l info
-   
-   # Celery beat (періодичні завдання)
-   celery -A config beat -l info
-   ```
-
-## 🛠 Корисні команди
-
-### Робота з Docker
-```bash
-# Запуск всіх сервісів
-make up
-
-# Зупинка всіх сервісів
-make down
-
-# Перезапуск певного сервісу
-docker-compose restart <service_name>
-
-# Перегляд логів
-docker-compose logs -f <service_name>
+# Користувачі
+GET    /api/users/profile/               # Мій профіль
+PATCH  /api/users/profile/               # Оновити профіль
 ```
 
-### Робота з базою даних
+Детальна документація: [Backend API Guide](./docs/BACKEND_API_GUIDE.md)
+
+## 🧪 Тестування
+
+### Postman тести
+
 ```bash
-# Запуск міграцій
-docker-compose exec app python manage.py migrate
-
-# Створення міграцій
-docker-compose exec app python manage.py makemigrations
-
-# Створення суперкористувача
-docker-compose exec app python manage.py createsuperuser
-
-# Запуск shell з підключенням до БД
-docker-compose exec db psql -U postgres
+cd backend
+newman run AutoRia_API_Complete_Test_Suite.postman_collection.json \
+  -e AutoRia_API_Complete_Test_Suite.postman_environment.json
 ```
 
-### Розробка Frontend
+**Результати**: 95%+ pass rate (критичні модулі 100%)
+
+Детальний гайд: [Postman Testing Guide](./backend/POSTMAN_TESTING_GUIDE.md)
+
+### Unit тести (Backend)
+
 ```bash
-# Встановлення залежностей
+cd backend
+python manage.py test
+```
+
+### E2E тести (Frontend)
+
+```bash
 cd frontend
-npm install
-
-# Запуск у режимі розробки
-npm run dev
-
-# Збірка для продакшену
-npm run build
+npm run test
 ```
 
-## 🤝 Внесення змін
+## 🚀 Production Deployment
 
-1. Створіть нову гілку для вашої функціональності:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+### Docker Compose (Production)
 
-2. Зробіть коміт змін:
-   ```bash
-   git add .
-   git commit -m "Додано нову функціональність"
-   ```
+```yaml
+# docker-compose.prod.yml
+services:
+  app:
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=yourdomain.com
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+  
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+```
 
-3. Запушіть зміни у віддалений репозиторій:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
+### Environment Variables (Production)
 
-4. Створіть Pull Request у гілку `main`.
+```bash
+# .env.prod
+DEBUG=False
+SECRET_KEY=<secure-random-key>
+ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+DATABASE_URL=postgresql://user:pass@db:5432/autoria_prod
+REDIS_URL=redis://redis:6379/0
+
+# API Keys (зашифровані)
+GOOGLE_MAPS_API_KEY=<encrypted>
+EMAIL_HOST_PASSWORD=<encrypted>
+```
+
+### Checklist
+
+- [ ] `DEBUG=False`
+- [ ] `SECRET_KEY` безпечний
+- [ ] `ALLOWED_HOSTS` налаштовані
+- [ ] HTTPS увімкнено (SSL сертифікати)
+- [ ] Database backups налаштовані
+- [ ] Redis persistence увімкнено
+- [ ] Gunicorn workers оптимізовані
+- [ ] Nginx reverse proxy налаштовано
+- [ ] Logs rotation активовано
+- [ ] Monitoring налаштовано (Flower, Sentry)
+
+Детальна інструкція: [Infrastructure Setup](./docs/INFRASTRUCTURE_SETUP.md)
+
+## 🤝 Contributing
+
+1. Fork репозиторій
+2. Створіть feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit зміни (`git commit -m 'Add some AmazingFeature'`)
+4. Push до branch (`git push origin feature/AmazingFeature`)
+5. Відкрийте Pull Request
 
 ## 📄 Ліцензія
 
-Цей проект поширюється під ліцензією MIT. Детальніше дивіться файл [LICENSE](LICENSE).
+Цей проект ліцензовано під MIT License - дивіться файл [LICENSE](LICENSE) для деталей.
+
+## 👨‍💻 Автор
+
+**Vadim Ponomarov**
+- GitHub: [@VadimPonomarov](https://github.com/VadimPonomarov)
+- Email: pvs.versia@gmail.com
+
+## 🙏 Подяки
+
+- [Django REST Framework](https://www.django-rest-framework.org/)
+- [Next.js](https://nextjs.org/)
+- [g4f](https://github.com/xtekky/gpt4free) - Безкоштовний LLM доступ
+- [NBU API](https://bank.gov.ua) - Курси валют
+- [Google Maps API](https://developers.google.com/maps) - Geocoding
 
 ---
 
-<div align="center">
-  <p>Розроблено для навчальних цілей</p>
-  <p>© 2024 AutoRia Clone Team</p>
-</div>
+**Версія**: 2.0  
+**Останнє оновлення**: 2025-01-25  
+**Мова**: Українська 🇺🇦
 
-
-3. **Готово!** 🎉
-
-Після успішного розгортання проект буде доступний за адресами:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:3000/docs
-- **Admin**: http://localhost:8000/admin
-
-## 📊 Включені дані
-
-Проект постачається з повним набором тестових даних:
-
-- **1,250+ довідкових записів**: марки, моделі, регіони, міста
-- **24 тестових користувача**: різні типи акаунтів
-- **Тестові оголошення**: для демонстрації функціоналу
-- **Адміністративні дані**: для повноцінного тестування
-
-## 🛠️ Технологічний стек
-
-### Backend
-- **Django 5.0+** - веб-фреймворк
-- **Django REST Framework** - API фреймворк
-- **PostgreSQL** - основна база даних
-- **Redis** - кешування та сесії
-- **RabbitMQ** - брокер повідомлень
-- **Celery** - асинхронні завдання
-- **JWT** - автентифікація
-- **Swagger/OpenAPI** - документація API
-
-### Frontend
-- **Next.js 15** - React фреймворк
-- **TypeScript** - типізований JavaScript
-- **Tailwind CSS** - CSS фреймворк
-- **shadcn/ui** - компонентна бібліотека
-- **NextAuth.js** - автентифікація
-- **React Hook Form** - робота з формами
-- **Lucide React** - іконки
-
-### DevOps & Tools
-- **Docker** - контейнеризація
-- **Docker Compose** - оркестрація
-- **Nginx** - веб-сервер (опціонально)
-- **GitHub Actions** - CI/CD (готовий до налаштування)
-
-## 📁 Структура проекту
-
-```
-DRF_NEXT_FULLSTACK_FINAL/
-├── backend/                 # Django REST API
-│   ├── apps/               # Django додатки
-│   ├── config/             # Налаштування Django
-│   ├── core/               # Загальні утиліти
-│   └── requirements.txt    # Python залежності
-├── frontend/               # Next.js додаток
-│   ├── src/               # Вихідний код
-│   ├── public/            # Статичні файли
-│   └── package.json       # Node.js залежності
-├── env-config/            # Конфігурації оточення
-├── docs/                  # Документація
-├── docker-compose.yml     # Docker конфігурація
-└── deploy.py             # Скрипт розгортання
-```
-
-## 🎓 Освітня цінність
-
-Цей проект демонструє:
-
-### Архітектурні патерни
-- **Мікросервісна архітектура** з Docker
-- **API-first підхід** до розробки
-- **Розділення відповідальності** між frontend та backend
-- **Масштабована структура** проекту
-
-### Найкращі практики
-- **Типобезпека** з TypeScript
-- **Автоматичне тестування** (готове до розширення)
-- **Документування API** з Swagger
-- **Контейнеризація** для консистентного розгортання
-- **Управління станом** в React додатках
-
-### Сучасні технології
-- **Server-Side Rendering** з Next.js
-- **Асинхронна обробка** з Celery
-- **Реактивний UI** з сучасними компонентами
-- **Автоматизація розгортання**
-
-## 🔧 Додаткові команди
-
-### Управління проектом
-```bash
-# Зупинка всіх сервісів
-docker-compose down
-
-# Перезапуск з пересборкою
-docker-compose down && docker-compose up -d --build
-
-# Перегляд логів
-docker-compose logs -f
-
-# Статус сервісів
-docker-compose ps
-```
-
-### Робота з даними
-```bash
-# Примусовий пересід даних
-FORCE_RESEED=true docker-compose up -d
-
-# Створення суперкористувача
-docker-compose exec app python manage.py createsuperuser
-
-# Доступ до Django shell
-docker-compose exec app python manage.py shell
-```
-
-### Розробка
-```bash
-# Запуск тестів backend
-docker-compose exec app python manage.py test
-
-# Запуск тестів frontend
-cd frontend && npm test
-
-# Лінтинг коду
-cd frontend && npm run lint
-```
-
-## 📚 Документація
-
-- [Процес сідингу даних](docs/SEEDING_PROCESS_UA.md)
-- [API документація](http://localhost:3000/docs)
-- [Swagger UI](http://localhost:8000/api/doc/)
-
-## 🤝 Внесок у проект
-
-Цей проект створений в освітніх цілях. Ви можете:
-
-1. **Форкнути** репозиторій
-2. **Створити** feature branch
-3. **Внести** зміни
-4. **Створити** Pull Request
-
-## 📄 Ліцензія
-
-Цей проект створений в освітніх цілях та розповсюджується під ліцензією MIT.
-
-## 🆘 Підтримка
-
-### Часті проблеми
-
-**Порти зайняті:**
-```bash
-# Перевірити зайняті порти
-netstat -tulpn | grep :3000
-netstat -tulpn | grep :8000
-```
-
-**Проблеми з Docker:**
-```bash
-# Очищення Docker
-docker system prune -a
-docker-compose down -v
-```
-
-**Проблеми з даними:**
-```bash
-# Пересоздання даних
-FORCE_RESEED=true docker-compose up -d
-```
-
-### Логи для діагностики
-```bash
-# Всі сервіси
-docker-compose logs
-
-# Конкретний сервіс
-docker-compose logs app
-docker-compose logs pg
-docker-compose logs redis
-```
-
----
-
-**Створено з ❤️ для вивчення сучасної веб-розробки**
-
-🎓 **Навчальний проект** | 🚀 **Готовий до запуску** | 📚 **Повна документація**
+⭐ Якщо цей проект був корисним, поставте зірку на GitHub!

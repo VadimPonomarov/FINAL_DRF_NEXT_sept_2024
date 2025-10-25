@@ -1,273 +1,490 @@
-# 🚗 AutoRia Frontend Проект
+# 🎨 AutoRia Frontend - Next.js Application
 
-Сучасний Next.js 15 додаток з **архітектурою подвійного провайдера автентифікації**, що включає функціонал AutoRia автомобільного маркетплейсу, інтеграції зовнішніх API та AI чат-систему.
+[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-3-38bdf8.svg)](https://tailwindcss.com/)
 
-## 🚀 Швидкий старт
+Сучасний веб-додаток для платформи продажу автомобілів на Next.js 14 з App Router, NextAuth та повною інтеграцією з Django REST API.
 
-```sh
-git clone <repository URL>
-cd frontend
+## 📋 Зміст
+
+- [Особливості](#-особливості)
+- [Вимоги](#-вимоги)
+- [Встановлення](#-встановлення)
+- [Налаштування](#-налаштування)
+- [Запуск](#-запуск)
+- [Структура](#-структура)
+- [Компоненти](#-компоненти)
+- [State Management](#-state-management)
+- [API Integration](#-api-integration)
+- [Styling](#-styling)
+
+## ✨ Особливості
+
+### 🔐 Автентифікація
+- **NextAuth.js**: JWT tokens + Redis storage
+- **Dual Provider**: Backend API + DummyJSON (для тестування)
+- **Protected Routes**: Middleware для захищених сторінок
+- **User Badges**: Відображення статусу користувача (session + redis)
+
+### 🌍 Інтернаціоналізація (i18n)
+- **3 мови**: Українська (за замовчуванням), Російська, Англійська
+- **Dynamic Switching**: Зміна мови без перезавантаження
+- **Context API**: `I18nContext` для всієї програми
+- **Локалізовані дати**: Форматування дат/чисел/валют
+
+### 🎨 UI/UX
+- **Tailwind CSS**: Утиліти-first CSS
+- **shadcn/ui**: Високоякісні компоненти
+- **Dark Mode**: Підтримка світлої/темної теми
+- **Responsive Design**: Адаптивний дизайн для всіх пристроїв
+- **Accessible**: WCAG 2.1 AA compliant
+
+### 🗺️ Google Maps
+- **Interactive Maps**: Відображення локації оголошень
+- **Geocoding**: Автоматичне визначення координат
+- **Custom Markers**: Кастомні маркери для оголошень
+
+### 💬 Real-time Chat
+- **WebSocket**: Чат з підтримкою через WebSocket
+- **AI Bot**: Інтеграція з AI для відповідей
+- **Persistent**: Збереження історії чату
+
+### 📱 Progressive Features
+- **SWR/React Query**: Data fetching з кешем
+- **Optimistic Updates**: Швидкі оновлення UI
+- **Error Boundaries**: Graceful error handling
+- **Loading States**: Skeleton loaders
+
+## 📦 Вимоги
+
+- **Node.js**: 18.0+ (LTS рекомендовано)
+- **npm** або **yarn** або **pnpm**
+- **Backend API**: Запущений на `http://localhost:8000`
+- **Redis**: Для token storage
+
+## 🚀 Встановлення
+
+```bash
+# Встановити залежності
 npm install
-npm install --legacy-peer-deps
-npm run dev
+# або
+yarn install
+# або
+pnpm install
 ```
 
-## 🛠️ Технології
-- **React 19.1.0** - Останній React з concurrent функціями
-- **Next.js 15.4.1** - App Router з серверними компонентами
-- **TypeScript 5.8.3** - Типобезпечна розробка
-- **TanStack Query** - Управління серверним станом
-- **Tailwind CSS** - Utility-first CSS фреймворк
-- **Shadcn/UI** - Сучасна бібліотека компонентів
-- **Framer Motion** - Бібліотека анімацій
-- **NextAuth.js** - Рішення для автентифікації
-- **Redis** - Кешування та зберігання сесій
-- **i18n** - Інтернаціоналізація (EN, RU, UK)
+## ⚙️ Налаштування
 
-## 🏗️ Архітектура проекту
+### Environment Variables
 
-### 🔐 Система подвійного провайдера автентифікації
+Створіть `.env.local` файл в корені `frontend/`:
 
-Проект реалізує **складну архітектуру подвійного провайдера автентифікації**, що дозволяє перемикатися між різними джерелами даних та функціоналом:
+```bash
+# Backend API
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+BACKEND_API_URL=http://localhost:8000  # Для server-side
 
-#### 1. **Backend Provider** (`AuthProvider.MyBackendDocs`)
-- **Призначення**: Основний функціонал AutoRia з Django backend
-- **Endpoint**: `http://localhost:8000` (локально) / `http://app:8000` (Docker)
-- **Функції**:
-  - 🚗 **AutoRia Маркетплейс** - Автомобільні оголошення та управління
-  - 👤 **Профілі користувачів** - Комплексне управління користувачами
-  - 📊 **Панель аналітики** - Статистика для преміум користувачів
-  - 💬 **AI Чат-система** - Реальний час WebSocket чат з AI
-  - 🛡️ **Модерація контенту** - Автоматичне виявлення нецензурної лексики
-  - 💰 **Валютна система** - Підтримка багатьох валют (USD, EUR, UAH)
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_super_secret_key_here_min_32_chars
 
-#### 2. **Dummy Provider** (`AuthProvider.Dummy`)
-- **Призначення**: Демонстрація інтеграції зовнішніх API
-- **Endpoint**: `https://dummyjson.com`
-- **Функції**:
-  - 🍳 **Система рецептів** - Інтеграція зовнішніх даних рецептів
-  - 👥 **Управління користувачами** - Зовнішні профілі користувачів
-  - 🔍 **Пошук та фільтрація** - Розширені можливості фільтрації
-  - 📱 **Pagination** - Infinite scroll and pagination
+# Google Maps (опціонально)
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
 
-### Modular Structure
-The project uses Next.js App Router with route groups `()` for logical organization without affecting URLs:
+# Redis (для token storage)
+REDIS_URL=redis://localhost:6379
+REDIS_HOST=localhost
+REDIS_PORT=6379
 
-#### 📱 Pages (`src/app/`)
-- **`(auth)/`** - Authentication pages (login, register)
-  - `login/` - Multi-provider login form
-  - `register/` - User registration
-- **`(main)/`** - Main application pages
-  - `autoria/` - **AutoRia marketplace** (Backend Provider)
-    - `search/` - Car search and filtering
-    - `create-ad/` - Advertisement creation
-    - `my-ads/` - User's advertisements
-    - `favorites/` - Favorite cars
-    - `analytics/` - Premium analytics dashboard
-    - `profile/` - AutoRia user profile
-  - `recipes/` - **Recipe system** (Dummy Provider)
-  - `users/` - **User management** (Dummy Provider)
-  - `dashboard/` - Main dashboard
-  - `enhanced-chat/` - AI chat interface
-- **`(admin)/`** - Administrative and debug pages
-  - `docs/` - API documentation (Swagger UI)
-- **`(services)/`** - Service monitoring pages
-  - `flower/` - Celery task monitoring
-  - `rabbitmq/` - Message queue management
-  - `redis-insight/` - Redis database monitoring
+# DummyJSON (для тестування, опціонально)
+NEXT_PUBLIC_DUMMY_API_BASE_URL=https://dummyjson.com
+```
 
-#### 🔌 API Routes (`src/app/api/`)
-- **`(auth-api)/`** - Authentication APIs
-  - `auth/login/` - Multi-provider login endpoint
-  - `auth/refresh/` - Token refresh for both providers
-- **`(autoria-api)/`** - AutoRia marketplace APIs
-  - `ads/` - Car advertisement management
-  - `accounts/` - User account management
-- **`(external-api)/`** - External service integrations
-  - `recipes/` - DummyJSON recipes API proxy
-- **`(user-api)/`** - User management APIs
-  - `users/` - DummyJSON users API proxy
-- **`(admin-api)/`** - Administrative APIs
-  - `health/` - System health checks
-  - `redis/` - Redis operations
-- **`(reference-api)/`** - Reference data APIs
-  - `reference/` - Car brands, models, colors
-  - `public/` - Public reference data
-- **`(helpers)/`** - Shared API utilities
+### Генерація NEXTAUTH_SECRET
 
-#### 🛠️ Utils (`src/utils/`)
-- **`chat/`** - Chat system utilities
-- **`auth/`** - Authentication utilities
-- **`api/`** - API and network utilities
-- **`ui/`** - UI and notification utilities
-- **`dev-tools/`** - Development tools
+```bash
+# Через OpenSSL
+openssl rand -base64 32
 
-#### 🌍 Localization (`src/locales/`)
-- **`en.ts`** - English translations
-- **`ru.ts`** - Russian translations
-- **`uk.ts`** - Ukrainian translations
-- **`index.ts`** - Exports and metadata
+# Або через Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+## 🎯 Запуск
+
+### Development
+
+```bash
+# Запустити dev server
+npm run dev
+
+# Доступно на http://localhost:3000
+```
+
+### Production Build
+
+```bash
+# Build для production
+npm run build
+
+# Запустити production server
+npm run start
+
+# Доступно на http://localhost:3000
+```
+
+### Lint та Format
+
+```bash
+# ESLint перевірка
+npm run lint
+
+# Prettier форматування
+npm run format
+
+# TypeScript перевірка
+npm run type-check
+```
+
+## 📁 Структура
+
+```
+frontend/
+├── src/
+│   ├── app/                        # Next.js App Router
+│   │   ├── (auth)/                 # Auth group routes
+│   │   │   ├── login/
+│   │   │   └── register/
+│   │   ├── (main)/                 # Main app routes
+│   │   │   ├── autoria/            # AutoRia pages
+│   │   │   │   ├── ads/
+│   │   │   │   ├── moderation/
+│   │   │   │   └── profile/
+│   │   │   └── page.tsx
+│   │   ├── api/                    # API routes (proxy to backend)
+│   │   │   ├── auth/[...nextauth]/
+│   │   │   ├── redis/
+│   │   │   └── (backend)/          # Backend proxy routes
+│   │   ├── layout.tsx              # Root layout
+│   │   └── page.tsx                # Home page
+│   ├── components/                 # React компоненти
+│   │   ├── AutoRia/                # AutoRia specific
+│   │   │   ├── Components/
+│   │   │   │   ├── CarAdCard.tsx   # Картка оголошення
+│   │   │   │   ├── CarAdForm.tsx   # Форма створення
+│   │   │   │   └── ...
+│   │   │   ├── Layout/
+│   │   │   │   ├── AutoRiaHeader.tsx
+│   │   │   │   └── AutoRiaFooter.tsx
+│   │   │   └── Pages/
+│   │   │       ├── HomePage.tsx
+│   │   │       ├── AdDetailsPage.tsx
+│   │   │       └── ModerationPage.tsx
+│   │   ├── ChatBot/                # WebSocket chat
+│   │   ├── Forms/                  # Форми
+│   │   ├── Menus/                  # Навігація
+│   │   └── All/                    # Спільні компоненти
+│   │       ├── AuthBadge.tsx       # Session auth badge
+│   │       ├── RedisUserBadge.tsx  # Redis user badge
+│   │       └── ...
+│   ├── contexts/                   # React Context API
+│   │   ├── AuthContext.tsx         # Session auth
+│   │   ├── RedisAuthContext.tsx    # Redis auth
+│   │   ├── AuthProviderContext.tsx # Provider switcher
+│   │   ├── I18nContext.tsx         # Інтернаціоналізація
+│   │   └── ThemeContext.tsx        # Тема (dark/light)
+│   ├── services/                   # API клієнти
+│   │   └── api/
+│   │       ├── apiClient.ts        # HTTP client
+│   │       └── tokenManager.ts     # Token management
+│   ├── utils/                      # Утиліти
+│   │   ├── fetchWithAuth.ts        # Auth fetch wrapper
+│   │   ├── auth/                   # Auth utils
+│   │   └── errors/                 # Error handlers
+│   ├── locales/                    # i18n переклади
+│   │   ├── uk.ts                   # Українська
+│   │   ├── ru.ts                   # Російська
+│   │   └── en.ts                   # Англійська
+│   ├── lib/                        # Бібліотеки та config
+│   │   ├── redis.ts                # Redis client
+│   │   └── utils.ts                # Tailwind utils (cn)
+│   └── styles/
+│       └── globals.css             # Global styles
+├── public/                         # Статичні файли
+│   ├── images/
+│   └── icons/
+├── .env.local                      # Environment variables (gitignored)
+├── next.config.js                  # Next.js config
+├── tailwind.config.ts              # Tailwind config
+├── tsconfig.json                   # TypeScript config
+└── package.json                    # Dependencies
+```
+
+## 🧩 Ключові Компоненти
+
+### `components/AutoRia/Components/CarAdCard.tsx`
+**Картка оголошення**
+
+```tsx
+<CarAdCard 
+  ad={carAd}
+  onClick={(id) => router.push(`/autoria/ads/${id}`)}
+  onFavorite={(id) => toggleFavorite(id)}
+/>
+```
+
+**Особливості**:
+- Memoized з `React.memo`
+- Lazy loading зображень
+- Відображення ціни в вибраній валюті
+- Favorite toggle
+
+### `components/AutoRia/Pages/ModerationPage.tsx`
+**Сторінка модерації**
+
+```tsx
+<ModerationPage />
+```
+
+**Особливості**:
+- Доступ тільки для Superuser/Staff
+- Фільтрація за статусом
+- Пакетна модерація
+- Real-time updates після модерації
+
+### `components/ChatBot/ChatBotIcon/ChatBotIconLogic.tsx`
+**WebSocket чат**
+
+```tsx
+<ChatBot />
+```
+
+**Особливості**:
+- WebSocket connection
+- AI відповіді
+- Persistent history
+- Real-time messaging
+
+## 🗃️ State Management
+
+### Context API
+
+**AuthContext** (`src/contexts/AuthContext.tsx`):
+```tsx
+const { session, status } = useAuth();
+// session: NextAuth session object
+// status: 'loading' | 'authenticated' | 'unauthenticated'
+```
+
+**RedisAuthContext** (`src/contexts/RedisAuthContext.tsx`):
+```tsx
+const { redisUser, authProvider, authLoading } = useRedisAuth();
+// redisUser: User from Redis (backend_auth or dummy_auth)
+// authProvider: 'backend' | 'dummy'
+// authLoading: boolean
+```
+
+**I18nContext** (`src/contexts/I18nContext.tsx`):
+```tsx
+const { locale, setLocale, t } = useI18n();
+// locale: 'uk' | 'ru' | 'en'
+// setLocale: (locale) => void
+// t: (key) => string  // Translation function
+```
+
+**ThemeContext** (`src/contexts/ThemeContext.tsx`):
+```tsx
+const { theme, setTheme } = useTheme();
+// theme: 'light' | 'dark' | 'system'
+// setTheme: (theme) => void
+```
+
+## 🔌 API Integration
+
+### fetchWithAuth
+
+Центральна функція для API запитів з автоматичною аутентифікацією:
+
+```typescript
+import { fetchWithAuth } from '@/utils/fetchWithAuth';
+
+// GET request
+const data = await fetchWithAuth('/api/ads/cars/');
+
+// POST request
+const newAd = await fetchWithAuth('/api/ads/cars/', {
+  method: 'POST',
+  body: JSON.stringify(adData)
+});
+```
+
+**Особливості**:
+- Автоматичне додавання токенів
+- Token refresh при 401
+- Retry logic
+- Error handling через `unifiedErrorHandler`
+
+### API Routes (Proxy)
+
+Next.js API routes проксують запити до Backend:
+
+```typescript
+// app/api/(backend)/ads/cars/route.ts
+export async function GET(request: Request) {
+  const token = await getToken(request);
+  
+  const response = await fetch(`${BACKEND_URL}/api/ads/cars/`, {
+    headers: {
+      'Authorization': `Bearer ${token.access}`
+    }
+  });
+  
+  return response;
+}
+```
+
+## 🎨 Styling
+
+### Tailwind CSS
+
+Utility-first CSS framework:
+
+```tsx
+<div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+    Заголовок
+  </h2>
+</div>
+```
+
+### shadcn/ui Components
+
+Високоякісні компоненти:
+
+```tsx
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+<Card>
+  <Badge variant="success">Активно</Badge>
+  <Button onClick={handleClick}>Зберегти</Button>
+</Card>
+```
+
+### Adaptive Design
+
+Responsive breakpoints:
+
+```tsx
+<div className="
+  grid 
+  grid-cols-1 
+  md:grid-cols-2 
+  lg:grid-cols-3 
+  xl:grid-cols-4 
+  gap-4
+">
+  {/* Cards */}
+</div>
+```
 
 ## 🧪 Testing
 
-The project uses Vitest for testing. To run all tests:
+### Unit Tests (Jest + React Testing Library)
 
 ```bash
-npm test
+# Запустити тести
+npm run test
+
+# Watch mode
+npm run test:watch
+
+# Coverage
+npm run test:coverage
 ```
 
-### Translation Management
-The project includes automated translation validation:
+### E2E Tests (Playwright)
 
 ```bash
-# Check translation consistency
-npm run check-translations
+# Запустити E2E тести
+npm run test:e2e
 
-# Get fix suggestions with templates
-npm run fix-translations
+# UI mode
+npm run test:e2e:ui
 ```
 
-**Automated Validation:**
-- ✅ **Pre-commit hooks** automatically validate translations
-- ✅ **Blocks commits** with translation inconsistencies
-- ✅ **Multi-language support** (EN, RU, UK)
-- ✅ **Detailed error reporting** with fix suggestions
+## 🚀 Performance Optimization
 
-**Translation Files:**
-- `src/locales/en.ts` - English (base language)
-- `src/locales/ru.ts` - Russian translations
-- `src/locales/uk.ts` - Ukrainian translations
+### Memoization
 
-## Test Structure
+```tsx
+// React.memo для компонентів
+export const CarAdCard = React.memo(({ ad }) => {
+  // ...
+}, (prevProps, nextProps) => {
+  return prevProps.ad.id === nextProps.ad.id;
+});
 
-Tests are organized in the `src/__tests__` directory:
+// useCallback для функцій
+const handleClick = useCallback(() => {
+  // ...
+}, [dependency]);
 
-- `src/__tests__/chat/` - Tests for chat functionality
-  - `ChatWebSocket.test.ts` - Tests for WebSocket connection
-  - `ChatAuth.test.ts` - Tests for authentication and token refresh
-  - `ChatEnvironment.test.ts` - Tests for environment-specific behavior
-  - `ChatFunctionality.test.ts` - Tests for core chat functionality
-  - `ChatComponents.test.tsx` - Tests for UI component integration
-  - `ChatRedisIntegration.test.ts` - Tests for Redis integration
+// useMemo для обчислень
+const filteredAds = useMemo(() => {
+  return ads.filter(ad => ad.status === 'active');
+}, [ads]);
+```
 
-## ✨ Key Features
+### Image Optimization
 
-### 🔐 Advanced Authentication System
-- **Dual-provider architecture**: Seamless switching between Backend and Dummy providers
-- **Dynamic menu system**: Context-aware navigation based on active provider
-- **Token management**: JWT access/refresh tokens with Redis storage
-- **Route protection**: Middleware-based authentication for protected routes
-- **Session persistence**: Automatic token refresh and session management
-- **Provider switching**: Runtime authentication provider switching
+```tsx
+import Image from 'next/image';
 
-### 🚗 AutoRia Marketplace
-- **Car listings**: Create, edit, and manage car advertisements
-- **Advanced search**: Filter by brand, model, year, price, location
-- **User profiles**: Comprehensive user management with avatars
-- **Analytics**: View statistics and performance data
-- **Favorites**: Save and manage favorite listings
+<Image
+  src={imageUrl}
+  alt="Car"
+  width={800}
+  height={600}
+  placeholder="blur"
+  blurDataURL="/placeholder.jpg"
+  loading="lazy"
+/>
+```
 
-### 💬 AI Chat System
-- **Real-time chat**: WebSocket-based chat with AI integration
-- **File uploads**: Support for images and documents
-- **Markdown support**: Rich text formatting with syntax highlighting
-- **Chat history**: Persistent conversation storage
+### Code Splitting
 
-### 🌍 Internationalization
-- **Multi-language**: English, Russian, Ukrainian support
-- **Dynamic switching**: Runtime language switching
-- **Translation validation**: Automated consistency checking
-- **Type-safe translations**: TypeScript integration
+```tsx
+import dynamic from 'next/dynamic';
 
-### 🎨 Modern UI/UX
-- **Responsive design**: Mobile-first approach with Tailwind CSS
-- **Dark/light themes**: System preference detection
-- **Animations**: Smooth transitions with Framer Motion
-- **Accessibility**: WCAG compliant components
+const ChatBot = dynamic(() => import('@/components/ChatBot'), {
+  loading: () => <ChatBotSkeleton />,
+  ssr: false  // Не рендерити на сервері
+});
+```
 
-## 🔧 Development Tools
+## 📊 Build Analysis
 
-### Scripts
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run test         # Run tests
-npm run check-translations  # Validate translations
+# Аналіз розміру бандлу
+npm run analyze
+
+# Або через Next.js
+ANALYZE=true npm run build
 ```
 
-### Code Quality
-- **TypeScript**: Strict type checking
-- **ESLint**: Code linting and formatting
-- **Prettier**: Code formatting
-- **Husky**: Git hooks for automated quality checks
-  - ✅ **Pre-commit**: Translation consistency validation
-  - ✅ **Commit-msg**: Extra checks for translation-related commits
-  - ✅ **Automatic blocking**: Prevents inconsistent translations from being committed
+## 🔗 Пов'язані документи
 
-## 📞 Contact
-**Email**: pvs.versia@gmail.com
+- [Повна документація](../docs/README.md)
+- [Backend API Guide](../docs/BACKEND_API_GUIDE.md)
+- [Setup Guide](../docs/SETUP_GUIDE.md)
+- [Troubleshooting](../docs/TROUBLESHOOTING.md)
 
-## 📋 Development Guidelines
+---
 
-### Adding New Features
-1. **Choose provider context** - Determine if feature belongs to Backend or Dummy provider
-2. **Plan the structure** - Determine which route group fits best
-3. **Create translations** - Add keys to all language files
-4. **Validate translations** - Run `npm run check-translations`
-5. **Follow patterns** - Use existing component and utility patterns
-6. **Test thoroughly** - Write tests for new functionality
-
-### Working with Authentication Providers
-- **Backend Provider**: Use for AutoRia-specific features (cars, ads, profiles)
-- **Dummy Provider**: Use for external API demonstrations (recipes, users)
-- **Provider switching**: Implement context-aware components that adapt to active provider
-- **Menu integration**: Add new items to appropriate provider menu section
-
-### Working with Translations
-- Always add keys to **all language files** (en, ru, uk)
-- Use the translation validation script before committing
-- Follow the hierarchical key structure
-- Never hardcode strings in components
-
-### API Development
-- Use appropriate route groups for organization
-- Follow RESTful conventions
-- Implement proper error handling
-- Add TypeScript types for requests/responses
-- Consider provider context when designing endpoints
-
-## 🔄 Provider Switching
-
-The application supports runtime switching between authentication providers:
-
-### Backend Provider Features
-```typescript
-// Access AutoRia-specific features
-- Car advertisements (CRUD operations)
-- User profiles with AutoRia context
-- Premium analytics and statistics
-- AI chat system with WebSocket
-- Content moderation system
-```
-
-### Dummy Provider Features
-```typescript
-// Access external API demonstrations
-- Recipe browsing and search
-- User management from DummyJSON
-- Advanced filtering and pagination
-- External API integration patterns
-```
-
-### Implementation Example
-```typescript
-// Components adapt to active provider
-const { provider } = useAuthProvider();
-
-if (provider === AuthProvider.MyBackendDocs) {
-  // Show AutoRia functionality
-} else if (provider === AuthProvider.Dummy) {
-  // Show external API features
-}
-```
+**Версія**: 2.0  
+**Останнє оновлення**: 2025-01-25  
+**Мова**: Українська 🇺🇦
