@@ -4,23 +4,34 @@
 
 Детальна інструкція налаштування всіх environment variables та конфігураційних файлів для AutoRia платформи.
 
+> **🎓 НАВЧАЛЬНИЙ ПРОЕКТ** - Усі .env файли включені в репозиторій для швидкого розгортання "out of the box"
+>
+> ⚠️ **У production НІКОЛИ не додавайте .env файли з секретами в Git!**
+
 ---
 
 ## 📁 Структура Environment Files
 
-```
-env-config/
-├── .env.base          # Базові налаштування (не секретні)
-├── .env.secrets       # API ключі та паролі (ЗАШИФРОВАНІ)
-├── .env.local         # Локальні переопределення (gitignored)
-└── .env.docker        # Docker-specific налаштування
+### Централізована схема (Єдиний центр відповідальності)
 
-backend/
-└── .env               # Backend-specific (gitignored)
+```
+env-config/               # 🎯 Централізовані конфігурації для Docker
+├── .env.base            # Базові налаштування ✅ В Git
+├── .env.secrets         # API ключі та паролі ✅ В Git (навчальні)
+└── .env.docker          # Docker-specific overrides ✅ В Git
 
 frontend/
-└── .env.local         # Frontend-specific (gitignored)
+└── .env.local           # Frontend-specific (Next.js) ✅ В Git (навчальні)
+
+redis/
+└── redis.conf           # Redis конфігурація ✅ В Git
 ```
+
+**Принцип роботи:**
+- **Docker-сервіси** (backend, postgres, redis, celery, nginx): Використовують ТІЛЬКИ файли з `env-config/`
+- **Frontend** (Next.js): Використовує власний `frontend/.env.local` (це Next.js convention)
+- **Порядок завантаження Docker**: `.env.base` → `.env.secrets` → `.env.docker`
+- **Немає дублювання**: Кожна змінна має одне джерело правди
 
 ---
 

@@ -185,7 +185,8 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env.test
+# ?? НАВЧАЛЬНИЙ ПРОЕКТ: .env файли включені в репозиторій!
+# .env.test  # Закоментовано для навчального проекту
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
