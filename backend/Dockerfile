@@ -54,8 +54,7 @@ ENV PATH="/root/.local/bin:$PATH"
 COPY pyproject.toml poetry.lock ./
 
 # Configure Poetry and install ALL dependencies (full installation)
-RUN poetry config repositories.pypi https://pypi.org/simple && \
-    poetry config virtualenvs.create false && \
+RUN poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --no-root
 
 # Install Playwright browsers for crawl4ai dynamic content parsing
