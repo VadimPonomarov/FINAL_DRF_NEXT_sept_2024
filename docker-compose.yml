@@ -13,6 +13,7 @@ services:
       IS_DOCKER: true
       DISABLE_RATELIMIT: true
       DEBUG: true
+      DISABLE_LLM_MODERATION: true
     env_file:
       - ./env-config/.env.base       # Base configuration
       - ./env-config/.env.secrets    # Secrets

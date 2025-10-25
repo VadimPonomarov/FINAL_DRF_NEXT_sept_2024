@@ -1,15 +1,98 @@
 """
 Интеллектуальная LLM-модерация на основе промптов
 Анализирует контент через промптирование вместо жестких правил
+Использует ChatAI с PollinationsAI провайдером
+LangChain JsonOutputParser для надежного парсинга JSON
 """
 import re
 import json
 import logging
+import time
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
+
+# Import ChatAI for real LLM moderation
+try:
+    import g4f
+    from g4f import Client
+    LLM_AVAILABLE = True
+    logger.info("[OK] g4f ChatAI available for LLM moderation")
+except ImportError as e:
+    LLM_AVAILABLE = False
+    logger.warning(f"[ERROR] g4f not available: {e}. Using simulation mode.")
+
+# Import LangChain JsonOutputParser for robust JSON parsing
+try:
+    from langchain_core.output_parsers import JsonOutputParser
+    from langchain_core.prompts import PromptTemplate
+    LANGCHAIN_AVAILABLE = True
+    logger.info("[OK] LangChain JsonOutputParser available")
+except ImportError as e:
+    LANGCHAIN_AVAILABLE = False
+    logger.warning(f"[WARN] LangChain not available: {e}. Using manual JSON parsing.")
+
+
+# ===== HARD BLOCK DICTIONARY FOR 100% CENSORSHIP =====
+# This list is checked BEFORE LLM to guarantee blocking of known profanity
+# Ukrainian, Russian, and English profanity with common variations
+HARD_BLOCK_PROFANITY = {
+    # Ukrainian profanity (original, transliterated, masked)
+    'блять', 'бля', 'блядь', 'бляха', 'блядство',
+    'blyat', 'blya', 'blyad', 'blyaha', 'bl@t', 'bl@d',
+    'хуй', 'хуя', 'хуйня', 'хуйло', 'хуёвий', 'хуєвий',
+    'hui', 'huy', 'huilo', 'huynia', 'h@i', 'h@y',
+    'пизда', 'піздець', 'пиздець', 'піздити', 'пиздити',
+    'pizda', 'pizdec', 'pizdets', 'p1zda', 'p!zda', 
+    'єбать', 'ебать', 'їбати', 'їбало', 'ібати', 'ебало',
+    'ebat', 'yebat', 'jebat', 'ebalo', 'e6at', 'eb@t',
+    'сука', 'суки', 'сучка', 'сучки',
+    'suka', 'suki', 'suchka', 's@ka',
+    'їбнутий', 'єбнутий', 'ебнутий', 'йобаний', 'ёбаный',
+    'ebnytyi', 'ebnutyi', 'yobanyi', 'jobanyi',
+    'мудак', 'мудила', 'мудило', 'мудаки',
+    'mudak', 'mudila', 'mudilo', 'm@dak',
+    'дебіл', 'дебил', 'дебильний',
+    'debil', 'debyl', 'd3bil',
+    'йолоп', 'йолопи', 'йолопство',
+    'yolop', 'jolop', 'j0lop',
+    'гівно', 'говно', 'гівняний', 'гавно',
+    'govno', 'gowno', 'g0vno', 'gavno',
+    'сцикло', 'сцикун',
+    'scyklo', 'scykun',
+    
+    # Russian profanity (original, transliterated, masked)
+    'пидор', 'пидарас', 'пидр', 'пидр', 'пид0р',
+    'pidor', 'pidaras', 'pidr', 'p1dor', 'p!dor',
+    'падла', 'падло',
+    'padla', 'padlo', 'p@dla',
+    'шлюха', 'шлюхи', 'шлюха',
+    'shluha', 'shlukha', 'shl@ha',
+    'чмо', 'чмошник',
+    'chmo', 'chmoshnik', 'ch~o',
+    'жопа', 'жопи', 'жопний',
+    'zhopa', 'jopa', 'zh0pa',
+    'долбоёб', 'долбаёб', 'долбоеб',
+    'dolboeb', 'dolbaeb', 'd0lb0eb',
+    
+    # English profanity (for completeness)
+    'fuck', 'fucking', 'fucked', 'fucker', 'f@ck', 'f*ck',
+    'shit', 'shitting', 'shitty', 'sh1t', 'sh!t',
+    'bitch', 'bitches', 'bitching', 'b1tch', 'b!tch',
+    'ass', 'asshole', '@ss', '@sshole',
+    'cunt', 'c@nt', 'c*nt',
+    'dick', 'dickhead', 'd1ck',
+    'bastard', 'b@stard',
+    'damn', 'damned', 'd@mn',
+}
+
+# Normalize the set (lowercase for case-insensitive matching)
+HARD_BLOCK_PROFANITY = {word.lower() for word in HARD_BLOCK_PROFANITY}
+
+logger.info(f"[OK] Hard block profanity dictionary loaded with {len(HARD_BLOCK_PROFANITY)} words")
 
 
 class ModerationStatus(Enum):
@@ -29,6 +112,25 @@ class ViolationType(Enum):
     INAPPROPRIATE_CONTENT = "inappropriate_content"
 
 
+# Pydantic models for LangChain JsonOutputParser
+class ProfanityAnalysisOutput(BaseModel):
+    """Structured output for profanity analysis"""
+    has_profanity: bool = Field(description="Whether profanity was detected")
+    found_words: List[str] = Field(default_factory=list, description="List of detected profane words")
+    languages: List[str] = Field(default_factory=list, description="Languages detected (ukrainian, russian, english)")
+    severity: str = Field(default="low", description="Severity level: low, medium, high")
+    confidence: float = Field(default=0.95, description="Confidence score 0.0-1.0")
+
+
+class TopicAnalysisOutput(BaseModel):
+    """Structured output for topic analysis"""
+    is_transport_related: bool = Field(description="Whether content is vehicle-related")
+    confidence: float = Field(default=0.95, description="Confidence score 0.0-1.0")
+    category: str = Field(default="transport", description="Category: transport, off_topic, prohibited")
+    reason: str = Field(description="Brief explanation of the decision")
+    transport_indicators: List[str] = Field(default_factory=list, description="Detected transport-related keywords")
+
+
 @dataclass
 class ModerationResult:
     """Результат модерации"""
@@ -43,13 +145,76 @@ class ModerationResult:
     processing_time_ms: int
 
 
+class ChatAIService:
+    """ChatAI service for LLM-based moderation using PollinationsAI provider."""
+    
+    def __init__(self):
+        """Initialize ChatAI service with default model and JsonOutputParser."""
+        self.client = Client() if LLM_AVAILABLE else None
+        self.text_model = "gpt-4"  # Default model for g4f
+        self.provider = "PollinationsAI"  # Using PollinationsAI as provider
+        
+        # Initialize LangChain JsonOutputParser if available
+        if LANGCHAIN_AVAILABLE:
+            self.profanity_parser = JsonOutputParser(pydantic_object=ProfanityAnalysisOutput)
+            self.topic_parser = JsonOutputParser(pydantic_object=TopicAnalysisOutput)
+            logger.info("[OK] LangChain JsonOutputParser initialized with Pydantic models")
+        else:
+            self.profanity_parser = None
+            self.topic_parser = None
+        
+    def generate_text(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> str:
+        """
+        Generate text response using ChatAI with PollinationsAI.
+        
+        Args:
+            messages: List of message dictionaries with 'role' and 'content'
+            model: Optional model override (defaults to gpt-4)
+            
+        Returns:
+            Generated text response
+        """
+        if not LLM_AVAILABLE or not self.client:
+            logger.warning("LLM not available, falling back to simulation")
+            raise Exception("LLM not available")
+            
+        try:
+            logger.info(f"[ChatAI] Request with {len(messages)} messages using {self.provider}")
+            
+            response = g4f.ChatCompletion.create(
+                model=model or self.text_model,
+                messages=messages,
+                stream=False
+            )
+            
+            result = str(response)
+            logger.info(f"[ChatAI] Response received: {len(result)} chars")
+            return result
+            
+        except Exception as e:
+            logger.error(f"[ERROR] ChatAI generation error: {e}")
+            raise
+
+
 class LLMPromptModerationService:
     """
     LLM-модерация на основе промптов
-    Использует интеллектуальный анализ вместо жестких паттернов
+    Использует интеллектуальный анализ через ChatAI с PollinationsAI
+    Автоматический fallback на симуляцию если LLM недоступен
     """
     
     def __init__(self):
+        """Initialize moderation service with ChatAI."""
+        # Initialize ChatAI for real LLM analysis
+        self.chatai = ChatAIService() if LLM_AVAILABLE else None
+        self.use_llm = LLM_AVAILABLE and self.chatai is not None
+        
+        if self.use_llm:
+            logger.info("[LLM] Moderation: Using ChatAI with PollinationsAI")
+        else:
+            logger.info("[SIM] Moderation: Using simulation mode (g4f not available)")
+        
+        # Profanity examples for fallback simulation
         self.profanity_examples = {
             'ukrainian': [
                 'блять', 'бля', 'хуй', 'хуя', 'хуе', 'хую', 'хуем', 'хуёв', 'хуевый', 'хуевая',
@@ -78,26 +243,212 @@ class LLMPromptModerationService:
             ]
         }
 
-    def simulate_llm_profanity_analysis(self, content: str) -> Dict[str, Any]:
+    def _hard_block_check(self, content: str, start_time: float) -> Optional[Dict[str, Any]]:
         """
-        Симуляция LLM анализа нецензурной лексики
-        В реальной системе здесь был бы вызов к OpenAI/Claude/etc
+        HARD BLOCK CHECK - runs BEFORE LLM for guaranteed blocking of known profanity.
+        Returns moderation result if profanity found, None otherwise.
+        This ensures 100% blocking rate for known Ukrainian/Russian/English profanity.
         """
-        import time
+        content_lower = content.lower()
+        found_words = []
+        censored_mapping = {}
+        detected_languages = set()
+        
+        # Normalize text: replace punctuation with spaces for word boundary detection
+        normalized = content_lower
+        for punct in '.,!?;:\'"()[]{}«»""—–-/\\|@#$%^&*+=<>~`':
+            normalized = normalized.replace(punct, ' ')
+        
+        # Extract words
+        words_in_content = set(word.strip() for word in normalized.split() if word.strip())
+        
+        # Check against hard block dictionary (word boundary matching only - fast)
+        for word in words_in_content:
+            if word in HARD_BLOCK_PROFANITY:
+                found_words.append(word)
+                censored_mapping[word] = self._censor_word(word)
+                # Detect language (simple heuristic based on character set)
+                if any(ord(c) in range(0x0400, 0x04FF) for c in word):
+                    # Cyrillic detected
+                    detected_languages.add('ukrainian' if 'є' in word or 'і' in word or 'ї' in word else 'russian')
+                elif word.isascii():
+                    detected_languages.add('english')
+                else:
+                    detected_languages.add('transliteration')
+        
+        if found_words:
+            processing_time = int((time.time() - start_time) * 1000)
+            logger.warning(f"[HARD_BLOCK] Detected profanity: {found_words[:3]}{'...' if len(found_words) > 3 else ''}")
+            return {
+                'has_profanity': True,
+                'confidence': 1.0,  # 100% confidence for hard block
+                'found_words': found_words,
+                'censored_words': censored_mapping,
+                'languages': list(detected_languages),
+                'severity': 'high',
+                'processing_time_ms': processing_time
+            }
+        
+        return None  # No profanity found, continue to LLM
+
+    def llm_profanity_analysis(self, content: str) -> Dict[str, Any]:
+        """
+        LLM анализ нецензурной лексики через ChatAI.
+        ВАЖНО: Сначала проверяет hard block словарь для гарантированного блока.
+        Автоматический fallback на симуляцию при ошибке LLM.
+        """
         start_time = time.time()
         
+        # STEP 1: Hard block check FIRST (before LLM) - 100% guaranteed blocking
+        hard_block_result = self._hard_block_check(content, start_time)
+        if hard_block_result:
+            return hard_block_result
+        
+        # STEP 2: Try real LLM analysis (for nuanced/masked profanity detection)
+        if self.use_llm:
+            try:
+                return self._real_llm_profanity_analysis(content, start_time)
+            except Exception as e:
+                logger.warning(f"LLM profanity analysis failed: {e}. Falling back to simulation.")
+                # Continue to simulation fallback below
+        
+        # STEP 3: Fallback to simulation
+        return self._simulate_profanity_analysis(content, start_time)
+    
+    def _real_llm_profanity_analysis(self, content: str, start_time: float) -> Dict[str, Any]:
+        """Real LLM-based profanity analysis using ChatAI with LangChain JsonOutputParser."""
+        
+        # Use LangChain JsonOutputParser if available
+        if LANGCHAIN_AVAILABLE and self.chatai.profanity_parser:
+            format_instructions = self.chatai.profanity_parser.get_format_instructions()
+            system_content = f"""You are a JSON API endpoint that detects profanity.
+
+Detect profanity in: English, Russian, Ukrainian. Detect direct, masked (bl@t, p1zda), and transliterated (blyat, nahui) profanity.
+
+{format_instructions}
+
+CRITICAL: Output ONLY valid JSON matching the schema. No markdown, no explanations."""
+        else:
+            # Fallback to manual instructions
+            system_content = """You are a JSON API endpoint that detects profanity. You MUST respond with ONLY valid JSON, no other text.
+
+Detect profanity in: English, Russian, Ukrainian. Detect direct, masked (bl@t, p1zda), and transliterated (blyat, nahui) profanity.
+
+Response format (ONLY JSON, no explanations):
+{
+    "has_profanity": true,
+    "found_words": ["word1", "word2"],
+    "languages": ["ukrainian"],
+    "severity": "high",
+    "confidence": 0.95
+}
+
+Rules:
+- has_profanity: boolean
+- found_words: array of detected profane words
+- languages: array from ["ukrainian", "russian", "english", "transliteration"]
+- severity: "low" | "medium" | "high"
+- confidence: number 0.0-1.0
+
+CRITICAL: Output ONLY the JSON object. No markdown, no explanations."""
+        
+        messages = [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": f"Analyze: {content}"}
+        ]
+        
+        try:
+            response = self.chatai.generate_text(messages)
+            
+            # Try LangChain parser first
+            if LANGCHAIN_AVAILABLE and self.chatai.profanity_parser:
+                try:
+                    result = self.chatai.profanity_parser.parse(response)
+                    logger.info("[LangChain] Successfully parsed with JsonOutputParser")
+                except Exception as e:
+                    logger.warning(f"[LangChain] Parser failed: {e}. Trying manual parsing.")
+                    # Fallback to manual parsing
+                    result = self._manual_json_parse(response)
+            else:
+                # Manual JSON parsing
+                result = self._manual_json_parse(response)
+            
+            # Process found words to create censored mapping
+            found_words = result.get('found_words', []) if isinstance(result, dict) else result.found_words
+            censored_mapping = {}
+            for word in found_words:
+                censored_mapping[word] = self._censor_word(word)
+            
+            processing_time = int((time.time() - start_time) * 1000)
+            
+            # Handle both dict and Pydantic model
+            if isinstance(result, dict):
+                return {
+                    'has_profanity': result.get('has_profanity', False),
+                    'confidence': result.get('confidence', 0.95),
+                    'found_words': result.get('found_words', []),
+                    'censored_words': censored_mapping,
+                    'languages': result.get('languages', []),
+                    'severity': result.get('severity', 'low'),
+                    'processing_time_ms': processing_time
+                }
+            else:
+                # Pydantic model
+                return {
+                    'has_profanity': result.has_profanity,
+                    'confidence': result.confidence,
+                    'found_words': result.found_words,
+                    'censored_words': censored_mapping,
+                    'languages': result.languages,
+                    'severity': result.severity,
+                    'processing_time_ms': processing_time
+                }
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse LLM response as JSON: {e}. Response: {response[:200]}")
+            raise
+        except Exception as e:
+            logger.error(f"LLM profanity analysis error: {e}")
+            raise
+    
+    def _manual_json_parse(self, response: str) -> Dict[str, Any]:
+        """Manual JSON parsing with markdown cleanup."""
+        response_clean = response.strip()
+        if response_clean.startswith("```json"):
+            response_clean = response_clean[7:]
+        if response_clean.startswith("```"):
+            response_clean = response_clean[3:]
+        if response_clean.endswith("```"):
+            response_clean = response_clean[:-3]
+        response_clean = response_clean.strip()
+        return json.loads(response_clean)
+    
+    def _simulate_profanity_analysis(self, content: str, start_time: float) -> Dict[str, Any]:
+        """
+        Fallback simulation of profanity analysis using pattern matching.
+        """
         content_lower = content.lower()
         found_words = []
         censored_mapping = {}
         detected_languages = []
         
-        # Симуляция интеллектуального анализа с улучшенным поиском
+        # Симуляция интеллектуального анализа - МАКСИМАЛЬНО ПРОСТОЙ подход
+        # Разбиваем текст на слова, заменяя знаки препинания на пробелы БЕЗ REGEX
+        try:
+            # Заменяем знаки препинания на пробелы простым циклом
+            cleaned = content_lower
+            for punct in '.,!?;:\'"()[]{}«»""—–-/\\|@#$%^&*+=<>~`':
+                cleaned = cleaned.replace(punct, ' ')
+            # Разбиваем на слова
+            words_in_content = set(word.strip() for word in cleaned.split() if word.strip())
+        except Exception as e:
+            logger.error(f"Error processing content: {e}")
+            words_in_content = set()
+        
+        # Ищем нецензурные слова
         for lang, examples in self.profanity_examples.items():
             for word in examples:
-                # Используем регулярные выражения для точного поиска
-                import re
-                regex = re.compile(rf'\b{re.escape(word)}\b|{re.escape(word)}', re.IGNORECASE)
-                if regex.search(content_lower):
+                if word.lower() in words_in_content:
                     found_words.append(word)
                     censored_mapping[word] = self._censor_word(word)
                     if lang not in detected_languages:
@@ -123,9 +474,118 @@ class LLMPromptModerationService:
             'processing_time_ms': processing_time
         }
 
-    def simulate_llm_topic_analysis(self, title: str, description: str, **fields) -> Dict[str, Any]:
+    def llm_topic_analysis(self, title: str, description: str, **fields) -> Dict[str, Any]:
         """
-        Симуляция LLM анализа тематики
+        LLM анализ тематики через ChatAI.
+        Автоматический fallback на симуляцию при ошибке.
+        """
+        # Try real LLM analysis first
+        if self.use_llm:
+            try:
+                return self._real_llm_topic_analysis(title, description, **fields)
+            except Exception as e:
+                logger.warning(f"LLM topic analysis failed: {e}. Falling back to simulation.")
+                # Continue to simulation fallback below
+        
+        # Fallback to simulation
+        return self._simulate_topic_analysis(title, description, **fields)
+    
+    def _real_llm_topic_analysis(self, title: str, description: str, **fields) -> Dict[str, Any]:
+        """Real LLM-based topic analysis using ChatAI with LangChain JsonOutputParser."""
+        # Collect all content
+        all_content = f"Title: {title}\nDescription: {description}"
+        for field_name, field_value in fields.items():
+            if isinstance(field_value, str):
+                all_content += f"\n{field_name}: {field_value}"
+        
+        # Use LangChain JsonOutputParser if available
+        if LANGCHAIN_AVAILABLE and self.chatai.topic_parser:
+            format_instructions = self.chatai.topic_parser.get_format_instructions()
+            system_content = f"""You are a JSON API endpoint for vehicle marketplace moderation.
+
+ALLOWED: Cars, motorcycles, trucks, buses, boats, yachts, aircraft, vehicle parts, tires, vehicle services.
+REJECTED: Real estate, electronics, clothing, food, adult content, drugs, weapons.
+
+{format_instructions}
+
+CRITICAL: Output ONLY valid JSON matching the schema. No markdown, no explanations."""
+        else:
+            # Fallback to manual instructions
+            system_content = """You are a JSON API endpoint for vehicle marketplace moderation. You MUST respond with ONLY valid JSON.
+
+ALLOWED: Cars, motorcycles, trucks, buses, boats, yachts, aircraft, vehicle parts, tires, vehicle services.
+REJECTED: Real estate, electronics, clothing, food, adult content, drugs, weapons.
+
+Response format (ONLY JSON):
+{
+    "is_transport_related": true,
+    "confidence": 0.95,
+    "category": "transport",
+    "reason": "Contains vehicle keywords",
+    "transport_indicators": ["car", "engine"]
+}
+
+Rules:
+- is_transport_related: boolean
+- confidence: number 0.0-1.0
+- category: "transport" | "off_topic" | "prohibited"
+- reason: string (max 100 chars)
+- transport_indicators: array of strings
+
+CRITICAL: Output ONLY the JSON object. No markdown, no explanations."""
+        
+        messages = [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": f"Analyze: {all_content}"}
+        ]
+        
+        try:
+            response = self.chatai.generate_text(messages)
+            
+            # Try LangChain parser first
+            if LANGCHAIN_AVAILABLE and self.chatai.topic_parser:
+                try:
+                    result = self.chatai.topic_parser.parse(response)
+                    logger.info("[LangChain] Successfully parsed with JsonOutputParser")
+                except Exception as e:
+                    logger.warning(f"[LangChain] Parser failed: {e}. Trying manual parsing.")
+                    # Fallback to manual parsing
+                    result = self._manual_json_parse(response)
+            else:
+                # Manual JSON parsing
+                result = self._manual_json_parse(response)
+            
+            # Handle both dict and Pydantic model
+            if isinstance(result, dict):
+                return {
+                    'is_transport_related': result.get('is_transport_related', True),
+                    'confidence': result.get('confidence', 0.95),
+                    'category': result.get('category', 'transport'),
+                    'transport_indicators': result.get('transport_indicators', []),
+                    'prohibited_items': [],  # Compatibility with old structure
+                    'reason': result.get('reason', 'Analysis complete')
+                }
+            else:
+                # Pydantic model
+                return {
+                    'is_transport_related': result.is_transport_related,
+                    'confidence': result.confidence,
+                    'category': result.category,
+                    'transport_indicators': result.transport_indicators,
+                    'prohibited_items': [],  # Compatibility with old structure
+                    'reason': result.reason
+                }
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse LLM topic response as JSON: {e}. Response: {response[:200]}")
+            raise
+        except Exception as e:
+            logger.error(f"LLM topic analysis error: {e}")
+            raise
+    
+    def _simulate_topic_analysis(self, title: str, description: str, **fields) -> Dict[str, Any]:
+        """
+        Fallback simulation of topic analysis using keyword matching.
         """
         all_content = f"{title} {description}"
         for field_name, field_value in fields.items():
@@ -328,27 +788,43 @@ class LLMPromptModerationService:
 
     def moderate_content(self, title: str, description: str, price: Optional[float] = None, **additional_fields) -> ModerationResult:
         """
-        Основная функция модерации через LLM промпты
+        Основная функция модерации через LLM промпты.
+        Использует ChatAI с PollinationsAI для реального анализа.
         """
-        import time
         start_time = time.time()
+        
+        logger.info(f"[{'LLM' if self.use_llm else 'SIM'}] Moderation: Starting analysis for '{title[:50]}...'")
         
         # Собираем весь контент
         full_content = f"{title} {description}"
         
-        # LLM анализ нецензурщины
-        profanity_analysis = self.simulate_llm_profanity_analysis(full_content)
+        # LLM анализ нецензурщины (real LLM or fallback to simulation)
+        profanity_analysis = self.llm_profanity_analysis(full_content)
         
-        # LLM анализ тематики
-        topic_analysis = self.simulate_llm_topic_analysis(title, description, **additional_fields)
+        # 🚀 ОПТИМИЗАЦИЯ: Если профанность найдена - сразу rejected БЕЗ topic analysis!
+        # Topic analysis занимает ~60s LLM, профанность блокируется и без него
+        if profanity_analysis['has_profanity']:
+            processing_time = int((time.time() - start_time) * 1000)
+            logger.info(f"[FAST_REJECT] Profanity detected, skipping topic analysis. Time: {processing_time}ms")
+            
+            return ModerationResult(
+                status=ModerationStatus.REJECTED,
+                confidence=profanity_analysis['confidence'],
+                violations=[ViolationType.PROFANITY],
+                flagged_text=profanity_analysis['found_words'],
+                censored_text=profanity_analysis['censored_words'],
+                reason=f"Обнаружена нецензурная лексика: {', '.join(profanity_analysis['found_words'])}",
+                suggestions=["Удалите нецензурную лексику из текста"],
+                language_detected=", ".join(profanity_analysis['languages']) if profanity_analysis['languages'] else 'profanity',
+                processing_time_ms=processing_time
+            )
+        
+        # LLM анализ тематики (только если НЕТ профанности)
+        topic_analysis = self.llm_topic_analysis(title, description, **additional_fields)
         
         # Объединяем результаты
         violations = []
         suggestions = []
-        
-        if profanity_analysis['has_profanity']:
-            violations.append(ViolationType.PROFANITY)
-            suggestions.append("Удалите нецензурную лексику из текста")
         
         if not topic_analysis['is_transport_related']:
             violations.append(ViolationType.OFF_TOPIC)
@@ -356,11 +832,7 @@ class LLMPromptModerationService:
         
         # Определяем статус
         if violations:
-            if ViolationType.PROFANITY in violations:
-                status = ModerationStatus.REJECTED
-                confidence = profanity_analysis['confidence']
-                reason = f"Обнаружена нецензурная лексика: {', '.join(profanity_analysis['found_words'])}"
-            elif ViolationType.OFF_TOPIC in violations:
+            if ViolationType.OFF_TOPIC in violations:
                 status = ModerationStatus.REJECTED
                 confidence = topic_analysis['confidence']
                 reason = topic_analysis['reason']
@@ -379,8 +851,8 @@ class LLMPromptModerationService:
             status=status,
             confidence=confidence,
             violations=violations,
-            flagged_text=profanity_analysis['found_words'],
-            censored_text=profanity_analysis['censored_words'],
+            flagged_text=[],  # No profanity
+            censored_text={},  # No profanity
             reason=reason,
             suggestions=suggestions,
             language_detected=", ".join(profanity_analysis['languages']) if profanity_analysis['languages'] else 'clean',

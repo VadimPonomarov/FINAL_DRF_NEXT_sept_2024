@@ -7,7 +7,6 @@ from apps.users.views.list_create_views import ListUsersView, CreateUserView
 from apps.users.views.reset_password_views import ResetPasswordTokenView, ResetPasswordView, RequestPasswordResetView
 from apps.users.views.admin_views import GrantStaffRightsView, AdminUserListView, AdminUserDetailView
 from apps.users.views.public_views import PublicUserListView
-from apps.users.views.public_views import PublicUserListView
 
 urlpatterns = [
     # Public endpoints (no auth required)

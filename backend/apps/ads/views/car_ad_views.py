@@ -3,29 +3,27 @@ Views for CarAd model with LLM validation and comprehensive filtering.
 """
 import logging
 from typing import Dict
-
 from rest_framework import generics, status
 
 logger = logging.getLogger(__name__)
-from django.db import models
-from django.db.models import Case, FloatField, IntegerField, Q, Value, When
-from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django.shortcuts import get_object_or_404
+from django.db.models import Case, When, IntegerField, FloatField, Value, Q
+from django.db import models
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
-from apps.ads.filters import CarAdFilter
 from apps.ads.models.car_ad_model import CarAd
 from apps.ads.serializers.car_ad_serializer import CarAdSerializer
-
+from apps.ads.filters import CarAdFilter
+from core.permissions import IsOwnerOrSuperUserWrite
+from rest_framework.pagination import PageNumberPagination
 # from core.services.llm_moderation import llm_moderation_service
 from core.enums.ads import AdStatusEnum
-from core.permissions import IsOwnerOrSuperUserWrite
 
 
 class CarAdPagination(PageNumberPagination):
@@ -120,17 +118,8 @@ class CustomOrderingFilter(OrderingFilter):
 
                 elif field == 'price' or field == '-price':
                     # Сортировка по цене с нормализацией к USD и обработкой NULL (NULL в конце)
+                    from django.db.models import Case, When, Value, IntegerField, DecimalField, F, ExpressionWrapper
                     from decimal import Decimal
-
-                    from django.db.models import (
-                        Case,
-                        DecimalField,
-                        ExpressionWrapper,
-                        F,
-                        IntegerField,
-                        Value,
-                        When,
-                    )
                     desc = field.startswith('-')
 
                     # Используем те же курсы, что и на фронте/в сериализаторе (CurrencyService),
@@ -202,12 +191,10 @@ class CarAdListView(generics.ListAPIView):
 
     def get_queryset(self):
         """Optimized queryset with prefetch_related to avoid N+1 queries."""
-        import logging
-
-        from django.db.models import IntegerField, Prefetch, Q
+        from django.db.models import Prefetch, Q, IntegerField
         from django.db.models.functions import Cast
-
         from apps.ads.models import AddImageModel
+        import logging
 
         logger = logging.getLogger(__name__)
 
@@ -504,219 +491,7 @@ class CarAdListView(generics.ListAPIView):
 
     @swagger_auto_schema(
         operation_summary="🚗 Browse Car Ads",
-        operation_description="""
-        Get a paginated list of active car advertisements with comprehensive filtering and search capabilities.
-        
-        ### Features:
-        - **Advanced Filtering**: Filter by price range, year, mileage, brand, model, region, city
-        - **Smart Search**: Full-text search across title, description, and specifications
-        - **Flexible Pagination**: Control page size (0 = return all items)
-        - **Multiple Ordering**: Sort by price, date, mileage, and more
-        - **Geographic Filtering**: Filter by region and city
-        
-        ### Performance:
-        - Optimized queries with select_related for better performance
-        - Efficient filtering using Django ORM
-        - Cached reference data for faster response times
-        """,
-        manual_parameters=[
-            openapi.Parameter(
-                'page',
-                openapi.IN_QUERY,
-                description="Page number for pagination (starts from 1)",
-                type=openapi.TYPE_INTEGER,
-                default=1,
-                minimum=1
-            ),
-            openapi.Parameter(
-                'page_size',
-                openapi.IN_QUERY,
-                description="Number of items per page. Use 0 to get all items without pagination",
-                type=openapi.TYPE_INTEGER,
-                default=50,
-                minimum=0,
-                maximum=10000
-            ),
-            openapi.Parameter(
-                'search',
-                openapi.IN_QUERY,
-                description="Search term for filtering ads by title, description, or specifications",
-                type=openapi.TYPE_STRING,
-                maxLength=100
-            ),
-            openapi.Parameter(
-                'ordering',
-                openapi.IN_QUERY,
-                description="Ordering field. Prefix with '-' for descending order",
-                type=openapi.TYPE_STRING,
-                enum=['created_at', '-created_at', 'price', '-price', 'year', '-year', 'mileage', '-mileage', 'title', '-title']
-            ),
-            openapi.Parameter(
-                'min_price',
-                openapi.IN_QUERY,
-                description="Minimum price filter",
-                type=openapi.TYPE_NUMBER,
-                minimum=0
-            ),
-            openapi.Parameter(
-                'max_price',
-                openapi.IN_QUERY,
-                description="Maximum price filter",
-                type=openapi.TYPE_NUMBER,
-                minimum=0
-            ),
-            openapi.Parameter(
-                'min_year',
-                openapi.IN_QUERY,
-                description="Minimum year filter",
-                type=openapi.TYPE_INTEGER,
-                minimum=1900,
-                maximum=2030
-            ),
-            openapi.Parameter(
-                'max_year',
-                openapi.IN_QUERY,
-                description="Maximum year filter",
-                type=openapi.TYPE_INTEGER,
-                minimum=1900,
-                maximum=2030
-            ),
-            openapi.Parameter(
-                'max_mileage',
-                openapi.IN_QUERY,
-                description="Maximum mileage filter in kilometers",
-                type=openapi.TYPE_INTEGER,
-                minimum=0
-            ),
-            openapi.Parameter(
-                'brand',
-                openapi.IN_QUERY,
-                description="Car brand filter (exact match)",
-                type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'model',
-                openapi.IN_QUERY,
-                description="Car model filter (exact match)",
-                type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'region',
-                openapi.IN_QUERY,
-                description="Region filter (exact match)",
-                type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'city',
-                openapi.IN_QUERY,
-                description="City filter (exact match)",
-                type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                'currency',
-                openapi.IN_QUERY,
-                description="Currency filter",
-                type=openapi.TYPE_STRING,
-                enum=['USD', 'EUR', 'UAH']
-            )
-        ],
-        responses={
-            200: openapi.Response(
-                description="List of car advertisements retrieved successfully",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'count': openapi.Schema(
-                            type=openapi.TYPE_INTEGER,
-                            description="Total number of advertisements matching the filters"
-                        ),
-                        'next': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_URI,
-                            description="URL for the next page of results",
-                            nullable=True
-                        ),
-                        'previous': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_URI,
-                            description="URL for the previous page of results",
-                            nullable=True
-                        ),
-                        'results': openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            description="List of car advertisements",
-                            items=openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    'title': openapi.Schema(type=openapi.TYPE_STRING),
-                                    'description': openapi.Schema(type=openapi.TYPE_STRING),
-                                    'price': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'currency': openapi.Schema(type=openapi.TYPE_STRING),
-                                    'year': openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    'mileage': openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    'brand': openapi.Schema(type=openapi.TYPE_STRING),
-                                    'model': openapi.Schema(type=openapi.TYPE_STRING),
-                                    'region': openapi.Schema(type=openapi.TYPE_STRING),
-                                    'city': openapi.Schema(type=openapi.TYPE_STRING),
-                                    'status': openapi.Schema(type=openapi.TYPE_STRING),
-                                    'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
-                                    'images': openapi.Schema(
-                                        type=openapi.TYPE_ARRAY,
-                                        items=openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_URI)
-                                    )
-                                }
-                            )
-                        )
-                    }
-                ),
-                examples={
-                    'application/json': {
-                        'count': 150,
-                        'next': 'http://localhost:8000/api/ads/cars/?page=2',
-                        'previous': None,
-                        'results': [
-                            {
-                                'id': 123,
-                                'title': '2019 Toyota Camry Hybrid',
-                                'description': 'Excellent condition, low mileage, all service records available',
-                                'price': 25000,
-                                'currency': 'USD',
-                                'year': 2019,
-                                'mileage': 45000,
-                                'brand': 'Toyota',
-                                'model': 'Camry',
-                                'region': 'California',
-                                'city': 'Los Angeles',
-                                'status': 'active',
-                                'created_at': '2024-01-15T10:30:00Z',
-                                'images': ['http://localhost:8000/media/ads/123/image1.jpg']
-                            }
-                        ]
-                    }
-                }
-            ),
-            400: openapi.Response(
-                description="Bad request - invalid parameters",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING),
-                        'details': openapi.Schema(type=openapi.TYPE_STRING)
-                    }
-                )
-            ),
-            500: openapi.Response(
-                description="Internal server error",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING),
-                        'message': openapi.Schema(type=openapi.TYPE_STRING)
-                    }
-                )
-            )
-        },
+        operation_description="Get a paginated list of active car advertisements with filtering and search capabilities.",
         tags=['🚗 Advertisements']
     )
     def get(self, request, *args, **kwargs):
@@ -730,306 +505,7 @@ class CarAdCreateView(generics.CreateAPIView):
 
     @swagger_auto_schema(
         operation_summary="📝 Post New Car Ad",
-        operation_description="""
-        Create a new car advertisement with comprehensive validation and automatic moderation.
-        
-        ### Features:
-        - **Automatic Account Creation**: Creates user account if not exists
-        - **LLM Content Validation**: AI-powered content moderation for quality assurance
-        - **Comprehensive Validation**: Validates all required fields and business rules
-        - **Image Support**: Supports multiple image uploads
-        - **Geographic Validation**: Validates region and city data
-        
-        ### Business Rules:
-        - User must be authenticated
-        - Account limits apply based on account type (Basic/Premium)
-        - Content goes through automatic moderation
-        - Images are validated for format and size
-        """,
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['title', 'description', 'price', 'currency', 'year', 'brand', 'model'],
-            properties={
-                'title': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Advertisement title (10-200 characters)',
-                    minLength=10,
-                    maxLength=200,
-                    example='2019 Toyota Camry Hybrid - Excellent Condition'
-                ),
-                'description': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Detailed advertisement description (50-2000 characters)',
-                    minLength=50,
-                    maxLength=2000,
-                    example='Well-maintained 2019 Toyota Camry Hybrid with low mileage. All service records available. No accidents, single owner. Perfect for daily commuting.'
-                ),
-                'price': openapi.Schema(
-                    type=openapi.TYPE_NUMBER,
-                    description='Price in specified currency (must be positive)',
-                    minimum=0,
-                    example=25000
-                ),
-                'currency': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Currency code',
-                    enum=['USD', 'EUR', 'UAH'],
-                    example='USD'
-                ),
-                'year': openapi.Schema(
-                    type=openapi.TYPE_INTEGER,
-                    description='Manufacturing year',
-                    minimum=1900,
-                    maximum=2030,
-                    example=2019
-                ),
-                'mileage': openapi.Schema(
-                    type=openapi.TYPE_INTEGER,
-                    description='Vehicle mileage in kilometers',
-                    minimum=0,
-                    maximum=1000000,
-                    example=45000
-                ),
-                'brand': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Car brand/manufacturer',
-                    maxLength=50,
-                    example='Toyota'
-                ),
-                'model': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Car model',
-                    maxLength=50,
-                    example='Camry'
-                ),
-                'generation': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Car generation (optional)',
-                    maxLength=50,
-                    example='XV70'
-                ),
-                'modification': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Car modification (optional)',
-                    maxLength=100,
-                    example='2.5L Hybrid LE'
-                ),
-                'color': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Car color',
-                    maxLength=30,
-                    example='Silver'
-                ),
-                'region': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Region/state',
-                    maxLength=100,
-                    example='California'
-                ),
-                'city': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='City',
-                    maxLength=100,
-                    example='Los Angeles'
-                ),
-                'contact_phone': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Contact phone number',
-                    pattern=r'^\+?[1-9]\d{1,14}$',
-                    example='+1234567890'
-                ),
-                'contact_email': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    format=openapi.FORMAT_EMAIL,
-                    description='Contact email address',
-                    example='seller@example.com'
-                ),
-                'images': openapi.Schema(
-                    type=openapi.TYPE_ARRAY,
-                    description='List of image URLs (max 10 images)',
-                    items=openapi.Schema(
-                        type=openapi.TYPE_STRING,
-                        format=openapi.FORMAT_URI
-                    ),
-                    maxItems=10,
-                    example=['http://localhost:8000/media/ads/123/image1.jpg']
-                ),
-                'features': openapi.Schema(
-                    type=openapi.TYPE_ARRAY,
-                    description='List of car features',
-                    items=openapi.Schema(type=openapi.TYPE_STRING),
-                    example=['Air Conditioning', 'Bluetooth', 'Backup Camera', 'Leather Seats']
-                ),
-                'condition': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Vehicle condition',
-                    enum=['excellent', 'good', 'fair', 'poor'],
-                    example='excellent'
-                ),
-                'fuel_type': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Fuel type',
-                    enum=['gasoline', 'diesel', 'hybrid', 'electric', 'lpg', 'cng'],
-                    example='hybrid'
-                ),
-                'transmission': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Transmission type',
-                    enum=['manual', 'automatic', 'cvt', 'semi-automatic'],
-                    example='automatic'
-                ),
-                'body_type': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='Body type',
-                    enum=['sedan', 'suv', 'hatchback', 'coupe', 'convertible', 'wagon', 'truck', 'van'],
-                    example='sedan'
-                ),
-                'engine_size': openapi.Schema(
-                    type=openapi.TYPE_NUMBER,
-                    description='Engine displacement in liters',
-                    minimum=0.5,
-                    maximum=10.0,
-                    example=2.5
-                ),
-                'horsepower': openapi.Schema(
-                    type=openapi.TYPE_INTEGER,
-                    description='Engine horsepower',
-                    minimum=1,
-                    maximum=2000,
-                    example=203
-                ),
-                'doors': openapi.Schema(
-                    type=openapi.TYPE_INTEGER,
-                    description='Number of doors',
-                    minimum=2,
-                    maximum=6,
-                    example=4
-                ),
-                'seats': openapi.Schema(
-                    type=openapi.TYPE_INTEGER,
-                    description='Number of seats',
-                    minimum=1,
-                    maximum=9,
-                    example=5
-                )
-            }
-        ),
-        responses={
-            201: openapi.Response(
-                description="Car advertisement created successfully",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'id': openapi.Schema(
-                            type=openapi.TYPE_INTEGER,
-                            description="Unique advertisement ID"
-                        ),
-                        'title': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Advertisement title"
-                        ),
-                        'status': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Advertisement status",
-                            enum=['pending', 'active', 'rejected', 'draft']
-                        ),
-                        'moderation_status': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Moderation status",
-                            enum=['pending', 'approved', 'rejected', 'needs_review']
-                        ),
-                        'created_at': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_DATETIME,
-                            description="Creation timestamp"
-                        ),
-                        'account': openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            description="User account information",
-                            properties={
-                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                                'account_type': openapi.Schema(type=openapi.TYPE_STRING),
-                                'ads_remaining': openapi.Schema(type=openapi.TYPE_INTEGER)
-                            }
-                        ),
-                        'moderation_feedback': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Moderation feedback (if any)",
-                            nullable=True
-                        )
-                    }
-                ),
-                examples={
-                    'application/json': {
-                        'id': 123,
-                        'title': '2019 Toyota Camry Hybrid - Excellent Condition',
-                        'status': 'pending',
-                        'moderation_status': 'pending',
-                        'created_at': '2024-01-15T10:30:00Z',
-                        'account': {
-                            'id': 456,
-                            'account_type': 'BASIC',
-                            'ads_remaining': 4
-                        },
-                        'moderation_feedback': None
-                    }
-                }
-            ),
-            400: openapi.Response(
-                description="Bad request - validation errors",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING),
-                        'details': openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            description="Field-specific validation errors"
-                        )
-                    }
-                ),
-                examples={
-                    'application/json': {
-                        'error': 'Validation failed',
-                        'details': {
-                            'title': ['This field is required.'],
-                            'price': ['Ensure this value is greater than or equal to 0.'],
-                            'year': ['Ensure this value is less than or equal to 2030.']
-                        }
-                    }
-                }
-            ),
-            401: openapi.Response(
-                description="Authentication required",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING),
-                        'message': openapi.Schema(type=openapi.TYPE_STRING)
-                    }
-                )
-            ),
-            403: openapi.Response(
-                description="Account limit exceeded",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING),
-                        'message': openapi.Schema(type=openapi.TYPE_STRING),
-                        'upgrade_required': openapi.Schema(type=openapi.TYPE_BOOLEAN)
-                    }
-                )
-            ),
-            500: openapi.Response(
-                description="Internal server error",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING),
-                        'message': openapi.Schema(type=openapi.TYPE_STRING)
-                    }
-                )
-            )
-        },
+        operation_description="Create a new car advertisement with automatic LLM validation.",
         tags=['🚗 Advertisements']
     )
     def post(self, request, *args, **kwargs):
@@ -1060,7 +536,6 @@ class CarAdCreateView(generics.CreateAPIView):
         # Проверяем лимиты перед переводом в ACTIVE
         try:
             from django.utils import timezone
-
             from ..services.account_limits import AccountLimitsService
 
             logger.info(f"🔍 PERFORM_CREATE: Starting limits check for ad {ad.id}")
@@ -1107,249 +582,7 @@ class CarAdDetailView(generics.RetrieveAPIView):
 
     @swagger_auto_schema(
         operation_summary="🔍 View Car Ad Details",
-        operation_description="""
-        Retrieve comprehensive information about a specific car advertisement.
-        
-        ### Features:
-        - **Complete Ad Information**: All advertisement details including images, specifications, and contact info
-        - **View Tracking**: Automatically tracks ad views for analytics
-        - **Public Access**: No authentication required for viewing ads
-        - **Rich Metadata**: Includes seller information, location details, and technical specifications
-        
-        ### Analytics:
-        - View count is automatically incremented
-        - Session tracking for unique visitor analytics
-        - Geographic tracking for regional analytics
-        """,
-        manual_parameters=[
-            openapi.Parameter(
-                'id',
-                openapi.IN_PATH,
-                description="Unique advertisement ID",
-                type=openapi.TYPE_INTEGER,
-                required=True
-            )
-        ],
-        responses={
-            200: openapi.Response(
-                description="Car advertisement details retrieved successfully",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'id': openapi.Schema(
-                            type=openapi.TYPE_INTEGER,
-                            description="Unique advertisement ID"
-                        ),
-                        'title': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Advertisement title"
-                        ),
-                        'description': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Detailed advertisement description"
-                        ),
-                        'price': openapi.Schema(
-                            type=openapi.TYPE_NUMBER,
-                            description="Price in specified currency"
-                        ),
-                        'currency': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Currency code"
-                        ),
-                        'year': openapi.Schema(
-                            type=openapi.TYPE_INTEGER,
-                            description="Manufacturing year"
-                        ),
-                        'mileage': openapi.Schema(
-                            type=openapi.TYPE_INTEGER,
-                            description="Vehicle mileage in kilometers"
-                        ),
-                        'brand': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Car brand/manufacturer"
-                        ),
-                        'model': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Car model"
-                        ),
-                        'generation': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Car generation",
-                            nullable=True
-                        ),
-                        'modification': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Car modification",
-                            nullable=True
-                        ),
-                        'color': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Car color"
-                        ),
-                        'region': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Region/state"
-                        ),
-                        'city': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="City"
-                        ),
-                        'contact_phone': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Contact phone number"
-                        ),
-                        'contact_email': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_EMAIL,
-                            description="Contact email address"
-                        ),
-                        'images': openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            description="List of image URLs",
-                            items=openapi.Schema(
-                                type=openapi.TYPE_STRING,
-                                format=openapi.FORMAT_URI
-                            )
-                        ),
-                        'features': openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            description="List of car features",
-                            items=openapi.Schema(type=openapi.TYPE_STRING)
-                        ),
-                        'condition': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Vehicle condition"
-                        ),
-                        'fuel_type': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Fuel type"
-                        ),
-                        'transmission': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Transmission type"
-                        ),
-                        'body_type': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Body type"
-                        ),
-                        'engine_size': openapi.Schema(
-                            type=openapi.TYPE_NUMBER,
-                            description="Engine displacement in liters"
-                        ),
-                        'horsepower': openapi.Schema(
-                            type=openapi.TYPE_INTEGER,
-                            description="Engine horsepower"
-                        ),
-                        'doors': openapi.Schema(
-                            type=openapi.TYPE_INTEGER,
-                            description="Number of doors"
-                        ),
-                        'seats': openapi.Schema(
-                            type=openapi.TYPE_INTEGER,
-                            description="Number of seats"
-                        ),
-                        'status': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description="Advertisement status",
-                            enum=['active', 'pending', 'rejected', 'draft', 'sold']
-                        ),
-                        'created_at': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_DATETIME,
-                            description="Creation timestamp"
-                        ),
-                        'updated_at': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_DATETIME,
-                            description="Last update timestamp"
-                        ),
-                        'view_count': openapi.Schema(
-                            type=openapi.TYPE_INTEGER,
-                            description="Total number of views"
-                        ),
-                        'seller': openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            description="Seller information",
-                            properties={
-                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                                'username': openapi.Schema(type=openapi.TYPE_STRING),
-                                'account_type': openapi.Schema(type=openapi.TYPE_STRING),
-                                'verified': openapi.Schema(type=openapi.TYPE_BOOLEAN)
-                            }
-                        )
-                    }
-                ),
-                examples={
-                    'application/json': {
-                        'id': 123,
-                        'title': '2019 Toyota Camry Hybrid - Excellent Condition',
-                        'description': 'Well-maintained 2019 Toyota Camry Hybrid with low mileage. All service records available. No accidents, single owner.',
-                        'price': 25000,
-                        'currency': 'USD',
-                        'year': 2019,
-                        'mileage': 45000,
-                        'brand': 'Toyota',
-                        'model': 'Camry',
-                        'generation': 'XV70',
-                        'modification': '2.5L Hybrid LE',
-                        'color': 'Silver',
-                        'region': 'California',
-                        'city': 'Los Angeles',
-                        'contact_phone': '+1234567890',
-                        'contact_email': 'seller@example.com',
-                        'images': [
-                            'http://localhost:8000/media/ads/123/image1.jpg',
-                            'http://localhost:8000/media/ads/123/image2.jpg'
-                        ],
-                        'features': ['Air Conditioning', 'Bluetooth', 'Backup Camera', 'Leather Seats'],
-                        'condition': 'excellent',
-                        'fuel_type': 'hybrid',
-                        'transmission': 'automatic',
-                        'body_type': 'sedan',
-                        'engine_size': 2.5,
-                        'horsepower': 203,
-                        'doors': 4,
-                        'seats': 5,
-                        'status': 'active',
-                        'created_at': '2024-01-15T10:30:00Z',
-                        'updated_at': '2024-01-15T10:30:00Z',
-                        'view_count': 42,
-                        'seller': {
-                            'id': 456,
-                            'username': 'john_doe',
-                            'account_type': 'PREMIUM',
-                            'verified': True
-                        }
-                    }
-                }
-            ),
-            404: openapi.Response(
-                description="Advertisement not found",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING),
-                        'message': openapi.Schema(type=openapi.TYPE_STRING)
-                    }
-                ),
-                examples={
-                    'application/json': {
-                        'error': 'Not found',
-                        'message': 'Advertisement with ID 123 does not exist'
-                    }
-                }
-            ),
-            500: openapi.Response(
-                description="Internal server error",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING),
-                        'message': openapi.Schema(type=openapi.TYPE_STRING)
-                    }
-                )
-            )
-        },
+        operation_description="Retrieve detailed information about a specific car advertisement.",
         tags=['🚗 Advertisements']
     )
     def get(self, request, *args, **kwargs):
@@ -1368,8 +601,8 @@ class CarAdDetailView(generics.RetrieveAPIView):
 
     def _track_ad_view(self, ad, request):
         """Track a view for the ad."""
-        from ..models.car_metadata_model import CarMetadataModel
         from ..services.view_tracker import AdViewTracker
+        from ..models.car_metadata_model import CarMetadataModel
 
         # Get client information
         ip_address = self._get_client_ip(request)
@@ -1431,11 +664,9 @@ class CarAdUpdateView(generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         """Simple update without moderation to avoid errors."""
-        import logging
-
-        from django.utils import timezone
-
         from core.enums.ads import AdStatusEnum
+        from django.utils import timezone
+        import logging
 
         logger = logging.getLogger(__name__)
 
@@ -1511,7 +742,6 @@ class MyCarAdsListView(generics.ListAPIView):
             return CarAd.objects.none()
 
         from django.db.models import Prefetch, Q
-
         from apps.ads.models import AddImageModel
 
         return CarAd.objects.filter(
@@ -1570,10 +800,7 @@ def validate_car_ad(request, pk):
 
         # Интеллектуальная LLM-модерация
         try:
-            from core.services.llm_moderation import (
-                llm_moderation_service,
-                moderate_car_ad_content,
-            )
+            from core.services.llm_moderation import moderate_car_ad_content, llm_moderation_service
 
             moderation_result = moderate_car_ad_content(
                 title=title,
@@ -1682,6 +909,11 @@ class TestModerationView(generics.GenericAPIView):
             description = request.data.get('description', '')
             price = request.data.get('price')
 
+            # DEBUG: Log received content
+            logger.info(f"[TestModeration] Received title: {repr(title)}")
+            logger.info(f"[TestModeration] Received description: {repr(description)}")
+            logger.info(f"[TestModeration] Title type: {type(title)}, encoding: {title.encode('utf-8') if title else 'empty'}")
+
             # Дополнительные поля
             additional_fields = {
                 'model': request.data.get('model', ''),
@@ -1699,6 +931,10 @@ class TestModerationView(generics.GenericAPIView):
                 price=float(price) if price else None,
                 **additional_fields
             )
+            
+            # DEBUG: Log moderation result
+            logger.info(f"[TestModeration] Moderation status: {moderation_result.status.value}")
+            logger.info(f"[TestModeration] Flagged words: {moderation_result.flagged_text}")
 
             # Этап 2: Дополнительные проверки
             additional_checks = self._perform_additional_checks(title, description, price)
@@ -1865,7 +1101,7 @@ def car_ad_statistics(request):
             status=status.HTTP_403_FORBIDDEN
         )
 
-    from django.db.models import Avg, Count, Max, Min
+    from django.db.models import Count, Avg, Min, Max
 
     total_ads = CarAd.objects.count()
     validated_ads = CarAd.objects.filter(is_validated=True).count()
@@ -1931,9 +1167,8 @@ def car_ad_statistics(request):
 @permission_classes([IsAuthenticated])
 def car_ad_analytics(request, ad_id):
     """Get analytics for a specific car ad."""
-    from core.permissions import IsPremiumUser
-
     from ..services.analytics import AdAnalyticsService
+    from core.permissions import IsPremiumUser
 
     # Get the ad
     ad = get_object_or_404(CarAd, id=ad_id)
@@ -2117,10 +1352,9 @@ def cleanup_all_ads(request):
     Используется только для тестирования и разработки.
     """
     try:
-        import sys
-        from io import StringIO
-
         from django.core.management import call_command
+        from io import StringIO
+        import sys
 
         # Перехватываем вывод команды
         old_stdout = sys.stdout

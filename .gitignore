@@ -299,3 +299,7 @@ log/
 /docs/
 /frontend/docs/
 /rabbitmq/
+/.playwright-mcp
+/.mypy_cache
+/.idea
+/__pycache__

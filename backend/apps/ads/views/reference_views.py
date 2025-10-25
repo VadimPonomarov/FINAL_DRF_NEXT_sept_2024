@@ -210,16 +210,30 @@ def car_marks_popular(request):
 @api_view(['GET'])
 @permission_classes([])  # Public access
 def car_marks_choices(request):
-    """Get simplified mark choices for forms."""
-    queryset = CarMarkModel.objects.all().select_related('vehicle_type').order_by('name')
-
-    # ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Фильтрация марок по типу транспорта!
+    """Get simplified mark choices for forms - CACHED for performance."""
+    from django.core.cache import cache
+    
     # Каскадная фильтрация: Тип → Марка → Модель
     vehicle_type_id = request.query_params.get('vehicle_type_id')
+    
+    # Cache key depends on vehicle_type_id
+    cache_key = f'car_marks_choices_vt_{vehicle_type_id or "all"}'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data is not None:
+        return Response(cached_data)
+    
+    # Cache miss - fetch from DB
+    queryset = CarMarkModel.objects.all().only('id', 'name', 'vehicle_type_id').select_related('vehicle_type').order_by('name')
+
     if vehicle_type_id:
         queryset = queryset.filter(vehicle_type_id=vehicle_type_id)
 
     serializer = CarMarkChoiceSerializer(queryset, many=True)
+    
+    # Cache for 1 hour
+    cache.set(cache_key, serializer.data, 3600)
+    
     return Response(serializer.data)
 
 
@@ -459,15 +473,30 @@ def car_models_popular(request):
 @api_view(['GET'])
 @permission_classes([])  # Public access
 def car_models_choices(request):
-    """Get simplified model choices for forms."""
-    queryset = CarModel.objects.all().select_related('mark').order_by('mark__name', 'name')
-
+    """Get simplified model choices for forms - CACHED for performance."""
+    from django.core.cache import cache
+    
     # Filter by mark if provided
     mark_id = request.query_params.get('mark_id')
+    
+    # Cache key depends on mark_id
+    cache_key = f'car_models_choices_mark_{mark_id or "all"}'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data is not None:
+        return Response(cached_data)
+    
+    # Cache miss - fetch from DB
+    queryset = CarModel.objects.all().only('id', 'name', 'mark_id').select_related('mark').order_by('mark__name', 'name')
+
     if mark_id:
         queryset = queryset.filter(mark_id=mark_id)
 
     serializer = CarModelChoiceSerializer(queryset, many=True)
+    
+    # Cache for 1 hour
+    cache.set(cache_key, serializer.data, 3600)
+    
     return Response(serializer.data)
 
 
