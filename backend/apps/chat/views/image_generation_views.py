@@ -453,86 +453,148 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
         logger.info(f"🔗 [mock_algorithm] Session ID: CAR-{car_session_id}")
         logger.info(f"📊 [mock_algorithm] Canonical data: {canonical_data}")
 
-        # Generate images using the mock algorithm
-        generated_images = []
-
-        for index, angle in enumerate(angles):
-            try:
-                logger.info(f"🔄 [mock_algorithm] Generating image {index + 1}/{len(angles)} for angle: {angle}")
-
-                # Create prompt using mock algorithm
-                prompt = create_car_image_prompt(canonical_data, angle, style, car_session_id)
-
-                # Translate to English using mock algorithm
-                english_prompt = mock_cmd._simple_translate_to_english(prompt, canonical_data)
-
-                # Generate image using OpenAI DALL-E 3
-                import os
-                from openai import OpenAI
-
+        # ⚡ АСИНХРОННА ГЕНЕРАЦІЯ: Генеруємо ВСІ промпти паралельно
+        logger.info(f"⚡ [AsyncGen] Starting parallel prompt generation for {len(angles)} angles")
+        
+        from apps.chat.utils.async_image_generation import sync_generate_all_prompts
+        
+        try:
+            # Генеруємо всі промпти паралельно з web search
+            angle_prompts = sync_generate_all_prompts(
+                brand=canonical_data.get('brand', ''),
+                model=canonical_data.get('model', ''),
+                year=canonical_data.get('year', 2020),
+                color=canonical_data.get('color', 'silver'),
+                body_type=canonical_data.get('body_type', 'sedan'),
+                angles=angles
+            )
+            
+            logger.info(f"✅ [AsyncGen] Generated {len(angle_prompts)} prompts in parallel")
+            logger.info(f"🔗 [AsyncGen] All prompts share session_id for consistency")
+            
+        except Exception as e:
+            logger.error(f"❌ [AsyncGen] Parallel generation failed: {e}")
+            import traceback
+            logger.error(f"❌ [AsyncGen] Traceback: {traceback.format_exc()}")
+            # Fallback до послідовної генерації
+            logger.info(f"🔄 [AsyncGen] Falling back to sequential generation")
+            angle_prompts = []
+            for index, angle in enumerate(angles):
                 try:
-                    # Initialize OpenAI client
-                    api_key = os.getenv('OPENAI_API_KEY')
-                    if not api_key:
-                        logger.warning("⚠️ [DALL-E] OPENAI_API_KEY not found in environment, using fallback")
-                        # Use fallback image generation instead of raising error
-                        image_url = generate_placeholder_url(english_prompt)
-                        logger.info(f"🔄 [Fallback] Using placeholder for {angle}: {image_url}")
-                        # Don't return here - continue to create image_obj below
-                        raise Exception("OPENAI_API_KEY not configured - using fallback")
+                    prompt = create_car_image_prompt(canonical_data, angle, style, car_session_id)
+                    angle_prompts.append({
+                        'angle': angle,
+                        'prompt': prompt,
+                        'seed': abs(hash(f"{car_session_id}_{angle}")) % 1000000,
+                        'session_id': f"CAR-{car_session_id}"
+                    })
+                except Exception as fallback_error:
+                    logger.error(f"❌ Fallback also failed for {angle}: {fallback_error}")
+                    continue
 
-                    client = OpenAI(api_key=api_key)
+        # ⚡ АСИНХРОННА ГЕНЕРАЦІЯ ЗОБРАЖЕНЬ: Генеруємо ВСІ зображення паралельно
+        logger.info(f"⚡ [AsyncImages] Starting parallel image generation for {len(angle_prompts)} angles")
+        
+        from apps.chat.utils.async_image_generation import sync_generate_all_images
+        
+        try:
+            # Генеруємо всі зображення паралельно
+            generated_images = sync_generate_all_images(
+                angle_prompts=angle_prompts,
+                canonical_data=canonical_data,
+                mock_cmd=mock_cmd,
+                get_angle_title=get_angle_title
+            )
+            
+            logger.info(f"✅ [AsyncImages] Generated {len(generated_images)} images in parallel")
+            
+        except Exception as e:
+            logger.error(f"❌ [AsyncImages] Parallel generation failed: {e}")
+            # Fallback до послідовної генерації
+            logger.info(f"🔄 [AsyncImages] Falling back to sequential generation")
+            
+            generated_images = []
+            
+            for index, angle_data in enumerate(angle_prompts):
+                try:
+                    angle = angle_data['angle']
+                    prompt = angle_data['prompt']
+                    seed = angle_data['seed']
+                    session_id = angle_data['session_id']
+                    
+                    logger.info(f"🔄 [Fallback] Generating image {index + 1}/{len(angle_prompts)} for angle: {angle}")
 
-                    # DALL-E 3 has a 4000 character limit for prompts
-                    # Simplify prompt if needed
-                    dalle_prompt = english_prompt[:4000] if len(english_prompt) > 4000 else english_prompt
+                    # Translate to English using mock algorithm
+                    english_prompt = mock_cmd._simple_translate_to_english(prompt, canonical_data)
 
-                    logger.info(f"🎨 [DALL-E] Generating image for {angle} with prompt length: {len(dalle_prompt)}")
+                    # Generate image using OpenAI DALL-E 3
+                    import os
+                    from openai import OpenAI
 
-                    # Generate image with DALL-E 3
-                    response = client.images.generate(
-                        model="dall-e-3",
-                        prompt=dalle_prompt,
-                        size="1024x1024",  # DALL-E 3 supports: 1024x1024, 1792x1024, 1024x1792
-                        quality="standard",  # "standard" or "hd"
-                        n=1,
-                    )
+                    try:
+                        # Initialize OpenAI client
+                        api_key = os.getenv('OPENAI_API_KEY')
+                        if not api_key:
+                            logger.warning("⚠️ [DALL-E] OPENAI_API_KEY not found in environment, using fallback")
+                            # Use fallback image generation instead of raising error
+                            image_url = generate_placeholder_url(english_prompt)
+                            logger.info(f"🔄 [Fallback] Using placeholder for {angle}: {image_url}")
+                            # Don't return here - continue to create image_obj below
+                            raise Exception("OPENAI_API_KEY not configured - using fallback")
 
-                    image_url = response.data[0].url
-                    logger.info(f"✅ [DALL-E] Successfully generated image for {angle}: {image_url[:100]}...")
+                        client = OpenAI(api_key=api_key)
+
+                        # DALL-E 3 has a 4000 character limit for prompts
+                        # Simplify prompt if needed
+                        dalle_prompt = english_prompt[:4000] if len(english_prompt) > 4000 else english_prompt
+
+                        logger.info(f"🎨 [DALL-E] Generating image for {angle} with prompt length: {len(dalle_prompt)}")
+
+                        # Generate image with DALL-E 3
+                        response = client.images.generate(
+                            model="dall-e-3",
+                            prompt=dalle_prompt,
+                            size="1024x1024",  # DALL-E 3 supports: 1024x1024, 1792x1024, 1024x1792
+                            quality="standard",  # "standard" or "hd"
+                            n=1,
+                        )
+
+                        image_url = response.data[0].url
+                        logger.info(f"✅ [DALL-E] Successfully generated image for {angle}: {image_url[:100]}...")
+
+                    except Exception as e:
+                        logger.error(f"❌ [DALL-E] Error generating image for {angle}: {e}")
+                        # Fallback to pollinations.ai if DALL-E fails
+                        logger.info(f"🔄 [DALL-E] Falling back to pollinations.ai")
+                        import urllib.parse
+                        
+                        # Використовуємо seed з angle_data для консистентності
+                        enhanced_prompt = f"{english_prompt}. CONSISTENCY: Same vehicle, session {session_id}, seed {seed}. NEGATIVE: cartoon, anime, drawing, sketch, low quality, blurry, distorted, multiple vehicles, people, text, watermarks"
+                        encoded_prompt = urllib.parse.quote(enhanced_prompt)
+                        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&model=flux&enhance=true&seed={seed}&nologo=true"
+                        logger.info(f"🔗 [Pollinations] Fallback URL for {angle}: {image_url[:100]}...")
+                        logger.info(f"🎲 [Pollinations] Using consistent seed: {seed}")
+
+                    # Create image object
+                    image_obj = {
+                        'url': image_url,
+                        'angle': angle,
+                        'title': get_angle_title(angle, canonical_data),
+                        'isMain': index == 0,
+                        'prompt': english_prompt,
+                        'seed': seed,
+                        'session_id': session_id
+                    }
+
+                    generated_images.append(image_obj)
+
+                    logger.info(f"✅ [Fallback] Generated {angle} image with seed {seed} (total: {len(generated_images)})")
 
                 except Exception as e:
-                    logger.error(f"❌ [DALL-E] Error generating image for {angle}: {e}")
-                    # Fallback to pollinations.ai if DALL-E fails
-                    logger.info(f"🔄 [DALL-E] Falling back to pollinations.ai")
-                    import urllib.parse
-                    enhanced_prompt = f"{english_prompt}. NEGATIVE: cartoon, anime, drawing, sketch, low quality, blurry, distorted, multiple vehicles, people, text, watermarks"
-                    encoded_prompt = urllib.parse.quote(enhanced_prompt)
-                    session_id = canonical_data.get('session_id', 'DEFAULT')
-                    seed = abs(hash(session_id)) % 1000000
-                    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&model=flux&enhance=true&seed={seed}&nologo=true"
-                    logger.info(f"🔗 [Pollinations] Fallback URL for {angle}: {image_url[:100]}...")
-
-                # Create image object
-                image_obj = {
-                    'url': image_url,
-                    'angle': angle,
-                    'title': get_angle_title(angle, canonical_data),
-                    'isMain': index == 0,
-                    'prompt': english_prompt,
-                    'seed': seed,
-                    'session_id': session_id
-                }
-
-                generated_images.append(image_obj)
-
-                logger.info(f"✅ [mock_algorithm] Generated {angle} image with seed {seed} (total: {len(generated_images)})")
-
-            except Exception as e:
-                logger.error(f"❌ [mock_algorithm] Error generating {angle} image: {e}")
-                import traceback
-                logger.error(f"❌ [mock_algorithm] Traceback: {traceback.format_exc()}")
-                continue
+                    logger.error(f"❌ [Fallback] Error generating {angle} image: {e}")
+                    import traceback
+                    logger.error(f"❌ [Fallback] Traceback: {traceback.format_exc()}")
+                    continue
 
         logger.info(f"🎉 [mock_algorithm] Successfully generated {len(generated_images)}/{len(angles)} images")
 

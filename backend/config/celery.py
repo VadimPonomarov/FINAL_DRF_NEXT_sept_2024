@@ -31,13 +31,6 @@ app.conf.beat_schedule = {
         'args': (30,),  # Keep tokens for 30 days after expiration
     },
 
-    # Clean temporary files daily (at 4:00 AM)
-    'clean-temp-files-daily': {
-        'task': 'clean_temp_files',
-        'schedule': crontab(hour=4, minute=0),
-        'args': (7,),  # Keep files for 7 days
-    },
-
     # Currency rates updates
     'update-currency-rates-daily': {
         'task': 'apps.currency.tasks.update_currency_rates_daily',
@@ -55,13 +48,6 @@ app.conf.beat_schedule = {
         'task': 'apps.currency.tasks.cleanup_old_currency_rates',
         'schedule': crontab(hour=3, minute=0),  # Daily cleanup at 3:00 AM
         'kwargs': {'days_to_keep': 30}
-    },
-
-    # Clean chat temporary files hourly
-    'cleanup-chat-temp-files-hourly': {
-        'task': 'cleanup_chat_temp_files',
-        'schedule': crontab(minute=0),  # Every hour at minute 0
-        'args': (),
     },
 
     # Analytics tasks

@@ -1,12 +1,18 @@
-"""
-🔍 Brand Logo Web Search для отримання актуальної інформації про логотипи
+﻿"""
+[SEARCH] Brand Logo Web Search для отримання актуальної інформації про логотипи
 
 Використовує DuckDuckGo для пошуку описів логотипів брендів перед генерацією зображень.
+Підтримує асинхронність для швидкої паралельної генерації множини зображень.
 """
 import logging
+import asyncio
 from typing import Optional, Dict
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
+
+# Thread pool для асинхронного виконання web search
+_search_executor = ThreadPoolExecutor(max_workers=10)
 
 def search_brand_logo_info(brand: str) -> Optional[str]:
     """
@@ -24,14 +30,14 @@ def search_brand_logo_info(brand: str) -> Optional[str]:
         # Пошуковий запит
         query = f"{brand} car logo badge emblem description"
         
-        logger.info(f"[BrandSearch] 🔍 Searching for: {query}")
+        logger.info(f"[BrandSearch] [SEARCH] Searching for: {query}")
         
         # Виконуємо пошук
         ddgs = DDGS()
         results = ddgs.text(query, max_results=3)
         
         if not results:
-            logger.warning(f"[BrandSearch] ⚠️ No results found for {brand}")
+            logger.warning(f"[BrandSearch] [WARN] No results found for {brand}")
             return None
         
         # Збираємо описи з результатів
@@ -46,20 +52,20 @@ def search_brand_logo_info(brand: str) -> Optional[str]:
                 descriptions.append(text)
         
         if not descriptions:
-            logger.warning(f"[BrandSearch] ⚠️ No relevant descriptions for {brand}")
+            logger.warning(f"[BrandSearch] [WARN] No relevant descriptions for {brand}")
             return None
         
         # Повертаємо перший найрелевантніший опис (обмежено 200 символів)
         best_description = descriptions[0][:200]
-        logger.info(f"[BrandSearch] ✅ Found description for {brand}: {best_description[:100]}...")
+        logger.info(f"[BrandSearch] [OK] Found description for {brand}: {best_description[:100]}...")
         
         return best_description
         
     except ImportError:
-        logger.error("[BrandSearch] ❌ duckduckgo_search not installed")
+        logger.error("[BrandSearch] [ERR] duckduckgo_search not installed")
         return None
     except Exception as e:
-        logger.error(f"[BrandSearch] ❌ Search error for {brand}: {e}")
+        logger.error(f"[BrandSearch] [ERR] Search error for {brand}: {e}")
         return None
 
 
@@ -137,10 +143,10 @@ def create_smart_logo_prompt(brand: str, model: str, year: int, color: str,
             if features.get("color"):
                 logo_hint += f", {features['color']}"
             logo_hint += ")"
-        logger.info(f"[SmartPrompt] ✅ Logo from web: {logo_hint}")
+        logger.info(f"[SmartPrompt] [OK] Logo from web: {logo_hint}")
     else:
         logo_hint = f"{brand} authentic badge"
-        logger.info(f"[SmartPrompt] ⚠️ Logo fallback")
+        logger.info(f"[SmartPrompt] [WARN] Logo fallback")
     
     # 2. Пошук реального фото автомобіля
     reference = get_real_car_reference_images(brand, model, year, angle)
@@ -148,8 +154,8 @@ def create_smart_logo_prompt(brand: str, model: str, year: int, color: str,
     if reference:
         # Аналізуємо референс для покращення промпту
         ref_details = analyze_reference_image_description(reference)
-        logger.info(f"[SmartPrompt] ✅ Reference found: {reference['url'][:80]}...")
-        logger.info(f"[SmartPrompt] 📝 Reference details: {ref_details}")
+        logger.info(f"[SmartPrompt] [OK] Reference found: {reference['url'][:80]}...")
+        logger.info(f"[SmartPrompt] [INFO] Reference details: {ref_details}")
         
         # Промпт з урахуванням референсу
         prompt = f"""
@@ -161,7 +167,7 @@ def create_smart_logo_prompt(brand: str, model: str, year: int, color: str,
         """.strip()
     else:
         # Промпт без референсу
-        logger.info(f"[SmartPrompt] ⚠️ No reference photo found")
+        logger.info(f"[SmartPrompt] [WARN] No reference photo found")
         prompt = f"""
         {year} {brand} {model} {body_type}, {color}, {angle} view.
         
@@ -170,7 +176,7 @@ def create_smart_logo_prompt(brand: str, model: str, year: int, color: str,
         """.strip()
     
     final_prompt = " ".join(prompt.split())
-    logger.info(f"[SmartPrompt] 📝 Final prompt length: {len(final_prompt)} chars")
+    logger.info(f"[SmartPrompt] [INFO] Final prompt length: {len(final_prompt)} chars")
     
     return final_prompt, reference
 
@@ -190,21 +196,21 @@ def get_brand_logo_reference_image(brand: str) -> Optional[str]:
         
         query = f"{brand} car logo official"
         
-        logger.info(f"[BrandSearch] 🖼️ Searching images for: {query}")
+        logger.info(f"[BrandSearch] [IMG] Searching images for: {query}")
         
         ddgs = DDGS()
         results = ddgs.images(query, max_results=1)
         
         if results and len(results) > 0:
             image_url = results[0].get('image')
-            logger.info(f"[BrandSearch] ✅ Found reference image: {image_url[:100]}...")
+            logger.info(f"[BrandSearch] [OK] Found reference image: {image_url[:100]}...")
             return image_url
         
-        logger.warning(f"[BrandSearch] ⚠️ No reference images found for {brand}")
+        logger.warning(f"[BrandSearch] [WARN] No reference images found for {brand}")
         return None
         
     except Exception as e:
-        logger.error(f"[BrandSearch] ❌ Image search error: {e}")
+        logger.error(f"[BrandSearch] [ERR] Image search error: {e}")
         return None
 
 
@@ -238,13 +244,13 @@ def get_real_car_reference_images(brand: str, model: str, year: int,
         angle_keyword = angle_keywords.get(angle, "front view")
         query = f"{year} {brand} {model} {angle_keyword} photo"
         
-        logger.info(f"[CarReference] 🚗 Searching real photos: {query}")
+        logger.info(f"[CarReference] [CAR] Searching real photos: {query}")
         
         ddgs = DDGS()
         results = ddgs.images(query, max_results=5)
         
         if not results:
-            logger.warning(f"[CarReference] ⚠️ No photos found for {brand} {model}")
+            logger.warning(f"[CarReference] [WARN] No photos found for {brand} {model}")
             return None
         
         # Беремо перше найкраще фото
@@ -257,13 +263,13 @@ def get_real_car_reference_images(brand: str, model: str, year: int,
             "source": best_result.get('source', '')
         }
         
-        logger.info(f"[CarReference] ✅ Found reference photo: {reference['url'][:100]}...")
-        logger.info(f"[CarReference] 📝 Title: {reference['title']}")
+        logger.info(f"[CarReference] [OK] Found reference photo: {reference['url'][:100]}...")
+        logger.info(f"[CarReference] [INFO] Title: {reference['title']}")
         
         return reference
         
     except Exception as e:
-        logger.error(f"[CarReference] ❌ Photo search error: {e}")
+        logger.error(f"[CarReference] [ERR] Photo search error: {e}")
         return None
 
 
