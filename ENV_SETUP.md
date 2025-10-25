@@ -1,336 +1,479 @@
-# 📦 Інструкція з налаштування змінних оточення
+# 🔐 Environment Setup - Повне керівництво
 
-## 🎯 Централізована архітектура
+## 📋 Огляд
 
-Проект використовує **повністю централізовану архітектуру** змінних оточення з єдиною папкою `env-config/` для забезпечення:
-- ✅ Єдиного джерела істини для всіх змінних
-- ✅ Безпечного зберігання секретів
-- ✅ Підтримки Docker та локального запуску
-- ✅ Простоти підтримки та масштабування
-- ✅ DRY принципу - кожна змінна визначена тільки в одному місці
+Детальна інструкція налаштування всіх environment variables та конфігураційних файлів для AutoRia платформи.
 
-## 📁 Структура змінних оточення
+---
+
+## 📁 Структура Environment Files
 
 ```
-env-config/                    # ВСІ змінні оточення в одній папці
-├── .env.base                  # Базові змінні + всі сервіс-специфічні
-├── .env.secrets               # Секрети (НЕ коммітяться в git)
-├── .env.docker                # Переопределения для Docker среды
-├── .env.local                 # Переопределения для локальной разработки
-└── load-env.py                # Загрузчик окружения для тестирования
+env-config/
+├── .env.base          # Базові налаштування (не секретні)
+├── .env.secrets       # API ключі та паролі (ЗАШИФРОВАНІ)
+├── .env.local         # Локальні переопределення (gitignored)
+└── .env.docker        # Docker-specific налаштування
+
+backend/
+└── .env               # Backend-specific (gitignored)
+
+frontend/
+└── .env.local         # Frontend-specific (gitignored)
 ```
 
-**Важливо:** Всі локальні `.env` файли в папках сервісів видалені! Тепер все централізовано в `env-config/`.
+---
 
-## 🚀 Швидке налаштування
+## 🔧 Backend Environment (.env.base)
 
-### 1. Перевірка файлів
-Всі необхідні файли вже створені в `env-config/`:
-- ✅ `.env.base` - базові змінні (вже налаштовано)
-- ✅ `.env.secrets` - секрети (перевірте значення)
-- ✅ `.env.docker` - Docker переопределения (вже налаштовано)
-- ✅ `.env.local` - локальні переопределения (вже налаштовано)
-
-### 2. Налаштування секретів
-Перевірте та за потреби оновіть `env-config/.env.secrets`:
+### Django Core
 
 ```bash
-# Обов'язкові секрети для роботи:
-POSTGRES_PASSWORD=password                    # Пароль PostgreSQL
-SECRET_KEY=django-insecure-your-secret-key... # Django secret key
-NEXTAUTH_SECRET=bXL+w0/zn9FX477unDrwiDMw...   # NextAuth secret
+# Режим відладки (ОБОВ'ЯЗКОВО False в production!)
+DEBUG=True
 
-# Google OAuth (незашифровані для простоти):
-GOOGLE_CLIENT_ID=317007351021-lhq7qt2ppsnihugttrs2f81nmvjbi0vr...
-GOOGLE_CLIENT_SECRET=GOCSPX-test_secret_key_for_development
-GOOGLE_API_KEY=test_google_api_key_for_development
+# Секретний ключ Django (змінити в production!)
+SECRET_KEY=django-insecure-change-me-in-production
 
-# Опціональні (для email):
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-gmail-app-password
+# Дозволені хости
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,*
 
-# Примітка: Зашифровані версії (ENCRYPTED_*) залишені для сумісності,
-# але використовуються незашифровані версії для простоти розробки
+# CSRF trusted origins
+CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
 
-### 3. Готово!
-Система вже налаштована та готова до роботи. Локальні перевизначення в `.env.local` та Docker налаштування в `.env.docker` вже оптимізовані.
+**⚠️ ВАЖЛИВО**: 
+- `SECRET_KEY` має бути мінімум 50 символів
+- В production використовуйте `python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`
 
-## 📋 Детальний опис файлів
+### Database (PostgreSQL)
 
-### 🔧 env-config/.env.base
-**Призначення:** Базові змінні + всі сервіс-специфічні змінні
-**Коммітиться:** ✅ Так (публічні дані)
+```bash
+# PostgreSQL налаштування
+POSTGRES_DB=autoria
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=localhost  # або 'db' для Docker
+POSTGRES_PORT=5432
 
-Містить всі змінні в логічних розділах:
-- **Основні налаштування проекту** (назва, версія, compose project)
-- **Мережеві налаштування** (PostgreSQL, Redis, RabbitMQ хости/порти)
-- **URL сервісів** (внутрішні Docker URL та публічні browser URL)
-- **NextAuth налаштування** (URL для аутентифікації)
-- **Celery налаштування** (result backend)
-- **Django специфічні** (порт, settings, медіа, кеш, сесії, безпека)
-- **Frontend специфічні** (Next.js порт, build ID, telemetry)
-- **Celery специфічні** (worker concurrency, prefetch, beat schedule)
-
-### 🔐 env-config/.env.secrets
-**Призначення:** Секретні дані
-**Коммітиться:** ❌ НІ (додано в .gitignore)
-
-Містить секрети в логічних групах:
-- **Основні секрети системи** (Django SECRET_KEY, JWT secret, NextAuth secret)
-- **Паролі баз даних** (PostgreSQL, RabbitMQ паролі)
-- **OAuth секрети** (Google Client ID/Secret)
-- **API ключі** (Google API, Google Maps, Tavily AI)
-- **Email секрети** (SMTP username/password)
-
-### 🐳 env-config/.env.docker
-**Призначення:** Переопределения для Docker среды
-**Коммітиться:** ✅ Так
-
-Містить тільки переопределения для Docker:
-- `IS_DOCKER=true` / `NEXT_PUBLIC_IS_DOCKER=true`
-- `DJANGO_ENV=production`
-- CORS налаштування для Docker контейнерів
-- Redis URL для фронтенда (внутрішні Docker URL)
-
-### 🏠 env-config/.env.local
-**Призначення:** Переопределения для локальної розробки
-**Коммітиться:** ✅ Так
-
-Містить тільки переопределения для локального запуску:
-- `IS_DOCKER=false` / `NEXT_PUBLIC_IS_DOCKER=false`
-- `DJANGO_ENV=development`
-- Локальні хости (`localhost` замість `redis`, `pg`, `rabbitmq`)
-- DEBUG режими та детальне логування
-
-## ⚙️ Порядок завантаження змінних
-
-### 🐳 Docker Compose
-Використовується YAML anchor для всіх сервісів:
-
-```yaml
-# Централізований блок файлів окружения
-x-env-files: &env-files
-  - ./env-config/.env.base       # 1. Базові + всі сервіс-специфічні
-  - ./env-config/.env.secrets    # 2. Секрети
-  - ./env-config/.env.docker     # 3. Docker переопределения
-
-services:
-  app:
-    env_file: *env-files         # Одна строка для всех сервисов!
-
-  frontend:
-    env_file: *env-files
-
-  # ... всі інші сервіси використовують той же блок
+# Або використовуйте DATABASE_URL
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/autoria
 ```
 
-### 💻 Локальна розробка
+**Для Docker Compose**:
+```bash
+POSTGRES_HOST=db
+DATABASE_URL=postgresql://postgres:postgres@db:5432/autoria
+```
 
-#### 🐍 Python сервіси (Django/Celery)
-Для локального запуску використовуйте `.env.local` замість `.env.docker`:
+### Redis
+
+```bash
+# Redis налаштування
+REDIS_HOST=localhost  # або 'redis' для Docker
+REDIS_PORT=6379
+REDIS_DB=1
+REDIS_PASSWORD=  # Залишити порожнім або встановити пароль
+
+# Або використовуйте REDIS_URL
+REDIS_URL=redis://localhost:6379/1
+# Для Docker: redis://redis:6379/1
+```
+
+### CORS (Cross-Origin Resource Sharing)
+
+```bash
+# Frontend URLs для CORS
+FRONTEND_URL=http://localhost:3000
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# В production додайте ваші домени
+# CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+```
+
+### URLs
+
+```bash
+# Backend URL
+BACKEND_URL=http://localhost:8000
+
+# Frontend URL
+FRONTEND_URL=http://localhost:3000
+```
+
+---
+
+## 🔑 API Keys та Секрети (.env.secrets)
+
+### Google Maps API
+
+```bash
+# Google Cloud Console: https://console.cloud.google.com/
+GOOGLE_MAPS_API_KEY=AIzaSyC...your_key_here
+```
+
+**Як отримати**:
+1. Перейти на https://console.cloud.google.com/
+2. Створити проект або вибрати існуючий
+3. Enable APIs:
+   - Geocoding API ✅
+   - Maps JavaScript API ✅
+   - Places API (опціонально)
+4. Credentials → Create credentials → API key
+5. Обмежити ключ (Application restrictions → HTTP referrers)
+6. Додати домени: `localhost:3000`, `yourdomain.com`
+
+### Email (SMTP)
+
+```bash
+# Gmail SMTP
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your_email@gmail.com
+EMAIL_HOST_PASSWORD=your_app_specific_password
+
+# Sender email
+DEFAULT_FROM_EMAIL=noreply@autoria.com
+```
+
+**Gmail App Password** (рекомендовано):
+1. Google Account → Security
+2. Enable 2-Step Verification
+3. App passwords → Generate
+4. Використати згенерований 16-символьний пароль
+
+### NBU API (Курси валют)
+
+```bash
+# Національний банк України - безкоштовно, без ключа!
+NBU_API_URL=https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange
+```
+
+**Особливості**:
+- ❌ Реєстрація не потрібна
+- ❌ API ключ не потрібен
+- ✅ Ліміт: ~100 запитів/день (достатньо з кешем)
+
+### PrivatBank API
+
+```bash
+# PrivatBank - безкоштовно, без ключа!
+PRIVATBANK_API_URL=https://api.privatbank.ua/p24api/pubinfo?exchange&coursid=5
+```
+
+**Особливості**:
+- ❌ Реєстрація не потрібна
+- ❌ API ключ не потрібен
+- ✅ Public API
+
+### DummyJSON (для тестування)
+
+```bash
+# Тестовий API для frontend
+NEXT_PUBLIC_DUMMY_API_BASE_URL=https://dummyjson.com
+```
+
+**Тестові дані**:
+- Username: `emilys`
+- Password: `emilyspass`
+
+---
+
+## 🔐 Шифрування Секретів
+
+### Автоматичне шифрування
+
+```bash
+# Запустити скрипт шифрування
+cd backend
+python scripts/encrypt_keys_for_backend.py
+
+# Введіть паролі та ключі коли буде запрошено
+# Скрипт зашифрує та збереже в env-config/.env.secrets
+```
+
+### Ручне шифрування (якщо потрібно)
 
 ```python
-# Python (Django/Celery)
+from cryptography.fernet import Fernet
+
+# Згенерувати ключ шифрування
+key = Fernet.generate_key()
+cipher = Fernet(key)
+
+# Зашифрувати значення
+encrypted = cipher.encrypt(b"your_secret_value")
+print(encrypted.decode())
+
+# Зберегти ключ шифрування в безпечному місці!
+```
+
+### Розшифрування (автоматичне)
+
+Django автоматично розшифровує при завантаженні:
+
+```python
+# backend/config/settings.py
+from core.services.encryption_service import decrypt_env_value
+
+GOOGLE_MAPS_API_KEY = decrypt_env_value(os.getenv('GOOGLE_MAPS_API_KEY'))
+```
+
+---
+
+## 🎨 Frontend Environment (.env.local)
+
+### Next.js Core
+
+```bash
+# URLs
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+BACKEND_API_URL=http://localhost:8000  # Для server-side
+
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=generate_min_32_chars_random_string
+```
+
+**Генерація NEXTAUTH_SECRET**:
+```bash
+# OpenSSL
+openssl rand -base64 32
+
+# Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+### API Keys
+
+```bash
+# Google Maps (той самий ключ що і в backend)
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyC...your_key_here
+
+# DummyJSON (для тестування)
+NEXT_PUBLIC_DUMMY_API_BASE_URL=https://dummyjson.com
+```
+
+### Redis (для токенів)
+
+```bash
+REDIS_URL=redis://localhost:6379
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=  # Якщо встановлений пароль
+```
+
+---
+
+## 🐳 Docker Environment (.env.docker)
+
+```bash
+# Docker Compose specific
+IS_DOCKER=true
+
+# Database
+POSTGRES_HOST=db
+DATABASE_URL=postgresql://postgres:postgres@db:5432/autoria
+
+# Redis
+REDIS_HOST=redis
+REDIS_URL=redis://redis:6379/1
+
+# URLs
+BACKEND_URL=http://app:8000
+FRONTEND_URL=http://frontend:3000
+```
+
+---
+
+## 📝 Приклади Конфігурацій
+
+### Local Development (без Docker)
+
+**env-config/.env.base**:
+```bash
+DEBUG=True
+POSTGRES_HOST=localhost
+REDIS_HOST=localhost
+BACKEND_URL=http://localhost:8000
+FRONTEND_URL=http://localhost:3000
+```
+
+**frontend/.env.local**:
+```bash
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+NEXTAUTH_URL=http://localhost:3000
+REDIS_URL=redis://localhost:6379
+```
+
+### Docker Development
+
+**env-config/.env.docker**:
+```bash
+IS_DOCKER=true
+POSTGRES_HOST=db
+REDIS_HOST=redis
+BACKEND_URL=http://app:8000
+```
+
+### Production
+
+**env-config/.env.base** (production):
+```bash
+DEBUG=False
+SECRET_KEY=<secure-50+-char-random-key>
+ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com,api.yourdomain.com
+
+POSTGRES_HOST=your-db-host.com
+POSTGRES_DB=autoria_prod
+POSTGRES_USER=autoria_user
+
+REDIS_HOST=your-redis-host.com
+REDIS_PASSWORD=<secure-redis-password>
+
+BACKEND_URL=https://api.yourdomain.com
+FRONTEND_URL=https://yourdomain.com
+
+# HTTPS/SSL
+SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+```
+
+**frontend/.env.production**:
+```bash
+NEXT_PUBLIC_BACKEND_URL=https://api.yourdomain.com
+NEXTAUTH_URL=https://yourdomain.com
+NEXTAUTH_SECRET=<secure-64+-char-random-key>
+```
+
+---
+
+## ✅ Чек-лист Налаштування
+
+### Backend:
+- [ ] `env-config/.env.base` створено
+- [ ] `env-config/.env.secrets` створено та зашифровано
+- [ ] PostgreSQL credentials налаштовані
+- [ ] Redis URL налаштований
+- [ ] Google Maps API ключ додано
+- [ ] Email SMTP налаштовано
+- [ ] `DEBUG=False` в production
+- [ ] `SECRET_KEY` згенерований та безпечний
+- [ ] `ALLOWED_HOSTS` налаштовані правильно
+
+### Frontend:
+- [ ] `frontend/.env.local` створено
+- [ ] `NEXTAUTH_SECRET` згенерований (min 32 chars)
+- [ ] Backend URL налаштований
+- [ ] Google Maps ключ додано
+- [ ] Redis URL налаштований
+
+### Security:
+- [ ] Всі `.env*` файли в `.gitignore`
+- [ ] Секретні ключі зашифровані
+- [ ] Production credentials ≠ development
+- [ ] HTTPS увімкнено в production
+- [ ] CORS налаштовано правильно
+
+---
+
+## 🔍 Перевірка Налаштувань
+
+### Backend
+
+```bash
+cd backend
+
+# Перевірити що Django читає env
+python manage.py shell
+>>> import os
+>>> os.getenv('DEBUG')
+'True'
+>>> os.getenv('DATABASE_URL')
+'postgresql://...'
+
+# Перевірити підключення до DB
+python manage.py dbshell
+
+# Перевірити Redis
+python manage.py shell
+>>> from django.core.cache import cache
+>>> cache.set('test', 'works')
+>>> cache.get('test')
+'works'
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+# Перевірити env variables
+npm run dev
+
+# В браузері console:
+console.log(process.env.NEXT_PUBLIC_BACKEND_URL)
+```
+
+---
+
+## 🚨 Troubleshooting
+
+### Проблема: Django не читає .env файли
+
+**Рішення**:
+```bash
+# Перевірити що python-dotenv встановлений
+pip install python-dotenv
+
+# Перевірити порядок завантаження в settings.py
 from dotenv import load_dotenv
-load_dotenv("env-config/.env.base")      # Базові змінні
-load_dotenv("env-config/.env.secrets")   # Секрети
-load_dotenv("env-config/.env.local")     # Локальні переопределения
+load_dotenv()
 ```
 
-#### ⚛️ Next.js Frontend
-Next.js має власну систему завантаження `.env` файлів, але для інтеграції з централізованою архітектурою використовується програмна загрузка в `next.config.js`.
+### Проблема: Frontend не бачить NEXT_PUBLIC_* змінні
 
-**Підхід:** Програмна загрузка переменних з `env-config/` в `frontend/next.config.js`
+**Рішення**:
+- Перезапустити dev server: `npm run dev`
+- Перевірити що змінні починаються з `NEXT_PUBLIC_`
+- Rebuild: `npm run build`
 
-```javascript
-// frontend/next.config.js
-// Загрузка переменных среды из централизованной env-config/ директории
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+### Проблема: Redis connection refused
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Функция для загрузки .env файла
-function loadEnvFile(filePath) {
-  if (!fs.existsSync(filePath)) return {};
-
-  const content = fs.readFileSync(filePath, 'utf8');
-  const env = {};
-
-  content.split('\n').forEach(line => {
-    line = line.trim();
-    if (line && !line.startsWith('#') && line.includes('=')) {
-      const [key, ...valueParts] = line.split('=');
-      const value = valueParts.join('=');
-      env[key.trim()] = value.trim();
-    }
-  });
-
-  return env;
-}
-
-// Загружаем переменные из env-config/ в правильном порядке
-const envConfigDir = path.resolve(__dirname, '../env-config');
-const baseEnv = loadEnvFile(path.join(envConfigDir, '.env.base'));
-const secretsEnv = loadEnvFile(path.join(envConfigDir, '.env.secrets'));
-const localEnv = loadEnvFile(path.join(envConfigDir, '.env.local'));
-
-// Объединяем переменные (поздние перезаписывают ранние)
-const allEnv = { ...baseEnv, ...secretsEnv, ...localEnv };
-
-// Устанавливаем переменные в process.env
-Object.entries(allEnv).forEach(([key, value]) => {
-  if (!process.env[key]) {
-    process.env[key] = value;
-  }
-});
-
-console.log('🔧 Loaded environment variables from env-config/');
-```
-
-**Переваги цього підходу:**
-- ✅ **Повне дотримання DRY** - змінні визначені тільки в `env-config/`
-- ✅ **Централізована архітектура** - жодного дублювання
-- ✅ **Автоматична загрузка** - Next.js завантажує при старті
-- ✅ **Правильний порядок** - base → secrets → local
-- ✅ **Немає локальних .env файлів** в `frontend/` директорії
-- ✅ **Автоматична розшифровка** - зашифровані змінні (`ENCRYPTED_*`) автоматично розшифровуються
-
-**Обробка зашифрованих змінних:**
-Frontend автоматично розшифровує `ENCRYPTED_GOOGLE_CLIENT_SECRET` та інші зашифровані змінні через `cryptoUtils.ts`.
-
-### 🧪 Тестування конфігурації
-Використовуйте `load-env.py` для перевірки:
-
+**Рішення**:
 ```bash
-cd env-config
-python load-env.py
+# Перевірити що Redis працює
+redis-cli ping
+# Має повернути: PONG
+
+# Або через Docker
+docker ps | grep redis
 ```
 
-### 🔄 Автоматична синхронізація
-Frontend автоматично завантажує всі змінні з `env-config/` при кожному запуску через `next.config.js`.
+### Проблема: PostgreSQL connection error
 
-**Жодної ручної синхронізації не потрібно:**
-- ✅ Зміни в `env-config/.env.base` → автоматично доступні у frontend
-- ✅ Зміни в `env-config/.env.secrets` → автоматично доступні у frontend
-- ✅ Зміни в `env-config/.env.local` → автоматично доступні у frontend
-- ✅ Перезапуск `npm run dev` завантажує нові значення
-
-## 🔐 Безпека
-
-### ⚠️ Критично важливо:
-1. **НЕ коммітити** `env-config/.env.secrets` в git
-2. **Файл вже додано** в `.gitignore`
-3. **Використовувати** сильні паролі та ключі
-4. **Регулярно ротувати** секрети в продакшені
-
-### ✅ Файли в git:
-- ✅ `env-config/.env.base` - базові + всі сервіс-специфічні змінні
-- ✅ `env-config/.env.docker` - Docker переопределения
-- ✅ `env-config/.env.local` - локальні переопределения
-- ✅ `env-config/load-env.py` - тестування конфігурації
-- ✅ `frontend/next.config.js` - програмна загрузка з env-config/
-
-### ❌ НЕ в git:
-- ❌ `env-config/.env.secrets` - секретні дані
-
-### 🚫 Файли, які НЕ повинні існувати:
-- ❌ `frontend/.env.local` - видалено (порушував DRY принцип)
-- ❌ `frontend/.env.docker` - видалено (дублював env-config/.env.docker)
-- ❌ `backend/.env*` - видалено (використовує env-config/ через load_dotenv)
-
-### 📝 Примітка про архітектуру:
-**Повна централізація:** Всі змінні оточення визначені **тільки** в `env-config/` директорії.
-Frontend завантажує їх програмно через `next.config.js`, backend - через `load_dotenv()`.
-
-### ❌ Файли НЕ в git:
-- ❌ `.env/.env.secrets` - реальні секрети
-
-## 🧪 Перевірка конфігурації
-
-### Перевірка завантаження змінних:
+**Рішення**:
 ```bash
-# Перевірити конфігурацію Docker Compose
-docker-compose config
+# Перевірити підключення
+psql -h localhost -U postgres -d autoria
 
-# Перевірити змінні в контейнері
-docker-compose exec app env | grep POSTGRES
-docker-compose exec app env | grep SECRET_KEY
+# Перевірити що DB існує
+psql -h localhost -U postgres -c "SELECT datname FROM pg_database;"
 ```
 
-### Перевірка секретів:
-```bash
-# Переконатися, що секрети завантажені
-docker-compose exec app printenv | grep -E "(PASSWORD|SECRET|KEY)" | head -5
-```
+---
 
-## 🔧 Додавання нового сервіса
+## 📚 Пов'язані документи
 
-1. **Створити папку сервіса:**
-   ```bash
-   mkdir new-service
-   ```
+- [SETUP.md](./SETUP.md) - Повна інструкція встановлення
+- [README.md](./README.md) - Огляд проекту
+- [docs/SETUP_GUIDE.md](./docs/SETUP_GUIDE.md) - Детальний гайд налаштування API
 
-2. **Створити .env файл сервіса:**
-   ```bash
-   touch new-service/.env
-   ```
+---
 
-3. **Додати тільки специфічні змінні:**
-   ```bash
-   # new-service/.env
-   NEW_SERVICE_PORT=9000
-   NEW_SERVICE_SPECIFIC_CONFIG=value
-   ```
-
-4. **Оновити docker-compose.yml:**
-   ```yaml
-   new-service:
-     env_file:
-       - ./.env/.env.base
-       - ./.env/.env.secrets
-       - ./.env/.env.local
-       - ./new-service/.env
-   ```
-
-## 🎯 Переваги нової архітектури
-
-✅ **DRY принцип** - кожна змінна визначена тільки в одному місці
-✅ **Безпека** - секрети централізовані та не коммітяться
-✅ **Масштабованість** - легко додавати нові сервіси
-✅ **Гнучкість** - підтримка Docker та локальної розробки
-✅ **Прозорість** - ясно, де яка змінна визначена
-
-## 🚨 Усунення неполадок
-
-### Змінна не знайдена:
-1. Перевірити `.env/.env.base` - загальні змінні
-2. Перевірити `.env/.env.secrets` - секретні змінні
-3. Перевірити `service/.env` - специфічні змінні
-4. Перевірити порядок завантаження в docker-compose.yml
-
-### Конфлікт змінних:
-- Змінні з пізніших файлів перекривають попередні
-- Порядок: base → secrets → local → service-specific
-
-### Секрети не завантажуються:
-1. Переконатися, що `.env/.env.secrets` існує
-2. Перевірити права доступу до файлу
-3. Переконатися, що файл вказаний в docker-compose.yml
-
-### Проблеми з Docker Compose:
-```bash
-# Перевірити синтаксис конфігурації
-docker-compose config
-
-# Перевірити, які змінні завантажені
-docker-compose exec app env | head -20
-
-# Перезапустити з новими змінними
-docker-compose down && docker-compose up -d
-```
-
-Ця архітектура забезпечує **максимальну безпеку**, **простоту управління** та **легке масштабування**! 🎯
+**Версія**: 2.0  
+**Останнє оновлення**: 2025-01-25  
+**Мова**: Українська 🇺🇦
