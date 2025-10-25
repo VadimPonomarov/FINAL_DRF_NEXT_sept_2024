@@ -103,11 +103,8 @@ export const useRecipes = ({initialData}: IProps) => {
     useEffect(() => {
         if (data) {
             const allRecipes = data.pages.flatMap((page) => page.products || []);
-            const startIndex = Number(skip);
-            const endIndex = limit > 0 ? Number(skip) + Number(limit) : allRecipes.length;
-            const visibleRecipes = allRecipes.slice(startIndex, endIndex);
-
-            const validRecipes = visibleRecipes.filter(recipe => recipe && recipe.id);
+            // Не нужно применять slice - сервер уже вернул правильные данные с учетом skip/limit
+            const validRecipes = allRecipes.filter(recipe => recipe && recipe.id);
             const uniqueRecipes = Array.from(new Set(validRecipes.map(recipe => recipe.id)))
                 .map(id => validRecipes.find(recipe => recipe.id === id));
 
