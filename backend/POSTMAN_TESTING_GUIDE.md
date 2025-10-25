@@ -17,6 +17,16 @@
 - **Newman** установлен: `npm install -g newman`
 - **Postman** (опционально, для визуального тестирования)
 
+### 📦 Канонические коллекции
+
+| Коллекция | Запросов | Использование |
+|-----------|----------|---------------|
+| **Complete Test Suite** ⭐ | 94 | Полный набор тестов (рекомендуется) |
+| **Core API** | 32 | Основные API endpoints |
+| **Currency API** | 7 | Валютные операции |
+| **Moderation API** | 5 | Модерация контента |
+| **Full Swagger** | 197 | Все endpoints из Swagger |
+
 ### Шаг 1: Создайте тестового суперпользователя
 
 ```bash
@@ -53,6 +63,30 @@ newman run AutoRia_API_Moderation.postman_collection.json \
 newman run AutoRia_Complete_197_Endpoints_FULL_SWAGGER.postman_collection.json \
     -e AutoRia_API_Complete_Test_Suite.postman_environment.json \
     --timeout-request 30000
+```
+
+### Запуск конкретных групп (папок) внутри коллекции
+
+```bash
+# Критичные endpoints
+newman run AutoRia_API_Complete_Test_Suite.postman_collection.json \
+    -e AutoRia_API_Complete_Test_Suite.postman_environment.json \
+    --folder "📁 Essential Endpoints (11 requests)"
+
+# Основные API
+newman run AutoRia_API_Complete_Test_Suite.postman_collection.json \
+    -e AutoRia_API_Complete_Test_Suite.postman_environment.json \
+    --folder "📁 Core API (32 requests)"
+
+# Административные функции
+newman run AutoRia_API_Complete_Test_Suite.postman_collection.json \
+    -e AutoRia_API_Complete_Test_Suite.postman_environment.json \
+    --folder "📁 Administration (13 requests)"
+
+# AI сервисы
+newman run AutoRia_API_Complete_Test_Suite.postman_collection.json \
+    -e AutoRia_API_Complete_Test_Suite.postman_environment.json \
+    --folder "📁 AI Services (9 requests)"
 ```
 
 ## 📦 Доступные коллекции
@@ -457,6 +491,11 @@ pm.test("✅ Response has data", () => {
 
 ---
 
-**Версия:** 1.0
-**Последнее обновление:** 2025-01-24
+## 📝 История изменений
+
+- **v1.1** (2025-01-25): Объединение с POSTMAN_USAGE_GUIDE, добавлена секция о запуске конкретных папок
+- **v1.0** (2025-01-24): Первая версия руководства
+
+**Версия:** 1.1  
+**Последнее обновление:** 2025-01-25
 
