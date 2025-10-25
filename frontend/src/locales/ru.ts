@@ -346,6 +346,7 @@ export default {
   },
   navigation: {
     home: "Главная",
+    search: "Поиск",
     myAds: "Мои объявления",
     favorites: "Избранные",
     analytics: "Аналитика",

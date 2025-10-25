@@ -82,6 +82,12 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
       id: 'home'
     },
     {
+      href: '/autoria/search',
+      label: t('navigation.search'),
+      icon: <Search className="h-4 w-4" />,
+      id: 'search'
+    },
+    {
       href: '/autoria/my-ads',
       label: t('navigation.myAds'),
       icon: <Car className="h-4 w-4" />,

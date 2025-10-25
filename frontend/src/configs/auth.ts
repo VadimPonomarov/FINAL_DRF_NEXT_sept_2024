@@ -83,10 +83,13 @@ export const authConfig: AuthOptions = {
     maxAge: 60 * 60 * 24 * 30, // 30 days (увеличено с 24 часов)
     updateAge: 60 * 60 * 24, // Обновлять сессию каждые 24 часа
   },
-  // НЕ указываем pages - пусть NextAuth использует встроенные страницы
-  // Встроенная страница входа: /api/auth/signin
-  // Встроенная страница выхода: /api/auth/signout
-  // Встроенная страница ошибок: /api/auth/error
+  // Настраиваем страницы NextAuth
+  pages: {
+    signIn: '/api/auth/signin',    // Встроенная страница входа
+    signOut: '/api/auth/signout',  // Встроенная страница выхода
+    error: '/api/auth/error',      // Встроенная страница ошибок
+    // НЕ указываем newUser - по умолчанию редирект на callbackUrl или "/"
+  },
   callbacks: {
     // JWT callback - добавляем данные в токен
     async jwt({ token, user }) {

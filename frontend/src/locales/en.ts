@@ -346,6 +346,7 @@ export default {
   },
   navigation: {
     home: "Home",
+    search: "Search",
     myAds: "My Ads",
     favorites: "Favorites",
     analytics: "Analytics",
