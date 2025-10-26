@@ -62,10 +62,6 @@ def print_error(message):
     """Виводить повідомлення про помилку"""
     print(f"{Colors.FAIL}[ERROR] {message}{Colors.ENDC}")
 
-def print_warning(message):
-    """Виводить попередження"""
-    print(f"{Colors.WARNING}[WARNING] {message}{Colors.ENDC}")
-
 def show_progress_bar(current, total, description="", width=50):
     """Показывает прогресс-бар"""
     percent = (current / total) * 100
@@ -1397,6 +1393,62 @@ def choose_services_to_rebuild():
         except (ValueError, KeyboardInterrupt):
             print("❌ Неверный формат. Используйте номера через запятую.")
 
+def remove_conflicting_containers(services_list):
+    """Видаляє конфліктуючі контейнери для вказаних сервісів"""
+    print("🧹 Видалення конфліктуючих контейнерів...")
+    
+    # Мапінг сервісів до можливих імен контейнерів
+    service_container_names = {
+        "app": ["app", "autoria_fresh_deploy-app-1", "autoria_clean_install-app-1"],
+        "frontend": ["frontend"],
+        "pg": ["pg"],
+        "redis": ["redis"],
+        "redis-insight": ["redis-insight"],
+        "rabbitmq": ["rabbitmq"],
+        "celery-worker": ["celery-worker"],
+        "celery-beat": ["celery-beat"],
+        "flower": ["celery-flower", "flower"],
+        "mailing": ["mailing"],
+        "nginx": ["nginx"]
+    }
+    
+    containers_to_remove = []
+    for service in services_list:
+        if service in service_container_names:
+            containers_to_remove.extend(service_container_names[service])
+    
+    if containers_to_remove:
+        # Зупиняємо контейнери
+        containers_str = " ".join(containers_to_remove)
+        print(f"   Зупинка: {containers_str}")
+        subprocess.run(
+            f"docker stop {containers_str}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        
+        # Видаляємо контейнери
+        print(f"   Видалення: {containers_str}")
+        result = subprocess.run(
+            f"docker rm -f {containers_str}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        
+        if result.returncode == 0:
+            print_success(f"✅ Видалено конфліктуючі контейнери: {len(containers_to_remove)}")
+            return True
+        else:
+            print_warning(f"⚠️ Деякі контейнери не знайдені (це нормально)")
+            return True
+    else:
+        print("   Немає контейнерів для видалення")
+        return True
+
 def restart_existing_containers(selected_services, frontend_mode):
     """Швидкий перезапуск існуючих контейнерів"""
     print("\n🔄 РЕЖИМ: Швидкий перезапуск існуючих контейнерів")
@@ -1405,19 +1457,23 @@ def restart_existing_containers(selected_services, frontend_mode):
     print("💡 Час виконання: ~1-5 хвилин (залежно від системи)")
     print()
 
-    # Етап 1: Зупинка контейнерів
-    show_progress_bar(1, 4, "🛑 Зупинка всіх контейнерів...")
+    # Етап 1: Видалення конфліктуючих контейнерів
+    show_progress_bar(1, 5, "🧹 Видалення конфліктуючих контейнерів...")
+    remove_conflicting_containers(selected_services)
+    
+    # Етап 2: Зупинка контейнерів проекту
+    show_progress_bar(2, 5, "🛑 Зупинка контейнерів проекту...")
     if not run_command("docker-compose down", capture_output=True):
         print_error("❌ Помилка при зупинці контейнерів")
         return None
-    print_success("✅ Всі контейнери зупинені")
+    print_success("✅ Контейнери проекту зупинені")
 
-    # Етап 2: Очищення мережі (опціонально)
-    show_progress_bar(2, 4, "🧹 Очищення Docker мереж...")
+    # Етап 3: Очищення мережі (опціонально)
+    show_progress_bar(3, 5, "🧹 Очищення Docker мереж...")
     run_command("docker network prune -f", capture_output=True, check=False)
 
-    # Етап 3: Запуск backend контейнерів (БЕЗ nginx)
-    show_progress_bar(3, 4, "🚀 Запуск backend контейнерів...")
+    # Етап 4: Запуск backend контейнерів (БЕЗ nginx)
+    show_progress_bar(4, 5, "🚀 Запуск backend контейнерів...")
 
     # Запускаем сначала все backend сервисы, кроме nginx (nginx запустится ПОСЛЕ фронтенда)
     backend_services = ["app", "pg", "redis", "redis-insight", "rabbitmq", "celery-worker", "celery-beat", "flower", "mailing"]
@@ -1466,8 +1522,8 @@ def restart_existing_containers(selected_services, frontend_mode):
         print_error(f"❌ Неочікувана помилка: {e}")
         return None
 
-    # Етап 4: Очікування готовності
-    show_progress_bar(4, 4, "⏳ Очікування готовності сервісів...")
+    # Етап 5: Очікування готовності
+    show_progress_bar(5, 5, "⏳ Очікування готовності сервісів...")
     print("⏳ Очікування ініціалізації сервісів...")
 
     # Показуємо прогрес очікування з перевіркою статусу
@@ -1499,14 +1555,32 @@ def selective_rebuild_services(selected_services, services_to_rebuild, frontend_
     """Выборочная пересборка указанных сервисов"""
     print(f"🎯 Выборочная пересборка сервисов: {', '.join(services_to_rebuild)}")
 
-    # Останавливаем все контейнеры
-    print("🛑 Остановка всех контейнеров...")
+    # Видаляємо конфліктуючі контейнери для сервісів, які перебудовуються
+    print("🧹 Видалення конфліктуючих контейнерів...")
+    remove_conflicting_containers(services_to_rebuild)
+
+    # Останавливаем все контейнеры проекту
+    print("🛑 Остановка контейнеров проекта...")
     run_command("docker-compose down", capture_output=True)
+
+    # Визначаємо project name (з директорії або змінної COMPOSE_PROJECT_NAME)
+    project_name = os.getenv('COMPOSE_PROJECT_NAME')
+    if not project_name:
+        # Використовуємо назву директорії як project name (lowercase)
+        project_name = Path.cwd().name.lower().replace(' ', '_').replace('-', '_')
 
     # Удаляем образы только для выбранных сервисов
     for service in services_to_rebuild:
         print(f"🗑️ Удаление образа для {service}...")
-        run_command(f"docker rmi final_drf_next_sept_2024-{service} 2>/dev/null || true",
+        # Пробуємо різні можливі назви образів
+        possible_image_names = [
+            f"{project_name}-{service}",
+            f"{project_name}_{service}",
+            service
+        ]
+        
+        for image_name in possible_image_names:
+            run_command(f"docker rmi {image_name} 2>/dev/null || true",
                    capture_output=True, check=False)
 
     # Пересобираем только выбранные сервисы
@@ -1529,13 +1603,31 @@ def full_rebuild_services(selected_services, frontend_mode):
     """Полная пересборка всех сервисов"""
     print("🏗️ Полная пересборка всех сервисов...")
 
-    # Останавливаем и удаляем все контейнеры
-    print("🛑 Полная очистка...")
+    # Видаляємо конфліктуючі контейнери для всіх обраних сервісів
+    print("🧹 Видалення конфліктуючих контейнерів...")
+    remove_conflicting_containers(selected_services)
+
+    # Останавливаем и удаляем все контейнеры проекту
+    print("🛑 Полная очистка проекту...")
     run_command("docker-compose down -v --remove-orphans", capture_output=True)
+
+    # Визначаємо project name для видалення образів
+    project_name = os.getenv('COMPOSE_PROJECT_NAME')
+    if not project_name:
+        project_name = Path.cwd().name.lower().replace(' ', '_').replace('-', '_')
 
     # Удаляем все образы проекта
     print("🗑️ Удаление всех образов проекта...")
-    run_command("docker images -q final_drf_next_sept_2024-* | xargs -r docker rmi -f",
+    # Windows PowerShell не підтримує xargs, тому використовуємо альтернативний підхід
+    result = subprocess.run(
+        f'docker images --format "{{{{.Repository}}}}" | Select-String -Pattern "{project_name}" | ForEach-Object {{ docker rmi -f $_ }}',
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0 and result.stderr:
+        # Якщо PowerShell команда не спрацювала, пробуємо bash стиль (для Git Bash / WSL)
+        run_command(f"docker images -q {project_name}-* {project_name}_* 2>/dev/null | xargs -r docker rmi -f 2>/dev/null || true",
                capture_output=True, check=False)
 
     # Продолжаем с обычной логикой полной пересборки
