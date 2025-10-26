@@ -30,9 +30,11 @@ const envConfigDir = path.resolve(__dirname, '../env-config');
 const baseEnv = loadEnvFile(path.join(envConfigDir, '.env.base'));
 const secretsEnv = loadEnvFile(path.join(envConfigDir, '.env.secrets'));
 const localEnv = loadEnvFile(path.join(envConfigDir, '.env.local'));
+const developmentEnv = loadEnvFile(path.join(envConfigDir, '.env.development'));
 
 // Объединяем переменные (поздние перезаписывают ранние)
-const allEnv = { ...baseEnv, ...secretsEnv, ...localEnv };
+// .env.development имеет наивысший приоритет для локальной разработки
+const allEnv = { ...baseEnv, ...secretsEnv, ...localEnv, ...developmentEnv };
 
 // Устанавливаем переменные в process.env
 Object.entries(allEnv).forEach(([key, value]) => {
@@ -42,6 +44,7 @@ Object.entries(allEnv).forEach(([key, value]) => {
 });
 
 console.log('🔧 Loaded environment variables from env-config/');
+console.log(`📂 Loaded files: .env.base, .env.secrets, .env.local, .env.development`);
 console.log(`📁 NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT_SET'}`);
 console.log(`📁 GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? 'SET' : 'NOT_SET'}`);
 console.log(`📁 GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT_SET'}`);

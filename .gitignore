@@ -189,7 +189,7 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env.test
+# .env.test - REMOVED FOR EDUCATIONAL PROJECT (все .env* включены в репозиторий)
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
