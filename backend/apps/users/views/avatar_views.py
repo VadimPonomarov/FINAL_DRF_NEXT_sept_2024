@@ -371,7 +371,7 @@ Final Style: {style} style with custom elements"""
             client = Client()
 
             response = client.images.generate(
-                model="flux-schnell",
+                model="flux",
                 prompt=formatted_prompt,
                 response_format="url"
             )
@@ -641,7 +641,7 @@ Final Style: {style} with enhanced details"""
             client = Client()
 
             response = client.images.generate(
-                model="flux-schnell",
+                model="flux",
                 prompt=enhanced_prompt,
                 response_format="url"
             )

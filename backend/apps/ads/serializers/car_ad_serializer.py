@@ -178,6 +178,8 @@ class CarAdSerializer(BaseModelSerializer):
         extra_kwargs = {
             **BaseModelSerializer.Meta.extra_kwargs,
             "account": {"read_only": True},  # Account cannot be changed during update
+            "price": {"required": True},  # Цена обязательна
+            "currency": {"required": True, "default": "USD"},  # Валюта обязательна с дефолтом
             "is_validated": {"read_only": True},
             "validation_errors": {"read_only": True},
             "status": {"read_only": True},
@@ -226,7 +228,14 @@ class CarAdSerializer(BaseModelSerializer):
 
         # ✅ КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Проверка цены
         price = attrs.get("price")
-        if price is not None and price <= 0:
+        
+        # Цена обязательна для создания нового объявления
+        if price is None:
+            raise serializers.ValidationError(
+                {"price": "Price is required. Please specify a price for your ad."}
+            )
+        
+        if price <= 0:
             raise serializers.ValidationError(
                 {"price": "Price must be greater than zero."}
             )

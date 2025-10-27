@@ -2960,6 +2960,8 @@ export default {
   "autoria.byMileage": "За пробігом",
   "autoria.byTitle": "За назвою",
   "autoria.all": "Всі",
+  "autoria.perPage": "На сторінці",
+  "autoria.view": "Вигляд",
   "autoria.noAdsYet": "no ads yet (uk)",
   "autoria.noAdsFound": "Автомобілі не знайдено",
   "autoria.tryAdjustFilters": "Спробуйте змінити параметри пошуку",

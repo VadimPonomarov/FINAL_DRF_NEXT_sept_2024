@@ -20,20 +20,20 @@ const FixedLanguageSwitch: React.FC = () => {
   }
 
   return (
-    <div className="fixed top-[110px] right-2 z-[9999] hidden md:block">
-      <div className="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+    <div className="fixed bottom-16 left-4 z-[9999]">
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden transition-all">
         {isExpanded ? (
           // Развернутый вид
           <div className="p-3">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-slate-600 font-medium">
+              <span className="text-sm text-slate-600 dark:text-gray-300 font-medium">
                 {t('Language')}
               </span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(false)}
-                className="h-6 w-6 p-0"
+                className="h-6 w-6 p-0 hover:bg-slate-100 dark:hover:bg-gray-700"
               >
                 <ChevronDown className="h-4 w-4" />
               </Button>
@@ -50,8 +50,8 @@ const FixedLanguageSwitch: React.FC = () => {
                   }}
                   className={`h-8 px-3 justify-start text-xs font-medium transition-all duration-200 ${
                     locale === localeOption.code
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   <span className="mr-2">{localeOption.flag}</span>
@@ -66,14 +66,14 @@ const FixedLanguageSwitch: React.FC = () => {
           <Button
             variant="ghost"
             onClick={() => setIsExpanded(true)}
-            className="h-10 px-3 flex items-center gap-2 hover:bg-slate-50 text-xs"
+            className="h-10 px-3 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-gray-700 text-xs transition-colors"
             title={`${t('Language')}: ${currentLocale?.nativeName}`}
           >
             <span className="text-base">{currentLocale?.flag}</span>
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-xs font-medium text-slate-700 dark:text-gray-300">
               {locale.toUpperCase()}
             </span>
-            <ChevronUp className="h-3 w-3 text-slate-400" />
+            <ChevronUp className="h-3 w-3 text-slate-400 dark:text-gray-400" />
           </Button>
         )}
       </div>

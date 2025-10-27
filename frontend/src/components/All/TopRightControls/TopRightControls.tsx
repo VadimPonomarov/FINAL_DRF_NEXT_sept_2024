@@ -19,9 +19,7 @@ const TopRightControls: React.FC = () => {
         <div className="fixed top-[60px] right-2 z-[99998]">
           <AuthBadge />
         </div>
-        <div className="fixed top-[100px] right-2 z-[99998]">
-          <FixedLanguageSwitch />
-        </div>
+        <FixedLanguageSwitch />
       </>
     );
   }
@@ -33,10 +31,8 @@ const TopRightControls: React.FC = () => {
         <AuthBadge />
       </div>
 
-      {/* Language Selector - отдельно с большим отступом */}
-      <div className="fixed top-[100px] right-2 z-[99998]">
-        <FixedLanguageSwitch />
-      </div>
+      {/* Language Selector - manages its own position */}
+      <FixedLanguageSwitch />
     </>
   );
 };

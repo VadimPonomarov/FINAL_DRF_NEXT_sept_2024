@@ -23,7 +23,7 @@ except ImportError:
 @swagger_auto_schema(
     method='post',
     operation_summary="🎨 Generate AI Image",
-    operation_description="Generate image using AI models (g4f flux-schnell). Supports various image generation prompts.",
+    operation_description="Generate image using AI models (g4f flux). Supports various image generation prompts with enhanced quality.",
     tags=['🤖 AI Services'],
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
@@ -73,7 +73,7 @@ def generate_image(request):
     try:
         data = request.data
         prompt = data.get('prompt')
-        model = data.get('model', 'flux-schnell')
+        model = data.get('model', 'flux')
         quality = data.get('quality', 'standard')
 
         if not prompt:
@@ -262,7 +262,7 @@ def generate_car_images(request):
                     try:
                         client = Client()
                         response = client.images.generate(
-                            model="flux-schnell",
+                            model="flux",
                             prompt=english_prompt,
                             response_format="url"
                         )

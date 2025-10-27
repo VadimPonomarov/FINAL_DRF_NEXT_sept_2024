@@ -25,6 +25,8 @@ import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
 import { smartFetch } from '@/utils/smartFetch';
 import { CurrencySelector } from '@/components/AutoRia/CurrencySelector/CurrencySelector';
 import { usePriceConverter } from '@/hooks/usePriceConverter';
+import CarAdCard from '@/components/AutoRia/Components/CarAdCard';
+import CarAdListItem from '@/components/AutoRia/Components/CarAdListItem';
 
 // Простой тип для автомобиля
 interface CarAd {
@@ -51,18 +53,35 @@ interface CarAd {
   accident_history?: boolean;
   is_favorite?: boolean;
   view_count?: number; // Количество просмотров
+  favorites_count?: number; // Количество добавлений в избранное
+  phone_views_count?: number; // Количество показов телефона
   is_vip?: boolean; // VIP статус
   is_premium?: boolean; // Premium статус
   body_type?: string; // Тип кузова
   images?: Array<{
     image: string;
     image_display_url?: string;
+    image_url?: string;
+    url?: string;
     is_main?: boolean;
   }>;
   user?: {
     id: number;
     email: string;
     account_type?: string;
+    phone?: string;
+  };
+  price_uah?: number; // Цена в UAH для отображения
+  dynamic_fields?: {
+    year?: number;
+    mileage?: number;
+    mileage_km?: number;
+    fuel_type?: string;
+    transmission?: string;
+    [key: string]: any;
+  };
+  seller?: {
+    phone?: string;
   };
 }
 
@@ -1434,320 +1453,42 @@ const SearchPage = () => {
                 </Card>
               ) : (
                 <div
-                  className={`${viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-4'} transition-opacity duration-300 ${paginationLoading ? 'opacity-50' : 'opacity-100'}`}
+                  className={`${viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-3'} transition-opacity duration-300 ${paginationLoading ? 'opacity-50' : 'opacity-100'}`}
                 >
                   {searchResults.map((car) => (
-                    <Card key={car.id} className="hover:shadow-lg transition-shadow duration-300 group">
-                    <CardContent className="p-0">
-                      <div className={viewMode === 'grid' ? 'block' : 'flex'}>
-                        {/* Image */}
-                        <div className={viewMode === 'grid' ? 'w-full h-48 relative' : 'w-48 h-32'}>
-                          {/* Favorite button for grid mode */}
-                          {viewMode === 'grid' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={togglingIds.has(car.id)}
-                              onClick={(e) => handleFavoriteToggle(car.id, e)}
-                              className={`absolute top-2 right-2 z-10 bg-white/80 hover:bg-white transition-colors ${
-                                Boolean(car.is_favorite) === true ? 'text-red-500 hover:text-red-600' : 'text-slate-400 hover:text-red-500'
-                              }`}
-                            >
-                              <Heart className={`h-4 w-4 ${Boolean(car.is_favorite) === true ? 'fill-current' : ''}`} />
-                            </Button>
-                          )}
-
-                          <div className="w-full h-full bg-slate-200 rounded-t-lg flex items-center justify-center">
-                            {(() => {
-                              let imageUrl = null;
-
-                              if (car.images && car.images.length > 0) {
-                                let mainImage = car.images.find(img => img.is_primary === true) || car.images[0];
-
-                                if (typeof mainImage === 'object') {
-                                  // ПРИОРИТЕТ: image_display_url (это правильное поле от бекенда)
-                                  imageUrl = mainImage.image_display_url || mainImage.image_url || mainImage.image;
-                                } else if (typeof mainImage === 'string') {
-                                  imageUrl = mainImage;
-                                }
-                              }
-
-                              if (imageUrl) {
-                                let fullImageUrl = imageUrl;
-
-                                // Если URL уже абсолютный (начинается с http), используем как есть
-                                if (!imageUrl.startsWith('http')) {
-                                  // Если URL начинается с /media/, используем через /api/media
-                                  if (imageUrl.startsWith('/media/')) {
-                                    fullImageUrl = `/api/media${imageUrl.substring(6)}`;
-                                  }
-                                  // Если URL начинается с /api/media/, используем как есть
-                                  else if (imageUrl.startsWith('/api/media/')) {
-                                    fullImageUrl = imageUrl;
-                                  }
-                                  // Иначе добавляем префикс /api/media/
-                                  else {
-                                    fullImageUrl = `/api/media/${imageUrl.replace(/^\/+/, '')}`;
-                                  }
-                                }
-
-                                return (
-                                  <img
-                                    src={fullImageUrl}
-                                    alt={car.title}
-                                    className="w-full h-full object-cover rounded-t-lg"
-                                    onError={(e) => {
-                                      console.error('❌ Image load error:', fullImageUrl);
-                                      e.currentTarget.style.display = 'none';
-                                      e.currentTarget.nextElementSibling!.style.display = 'flex';
-                                    }}
-                                  />
-                                );
-                              }
-
-                              return (
-                                <div className="text-slate-400 flex items-center justify-center">
-                                  <Car className="h-8 w-8 mr-2" />
-                                  {t('autoria.noPhoto')}
-                                </div>
-                              );
-                            })()}
-                            <div className="text-slate-400 hidden w-full h-full items-center justify-center">
-                              <Car className="h-8 w-8 mr-2" />
-                              {t('autoria.photoUnavailable') || t('autoria.noPhoto')}
-                            </div>
-
-                            {/* 📊 Счетчики статистики в правом нижнем углу */}
-                            <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs">
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1">
-                                  <Eye className="h-3 w-3" />
-                                  <span>{car.view_count || 0}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Heart className="h-3 w-3" />
-                                  <span>{car.favorites_count || 0}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  <span>{car.phone_views_count || 0}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1">
-                          {/* Analytics Header */}
-                          <div className="px-4 pt-3 pb-2 bg-slate-50 border-b border-slate-100">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="text-xs text-slate-500">
-                                  ID: {car.id}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="p-4">
-                            {/* Тип транспорта над заголовком */}
-                            {car.vehicle_type_name && (
-                              <div className="flex items-center gap-1 text-xs text-slate-500 mb-2">
-                                <Car className="h-3 w-3" />
-                                <span>{car.vehicle_type_name}</span>
-                              </div>
-                            )}
-
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="font-semibold text-lg line-clamp-2 flex-1">{car.title}</h3>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={togglingIds.has(car.id)}
-                                onClick={(e) => handleFavoriteToggle(car.id, e)}
-                                className={`ml-2 flex-shrink-0 transition-colors ${
-                                  Boolean(car.is_favorite) === true ? 'text-red-500 hover:text-red-600' : 'text-slate-400 hover:text-red-500'
-                                }`}
-                              >
-                                <Heart className={`h-4 w-4 ${Boolean(car.is_favorite) === true ? 'fill-current' : ''}`} />
-                              </Button>
-                            </div>
-
-                            <div className="flex items-center gap-4 text-sm text-slate-600 mb-3">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                {car.year || t('common.none')}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Gauge className="h-4 w-4" />
-                                {car.mileage ? car.mileage.toLocaleString() : t('common.none')} {t('autoria.km') || 'км'}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-4 w-4" />
-                                {car.city_name && car.region_name
-                                  ? `${car.city_name}, ${car.region_name}`
-                                  : car.city || t('common.none')
-                                }
-                              </span>
-                            </div>
-
-                            {/* Техническая информация */}
-                            <div className="grid grid-cols-2 gap-2 mb-3">
-                              {(car.fuel_type || car.engine_volume) && (
-                                <div className="flex items-center gap-1 text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded">
-                                  <Fuel className="h-3 w-3 text-orange-500" />
-                                  <span>
-                                    {car.fuel_type || t('common.none')}
-                                    {car.engine_volume && `, ${car.engine_volume} л.`}
-                                  </span>
-                                </div>
-                              )}
-
-                              {car.transmission && (
-                                <div className="flex items-center gap-1 text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded">
-                                  <Cog className="h-3 w-3 text-blue-500" />
-                                  <span>
-                                    {car.transmission === 'automatic' ? 'Автомат' :
-                                     car.transmission === 'manual' ? 'Механика' :
-                                     car.transmission === 'robot' ? 'Робот' :
-                                     car.transmission === 'variator' ? 'Вариатор' :
-                                     car.transmission}
-                                  </span>
-                                </div>
-                              )}
-
-                              {car.license_plate && (
-                                <div className="flex items-center gap-1 text-xs text-slate-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
-                                  <Hash className="h-3 w-3 text-blue-600" />
-                                  <span className="font-mono font-medium text-blue-700">
-                                    {car.license_plate}
-                                  </span>
-                                </div>
-                              )}
-
-                              {car.vin_code && (
-                                <div className="flex items-center gap-1 text-xs text-slate-600 bg-green-50 px-2 py-1 rounded border border-green-200">
-                                  <FileText className="h-3 w-3 text-green-600" />
-                                  <span className="font-mono font-medium text-green-700">
-                                    {car.vin_code}
-                                  </span>
-                                </div>
-                              )}
-
-                              {car.fuel_type === 'electric' && (
-                                <div className="flex items-center gap-1 text-xs text-white bg-green-500 px-2 py-1 rounded">
-                                  <Zap className="h-3 w-3" />
-                                  <span>{t('autoria.electric') || 'Electric'}</span>
-                                </div>
-                              )}
-
-                              {car.accident_history && (
-                                <div className="flex items-center gap-1 text-xs text-white bg-red-500 px-2 py-1 rounded">
-                                  <AlertTriangle className="h-3 w-3" />
-                                  <span>{t('autoria.wasInAccident') || 'Accident history'}</span>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex justify-between items-center">
-                              <div className="text-2xl font-bold text-green-600">
-                                {formatPriceInSelectedCurrency(car)}
-                              </div>
-                            </div>
-
-                            {/* Premium/VIP badges */}
-                            <div className="flex items-center justify-end gap-1 pt-2 mt-2">
-                              {car.is_vip && (
-                                <Badge variant="outline" className="text-xs text-purple-600 border-purple-200">
-                                  ⭐ VIP
-                                </Badge>
-                              )}
-                              {car.is_premium && (
-                                <Badge variant="outline" className="text-xs text-gold-600 border-gold-200">
-                                  💎 Premium
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* User Information Footer */}
-                        {car.user && (
-                          <div className={`px-4 py-2 border-t border-gray-100 mt-2 ${
-                            isOwner(car) ? 'bg-green-50' : 'bg-gray-50'
-                          }`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <User className="h-3 w-3 text-slate-500" />
-                                <span className="text-xs text-slate-600 font-medium">
-                                  {car.user.email}
-                                </span>
-                                <span className="text-xs text-slate-400">
-                                  • ID: {car.user.id}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                {/* Кнопки действий */}
-                                <div className="flex items-center gap-1">
-                                  {/* Просмотр */}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleViewAd(car.id);
-                                    }}
-                                    className="h-6 w-6 p-0 text-slate-500 hover:text-blue-600"
-                                    title="Просмотреть"
-                                  >
-                                    <ExternalLink className="h-3 w-3" />
-                                  </Button>
-
-                                  {/* Редактирование (только для владельца) */}
-                                  {isOwner(car) && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        window.location.href = `/autoria/ads/edit/${car.id}`;
-                                      }}
-                                      className="h-6 w-6 p-0 text-slate-500 hover:text-green-600"
-                                      title="Редактировать"
-                                    >
-                                      <Edit className="h-3 w-3" />
-                                    </Button>
-                                  )}
-
-                                  {/* Удаление (только для владельца) */}
-                                  {isOwner(car) && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => handleDeleteAd(car.id, e)}
-                                      disabled={deletingIds.has(car.id)}
-                                      className="h-6 w-6 p-0 text-slate-500 hover:text-red-600"
-                                      title="Удалить"
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  )}
-                                </div>
-
-                                {isOwner(car) && (
-                                  <div className="flex items-center justify-center w-6 h-6 bg-green-100 text-green-600 rounded-full" title={t('autoria.yours') || 'Yours'}>
-                                    <span className="text-xs">👑</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                    viewMode === 'grid' ? (
+                      <CarAdCard 
+                        key={car.id} 
+                        ad={car}
+                        onCountersUpdate={(adId, counters) => {
+                          setSearchResults(prevResults => 
+                            prevResults.map(ad => 
+                              ad.id === adId 
+                                ? { ...ad, favorites_count: counters.favorites_count, phone_views_count: counters.phone_views_count }
+                                : ad
+                            )
+                          );
+                        }}
+                      />
+                    ) : (
+                      <CarAdListItem 
+                        key={car.id} 
+                        ad={car}
+                        onCountersUpdate={(adId, counters) => {
+                          setSearchResults(prevResults => 
+                            prevResults.map(ad => 
+                              ad.id === adId 
+                                ? { ...ad, favorites_count: counters.favorites_count, phone_views_count: counters.phone_views_count }
+                                : ad
+                            )
+                          );
+                        }}
+                        onDelete={handleDeleteAd}
+                        isOwner={isOwner}
+                        togglingIds={togglingIds}
+                        deletingIds={deletingIds}
+                      />
+                    )
                 ))}
               </div>
             )

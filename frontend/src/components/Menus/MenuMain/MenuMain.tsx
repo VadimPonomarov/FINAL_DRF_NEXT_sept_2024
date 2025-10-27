@@ -258,31 +258,6 @@ export const MenuMain: FC = () => {
         provider: AuthProvider.MyBackendDocs,
         tooltip: "AutoRia - система объявлений"
       },
-      {
-        path: "/autoria/moderation",
-        label: (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="group flex items-center gap-2">
-                  <Shield
-                    size={18}
-                    className="text-foreground group-hover:text-accent-foreground transition-colors"
-                  />
-                  <span className="text-sm">Модерація</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Модерація оголошень (тільки для менеджерів та адміністраторів)</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ),
-        disabled: !isAuthenticated,
-        index: 8,
-        provider: AuthProvider.MyBackendDocs,
-        tooltip: "Модерація оголошень"
-      }
     ];
 
     // Menu items for Dummy provider
