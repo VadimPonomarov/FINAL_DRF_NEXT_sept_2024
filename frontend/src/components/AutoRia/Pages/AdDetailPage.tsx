@@ -273,7 +273,7 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({ adId, showModerationControl
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href);
-      alert('Ссылка скопирована в буфер обмена');
+      toast({ title: '✅ Успіх', description: 'Посилання скопійовано в буфер обміну' });
     }
   }, [adData]);
 

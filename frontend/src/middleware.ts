@@ -82,32 +82,38 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Function to check backend_auth tokens presence in Redis (for Autoria access)
-// UPDATED: Now only checks NextAuth session, allows client-side token refresh
+// УРОВЕНЬ 1 (из 3): Middleware - проверка NextAuth сессии
+// ════════════════════════════════════════════════════════════════════════
+// Трехуровневая система валидации:
+// 1. [ЭТОТ УРОВЕНЬ] Middleware: NextAuth сессия → /api/auth/signin если нет
+// 2. HOC withAutoRiaAuth: Backend токены → /login если нет
+// 3. fetchWithAuth: Обработчики 401/403 → /login + auto-refresh
+// ════════════════════════════════════════════════════════════════════════
+//
+// ВАЖНО: Middleware проверяет ТОЛЬКО NextAuth сессию!
+// Backend токены (внешние API) НЕ проверяются здесь - это делает HOC (уровень 2)
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
-    // First, check NextAuth session using getToken
-    console.log(`[Middleware] Checking NextAuth session for Autoria access`);
+    console.log(`[Middleware L1] Checking NextAuth session for Autoria access`);
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-    console.log(`[Middleware] getToken result:`, token ? 'Token exists' : 'No token', token ? `email: ${token.email}` : '');
+    console.log(`[Middleware L1] getToken result:`, token ? 'Token exists' : 'No token', token ? `email: ${token.email}` : '');
 
-    // If no NextAuth session, redirect to signin (not /login, because /login requires session)
+    // Если нет NextAuth сессии - редирект на signin
     if (!token || !token.email) {
-      console.log(`[Middleware] No valid NextAuth session - redirecting to signin`);
+      console.log(`[Middleware L1] ❌ No NextAuth session - redirecting to signin`);
       const signinUrl = new URL('/api/auth/signin', req.url);
       signinUrl.searchParams.set('callbackUrl', req.url);
       return NextResponse.redirect(signinUrl);
     }
 
-    // NextAuth session exists - allow access
-    // Client-side code (fetchWithAuth) will handle token refresh if needed
-    console.log(`[Middleware] ✅ NextAuth session valid (email: ${token.email}) - allowing Autoria access`);
-    console.log(`[Middleware] 💡 Client-side code will handle backend token refresh if needed`);
+    // NextAuth сессия существует - разрешаем доступ
+    // HOC (уровень 2) проверит наличие backend токенов и редиректнет на /login при необходимости
+    console.log(`[Middleware L1] ✅ NextAuth session valid (email: ${token.email}) - passing to L2 (HOC)`);
 
     return NextResponse.next();
   } catch (error) {
-    console.error('[Middleware] Error checking NextAuth session:', error);
+    console.error('[Middleware L1] ❌ Error checking NextAuth session:', error);
     const signinUrl = new URL('/api/auth/signin', req.url);
     signinUrl.searchParams.set('callbackUrl', req.url);
     return NextResponse.redirect(signinUrl);

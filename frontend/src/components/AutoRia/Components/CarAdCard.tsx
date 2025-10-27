@@ -414,4 +414,31 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
   );
 };
 
-export default CarAdCard;
+// Мемоизация компонента для предотвращения ненужных ререндеров
+// Компонент будет перерисовываться только если изменился ad.id или важные поля ad
+export default React.memo(CarAdCard, (prevProps, nextProps) => {
+  // Сравниваем по ID - если ID тот же, проверяем важные поля
+  if (prevProps.ad.id !== nextProps.ad.id) return false;
+  
+  // Проверяем изменились ли критичные поля
+  const fieldsToCompare: (keyof CarAd)[] = [
+    'is_favorite',
+    'favorites_count',
+    'phone_views_count',
+    'view_count',
+    'title',
+    'price',
+    'price_usd',
+    'price_eur',
+    'price_uah'
+  ];
+  
+  for (const field of fieldsToCompare) {
+    if (prevProps.ad[field] !== nextProps.ad[field]) {
+      return false; // Props changed, need re-render
+    }
+  }
+  
+  // Props didn't change, skip re-render
+  return true;
+});

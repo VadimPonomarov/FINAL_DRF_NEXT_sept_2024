@@ -1,11 +1,19 @@
 /**
- * Centralized auth-aware fetch with automatic token refresh and user notifications
+ * УРОВЕНЬ 3 (из 3): Обработчики ошибок 401/403
+ * ════════════════════════════════════════════════════════════════════════
+ * Трехуровневая система валидации:
+ * 1. Middleware: NextAuth сессия → /api/auth/signin если нет
+ * 2. HOC withAutoRiaAuth: Backend токены → /login если нет
+ * 3. [ЭТОТ УРОВЕНЬ] fetchWithAuth: Обработка 401/403 → auto-refresh + /login
+ * ════════════════════════════════════════════════════════════════════════
  *
  * Workflow:
- * 1. Makes initial request
- * 2. If 401 (Unauthorized), attempts to refresh tokens via /api/auth/refresh
- * 3. If refresh succeeds, retries the original request
- * 4. If refresh fails or second request returns 401, shows toast and redirects to /login
+ * 1. Делает запрос к API
+ * 2. При 401 → пытается refresh токена через /api/auth/refresh
+ * 3. При успехе refresh → повторяет оригинальный запрос
+ * 4. При провале refresh или 403 → redirect на /login
+ *
+ * Цель: Обрабатывать протухшие токены во время работы (runtime)
  *
  * Usage: await fetchWithAuth('/api/autoria/favorites/toggle', { method: 'POST', body: JSON.stringify({ car_ad_id }) })
  */
@@ -23,8 +31,19 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
     cache: 'no-store'
   });
 
-  if (resp.status !== 401) {
+  // Проверяем статус ответа - обрабатываем 401 и 403
+  if (resp.status !== 401 && resp.status !== 403) {
     console.log('[fetchWithAuth] Request successful, status:', resp.status);
+    return resp;
+  }
+
+  // 403 Forbidden - нет прав доступа, редиректим на /login сразу
+  if (resp.status === 403) {
+    console.log('[fetchWithAuth] ❌ 403 Forbidden - redirecting to /login');
+    if (typeof window !== 'undefined') {
+      const callback = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login?callbackUrl=${callback}&error=forbidden&message=${encodeURIComponent('Необхідна авторизація для доступу до цього ресурсу')}`;
+    }
     return resp;
   }
 
@@ -61,27 +80,12 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
     console.error('[fetchWithAuth] ❌ Error during token refresh:', error);
   }
 
-  // Still unauthorized: show toast and redirect to /login with callback
+  // Still unauthorized: redirect to /login with callback
+  // Обработчики 401/403 ошибок - редиректим на /login для получения backend токенов
   if (typeof window !== 'undefined') {
-    console.log('[fetchWithAuth] 🔄 Redirecting to login page...');
-
-    // Динамически импортируем toast для показа уведомления
-    import('@/hooks/use-toast').then(({ toast }) => {
-      toast({
-        title: "Требуется авторизация",
-        description: "Ваша сессия истекла. Пожалуйста, войдите снова для доступа к ресурсам.",
-        variant: "destructive",
-        duration: 5000,
-      });
-    }).catch(err => {
-      console.error('[fetchWithAuth] Failed to show toast:', err);
-    });
-
-    // Небольшая задержка для показа toast перед редиректом
-    setTimeout(() => {
-      const callback = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = `/login?callbackUrl=${callback}&message=${encodeURIComponent('Ваша сессия истекла. Пожалуйста, войдите снова.')}`;
-    }, 500);
+    console.log('[fetchWithAuth] ❌ Token refresh failed, redirecting to /login');
+    const callback = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/login?callbackUrl=${callback}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`;
   }
 
   return resp; // Return the 401 response for callers on the server side

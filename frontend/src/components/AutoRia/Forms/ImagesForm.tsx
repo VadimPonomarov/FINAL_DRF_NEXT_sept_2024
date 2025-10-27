@@ -9,6 +9,7 @@ import { Upload, X, Star, Wand2, Camera, Image as ImageIcon, Copy, RefreshCw, Se
 import { CarAdFormData } from '@/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 import { useToast } from '@/hooks/use-toast';
+import { alertHelpers } from '@/components/ui/alert-dialog-helper';
 // import CarImageGenerator from '@/components/AutoRia/Components/CarImageGenerator';
 import ImageGenerationModal from '@/components/AutoRia/Components/ImageGenerationModal';
 // import ImageLightbox from '@/components/AutoRia/Components/ImageLightbox';
@@ -116,12 +117,12 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
     const validFiles = files.filter(file => {
       // Проверяем тип файла
       if (!file.type.startsWith('image/')) {
-        alert(`Файл ${file.name} не является изображением`);
+        toast({ title: t('common.error'), description: `${t('autoria.fileNotImage')}: ${file.name}`, variant: 'destructive' });
         return false;
       }
       // Проверяем размер файла (максимум 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert(`Файл ${file.name} слишком большой (максимум 10MB)`);
+        toast({ title: t('common.error'), description: `${t('autoria.fileTooLarge')}: ${file.name} (${t('autoria.max10MB')})`, variant: 'destructive' });
         return false;
       }
       return true;
@@ -313,7 +314,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
     });
 
     if (!data.brand || !data.model || !data.year) {
-      alert(t('autoria.fillRequiredFieldsForGeneration') || 'Пожалуйста, заполните марку, модель и год автомобиля для генерации изображений');
+      toast({ title: t('common.warning'), description: t('autoria.fillRequiredFieldsForGeneration') || 'Заповніть марку, модель та рік автомобіля для генерації зображень', variant: 'destructive' });
       return;
     }
 
@@ -611,7 +612,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
       const total = allImages.length;
       if (total === 0) return;
       const confirmed = typeof window !== 'undefined'
-        ? window.confirm('Удалить все изображения? Это действие необратимо.')
+        ? await alertHelpers.confirmDelete(t('autoria.allImages') || 'всі зображення')
         : true;
       if (!confirmed) return;
 

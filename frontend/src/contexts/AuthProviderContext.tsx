@@ -8,11 +8,12 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { toast } from "@/hooks/use-toast";
 import { AuthProvider as AuthProviderEnum, TOAST_DURATION } from "@/common/constants/constants";
 import { User } from "@/common/interfaces/user.interface";
 import { IAuthContext, IAuthProviderContext } from "@/common/interfaces/authContext.interface";
+import { cleanupAuth } from '@/lib/auth/cleanupAuth';
 
 // ============================================================================
 // 1. КОНТЕКСТ ДЛЯ СОСТОЯНИЯ АУТЕНТИФИКАЦИИ (КТО ПОЛЬЗОВАТЕЛЬ)
@@ -65,12 +66,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     setIsAuthenticated(false);
     setUser(null);
-    await signOut({ redirect: false }); // next-auth logout
-    localStorage.removeItem("backend_auth");
+    
+    // Полная очистка сессии, localStorage, sessionStorage и Redis
+    await cleanupAuth('/api/auth/signin');
+    
     toast({ title: "Logged out successfully." });
-    // Redirect to NextAuth signin page
-    window.location.href = '/api/auth/signin';
-  }, []);
+  }, [toast]);
   
   const login = useCallback((user: User, accessToken: string, refreshToken: string) => {
       const authPayload = {

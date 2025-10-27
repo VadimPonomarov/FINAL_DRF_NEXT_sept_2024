@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,15 +95,7 @@ const ModerationPage = () => {
     }
   }, [authLoading, isAuthenticated, checkAuth]);
 
-  // Загрузка данных
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadModerationQueue();
-      loadModerationStats();
-    }
-  }, [statusFilter, searchQuery, sortBy, sortOrder, isAuthenticated]);
-
-  const loadModerationQueue = async () => {
+  const loadModerationQueue = useCallback(async () => {
     setLoading(true);
     try {
       console.log('[Moderation] 📤 Loading moderation queue...');
@@ -166,9 +158,9 @@ const ModerationPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, searchQuery, sortBy, sortOrder, toast]);
 
-  const loadModerationStats = async () => {
+  const loadModerationStats = useCallback(async () => {
     try {
       const response = await fetchWithAuth('/api/ads/moderation/statistics');
       
@@ -197,9 +189,17 @@ const ModerationPage = () => {
     } catch (error) {
       console.error('[Moderation] ❌ Failed to load stats:', error);
     }
-  };
+  }, [toast]);
 
-  const moderateAd = async (adId: number, action: 'approve' | 'reject' | 'review' | 'block' | 'activate', reason?: string) => {
+  // Загрузка данных
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadModerationQueue();
+      loadModerationStats();
+    }
+  }, [statusFilter, searchQuery, sortBy, sortOrder, isAuthenticated, loadModerationQueue, loadModerationStats]);
+
+  const moderateAd = useCallback(async (adId: number, action: 'approve' | 'reject' | 'review' | 'block' | 'activate', reason?: string) => {
     try {
       console.log(`[Moderation] 🔧 ${action.toUpperCase()} ad ${adId}...`);
 
@@ -258,9 +258,9 @@ const ModerationPage = () => {
         duration: 4000
       });
     }
-  };
+  }, [user, t, toast, loadModerationQueue, loadModerationStats]);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case 'pending':
         return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">⏳ На модерации</Badge>;

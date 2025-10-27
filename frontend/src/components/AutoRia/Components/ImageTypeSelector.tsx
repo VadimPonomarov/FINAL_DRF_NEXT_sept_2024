@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -35,6 +36,7 @@ const ImageTypeSelector: React.FC<ImageTypeSelectorProps> = ({
   className = ''
 }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 
   const imageTypes: ImageType[] = [
@@ -88,7 +90,7 @@ const ImageTypeSelector: React.FC<ImageTypeSelectorProps> = ({
 
   const handleGenerate = () => {
     if (selectedTypes.length === 0) {
-      alert(t('autoria.testAds.imageTypes.noSelection'));
+      toast({ title: t('common.warning'), description: t('autoria.testAds.imageTypes.noSelection'), variant: 'destructive' });
       return;
     }
     onGenerate(selectedTypes);

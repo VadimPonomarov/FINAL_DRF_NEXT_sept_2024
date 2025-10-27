@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,7 +78,7 @@ const MyAdsPage: React.FC = () => {
   const [totalAds, setTotalAds] = useState(0);
 
   // 📊 Загрузка объявлений с backend
-  const loadAds = async (statusFilter = 'all', pageNum = 1) => {
+  const loadAds = useCallback(async (statusFilter = 'all', pageNum = 1) => {
     try {
       setLoading(true);
       setError(null);
@@ -116,11 +116,13 @@ const MyAdsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // 🗑️ Удаление объявления
-  const deleteAd = async (adId: number) => {
-    if (!confirm('Вы уверены, что хотите удалить это объявление?')) {
+  const deleteAd = useCallback(async (adId: number) => {
+    const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
+    const confirmed = await alertHelpers.confirmDelete(t('autoria.thisAd') || 'це оголошення');
+    if (!confirmed) {
       return;
     }
 
@@ -147,23 +149,23 @@ const MyAdsPage: React.FC = () => {
 
     } catch (error: any) {
       console.error('[MyAdsPage] ❌ Error deleting ad:', error);
-      alert(`Ошибка удаления: ${error.message}`);
+      toast({ title: '❌ ' + t('common.error'), description: `${t('myAds.deleteError')}: ${error.message}`, variant: 'destructive' });
     }
-  };
+  }, [selectedStatus, page, loadAds, t, toast]);
 
   // 🔄 Загрузка при монтировании
   useEffect(() => {
     loadAds(selectedStatus, page);
-  }, [selectedStatus, page]);
+  }, [loadAds, selectedStatus, page]);
 
   // 💰 Форматирование цены
-  const formatPrice = (price: number, currency: string) => {
+  const formatPrice = useCallback((price: number, currency: string) => {
     const symbols = { USD: '$', EUR: '€', UAH: '₴' };
     return `${symbols[currency as keyof typeof symbols] || '$'}${price.toLocaleString()}`;
-  };
+  }, []);
 
   // 📅 Форматирование даты
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return formatDateFunc(new Date(dateString), {
       day: '2-digit',
       month: '2-digit',
@@ -171,7 +173,7 @@ const MyAdsPage: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
+  }, [formatDateFunc]);
 
   // 🎨 Карточка объявления
   const AdCard: React.FC<{ ad: CarAd }> = ({ ad }) => {

@@ -144,7 +144,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
   // Функция для валидации текущего контента формы
   const validateCurrentContent = async () => {
     if (!data.title || !data.description) {
-      alert(t('basicInfo.fillTitleDescription', 'Please fill in title and description to validate'));
+      toast({ title: '⚠️ ' + t('common.warning'), description: t('basicInfo.fillTitleDescription'), variant: 'destructive' });
 
       return;
     }
@@ -183,7 +183,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
       setIsValidationModalOpen(true);
     } catch (error) {
       console.error('Validation error:', error);
-      alert(t('basicInfo.validationError', 'Error validating content. Please try again.'));
+      toast({ title: '❌ ' + t('common.error'), description: t('basicInfo.validationError'), variant: 'destructive' });
     } finally {
       setIsValidating(false);
     }
@@ -218,7 +218,11 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
     // Проверяем обязательные поля
     const validation = validateRequiredFieldsForGeneration();
     if (!validation.isValid) {
-      alert(`🚫 ${t('ai.requiredFieldsTitle', 'To generate the title, please fill the required fields:')}\n\n${validation.missingFields.join('\n')}\n\n${t('ai.pleaseGoToTabs', 'Please go to the corresponding tabs and fill these fields.')}`);
+      toast({ 
+        title: '⚠️ ' + t('common.warning'), 
+        description: `${t('ai.requiredFieldsTitle')}\n\n${validation.missingFields.join('\n')}\n\n${t('ai.pleaseGoToTabs')}`,
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -283,7 +287,11 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
     // Проверяем обязательные поля
     const validation = validateRequiredFieldsForGeneration();
     if (!validation.isValid) {
-      alert(`🚫 Для генерации описания необходимо заполнить следующие обязательные поля:\n\n${validation.missingFields.join('\n')}\n\nПожалуйста, перейдите к соответствующим табам и заполните эти поля.`);
+      toast({ 
+        title: '⚠️ ' + t('common.warning'), 
+        description: `${t('ai.requiredFieldsDescription')}\n\n${validation.missingFields.join('\n')}\n\n${t('ai.pleaseGoToTabs')}`,
+        variant: 'destructive'
+      });
       return;
     }
 

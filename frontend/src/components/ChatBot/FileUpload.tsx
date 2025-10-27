@@ -100,7 +100,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       if (emptyFiles.length > 0) {
         const fileNames = emptyFiles.map(f => f.name).join(', ');
         console.error(`Empty files detected: ${fileNames}`);
-        alert(`Обнаружены пустые файлы: ${fileNames}`);
+        toast({ title: '⚠️ Увага', description: `Виявлено порожні файли: ${fileNames}`, variant: 'destructive' });
         setIsUploading(false);
         return;
       }
@@ -110,7 +110,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       if (invalidTypeFiles.length > 0) {
         const fileNames = invalidTypeFiles.map(f => `${f.name} (${f.type})`).join(', ');
         console.error(`Invalid file types: ${fileNames}`);
-        alert(`Неподдерживаемые типы файлов: ${fileNames}\nРазрешены только: PDF, JPG, JPEG, PNG, DOC, DOCX, TXT`);
+        toast({ title: '⚠️ Увага', description: `Непідтримувані типи файлів: ${fileNames}\nДозволено тільки: PDF, JPG, JPEG, PNG, DOC, DOCX, TXT`, variant: 'destructive' });
         setIsUploading(false);
         return;
       }

@@ -165,12 +165,12 @@ const MyAdsPage = () => {
   }, []);
 
   // Обработчик клика по карточке объявления (переход на редактирование для своих объявлений)
-  const handleCardClick = (carId: number) => {
+  const handleCardClick = useCallback((carId: number) => {
     window.location.href = `/autoria/ads/edit/${carId}`;
-  };
+  }, []);
 
-  // Обработчик добавления/удаления из избранного
-  const handleFavoriteToggle = async (carId: number, event: React.MouseEvent) => {
+  // Обработчик добавления/удаления из избранного (мемоизировано)
+  const handleFavoriteToggle = useCallback(async (carId: number, event: React.MouseEvent) => {
     event.stopPropagation(); // Предотвращаем клик по карточке
 
     try {
@@ -197,9 +197,9 @@ const MyAdsPage = () => {
       // В случае ошибки возвращаем предыдущее состояние
       await loadAds();
     }
-  };
+  }, [ads, loadAds]);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case 'active':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{t('statusActive')}</Badge>;

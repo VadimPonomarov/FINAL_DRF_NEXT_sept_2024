@@ -146,7 +146,8 @@ const AutoRiaMainPage = () => {
   const clearAllAds = useCallback(async () => {
     if (isGenerating) return;
 
-    const confirmed = confirm(t('autoria.testAds.confirmDelete'));
+    const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
+    const confirmed = await alertHelpers.confirmDelete(t('autoria.testAds.allTestAds') || 'всі тестові оголошення');
     if (!confirmed) return;
 
     setIsGenerating(true);

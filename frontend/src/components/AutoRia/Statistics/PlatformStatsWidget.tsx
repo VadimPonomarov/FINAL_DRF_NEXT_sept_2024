@@ -139,13 +139,13 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
       {/* Заголовок с кнопкой обновления */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          📊 Статистика платформы
+          📊 {t('autoria.platformStats') || 'Статистика платформи'}
         </h3>
         <div className="flex items-center gap-2">
           {lastUpdated && (
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-500">
-                Обновлено: {lastUpdated.toLocaleTimeString()}
+                {t('common.updated') || 'Оновлено'}: {lastUpdated.toLocaleTimeString()}
               </span>
               {sourceInfo && (
                 <TooltipProvider>

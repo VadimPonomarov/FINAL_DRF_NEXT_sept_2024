@@ -1,59 +1,66 @@
-import { NextRequest, NextResponse } from 'next/server';
-
 /**
- * API для очистки недействительных токенов аутентификации
+ * API endpoint для полной очистки авторизации в Redis
+ * Очищает провайдеры и токены текущего пользователя
  */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authConfig } from '@/configs/auth';
+import { redis } from '@/lib/redis';
+
 export async function POST(request: NextRequest) {
   try {
-    console.log('[Auth Cleanup API] Starting cleanup of invalid tokens...');
+    console.log('[API /auth/cleanup] Received cleanup request');
 
-    // Очищаем backend токены из Redis
-    const redisResponse = await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        key: 'backend_auth', 
-        value: null 
-      })
-    });
+    // Получаем сессию пользователя
+    const session = await getServerSession(authConfig);
 
-    if (!redisResponse.ok) {
-      console.warn('[Auth Cleanup API] Failed to clear Redis tokens');
-    } else {
-      console.log('[Auth Cleanup API] Redis tokens cleared');
+    if (!session?.user?.email) {
+      console.log('[API /auth/cleanup] No session found');
+      return NextResponse.json(
+        { success: false, error: 'No active session' },
+        { status: 401 }
+      );
     }
 
-    // Очищаем провайдер, если он был установлен в backend
-    const providerResponse = await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        key: 'auth_provider', 
-        value: 'dummy' // Возвращаем к dummy провайдеру
-      })
-    });
+    const userEmail = session.user.email;
+    console.log('[API /auth/cleanup] Cleaning up for user:', userEmail);
 
-    if (!providerResponse.ok) {
-      console.warn('[Auth Cleanup API] Failed to reset auth provider');
-    } else {
-      console.log('[Auth Cleanup API] Auth provider reset to dummy');
+    // Очищаем данные в Redis
+    const providerKey = `provider:${userEmail}`;
+    const tokensKey = `tokens:${userEmail}`;
+    const autoRiaTokensKey = `autoria:tokens:${userEmail}`;
+
+    try {
+      // Удаляем ключи из Redis
+      await Promise.all([
+        redis.del(providerKey),
+        redis.del(tokensKey),
+        redis.del(autoRiaTokensKey),
+      ]);
+
+      console.log('[API /auth/cleanup] ✅ Redis data cleared for keys:', {
+        providerKey,
+        tokensKey,
+        autoRiaTokensKey,
+      });
+    } catch (redisError) {
+      console.error('[API /auth/cleanup] ❌ Redis cleanup error:', redisError);
+      // Продолжаем, даже если Redis не доступен
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Authentication tokens cleaned up successfully',
-      actions: [
-        'Cleared backend_auth tokens from Redis',
-        'Reset auth_provider to dummy'
-      ]
+      message: 'Authentication data cleared successfully',
     });
-
-  } catch (error: any) {
-    console.error('[Auth Cleanup API] Error during cleanup:', error);
-
-    return NextResponse.json({
-      success: false,
-      error: error.message || 'Failed to cleanup auth tokens'
-    }, { status: 500 });
+  } catch (error) {
+    console.error('[API /auth/cleanup] ❌ Cleanup error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

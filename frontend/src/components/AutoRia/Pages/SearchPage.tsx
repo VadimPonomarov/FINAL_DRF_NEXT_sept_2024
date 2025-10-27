@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { alertHelpers } from '@/components/ui/alert-dialog-helper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -344,21 +345,24 @@ const SearchPage = () => {
     // searchCars автоматически вызовется через useCallback зависимости
   }, [currentPage, filters, sortBy, sortOrder, updateURL]);
 
-  // Обновление фильтра
-  const updateFilter = (key: string, value: any) => {
+  // Обновление фильтра (мемоизировано)
+  const updateFilter = useCallback((key: string, value: any) => {
     console.log('🔄 updateFilter called:', { key, value });
-    console.log('🔄 Previous filters:', filters);
-    const newFilters = { ...filters, [key]: value };
-    console.log('🔄 New filters will be:', newFilters);
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters(prev => {
+      console.log('🔄 Previous filters:', prev);
+      const newFilters = { ...prev, [key]: value };
+      console.log('🔄 New filters will be:', newFilters);
+      
+      // Update URL with new filters
+      updateURL(newFilters, 1, sortBy, sortOrder);
+      
+      return newFilters;
+    });
     setCurrentPage(1);
-
-    // Update URL with new filters
-    updateURL(newFilters, 1, sortBy, sortOrder);
 
     // УБИРАЕМ автоматический поиск - только по кнопке!
     console.log('🔄 Filter updated, but search will only run on button click');
-  };
+  }, [updateURL, sortBy, sortOrder]);
 
   // Дебаунсированное обновление поиска
   const updateSearchWithDebounce = (value: string) => {
@@ -423,8 +427,8 @@ const SearchPage = () => {
     });
   };
 
-  // Сброс только поля поиска
-  const clearSearchField = async () => {
+  // Сброс только поля поиска (мемоизировано)
+  const clearSearchField = useCallback(async () => {
     console.log('🔍 Search field cleared via X button, triggering immediate search');
 
     // Очищаем таймер debounce
@@ -454,7 +458,7 @@ const SearchPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, currentPage, sortBy, sortOrder, updateURL]);
 
   // Дебаунсированное обновление фильтров - ОТКЛЮЧЕНО
   const triggerFilterSearch = useCallback(() => {
@@ -468,16 +472,16 @@ const SearchPage = () => {
     console.log('🔄 Filter search disabled - use Search button instead');
   }, []);
 
-  // Применение фильтров
-  const applyFilters = () => {
+  // Применение фильтров (мемоизировано)
+  const applyFilters = useCallback(() => {
     console.log('🚀 APPLY FILTERS CLICKED!');
     console.log('🚀 Current filters:', filters);
     updateURL(filters, currentPage, sortBy, sortOrder);
     searchCars();
-  };
+  }, [filters, currentPage, sortBy, sortOrder, updateURL, searchCars]);
 
-  // Сброс фильтров
-  const clearFilters = async () => {
+  // Сброс фильтров (мемоизировано)
+  const clearFilters = useCallback(async () => {
     console.log('🔄 clearFilters called - resetting all filters');
 
     // Сбрасываем все фильтры
@@ -535,7 +539,7 @@ const SearchPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
   // Простые функции для действий (мемоизированы для предотвращения ререндера дочерних компонентов)
   const handleViewAd = useCallback((carId: number) => {
@@ -667,7 +671,7 @@ const SearchPage = () => {
     }
 
     // Подтверждение удаления
-    const confirmed = window.confirm('Вы уверены, что хотите удалить это объявление? Это действие нельзя отменить.');
+    const confirmed = await alertHelpers.confirmDelete(t('autoria.thisAd') || 'це оголошення');
     if (!confirmed) return;
 
     setDeletingIds(prev => new Set(prev).add(carId));
@@ -724,9 +728,9 @@ const SearchPage = () => {
         return next;
       });
     }
-  };
+  }, [deletingIds, toast, isAuthenticated, user, searchResults]);
 
-  const isOwner = (car: CarAd) => {
+  const isOwner = useCallback((car: CarAd) => {
     if (!isAuthenticated || !user) return false;
 
     // Проверяем по email пользователя
@@ -740,7 +744,18 @@ const SearchPage = () => {
 
     // Если нет информации о владельце, разрешаем только суперюзерам
     return user.is_superuser || false;
-  };
+  }, [isAuthenticated, user]);
+
+  // Мемоизированный callback для обновления счетчиков (предотвращает ререндер всех карточек)
+  const handleCountersUpdate = useCallback((adId: number, counters: { favorites_count: number; phone_views_count: number }) => {
+    setSearchResults(prevResults => 
+      prevResults.map(ad => 
+        ad.id === adId 
+          ? { ...ad, favorites_count: counters.favorites_count, phone_views_count: counters.phone_views_count }
+          : ad
+      )
+    );
+  }, []);
 
   // Restore filters from URL on mount
   useEffect(() => {
@@ -1460,29 +1475,13 @@ const SearchPage = () => {
                       <CarAdCard 
                         key={car.id} 
                         ad={car}
-                        onCountersUpdate={(adId, counters) => {
-                          setSearchResults(prevResults => 
-                            prevResults.map(ad => 
-                              ad.id === adId 
-                                ? { ...ad, favorites_count: counters.favorites_count, phone_views_count: counters.phone_views_count }
-                                : ad
-                            )
-                          );
-                        }}
+                        onCountersUpdate={handleCountersUpdate}
                       />
                     ) : (
                       <CarAdListItem 
                         key={car.id} 
                         ad={car}
-                        onCountersUpdate={(adId, counters) => {
-                          setSearchResults(prevResults => 
-                            prevResults.map(ad => 
-                              ad.id === adId 
-                                ? { ...ad, favorites_count: counters.favorites_count, phone_views_count: counters.phone_views_count }
-                                : ad
-                            )
-                          );
-                        }}
+                        onCountersUpdate={handleCountersUpdate}
                         onDelete={handleDeleteAd}
                         isOwner={isOwner}
                         togglingIds={togglingIds}

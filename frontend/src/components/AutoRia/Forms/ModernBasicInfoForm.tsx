@@ -87,7 +87,11 @@ const ModernBasicInfoForm: React.FC<ModernBasicInfoFormProps> = ({ data, onChang
   const generateTitle = async () => {
     const validation = validateRequiredFieldsForGeneration();
     if (!validation.isValid) {
-      alert(`🚫 Для генерації заголовка необхідно заповнити наступні поля:\n\n${validation.missingFields.join('\n')}\n\nПерейдіть до відповідних вкладок і заповніть ці поля.`);
+      toast({ 
+        title: '⚠️ ' + t('common.warning'), 
+        description: `${t('ai.requiredFieldsTitle')}\n\n${validation.missingFields.join('\n')}\n\n${t('ai.pleaseGoToTabs')}`,
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -135,7 +139,11 @@ const ModernBasicInfoForm: React.FC<ModernBasicInfoFormProps> = ({ data, onChang
   const generateDescription = async () => {
     const validation = validateRequiredFieldsForGeneration();
     if (!validation.isValid) {
-      alert(`🚫 Для генерації опису необхідно заповнити наступні поля:\n\n${validation.missingFields.join('\n')}\n\nПерейдіть до відповідних вкладок і заповніть ці поля.`);
+      toast({ 
+        title: '⚠️ ' + t('common.warning'), 
+        description: `${t('ai.requiredFieldsDescription')}\n\n${validation.missingFields.join('\n')}\n\n${t('ai.pleaseGoToTabs')}`,
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -195,7 +203,7 @@ const ModernBasicInfoForm: React.FC<ModernBasicInfoFormProps> = ({ data, onChang
   // Функция валидации контента
   const validateCurrentContent = async () => {
     if (!data.title || !data.description) {
-      alert('Будь ласка, заповніть заголовок та опис для перевірки');
+      toast({ title: '⚠️ ' + t('common.warning'), description: t('basicInfo.fillTitleDescription'), variant: 'destructive' });
       return;
     }
 
@@ -241,10 +249,10 @@ const ModernBasicInfoForm: React.FC<ModernBasicInfoFormProps> = ({ data, onChang
         message += `\n\nРекомендації:\n${result.suggestions.map(s => `• ${s}`).join('\n')}`;
       }
 
-      alert(message);
+      toast({ title: '✅ ' + t('common.success'), description: message });
     } catch (error) {
       console.error('Validation error:', error);
-      alert('Помилка при перевірці контенту. Спробуйте ще раз.');
+      toast({ title: '❌ ' + t('common.error'), description: t('basicInfo.validationError'), variant: 'destructive' });
     } finally {
       setIsValidating(false);
     }

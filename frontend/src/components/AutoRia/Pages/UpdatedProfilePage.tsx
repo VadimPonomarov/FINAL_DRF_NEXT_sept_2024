@@ -430,7 +430,9 @@ const UpdatedProfilePage = () => {
 
   const handleDeleteAddress = async () => {
     if (data?.addresses && data.addresses.length > 0) {
-      if (confirm(t('profile.address.confirmDelete'))) {
+      const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
+      const confirmed = await alertHelpers.confirmDelete(t('profile.address.thisAddress') || 'цю адресу');
+      if (confirmed) {
         try {
           await deleteAddress(data.addresses[0].id);
           setAddressForm({
@@ -665,7 +667,7 @@ const UpdatedProfilePage = () => {
             await mutate();
             // console.debug('🔄 Profile data refreshed');
 
-            alert(t('profile.avatar.success'));
+            toast({ title: '✅ ' + t('common.success'), description: t('profile.avatar.success') });
           } else {
             const saveError = await saveResponse.json();
             console.error('❌ Failed to save avatar to profile:', saveError);
@@ -673,7 +675,7 @@ const UpdatedProfilePage = () => {
             // Still update local state with original URL
             updateAvatarUrl(result.avatar_url);
 
-            alert(`${t('profile.avatar.success')} (${t('profile.avatar.saveWarning')})`);
+            toast({ title: '✅ ' + t('common.success'), description: `${t('profile.avatar.success')} (${t('profile.avatar.saveWarning')})` });
           }
         } catch (saveError) {
           console.error('❌ Error saving avatar to profile:', saveError);
@@ -681,15 +683,15 @@ const UpdatedProfilePage = () => {
           // Still update local state with original URL
           updateAvatarUrl(result.avatar_url);
 
-          alert(`${t('profile.avatar.success')} (${t('profile.avatar.saveWarning')})`);
+          toast({ title: '✅ ' + t('common.success'), description: `${t('profile.avatar.success')} (${t('profile.avatar.saveWarning')})` });
         }
       } else {
-        alert(`${t('profile.avatar.failed')}: ${result.error}`);
+        toast({ title: '❌ ' + t('common.error'), description: `${t('profile.avatar.failed')}: ${result.error}`, variant: 'destructive' });
       }
     } catch (error) {
       console.error('❌ Error generating avatar:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`${t('profile.avatar.failed')}: ${errorMessage}`);
+      toast({ title: '❌ ' + t('common.error'), description: `${t('profile.avatar.failed')}: ${errorMessage}`, variant: 'destructive' });
     } finally {
       setIsGeneratingAvatar(false);
     }
@@ -1413,7 +1415,9 @@ const UpdatedProfilePage = () => {
                             size="sm"
                             className="text-red-600 hover:text-red-700"
                             onClick={async () => {
-                              if (confirm(t('profile.contact.confirmDelete'))) {
+                              const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
+                              const confirmed = await alertHelpers.confirmDelete(t('profile.contact.thisContact') || 'цей контакт');
+                              if (confirmed) {
                                 try {
                                   await deleteContact(contact.id);
                                   toast({

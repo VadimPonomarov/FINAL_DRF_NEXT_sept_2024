@@ -110,7 +110,7 @@ const AuthTestPage = () => {
   // Установка тестового токена
   const setTestAuthToken = async () => {
     if (!testToken.trim()) {
-      alert('Please enter a token');
+      toast({ title: t('common.warning'), description: 'Please enter a token', variant: 'destructive' });
       return;
     }
 
@@ -132,14 +132,14 @@ const AuthTestPage = () => {
       });
 
       if (response.ok) {
-        alert('Token saved successfully!');
+        toast({ title: '✅ ' + t('common.success'), description: 'Token saved successfully!' });
         setTestToken('');
         checkAuthStatus();
       } else {
-        alert('Failed to save token');
+        toast({ title: '❌ ' + t('common.error'), description: 'Failed to save token', variant: 'destructive' });
       }
     } catch (error) {
-      alert('Error saving token: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast({ title: '❌ ' + t('common.error'), description: 'Error saving token: ' + (error instanceof Error ? error.message : 'Unknown error'), variant: 'destructive' });
     }
   };
 
@@ -157,13 +157,13 @@ const AuthTestPage = () => {
       });
 
       if (response.ok) {
-        alert('Token cleared successfully!');
+        toast({ title: '✅ ' + t('common.success'), description: 'Token cleared successfully!' });
         checkAuthStatus();
       } else {
-        alert('Failed to clear token');
+        toast({ title: '❌ ' + t('common.error'), description: 'Failed to clear token', variant: 'destructive' });
       }
     } catch (error) {
-      alert('Error clearing token: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast({ title: '❌ ' + t('common.error'), description: 'Error clearing token: ' + (error instanceof Error ? error.message : 'Unknown error'), variant: 'destructive' });
     }
   };
 

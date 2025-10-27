@@ -1,50 +1,106 @@
-/* Глобальные стили для исправления проблем с ховером кнопок */
-/* КРИТИЧНО: текст должен оставаться видимым при hover */
+/* 
+ * Глобальные стили для обеспечения контрастности при hover
+ * КРИТИЧНО: текст должен быть читаемым на любом фоне
+ */
 
-/* Принудительное применение белого цвета для ВСЕХ цветных кнопок при ховере */
+/* ========================================
+ * СВЕТЛАЯ ТЕМА - Цветные кнопки
+ * ======================================== */
 button[class*="bg-orange"]:hover,
+button[class*="bg-amber"]:hover,
+button[class*="bg-yellow"]:hover,
 button[class*="bg-green"]:hover,
 button[class*="bg-red"]:hover,
 button[class*="bg-blue"]:hover,
-button[class*="bg-gray"]:hover,
-button[class*="bg-black"]:hover,
 button[class*="bg-purple"]:hover,
 button[class*="bg-indigo"]:hover,
-button[class*="bg-yellow"]:hover,
+button[class*="bg-pink"]:hover,
+button[class*="bg-cyan"]:hover,
 button.bg-primary:hover {
   color: white !important;
+  filter: brightness(0.95);
 }
 
-/* Темная тема - белый текст для цветных кнопок */
-.dark button[class*="bg-orange"]:hover,
-.dark button[class*="bg-green"]:hover,
-.dark button[class*="bg-red"]:hover,
-.dark button[class*="bg-blue"]:hover,
-.dark button[class*="bg-gray"]:hover,
-.dark button[class*="bg-black"]:hover,
-.dark button.bg-primary:hover {
+/* Темные фоны - всегда белый текст */
+button[class*="bg-gray"]:hover:not([class*="bg-gray-1"]):not([class*="bg-gray-2"]):not([class*="bg-gray-3"]),
+button[class*="bg-black"]:hover,
+button[class*="bg-slate-"]:hover:not([class*="bg-slate-1"]):not([class*="bg-slate-2"]):not([class*="bg-slate-3"]) {
   color: white !important;
+  filter: brightness(1.1);
+}
+
+/* Светлые фоны - темный текст */
+button[class*="bg-gray-1"]:hover,
+button[class*="bg-gray-2"]:hover,
+button[class*="bg-gray-3"]:hover,
+button[class*="bg-white"]:hover {
+  color: rgb(17 24 39) !important; /* gray-900 */
+  background-color: rgb(243 244 246) !important; /* gray-100 */
 }
 
 /* Кнопки с outline - светлая тема */
-button[class*="variant-outline"]:hover,
+button[class*="outline"]:hover:not([class*="bg-"]),
 button[class*="border"]:hover:not([class*="bg-"]) {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+  background-color: rgb(243 244 246) !important; /* gray-100 */
   color: rgb(17 24 39) !important; /* gray-900 */
+  border-color: rgb(156 163 175) !important; /* gray-400 */
 }
 
-/* Кнопки с outline - темная тема */
-.dark button[class*="variant-outline"]:hover,
-.dark button[class*="border"]:hover:not([class*="bg-"]) {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+/* ========================================
+ * ТЕМНАЯ ТЕМА - Улучшенная контрастность
+ * ======================================== */
+
+/* Цветные кнопки в темной теме - убираем черные, используем синие */
+.dark button.bg-primary:hover,
+.dark button[class*="bg-black"]:hover {
+  background-color: rgb(37 99 235) !important; /* blue-600 */
+  color: white !important;
+  filter: brightness(1.1);
+}
+
+.dark button[class*="bg-orange"]:hover,
+.dark button[class*="bg-amber"]:hover,
+.dark button[class*="bg-yellow"]:hover,
+.dark button[class*="bg-green"]:hover,
+.dark button[class*="bg-red"]:hover,
+.dark button[class*="bg-blue"]:hover,
+.dark button[class*="bg-purple"]:hover,
+.dark button[class*="bg-indigo"]:hover,
+.dark button[class*="bg-pink"]:hover,
+.dark button[class*="bg-cyan"]:hover {
+  color: white !important;
+  filter: brightness(1.15);
+}
+
+/* Серые кнопки в темной теме - средне-серый фон */
+.dark button[class*="bg-gray"]:hover {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
   color: white !important;
 }
 
-/* Ссылки-кнопки */
+/* Кнопки с outline в темной теме */
+.dark button[class*="outline"]:hover:not([class*="bg-"]),
+.dark button[class*="border"]:hover:not([class*="bg-"]) {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+  color: white !important;
+  border-color: rgb(107 114 128) !important; /* gray-500 */
+}
+
+/* Ghost кнопки - тонкий hover */
+.dark button[class*="ghost"]:hover {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+/* ========================================
+ * ССЫЛКИ-КНОПКИ
+ * ======================================== */
 a[class*="bg-orange"]:hover,
 a[class*="bg-green"]:hover,
 a[class*="bg-red"]:hover,
 a[class*="bg-blue"]:hover,
+a[class*="bg-yellow"]:hover,
+a[class*="bg-purple"]:hover,
 a.bg-primary:hover {
   color: white !important;
 }
@@ -53,6 +109,24 @@ a.bg-primary:hover {
 .dark a[class*="bg-green"]:hover,
 .dark a[class*="bg-red"]:hover,
 .dark a[class*="bg-blue"]:hover,
+.dark a[class*="bg-black"]:hover,
 .dark a.bg-primary:hover {
   color: white !important;
+  filter: brightness(1.1);
+}
+
+/* ========================================
+ * АНИМАЦИЯ И ПЛАВНОСТЬ
+ * ======================================== */
+button, a[class*="bg-"] {
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover, a[class*="bg-"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+button:active, a[class*="bg-"]:active {
+  transform: translateY(0);
 }

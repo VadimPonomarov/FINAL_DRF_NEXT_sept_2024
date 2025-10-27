@@ -3,10 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
 import { useUserProfileData } from '@/hooks/useUserProfileData';
-import { User, Crown } from 'lucide-react';
+import { User, Crown, Trash2 } from 'lucide-react';
+import { cleanupBackendTokens } from '@/lib/auth/cleanupAuth';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Бейдж с информацией о залогиненном пользователе AutoRia
@@ -42,8 +45,11 @@ const AutoRiaUserBadge: React.FC = () => {
   const accountType = userProfileData?.account?.account_type?.toUpperCase() || 'BASIC';
   const isPremium = ['PREMIUM', 'VIP'].includes(accountType);
   
-  // Имя пользователя или email
-  const displayName = actualUser.username || actualUser.email || userProfileData?.account?.user?.email || 'User';
+  // Имя пользователя - НЕ показываем email (он уже в AuthBadge)
+  const displayName = actualUser.username || 
+                      (actualUser.first_name && actualUser.last_name 
+                        ? `${actualUser.first_name} ${actualUser.last_name}` 
+                        : actualUser.first_name || 'AutoRia');
   
   // Определяем полномочия пользователя
   const isSuperuser = actualUser?.is_superuser || false;
@@ -63,31 +69,31 @@ const AutoRiaUserBadge: React.FC = () => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge
-            variant={isPremium ? "default" : "secondary"}
-            className={`cursor-pointer hover:shadow-md transition-all ${
+            variant="outline"
+            className={`cursor-pointer transition-all shadow-sm ${
               isPremium 
-                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white font-bold'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white border-yellow-600 hover:from-amber-500 hover:to-yellow-600 font-semibold'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
-            <Link href="/autoria/profile" className="flex items-center gap-1.5 px-2 py-1">
+            <Link href="/autoria/profile" className="flex items-center gap-1.5 px-2 py-0.5">
               {isPremium ? (
-                <Crown className="h-3.5 w-3.5" />
+                <Crown className="h-3 w-3" />
               ) : (
-                <User className="h-3.5 w-3.5" />
+                <User className="h-3 w-3" />
               )}
-              <span className="text-xs font-medium">{displayName}</span>
+              <span className="text-xs">{displayName}</span>
             </Link>
           </Badge>
         </TooltipTrigger>
         <TooltipContent 
-          side="left" 
-          align="end"
-          alignOffset={-10}
-          className="max-w-[250px] sm:max-w-[280px] p-3 z-[100000]"
-          sideOffset={16}
+          side="bottom" 
+          align="start"
+          className="max-w-[280px] p-3 z-[10000000]"
+          sideOffset={8}
+          alignOffset={-120}
           avoidCollisions={true}
-          collisionPadding={10}
+          collisionPadding={20}
         >
           <div className="space-y-2">
             <div>

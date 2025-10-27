@@ -122,7 +122,7 @@ const UserModerationPage = () => {
       console.log(`[UserModeration] Banning user ${userId} with reason: ${reason}`);
 
       // Временная реализация
-      alert(`Пользователь заблокирован. Причина: ${reason}`);
+      toast({ title: '✅ ' + t('common.success'), description: `${t('moderation.userBlocked')}: ${reason}` });
 
       // Обновить локальное состояние
       setUsers(prev => prev.map(u =>
@@ -134,7 +134,7 @@ const UserModerationPage = () => {
       setSelectedUser(null);
     } catch (error) {
       console.error('[UserModeration] Error banning user:', error);
-      alert('Ошибка при блокировке пользователя');
+      toast({ title: '❌ ' + t('common.error'), description: t('moderation.errorBlocking'), variant: 'destructive' });
     }
   };
 
@@ -144,7 +144,7 @@ const UserModerationPage = () => {
       console.log(`[UserModeration] Unbanning user ${userId}`);
 
       // Временная реализация
-      alert('Пользователь разблокирован');
+      toast({ title: '✅ ' + t('common.success'), description: t('moderation.userUnblocked') });
 
       // Обновить локальное состояние
       setUsers(prev => prev.map(u =>
@@ -154,7 +154,7 @@ const UserModerationPage = () => {
       ));
     } catch (error) {
       console.error('[UserModeration] Error unbanning user:', error);
-      alert('Ошибка при разблокировке пользователя');
+      toast({ title: '❌ ' + t('common.error'), description: t('moderation.errorUnblocking'), variant: 'destructive' });
     }
   };
 

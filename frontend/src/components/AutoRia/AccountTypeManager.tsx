@@ -41,7 +41,9 @@ const AccountTypeManager: React.FC<AccountTypeManagerProps> = ({
 
   // Функция для очистки всех тестовых объявлений
   const handleCleanupTestAds = async () => {
-    if (!confirm('Вы уверены, что хотите удалить ВСЕ тестовые объявления? Это действие нельзя отменить.')) {
+    const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
+    const confirmed = await alertHelpers.confirmDelete(t('autoria.testAds.allTestAds') || 'ВСІ тестові оголошення');
+    if (!confirmed) {
       return;
     }
 

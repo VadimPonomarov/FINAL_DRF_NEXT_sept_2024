@@ -16,6 +16,12 @@ code, pre, .font-mono {
 @tailwind components;
 @tailwind utilities;
 
+/* Убираем overflow-hidden у body чтобы не обрезать fixed элементы (бейджи, тултипы) */
+body {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
 @layer base {
   @keyframes progress {
     from { width: 100%; }
@@ -35,8 +41,8 @@ code, pre, .font-mono {
     --card-foreground: var(--surface-text);
     --popover: 0 0% 100%;
     --popover-foreground: var(--surface-text);
-    --primary: var(--text);
-    --primary-foreground: 0 0% 98%;
+    --primary: 220 100% 50%; /* Более контрастный синий для светлой темы */
+    --primary-foreground: 0 0% 100%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: var(--text);
     --muted: 240 4.8% 95.9%;
@@ -183,13 +189,6 @@ input, textarea, select { color: hsl(var(--form-text)); }
         margin-left: 4px !important;
         pointer-events: auto !important;
         display: inline-flex !important;
-    }
-
-    .badge {
-        @apply absolute -bottom-[25px] right-[5px]
-               bg-transparent border-none
-               text-foreground hover:text-accent-foreground
-               transition-colors duration-200 z-[102];
     }
 
     .theme-toggle {

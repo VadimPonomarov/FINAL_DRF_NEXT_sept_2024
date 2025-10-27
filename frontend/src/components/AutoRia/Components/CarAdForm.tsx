@@ -231,7 +231,8 @@ const CarAdForm: React.FC<CarAdFormProps> = ({
 
     } catch (error) {
       console.error('[CarAdForm] ❌ Error generating mock data:', error);
-      alert(`Ошибка при генерации данных: ${error.message || error}`);
+      const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
+      alertHelpers.error(`${t('common.error')}: ${error.message || error}`);
     }
   };
 
@@ -263,10 +264,9 @@ const CarAdForm: React.FC<CarAdFormProps> = ({
   const handleDelete = useCallback(async () => {
     if (!onDelete) return;
 
-    // Показываем подтверждение удаления через стандартный confirm
-    const confirmed = window.confirm(
-      'Ви впевнені, що хочете видалити це оголошення?\n\nЦю дію неможливо скасувати.'
-    );
+    // Показываем подтверждение удаления через shadcn AlertDialog
+    const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
+    const confirmed = await alertHelpers.confirmDelete(t('autoria.thisAd') || 'це оголошення');
 
     if (!confirmed) return;
 

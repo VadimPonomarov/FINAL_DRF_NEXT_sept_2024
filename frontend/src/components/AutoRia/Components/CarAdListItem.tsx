@@ -93,7 +93,9 @@ const CarAdListItem: React.FC<CarAdListItemProps> = ({
     
     if (deletingIds.has(ad.id)) return;
     
-    if (confirm(`Удалить объявление "${ad.title}"?`)) {
+    const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
+    const confirmed = await alertHelpers.confirmDelete(`${t('autoria.ad')}: "${ad.title}"`);
+    if (confirmed) {
       onDelete?.(ad.id);
     }
   };
@@ -319,5 +321,41 @@ const CarAdListItem: React.FC<CarAdListItemProps> = ({
   );
 };
 
-export default CarAdListItem;
+// Мемоизация компонента для предотвращения ненужных ререндеров
+// Компонент будет перерисовываться только если изменился ad.id или важные поля
+export default React.memo(CarAdListItem, (prevProps, nextProps) => {
+  // Сравниваем по ID - если ID тот же, проверяем важные поля
+  if (prevProps.ad.id !== nextProps.ad.id) return false;
+  
+  // Проверяем изменились ли критичные поля
+  const fieldsToCompare: (keyof CarAd)[] = [
+    'is_favorite',
+    'favorites_count',
+    'phone_views_count',
+    'view_count',
+    'title',
+    'price',
+    'price_usd',
+    'price_eur',
+    'price_uah'
+  ];
+  
+  for (const field of fieldsToCompare) {
+    if (prevProps.ad[field] !== nextProps.ad[field]) {
+      return false; // Props changed, need re-render
+    }
+  }
+  
+  // Проверяем другие props
+  if (prevProps.togglingIds !== nextProps.togglingIds ||
+      prevProps.deletingIds !== nextProps.deletingIds ||
+      prevProps.isOwner !== nextProps.isOwner ||
+      prevProps.onDelete !== nextProps.onDelete ||
+      prevProps.onCountersUpdate !== nextProps.onCountersUpdate) {
+    return false;
+  }
+  
+  // Props didn't change, skip re-render
+  return true;
+});
 

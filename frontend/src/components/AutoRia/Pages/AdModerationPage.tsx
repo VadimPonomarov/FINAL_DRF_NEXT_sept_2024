@@ -96,11 +96,11 @@ const AdModerationPage: React.FC<AdModerationPageProps> = ({ adId }) => {
       // TODO: Implement actual moderation API call
       // await CarAdsService.moderateAd(adId, newStatus, moderationReason);
       
-      alert('Модерация сохранена успешно');
+      toast({ title: '✅ ' + t('common.success'), description: t('moderation.savedSuccessfully') });
       
     } catch (error) {
       console.error('[AdModerationPage] Error saving moderation:', error);
-      alert('Ошибка при сохранении модерации');
+      toast({ title: '❌ ' + t('common.error'), description: t('moderation.errorSaving'), variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }

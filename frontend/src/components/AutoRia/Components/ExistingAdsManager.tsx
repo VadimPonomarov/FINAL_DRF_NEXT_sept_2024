@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -36,6 +37,7 @@ const ExistingAdsManager: React.FC<ExistingAdsManagerProps> = ({
   className = ''
 }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
   const [selectedImageTypes, setSelectedImageTypes] = useState<string[]>(['front', 'side']);
 
@@ -87,13 +89,13 @@ const ExistingAdsManager: React.FC<ExistingAdsManagerProps> = ({
 
   const handleProcess = () => {
     if (selectedActions.length === 0) {
-      alert(t('autoria.testAds.existingAds.noOptions'));
+      toast({ title: t('common.warning'), description: t('autoria.testAds.existingAds.noOptions'), variant: 'destructive' });
       return;
     }
 
     // Если выбрано добавление изображений, проверяем типы
     if (selectedActions.includes('addImages') && selectedImageTypes.length === 0) {
-      alert(t('autoria.testAds.imageTypes.noSelection'));
+      toast({ title: t('common.warning'), description: t('autoria.testAds.imageTypes.noSelection'), variant: 'destructive' });
       return;
     }
 
