@@ -2708,6 +2708,7 @@ export default {
   "autoria.moderation.needsReview": "Требует проверки",
   "autoria.moderation.rejected": "Отклонено",
   "autoria.moderation.active": "Активные",
+  "autoria.moderation.draft": "Черновик",
   "autoria.moderation.todayModerated": "Проверено сегодня",
   "autoria.moderation.approve": "Одобрить",
   "autoria.moderation.reject": "Отклонить",

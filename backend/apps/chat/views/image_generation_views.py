@@ -2,6 +2,8 @@
 Views for AI image generation using g4f
 """
 import logging
+import requests
+from typing import Optional, List, Dict
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -18,6 +20,122 @@ try:
 except ImportError:
     G4F_AVAILABLE = False
     logger.warning("g4f not available, image generation will use fallbacks")
+
+
+def search_reference_images(brand: str, model: str, year: int, color: Optional[str] = None) -> List[str]:
+    """
+    Поиск реальных фотографий автомобиля в интернете для использования как референс.
+    
+    Когда AI модель не уверена (менее 95%) в правильности отображения конкретного автомобиля,
+    она должна найти реальные фото с точными параметрами и использовать их как образец.
+    
+    Args:
+        brand: Марка автомобиля (например, "BMW")
+        model: Модель (например, "X5")
+        year: Год выпуска
+        color: Цвет (опционально)
+    
+    Returns:
+        List[str]: Список URL реальных фотографий для использования как референс
+    """
+    reference_urls = []
+    
+    # Формируем точный поисковый запрос
+    search_query = f"{brand} {model} {year}"
+    if color:
+        search_query += f" {color}"
+    search_query += " photo stock image"
+    
+    logger.info(f"[ReferenceSearch] Searching for: {search_query}")
+    
+    try:
+        # Метод 1: Unsplash API (бесплатный, высококачественные фото)
+        unsplash_url = f"https://api.unsplash.com/search/photos"
+        unsplash_params = {
+            'query': search_query,
+            'per_page': 3,
+            'orientation': 'landscape'
+        }
+        
+        # Если есть Unsplash Access Key в настройках
+        unsplash_key = getattr(settings, 'UNSPLASH_ACCESS_KEY', None)
+        if unsplash_key:
+            unsplash_params['client_id'] = unsplash_key
+            response = requests.get(unsplash_url, params=unsplash_params, timeout=5)
+            if response.status_code == 200:
+                results = response.json().get('results', [])
+                for result in results[:3]:
+                    reference_urls.append(result['urls']['regular'])
+                logger.info(f"[ReferenceSearch] Found {len(results)} images from Unsplash")
+    
+    except Exception as e:
+        logger.warning(f"[ReferenceSearch] Unsplash search failed: {e}")
+    
+    try:
+        # Метод 2: Pixabay API (бесплатный, хорошее качество)
+        pixabay_key = getattr(settings, 'PIXABAY_API_KEY', None)
+        if pixabay_key and len(reference_urls) < 3:
+            pixabay_url = "https://pixabay.com/api/"
+            pixabay_params = {
+                'key': pixabay_key,
+                'q': search_query,
+                'image_type': 'photo',
+                'per_page': 3,
+                'safesearch': 'true'
+            }
+            response = requests.get(pixabay_url, params=pixabay_params, timeout=5)
+            if response.status_code == 200:
+                hits = response.json().get('hits', [])
+                for hit in hits[:3]:
+                    reference_urls.append(hit['largeImageURL'])
+                logger.info(f"[ReferenceSearch] Found {len(hits)} images from Pixabay")
+    
+    except Exception as e:
+        logger.warning(f"[ReferenceSearch] Pixabay search failed: {e}")
+    
+    # Если не нашли через API, создаем инструкцию для модели искать самостоятельно
+    if not reference_urls:
+        logger.info(f"[ReferenceSearch] No API results, AI will use internal knowledge of {search_query}")
+    
+    return reference_urls
+
+
+def create_reference_instruction(brand: str, model: str, year: int, reference_urls: Optional[List[str]] = None) -> str:
+    """
+    Создает инструкцию для AI модели использовать реальные фотографии как референс.
+    
+    Эта инструкция говорит модели:
+    1. Искать в своей базе знаний реальные фотографии этого автомобиля
+    2. Копировать дизайн, пропорции, детали с реальных фото
+    3. НЕ придумывать дизайн самостоятельно, если не уверена
+    """
+    
+    if reference_urls and len(reference_urls) > 0:
+        # Если нашли реальные фото - инструктируем модель их использовать
+        reference_instruction = (
+            f"CRITICAL REFERENCE INSTRUCTION: "
+            f"Real photographs of {brand} {model} {year} have been found. "
+            f"Your task is to COPY the design from these real photos as accurately as possible. "
+            f"Found {len(reference_urls)} reference images. "
+            f"EXACT COPYING required: body shape, headlight design, grille pattern, wheel design, "
+            f"proportions, styling details - everything must match the real {brand} {model} {year}. "
+            f"Do NOT invent or imagine - COPY what you see in real photos of this exact model and year."
+        )
+    else:
+        # Если не нашли фото через API - инструктируем модель использовать внутренние знания
+        reference_instruction = (
+            f"CRITICAL KNOWLEDGE INSTRUCTION: "
+            f"Search your training data for REAL photographs of {brand} {model} {year}. "
+            f"If you are less than 95% confident about the exact appearance of this vehicle, "
+            f"you MUST use reference images from your knowledge base. "
+            f"Recreate the design AS IT APPEARS in real photographs - not your interpretation. "
+            f"COPY EXACTLY: body panels, headlight shapes, grille design, wheel fitment, "
+            f"all styling elements must match REAL {brand} {model} {year} from photos. "
+            f"If uncertain about any detail (especially badges, logos, grille), "
+            f"use GENERIC UNMARKED version of that area rather than guessing incorrectly."
+        )
+    
+    return reference_instruction
 
 
 @swagger_auto_schema(
@@ -665,38 +783,22 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     }
 
     # Enforce correct type; explicit positives and negatives per type
-    # ULTRA-CRITICAL: MASSIVE prohibition list - AI MUST NOT generate logos
+    # ✅ IMPROVED APPROACH: Focus on what we WANT, not what we DON'T want
+    # Problem: Mentioning brand names in negative prompts makes AI remember them
+    # Solution: Use generic positive instructions instead
     global_negatives = [
-        'no text overlay', 'no watermark', 'no low quality', 'no extra logos',
-        'no people', 'no cropped vehicle', 'no distortion',
-        # CRITICAL: Multiple repetitions to force AI compliance
-        'NO logo emblems', 'NO logo emblems', 'NO logo emblems',
-        'NO brand logos', 'NO brand logos', 'NO brand logos',
-        'NO brand badges', 'NO brand badges', 'NO brand badges',
-        'NO brand symbols', 'NO brand symbols', 'NO brand symbols',
-        'NO manufacturer logos', 'NO manufacturer logos', 'NO manufacturer logos',
-        # Specific brand prohibitions (repeated 3x each for emphasis)
-        'NO Toyota logo', 'NO Toyota logo', 'NO Toyota logo',
-        'NO Toyota oval', 'NO Toyota oval', 'NO Toyota oval',
-        'NO Toyota emblem', 'NO Toyota emblem', 'NO Toyota emblem',
-        'NO BMW logo', 'NO BMW logo', 'NO BMW logo',
-        'NO BMW roundel', 'NO BMW roundel', 'NO BMW roundel',
-        'NO Mercedes logo', 'NO Mercedes logo', 'NO Mercedes logo',
-        'NO Mercedes star', 'NO Mercedes star', 'NO Mercedes star',
-        'NO Nissan logo', 'NO Nissan logo', 'NO Nissan logo',
-        'NO Honda logo', 'NO Honda logo', 'NO Honda logo',
-        'NO Audi logo', 'NO Audi logo', 'NO Audi logo',
-        'NO VW logo', 'NO VW logo', 'NO VW logo',
-        'NO Ford logo', 'NO Ford logo', 'NO Ford logo',
-        'NO Chevrolet logo', 'NO Chevrolet logo', 'NO Chevrolet logo',
-        'NO Hyundai logo', 'NO Hyundai logo', 'NO Hyundai logo',
-        'NO Kia logo', 'NO Kia logo', 'NO Kia logo',
-        # Shape prohibitions
-        'NO circular badges', 'NO oval badges', 'NO star badges',
-        'NO wing badges', 'NO ring badges',
-        # Final emphasis
-        'blank front grille', 'unmarked grille', 'clean grille surface',
-        'no grille emblem', 'no grille badge', 'no grille logo'
+        'no text overlay',
+        'no watermark',
+        'no low quality',
+        'no people',
+        'no cropped vehicle',
+        'no distortion',
+        # Generic branding removal (no specific brand names)
+        'unmarked vehicle',
+        'generic design',
+        'blank grille',
+        'smooth front surface',
+        'clean vehicle design'
     ]
 
     if vt == 'bus':
@@ -932,46 +1034,233 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
 
     print(f"[ImageGen] 🚫 BRANDING FORCE DISABLED FOR ALL VEHICLES: {brand_mismatch_reason}")
 
-    # ULTRA-STRICT APPROACH: FORCE DISABLE ALL BRANDING - AI IGNORES NEGATIVE PROMPTS
-    # Multiple layers of protection to prevent logo generation
+    # ✅ "ОТ ОБРАТНОГО" ПОДХОД: Явно описываем ЗОНЫ, которые должны быть ПУСТЫМИ
+    # Фокусируем внимание модели на конкретных областях автомобиля
+    
+    # Layer 1: Детальное описание ПУСТЫХ зон (области, где обычно логотипы)
+    strict_branding = (
+        f"CRITICAL ZONES SPECIFICATION for {brand} {model}: "
+        f"1. FRONT GRILLE CENTER: completely SMOOTH metal/plastic surface, FLAT and UNMARKED, no protrusions, no circular elements, no oval shapes. "
+        f"2. HOOD CENTER (above grille): CLEAN painted surface matching body color ({color}), FLAT, no raised elements. "
+        f"3. REAR TRUNK/TAILGATE CENTER: SMOOTH painted surface, BLANK area, no lettering, no emblems. "
+        f"4. WHEEL CENTERS (hubcaps): simple PLAIN design, solid color or basic pattern, no text, no symbols. "
+        f"5. STEERING WHEEL CENTER (if interior): FLAT surface, single color, no circular badges. "
+        f"IMPORTANT: These areas must look like BLANK TEMPLATES ready for badge installation - smooth, unmarked, clean."
+    )
 
-    # Layer 1: Strict branding instruction
-    strict_branding = "CRITICAL: Clean vehicle design with BLANK front grille (no logo, no emblem, no badge, no text). Smooth unmarked grille surface. Generic vehicle without manufacturer identification."
-
-    # Layer 2: Multiple explicit prohibitions
+    # ✅ СТРОГАЯ ЗАЩИТА: Запрет на использование популярных логотипов для неподходящих брендов
+    # Список популярных брендов с узнаваемыми логотипами
+    popular_branded_logos = {
+        'toyota': 'Toyota oval logo',
+        'volkswagen': 'VW logo', 'vw': 'VW logo',
+        'mercedes-benz': 'Mercedes star', 'mercedes': 'Mercedes star',
+        'bmw': 'BMW roundel',
+        'audi': 'Audi rings',
+        'honda': 'Honda H logo',
+        'nissan': 'Nissan circle logo',
+        'ford': 'Ford oval logo',
+        'chevrolet': 'Chevrolet bowtie', 'chevy': 'Chevrolet bowtie',
+        'hyundai': 'Hyundai H logo',
+        'kia': 'Kia oval logo',
+        'mazda': 'Mazda M logo',
+        'subaru': 'Subaru stars',
+        'volvo': 'Volvo arrow logo',
+        'porsche': 'Porsche crest',
+        'ferrari': 'Ferrari prancing horse',
+        'lamborghini': 'Lamborghini bull logo',
+        'bentley': 'Bentley B logo',
+        'rolls-royce': 'Rolls-Royce RR logo',
+        'lexus': 'Lexus L logo',
+        'infiniti': 'Infiniti logo',
+        'acura': 'Acura A logo'
+    }
+    
+    brand_lower = brand.lower()
+    
+    # Создаем список ЗАПРЕЩЕННЫХ логотипов (все популярные, кроме текущего бренда)
+    forbidden_logos = []
+    for brand_name, logo_name in popular_branded_logos.items():
+        if brand_lower != brand_name:  # Если это НЕ наш бренд
+            forbidden_logos.append(logo_name)
+    
+    # Строгая инструкция о запрещенных логотипах
+    if forbidden_logos:
+        forbidden_instruction = (
+            f"ABSOLUTELY FORBIDDEN - DO NOT GENERATE ANY OF THESE LOGOS: "
+            f"{', '.join(forbidden_logos)}. "
+            f"These logos belong to OTHER brands, NOT to {brand}. "
+            f"CRITICAL: This is {brand} {model}, NOT Toyota, NOT Mercedes, NOT BMW, NOT any other brand. "
+            f"If you are uncertain about {brand} logo - use BLANK unmarked grille instead."
+        )
+    else:
+        forbidden_instruction = ""
+    
+    # Layer 2: Позитивное описание того, НА ЧТО обращать внимание
     brand_protection = (
-        "ABSOLUTELY FORBIDDEN - DO NOT GENERATE: "
-        "Toyota oval logo, Toyota emblem, Toyota badge, Toyota symbol, "
-        "BMW roundel, BMW logo, BMW badge, BMW emblem, "
-        "Mercedes star, Mercedes logo, Mercedes badge, Mercedes emblem, "
-        "Nissan circle, Nissan logo, Nissan badge, Nissan emblem, "
-        "Honda wing, Honda logo, Honda badge, Honda emblem, "
-        "Audi rings, Audi logo, Audi badge, Audi emblem, "
-        "Volkswagen VW, VW logo, VW badge, VW emblem, "
-        "Ford oval, Ford logo, Ford badge, Ford emblem, "
-        "Chevrolet bowtie, Chevy logo, Chevy badge, Chevy emblem, "
-        "Hyundai H, Hyundai logo, Hyundai badge, Hyundai emblem, "
-        "Kia oval, Kia logo, Kia badge, Kia emblem, "
-        "Mazda M, Mazda logo, Mazda badge, Mazda emblem, "
-        "Subaru stars, Subaru logo, Subaru badge, Subaru emblem, "
-        "Volvo arrow, Volvo logo, Volvo badge, Volvo emblem, "
-        "ANY brand logo, ANY brand emblem, ANY brand badge, ANY brand symbol, "
-        "ANY circular logo, ANY oval logo, ANY star logo, ANY wing logo, ANY ring logo, "
-        "ANY manufacturer marking, ANY brand identification. "
-        "CRITICAL: Front grille must be COMPLETELY BLANK - no logos, no emblems, no badges, no text, no symbols. "
-        "Clean unmarked surface only. "
+        f"{forbidden_instruction} "
+        f"FOCUS ATTENTION on these elements of the {brand} {model}: "
+        f"VEHICLE SHAPE and PROPORTIONS ({body_type} style), "
+        f"BODY COLOR ({color}), "
+        f"BODY LINES and STYLING, "
+        f"WINDOW DESIGN, "
+        f"HEADLIGHT and TAILLIGHT shapes, "
+        f"WHEEL design (rims without center logos), "
+        f"OVERALL SILHOUETTE and STANCE. "
+        f"IGNORE brand identity - treat this as a CONCEPT CAR or PROTOTYPE before branding is applied."
     )
 
     negatives = ", ".join(global_negatives + ([type_negation] if type_negation else []))
 
-    # CRITICAL: Put brand protection at the BEGINNING so AI sees it first
-    # Final structured prompt (English translation is applied later)
+    # Собираем информацию о состоянии и особенностях автомобиля
+    condition_details = []
+    if condition:
+        condition_lower = condition.lower()
+        if 'excellent' in condition_lower or 'отличное' in condition_lower or 'відмінний' in condition_lower:
+            condition_details.append("pristine condition, well-maintained, no visible damage")
+        elif 'good' in condition_lower or 'хорошее' in condition_lower or 'гарний' in condition_lower:
+            condition_details.append("good condition, minor wear typical for age")
+        elif 'fair' in condition_lower or 'среднее' in condition_lower or 'задовільний' in condition_lower:
+            condition_details.append("fair condition, visible signs of use and age")
+        elif 'poor' in condition_lower or 'плохое' in condition_lower or 'поганий' in condition_lower:
+            condition_details.append("poor condition, significant wear and damage")
+    
+    # Парсим описание для специфических повреждений/особенностей
+    damage_keywords = {
+        'scratch': 'scratches', 'царапина': 'scratches', 'подряпина': 'scratches',
+        'dent': 'dents', 'вмятина': 'dents', 'вм\'ятина': 'dents',
+        'crack': 'cracked glass', 'трещина': 'cracked glass', 'тріщина': 'cracked glass',
+        'broken': 'broken parts', 'разбит': 'broken parts', 'розбитий': 'broken parts',
+        'rust': 'rust spots', 'ржавчина': 'rust spots', 'іржа': 'rust spots',
+        'paint': 'paint damage', 'краска': 'paint damage', 'фарба': 'paint damage'
+    }
+    
+    specific_damages = []
+    if scene_desc:
+        scene_lower = scene_desc.lower()
+        for keyword, damage_type in damage_keywords.items():
+            if keyword in scene_lower:
+                specific_damages.append(damage_type)
+                # Пытаемся найти локализацию повреждения
+                if 'капот' in scene_lower or 'hood' in scene_lower:
+                    specific_damages[-1] += ' on hood'
+                elif 'дверь' in scene_lower or 'door' in scene_lower or 'двері' in scene_lower:
+                    specific_damages[-1] += ' on door'
+                elif 'крыло' in scene_lower or 'fender' in scene_lower or 'крило' in scene_lower:
+                    specific_damages[-1] += ' on fender'
+                elif 'бампер' in scene_lower or 'bumper' in scene_lower:
+                    specific_damages[-1] += ' on bumper'
+    
+    damage_description = ", ".join(specific_damages) if specific_damages else ""
+    condition_description = ", ".join(condition_details) if condition_details else ""
+    
+    # ✅ IMPROVED PROMPT STRUCTURE: Lead with POSITIVE description, minimize negative mentions
+    # Focus AI attention on what we WANT (specific vehicle, color, angle) rather than what we DON'T want
+    
+    # Определяем возраст автомобиля для корректного отображения
+    current_year = 2025
+    vehicle_age = current_year - int(year) if year else 0
+    age_instruction = ""
+    
+    if vehicle_age >= 30:
+        age_instruction = (
+            f"This is a CLASSIC/VINTAGE vehicle from {year} (over 30 years old). "
+            f"Show PERIOD-CORRECT design: older body style, classic headlights, vintage wheels, "
+            f"technology and styling typical for {year}s era. NO modern elements."
+        )
+    elif vehicle_age >= 15:
+        age_instruction = (
+            f"This is an OLDER vehicle from {year} ({vehicle_age} years old). "
+            f"Show APPROPRIATE AGE: body style from {year}, headlight/taillight design of that era, "
+            f"wheel designs typical for {year}. NOT a modern redesign."
+        )
+    elif vehicle_age >= 5:
+        age_instruction = (
+            f"This is a USED vehicle from {year} ({vehicle_age} years old). "
+            f"Show design from {year} model year, appropriate styling for that period."
+        )
+    else:
+        age_instruction = (
+            f"This is a RECENT/NEW vehicle from {year}. "
+            f"Show current generation design typical for {year}."
+        )
+    
+    # ✅ ПОИСК РЕФЕРЕНСНЫХ ИЗОБРАЖЕНИЙ (реальные фото из интернета)
+    # Когда модель менее 95% уверена, она должна найти и скопировать реальные фото
+    try:
+        reference_urls = search_reference_images(brand, model, year, color)
+        reference_instruction_part = create_reference_instruction(brand, model, year, reference_urls)
+        logger.info(f"[ImageGen] Reference search completed for {brand} {model} {year}: {len(reference_urls)} images found")
+    except Exception as e:
+        logger.warning(f"[ImageGen] Reference search failed: {e}, using fallback instruction")
+        reference_instruction_part = create_reference_instruction(brand, model, year, None)
+    
+    # Инструкция об использовании реальных знаний
+    knowledge_instruction = (
+        f"{reference_instruction_part} "
+        f"CRITICAL INSTRUCTION: Use your REAL KNOWLEDGE about {brand} {model} ({year}). "
+        f"{age_instruction} "
+        f"Generate images based on ACTUAL characteristics of this specific vehicle model from {year}: "
+        f"authentic body shape AS IT WAS IN {year}, correct proportions for that year, "
+        f"realistic headlight/taillight design TYPICAL FOR {year}, "
+        f"accurate wheel fitment and styling FROM {year} era, "
+        f"typical design elements for this exact model and year {year}. "
+        f"DO NOT show modern redesigns or newer generations - this must be the {year} version. "
+        f"This must be a SINGLE CONSISTENT VEHICLE shown from different angles - "
+        f"the SAME EXACT {brand} {model} {year} in ALL images, not different variants or generations."
+    )
+    
+    # Детали состояния и повреждений с учетом возраста
+    if condition_description or damage_description or vehicle_age >= 15:
+        visual_age_markers = []
+        
+        # Добавляем визуальные признаки возраста
+        if vehicle_age >= 30 and ('poor' in (condition or '').lower() or 'fair' in (condition or '').lower()):
+            visual_age_markers.append(
+                "aged classic car appearance: slightly faded paint, minor surface oxidation, "
+                "vintage patina, period-appropriate wear"
+            )
+        elif vehicle_age >= 15:
+            if 'poor' in (condition or '').lower():
+                visual_age_markers.append(
+                    "visible aging: worn paint, surface weathering, aged rubber seals, "
+                    "typical wear for a {year} vehicle"
+                )
+            elif 'fair' in (condition or '').lower():
+                visual_age_markers.append(
+                    "moderate aging: some paint dulling, minor weathering, "
+                    "typical aging for a {year} vehicle"
+                )
+        
+        condition_parts = [condition_description] if condition_description else []
+        if damage_description:
+            condition_parts.append(f"Specific visible damage: {damage_description}")
+        if visual_age_markers:
+            condition_parts.extend(visual_age_markers)
+        
+        if condition_parts:
+            condition_instruction = (
+                f"Vehicle condition and age details: {'. '.join(condition_parts)}. "
+                f"Show these details CONSISTENTLY in all angles where applicable. "
+                f"IMPORTANT: The vehicle must look {vehicle_age} years old, NOT brand new."
+            )
+        else:
+            condition_instruction = ""
+    else:
+        condition_instruction = ""
+    
     final_prompt = (
-        f"CRITICAL INSTRUCTION: {brand_protection} "
-        f"{strict_branding}. "
-        f"{base_prompt}. {type_enforcement}. "
-        f"Angle: {angle_prompt}. Style: {style_prompt}. {consistency_prompt}. "
-        f"Negative: {negatives}. High resolution, clean background or coherent scene, professional rendering."
+        f"{knowledge_instruction} "
+        f"Professional automotive photography of CONCEPT VEHICLE / DESIGN STUDY: "
+        f"{brand} {model} ({year}) in {color} color, {body_type} body configuration. "
+        f"{condition_instruction}"
+        f"PRE-PRODUCTION PROTOTYPE - show vehicle before branding/badges applied. "
+        f"{type_enforcement}. "
+        f"Camera angle: {angle_prompt}. "
+        f"Photographic style: {style_prompt}, high resolution, professional studio rendering. "
+        f"{strict_branding} "
+        f"{brand_protection} "
+        f"Technical consistency: {consistency_prompt}. "
+        f"Quality standards: clean background, sharp focus, realistic lighting, {negatives}."
     )
 
     # Log branding decision for debugging
@@ -983,7 +1272,7 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     return final_prompt
 
 
-def get_vehicle_type_backend(brand, body_type, vehicle_type_name: str = None, raw_vehicle_type_input: str = None):
+def get_vehicle_type_backend(brand, body_type, vehicle_type_name: Optional[str] = None, raw_vehicle_type_input: Optional[str] = None):
     """Определяет тип транспортного средства по множеству сигналов (явный ввод, локализованное имя, бренд/кузов)."""
     brand_lower = (brand or '').lower()
     body_type_lower = (body_type or '').lower()

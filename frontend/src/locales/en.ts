@@ -1542,6 +1542,7 @@ export default {
   "autoria.moderation.needsReview": "Needs Review",
   "autoria.moderation.rejected": "Rejected",
   "autoria.moderation.active": "Active",
+  "autoria.moderation.draft": "Draft",
   "autoria.moderation.todayModerated": "Moderated Today",
   "autoria.moderation.approve": "Approve",
   "autoria.moderation.reject": "Reject",

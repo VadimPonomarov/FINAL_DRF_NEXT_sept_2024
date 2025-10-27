@@ -3161,6 +3161,7 @@ export default {
   "autoria.moderation.needsReview": "Потребує перевірки",
   "autoria.moderation.rejected": "Відхилено",
   "autoria.moderation.active": "Активних",
+  "autoria.moderation.draft": "Чернетка",
   "autoria.moderation.todayModerated": "Сьогодні перевірено",
   "autoria.moderation.approve": "Схвалити",
   "autoria.moderation.reject": "Відхилити",

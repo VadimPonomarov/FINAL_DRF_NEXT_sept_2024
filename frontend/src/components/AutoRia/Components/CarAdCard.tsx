@@ -308,6 +308,25 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
           {ad.title}
         </h3>
         
+        {/* 🚗 Тип - Марка - Модель */}
+        <div className="text-sm text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2 flex-wrap">
+          {ad.vehicle_type_name && (
+            <Badge variant="outline" className="text-xs">
+              {ad.vehicle_type_name}
+            </Badge>
+          )}
+          {ad.mark_name && (
+            <Badge variant="outline" className="font-semibold">
+              {ad.mark_name}
+            </Badge>
+          )}
+          {ad.model && (
+            <Badge variant="secondary">
+              {ad.model}
+            </Badge>
+          )}
+        </div>
+        
         {/* 💰 Цена */}
         <div className="text-2xl font-bold text-green-600 mb-3">
           {(() => {
@@ -326,9 +345,9 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
           </div>
           <div className="flex items-center gap-2">
             <Fuel className="h-4 w-4" />
-            <span>{ad.dynamic_fields?.fuel_type || 'N/A'}</span>
+            <span>{ad.dynamic_fields?.fuel_type || ad.fuel_type || 'N/A'}</span>
             <span>•</span>
-            <span>{ad.dynamic_fields?.transmission || 'N/A'}</span>
+            <span>{ad.dynamic_fields?.transmission || ad.transmission || 'N/A'}</span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />

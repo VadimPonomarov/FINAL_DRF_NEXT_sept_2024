@@ -382,11 +382,12 @@ const ModerationPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">📋 {t('autoria.moderation.allStatuses')}</SelectItem>
+                  <SelectItem value="active">✅ {t('autoria.moderation.active')}</SelectItem>
                   <SelectItem value="pending">⏳ {t('autoria.moderation.pendingModeration')}</SelectItem>
+                  <SelectItem value="draft">📝 {t('autoria.moderation.draft')}</SelectItem>
                   <SelectItem value="needs_review">🔍 {t('autoria.moderation.needsReview')}</SelectItem>
                   <SelectItem value="rejected">❌ {t('autoria.moderation.rejected')}</SelectItem>
                   <SelectItem value="blocked">🚫 {t('autoria.moderation.block')}</SelectItem>
-                  <SelectItem value="active">✅ {t('autoria.moderation.active')}</SelectItem>
                 </SelectContent>
               </Select>
               <Button
