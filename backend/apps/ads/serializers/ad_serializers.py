@@ -13,7 +13,8 @@ class AddSerializer(BaseModelSerializer):
     """
     Serializer for creating and updating ads.
     """
-    images = AdImageSerializer(many=True, required=False)
+    # Images field - use JSONField for Swagger compatibility (write operations)
+    images = serializers.JSONField(required=False, help_text="List of image objects with url, caption, order fields")
     account = serializers.PrimaryKeyRelatedField(
         queryset=AddsAccount.objects.all(),
         write_only=True
