@@ -19,6 +19,7 @@ import { FavoritesService } from '@/services/autoria/favorites.service';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatCardPrice } from '@/utils/priceFormatter';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface CarAdCardProps {
   ad: CarAd;
@@ -29,6 +30,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
   const { t, locale } = useI18n();
   const router = useRouter();
   const { currency } = useCurrency();
+  const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(ad.is_favorite || false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(ad.favorites_count || 0);
@@ -149,9 +151,19 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
 
       // Показываем пользователю сообщение об ошибке
       if (error.message?.includes('401') || error.message?.includes('403')) {
-        alert('Необходимо войти в систему для добавления в избранное');
+        toast({
+          variant: 'destructive',
+          title: t('notifications.error'),
+          description: t('notifications.loginRequiredForFavorites'),
+          duration: 4000
+        });
       } else {
-        alert(`Ошибка при обновлении избранного: ${error.message || 'Попробуйте еще раз'}`);
+        toast({
+          variant: 'destructive',
+          title: t('notifications.error'),
+          description: `${t('notifications.favoriteAddError')}: ${error.message || t('notifications.tryAgain')}`,
+          duration: 4000
+        });
       }
 
       // НЕ откатываем изменения, так как состояние еще не изменилось
@@ -192,7 +204,12 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       console.log(`✅ Phone view tracked for ad ${ad.id}, total phone views: ${newPhoneViewsCount}`);
       
       // Показываем телефон
-      alert(`Телефон: ${ad.seller?.phone || '+380 XX XXX XX XX'}`);
+      toast({
+        variant: 'default',
+        title: t('notifications.phoneShown'),
+        description: ad.seller?.phone || t('notifications.phoneNumber'),
+        duration: 5000
+      });
     } catch (error) {
       console.error('❌ Error tracking phone view:', error);
     }

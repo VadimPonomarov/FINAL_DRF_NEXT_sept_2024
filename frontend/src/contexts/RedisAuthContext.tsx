@@ -21,10 +21,26 @@ export const RedisAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { user, isAuthenticated } = useAutoRiaAuth();
   const { data: userProfileData } = useUserProfileData();
 
+  // Объединяем данные пользователя из обоих источников
+  const combinedUser = user || userProfileData?.user 
+    ? {
+        ...user,
+        ...userProfileData?.user,
+        // Приоритет для is_superuser и is_staff из обоих источников
+        is_superuser: user?.is_superuser || userProfileData?.user?.is_superuser || false,
+        is_staff: user?.is_staff || userProfileData?.user?.is_staff || false,
+      }
+    : null;
+
   const redisAuth = {
-    user: user || userProfileData?.user || null,
+    user: combinedUser,
     isAuthenticated,
   };
+
+  // Отладочный вывод только при изменениях (убрано для производительности)
+  // if (typeof window !== 'undefined' && combinedUser) {
+  //   console.log('[RedisAuthContext] User data:', combinedUser);
+  // }
 
   return (
     <RedisAuthContext.Provider value={{ redisAuth }}>

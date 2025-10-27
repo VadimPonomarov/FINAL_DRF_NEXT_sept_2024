@@ -3547,6 +3547,88 @@ export default {
   "autoria.analytics.priceDistributionTitle": "Car Price Distribution",
   "autoria.analytics.price": "Price ($)",
   "autoria.analytics.adsQuantity": "Ads Count",
-  "autoria.analytics.brand": "Brand"
+  "autoria.analytics.brand": "Brand",
+
+  // Notifications (Toast/Alert messages)
+  notifications: {
+    success: "✅ Success",
+    error: "❌ Error",
+    warning: "⚠️ Warning",
+    info: "ℹ️ Information",
+    
+    // Favorites
+    loginRequired: "Login required",
+    loginRequiredForFavorites: "You must be logged in to add to favorites",
+    favoriteAddError: "Error updating favorites",
+    favoriteAdded: "Added to favorites",
+    favoriteRemoved: "Removed from favorites",
+    favoriteToggleError: "Error changing favorite status. Please try again.",
+    
+    // Phone number
+    phoneShown: "Phone",
+    phoneNumber: "+380 XX XXX XX XX",
+    
+    // Ads
+    adDeleted: "Ad deleted",
+    adDeleteError: "Delete error",
+    adCreated: "Ad created",
+    adUpdated: "Ad updated",
+    
+    // Moderation
+    moderationApproved: "Ad approved!",
+    moderationRejected: "Ad rejected!",
+    moderationBlocked: "Ad blocked!",
+    moderationActionError: "Action execution error",
+    moderationSaved: "Moderation saved successfully",
+    moderationSaveError: "Error saving moderation",
+    
+    // User moderation
+    userBlocked: "User blocked. Reason: {reason}",
+    userUnblocked: "User unblocked",
+    userBlockError: "Error blocking user",
+    userUnblockError: "Error unblocking user",
+    
+    // Profile/Avatar
+    avatarSuccess: "Avatar updated successfully",
+    avatarSaveWarning: "Don't forget to save changes",
+    avatarFailed: "Avatar update failed",
+    
+    // Images
+    fileNotImage: "File {fileName} is not an image",
+    fileTooLarge: "File {fileName} is too large (maximum 10MB)",
+    fillRequiredFields: "Please fill in brand, model and year to generate images",
+    
+    // File uploads
+    emptyFiles: "Empty files detected: {fileNames}",
+    unsupportedFiles: "Unsupported file types: {fileNames}\nOnly allowed: PDF, JPG, JPEG, PNG, DOC, DOCX, TXT",
+    
+    // Auth tokens
+    enterToken: "Please enter a token",
+    tokenSaved: "Token saved successfully!",
+    tokenSaveFailed: "Failed to save token",
+    tokenCleared: "Token cleared successfully!",
+    tokenClearFailed: "Failed to clear token",
+    
+    // Link copy
+    linkCopied: "Link copied to clipboard",
+    
+    // Content validation
+    fillTitleDescription: "Please fill in title and description to validate",
+    validationError: "Error validating content. Please try again.",
+    
+    // AI generation
+    requiredFieldsTitle: "🚫 To generate the title, please fill in the following fields:",
+    requiredFieldsDescription: "🚫 To generate the description, please fill in the following required fields:",
+    pleaseGoToTabs: "Please go to the corresponding tabs and fill in these fields.",
+    generationError: "Error generating data",
+    
+    // Test data
+    noImageTypeSelection: "Please select at least one image type",
+    noAdsSelection: "Please select at least one option to delete",
+    
+    // Generic
+    tryAgain: "Please try again",
+    unknownError: "Unknown error"
+  }
 };
 

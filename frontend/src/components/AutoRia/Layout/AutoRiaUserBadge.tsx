@@ -16,8 +16,25 @@ const AutoRiaUserBadge: React.FC = () => {
   const { user, isAuthenticated } = useAutoRiaAuth();
   const { data: userProfileData } = useUserProfileData();
 
+  // Отладка только при изменении статуса авторизации
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      console.log('[AutoRiaUserBadge] User authenticated:', {
+        hasUser: !!user,
+        hasProfileData: !!userProfileData,
+      });
+    }
+  }, [isAuthenticated]); // Только при изменении isAuthenticated!
+
   // Если пользователь не авторизован, не показываем бейдж
-  if (!isAuthenticated || !user) {
+  // Проверяем либо user из useAutoRiaAuth, либо userProfileData
+  if (!isAuthenticated && !user && !userProfileData?.user) {
+    return null;
+  }
+
+  // Получаем данные пользователя из доступных источников
+  const actualUser = user || userProfileData?.user;
+  if (!actualUser) {
     return null;
   }
 
@@ -26,12 +43,12 @@ const AutoRiaUserBadge: React.FC = () => {
   const isPremium = ['PREMIUM', 'VIP'].includes(accountType);
   
   // Имя пользователя или email
-  const displayName = user.username || user.email || 'User';
+  const displayName = actualUser.username || actualUser.email || userProfileData?.account?.user?.email || 'User';
   
   // Определяем полномочия пользователя
-  const isSuperuser = user?.is_superuser || userProfileData?.user?.is_superuser || false;
-  const isStaff = user?.is_staff || userProfileData?.user?.is_staff || false;
-  const isModerator = userProfileData?.user?.groups?.some((g: any) => g.name === 'Moderators') || false;
+  const isSuperuser = actualUser?.is_superuser || false;
+  const isStaff = actualUser?.is_staff || false;
+  const isModerator = actualUser?.groups?.some((g: any) => g.name === 'Moderators') || false;
   
   // Собираем список ролей
   const roles = [];
@@ -72,7 +89,7 @@ const AutoRiaUserBadge: React.FC = () => {
           <div className="space-y-2">
             <div>
               <p className="font-semibold text-sm truncate">{displayName}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              <p className="text-xs text-muted-foreground truncate">{actualUser.email}</p>
             </div>
             
             <div className="border-t pt-2">

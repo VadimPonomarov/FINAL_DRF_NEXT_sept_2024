@@ -91,24 +91,30 @@ class Command(BaseCommand):
                     statuses, weights = zip(*status_choices)
                     status = random.choices(statuses, weights=weights)[0]
 
+                    # Правильная структура: mark как FK, остальное в dynamic_fields
                     ad_data = {
                         'account': account,
                         'title': f'{mark.name} {model_name} {year}',
-                        'mark': mark,
-                        'model': model_name,
-                        'year': year,
-                        'mileage': mileage,
-                        'color': color,
+                        'mark': mark,  # ForeignKey к CarMarkModel
+                        'dynamic_fields': {
+                            'model': model_name,
+                            'year': year,
+                            'mileage': mileage,
+                            'color': color.name if color else 'Белый',
+                            'condition': 'used',
+                            'fuel_type': random.choice(['Бензин', 'Дизель', 'Гибрид', 'Электро']),
+                            'transmission': random.choice(['Механическая', 'Автоматическая', 'Робот']),
+                            'body_type': random.choice(['Седан', 'Хэтчбек', 'Универсал', 'Кроссовер']),
+                        },
                         'price': Decimal(str(price)),
                         'currency': Currency.USD,
                         'city': city,
                         'region': region,
                         'seller_type': random.choice(list(SellerType)),
-                        'exchange': random.choice([True, False]),
                         'exchange_status': random.choice(list(ExchangeStatus)),
                         'status': status,
                         'is_validated': status == AdStatusEnum.ACTIVE,
-                        'description': f'Продается {mark.name} {model_name} {year} года в отличном состоянии. Пробег {mileage} км.',
+                        'description': f'Продается {mark.name} {model_name} {year} года в отличном состоянии. Пробег {mileage} км. Цвет: {color.name if color else "Белый"}.',
                     }
 
                     ad = CarAd.objects.create(**ad_data)

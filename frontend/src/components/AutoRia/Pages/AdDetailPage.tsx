@@ -28,6 +28,7 @@ import { CarAd } from '@/types/autoria';
 import CarAdsService from '@/services/autoria/carAds.service';
 import { FavoritesService } from '@/services/autoria/favorites.service';
 import { useI18n } from '@/contexts/I18nContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface AdDetailPageProps {
   adId: number;
@@ -35,6 +36,7 @@ interface AdDetailPageProps {
 
 const AdDetailPage: React.FC<AdDetailPageProps> = ({ adId }) => {
   const { t } = useI18n();
+  const { toast } = useToast();
   const [ad, setAd] = useState<CarAd | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -161,8 +163,13 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({ adId }) => {
         message: response.message
       });
 
-      // Показываем алерт об успешном действии
-      alert(response.message || (response.is_favorite ? 'Добавлено в избранное' : 'Удалено из избранного'));
+      // Показываем toast об успешном действии
+      toast({
+        variant: 'default',
+        title: t('notifications.success'),
+        description: response.message || (response.is_favorite ? t('notifications.favoriteAdded') : t('notifications.favoriteRemoved')),
+        duration: 3000
+      });
 
       // Обновляем UI с реальным статусом от сервера
       setIsFavorite(response.is_favorite);
@@ -173,8 +180,13 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({ adId }) => {
       // В случае ошибки возвращаем предыдущее состояние
       setIsFavorite(!isFavorite);
 
-      // Показываем алерт об ошибке
-      alert('Ошибка при изменении статуса избранного. Попробуйте еще раз.');
+      // Показываем toast об ошибке
+      toast({
+        variant: 'destructive',
+        title: t('notifications.error'),
+        description: t('notifications.favoriteToggleError'),
+        duration: 4000
+      });
     }
   };
 

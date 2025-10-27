@@ -192,6 +192,24 @@ const CarAdListItem: React.FC<CarAdListItemProps> = ({
             <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-orange-600 transition-colors">
               {ad.title}
             </h3>
+            {/* Тип - Марка - Модель */}
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {ad.vehicle_type_name && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-[16px]">
+                  {ad.vehicle_type_name}
+                </Badge>
+              )}
+              {ad.mark_name && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-[16px] font-semibold">
+                  {ad.mark_name}
+                </Badge>
+              )}
+              {ad.model && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 leading-[16px]">
+                  {ad.model}
+                </Badge>
+              )}
+            </div>
           </div>
           
           {/* Цена */}

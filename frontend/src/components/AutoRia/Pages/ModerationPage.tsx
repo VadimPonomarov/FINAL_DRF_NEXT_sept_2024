@@ -229,7 +229,12 @@ const ModerationPage = () => {
           activate: 'активировано'
         };
 
-        alert(`Объявление ${actionMessages[action]}!`);
+        toast({
+          variant: 'default',
+          title: t('notifications.success'),
+          description: actionMessages[action],
+          duration: 3000
+        });
 
         // Refresh the queue
         loadModerationQueue();
@@ -237,11 +242,21 @@ const ModerationPage = () => {
         setSelectedAd(null);
       } else {
         console.error(`[Moderation] ❌ Failed to ${action} ad:`, result.message);
-        alert(`Ошибка: ${result.message}`);
+        toast({
+          variant: 'destructive',
+          title: t('notifications.error'),
+          description: result.message || t('notifications.moderationActionError'),
+          duration: 4000
+        });
       }
     } catch (error) {
       console.error(`[Moderation] ❌ Failed to ${action} ad:`, error);
-      alert(`Ошибка при выполнении действия "${action}"`);
+      toast({
+        variant: 'destructive',
+        title: t('notifications.error'),
+        description: t('notifications.moderationActionError'),
+        duration: 4000
+      });
     }
   };
 
@@ -627,19 +642,19 @@ const ModerationPage = () => {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div className="font-medium">{ad.brand}</div>
-                          <div className="text-gray-500">{ad.model}</div>
+                          <div className="font-medium">{ad.mark_name || ad.mark || '—'}</div>
+                          <div className="text-gray-500">{ad.model || '—'}</div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm">{ad.year}</TableCell>
+                      <TableCell className="text-sm">{ad.year || '—'}</TableCell>
                       <TableCell className="text-sm font-medium text-green-600">
                         {formatPrice(ad.price, ad.currency)}
                       </TableCell>
                       <TableCell>{getStatusBadge(ad.status)}</TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div className="font-medium">{ad.user?.email}</div>
-                          <div className="text-gray-500">{ad.city}</div>
+                          <div className="font-medium">{ad.user?.email || '—'}</div>
+                          <div className="text-gray-500">{ad.city_name || ad.city || '—'}</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-gray-500">

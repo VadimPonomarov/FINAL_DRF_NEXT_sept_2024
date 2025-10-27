@@ -63,6 +63,16 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
     return isSuper;
   }, [redisAuth]);
 
+  // роверяем, является ли пользователь модератором
+  const isModerator = React.useMemo(() => {
+    // @ts-ignore
+    const isMod = redisAuth?.user?.groups?.some((g: any) => g.name === 'Moderators') || false;
+    if (typeof window !== 'undefined') {
+      window.console.log('[AutoRiaHeader] isModerator:', isMod);
+    }
+    return isMod;
+  }, [redisAuth]);
+
   // ╨Я╤А╨╛╨▓╨╡╤А╤П╨╡╨╝, ╤П╨▓╨╗╤П╨╡╤В╤Б╤П ╨╗╨╕ ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤М ╨┐╤А╨╡╨╝╨╕╤Г╨╝ ╨╕╨╗╨╕ ╤Б╤Г╨┐╨╡╤А╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╨╡╨╝
   const isPremiumUser = React.useMemo(() => {
     // ╨б╤Г╨┐╨╡╤А╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╨╕ ╨╕╨╝╨╡╤О╤В ╨┤╨╛╤Б╤В╤Г╨┐ ╨║ ╨░╨╜╨░╨╗╨╕╤В╨╕╨║╨╡ ╨╜╨╡╨╖╨░╨▓╨╕╤Б╨╕╨╝╨╛ ╨╛╤В ╨░╨║╨║╨░╤Г╨╜╤В╨░
@@ -107,7 +117,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   // ╨Я╤Г╨╜╨║╤В ╨╝╨╛╨┤╨╡╤А╨░╤Ж╨╕╨╕ (╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╤Б╤Г╨┐╨╡╤А╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╨╡╨╣ ╨╕ ╨╝╨╛╨┤╨╡╤А╨░╤В╨╛╤А╨╛╨▓)
   const moderationItem = {
     href: '/autoria/moderation',
-    label: '╨Ь╨╛╨┤╨╡╤А╨░╤Ж╨╕╤П',
+    label: 'Модерація',
     icon: <Shield className="h-4 w-4" />,
     id: 'moderation',
     badge: <Badge variant="destructive" className="ml-1 text-xs">ADMIN</Badge>
@@ -170,6 +180,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
                 >
                   {item.icon}
                   <span className="hidden xl:inline">{item.label}</span>
+                  {/* @ts-ignore */}
                   {item.badge}
                 </Button>
               </Link>
@@ -191,7 +202,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
                   {availableLocales.map((localeOption) => (
                     <DropdownMenuItem
                       key={localeOption.code}
-                      onClick={() => setLocale(localeOption.code)}
+                      onClick={() => setLocale(localeOption.code as any)}
                       className={locale === localeOption.code ? 'bg-accent' : ''}
                     >
                       {localeOption.flag} {localeOption.name}
@@ -222,6 +233,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
                 >
                   {item.icon}
                   <span className="text-xs">{item.label.split(' ')[0]}</span>
+                  {/* @ts-ignore */}
                   {item.badge}
                 </Button>
               </Link>
@@ -243,7 +255,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
                 {availableLocales.map((localeOption) => (
                   <DropdownMenuItem
                     key={localeOption.code}
-                    onClick={() => setLocale(localeOption.code)}
+                    onClick={() => setLocale(localeOption.code as any)}
                     className={locale === localeOption.code ? 'bg-accent' : ''}
                   >
                     {localeOption.flag} {localeOption.name}
