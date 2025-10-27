@@ -187,6 +187,7 @@ interface CarImageGenerationRequest {
   quality?: 'standard' | 'high';
   useDescription?: boolean; // Использовать описание в промпте
   sessionId?: string; // Опционально: фиксировать серию для перегенераций
+  use_mock_algorithm?: boolean; // 🎯 Использовать mock алгоритм (тот же, что в тестовых объявлениях)
 }
 
 interface GeneratedCarImage {
@@ -206,7 +207,7 @@ interface CarImageGenerationResponse {
 export async function POST(request: NextRequest) {
   try {
     const body: CarImageGenerationRequest = await request.json();
-    const { formData, angles = ['front', 'side', 'rear', 'interior'], style = 'realistic', quality = 'standard', useDescription = true, sessionId } = body;
+    const { formData, angles = ['front', 'side', 'rear', 'interior'], style = 'realistic', quality = 'standard', useDescription = true, sessionId, use_mock_algorithm = false } = body;
     const url = (request as any)?.nextUrl;
     const debug = url?.searchParams?.get?.('debug') === '1';
     const promptOnly = url?.searchParams?.get?.('promptOnly') === '1';
@@ -253,9 +254,10 @@ export async function POST(request: NextRequest) {
     let generatedImages: GeneratedCarImage[] = [];
 
     console.log(`🔗 Car session ID for consistency: CAR-${carSessionId}`);
+    console.log(`🎯 Use mock algorithm: ${use_mock_algorithm}`);
 
     try {
-      generatedImages = await generateCarImagesWithBackend(formData, angles, style, carSessionId);
+      generatedImages = await generateCarImagesWithBackend(formData, angles, style, carSessionId, use_mock_algorithm, request);
     } catch (error) {
       console.error('Backend generation failed, using pollinations fallback:', error);
 
@@ -319,7 +321,7 @@ export async function POST(request: NextRequest) {
 /**
  * Generate car images using backend service
  */
-async function generateCarImagesWithBackend(formData: Partial<CarAdFormData>, angles: string[], style: string, carSessionId?: string, request?: NextRequest): Promise<GeneratedCarImage[]> {
+async function generateCarImagesWithBackend(formData: Partial<CarAdFormData>, angles: string[], style: string, carSessionId?: string, use_mock_algorithm?: boolean, request?: NextRequest): Promise<GeneratedCarImage[]> {
   try {
     // Call backend service for car image generation
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
@@ -330,6 +332,7 @@ async function generateCarImagesWithBackend(formData: Partial<CarAdFormData>, an
     console.log('[generateCarImagesWithBackend] 🚗 Sending car data to backend (normalized):', carData);
     console.log('[generateCarImagesWithBackend] 📐 Angles:', angles);
     console.log('[generateCarImagesWithBackend] 🎨 Style:', style);
+    console.log('[generateCarImagesWithBackend] 🎯 Use mock algorithm:', use_mock_algorithm);
 
     // Получаем токены из Redis для аутентификации (если request передан)
     let authHeaders: Record<string, string> = {
@@ -364,7 +367,8 @@ async function generateCarImagesWithBackend(formData: Partial<CarAdFormData>, an
       body: JSON.stringify({
         car_data: carData,
         angles,
-        style
+        style,
+        use_mock_algorithm: use_mock_algorithm || false // 🎯 Передаем флаг использования mock алгоритма
       }),
     });
 

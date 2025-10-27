@@ -704,7 +704,8 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
         return;
       }
 
-      // Запускаем генерацию асинхронно
+      // Запускаем генерацию асинхронно с использованием того же mock алгоритма, что и в тестовых объявлениях
+      console.log('[ImagesForm] 🎨 Using MOCK ALGORITHM (same as test ads) for consistency');
       fetch('/api/llm/generate-car-images', {
         method: 'POST',
         headers: {
@@ -727,7 +728,8 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
           },
           angles: toGenerate, // Передаем выбранные типы изображений
           style: 'realistic',
-          useDescription: true // Включаем использование описания
+          useDescription: true, // Включаем использование описания
+          use_mock_algorithm: true // 🎯 КРИТИЧНО: Используем тот же mock алгоритм, что и в тестовых объявлениях
         }),
       })
       .then(async (response): Promise<any> => {

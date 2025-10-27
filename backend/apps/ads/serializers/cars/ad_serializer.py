@@ -65,7 +65,8 @@ class CarAdCreateSerializer(BaseModelSerializer):
     - Moderation status handling
     - Related model creation (CarPricing, CarModeration, CarMetadata, CarSpecification)
     """
-    images = CarAdImageSerializer(many=True, required=False)
+    # Images field - use JSONField for Swagger compatibility
+    images = serializers.JSONField(required=False, help_text="List of image objects with url, caption, order fields")
 
     # Price fields - user should only provide one of these
     price_usd = serializers.DecimalField(
@@ -366,7 +367,8 @@ class CarAdUpdateSerializer(BaseModelSerializer):
     - Related model updates (CarPricing, CarSpecification, etc.)
     - Image management
     """
-    images = CarAdImageSerializer(many=True, required=False)
+    # Images field - use JSONField for Swagger compatibility
+    images = serializers.JSONField(required=False, help_text="List of image objects with url, caption, order fields")
 
     # Price fields - user can update any of these
     price_usd = serializers.DecimalField(
