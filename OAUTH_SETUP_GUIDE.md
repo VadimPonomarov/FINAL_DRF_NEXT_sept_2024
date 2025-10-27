@@ -1,97 +1,89 @@
-# 🔐 Google OAuth Setup Guide
+# 🔐 OAuth Setup Guide
 
-## Проблема
-Google OAuth клиент был удален (ошибка 404). Нужно создать новые credentials.
+## Важная информация
 
-## Решение: Создать новый OAuth Client
+Все OAuth ключи в этом проекте **ЗАШИФРОВАНЫ** и хранятся в файле `frontend/.env.local`.
 
-### Шаг 1: Перейдите в Google Cloud Console
-🔗 https://console.cloud.google.com/
+### Зашифрованные ключи
 
-### Шаг 2: Создайте/выберите проект
-1. Нажмите на выбор проекта вверху
-2. Создайте новый проект или выберите существующий
-3. Название: `AutoRia Clone` (или любое)
+Ключи хранятся с префиксом `ENC_` и используют алгоритм:
+- Base64 encoding
+- String reversal
+- Custom encryption (см. `frontend/src/utils/auth/simple-crypto.ts`)
 
-### Шаг 3: Включите Google+ API
-1. Перейдите в **APIs & Services** → **Library**
-2. Найдите "Google+ API"
-3. Нажмите **Enable**
+### Где найти ключи
 
-### Шаг 4: Настройте OAuth Consent Screen
-1. **APIs & Services** → **OAuth consent screen**
-2. Выберите **External**
-3. Заполните:
-   - App name: `AutoRia Clone`
-   - User support email: ваш email
-   - Developer contact: ваш email
-4. Нажмите **Save and Continue**
-5. Scopes: пропустите (Save and Continue)
-6. Test users: добавьте свой email для тестирования
-7. Нажмите **Save and Continue**
+1. **Frontend OAuth ключи**: `frontend/.env.local`
+   - `GOOGLE_CLIENT_ID=ENC_...`
+   - `GOOGLE_CLIENT_SECRET=ENC_...`
+   - `GITHUB_CLIENT_ID=ENC_...`
+   - `GITHUB_CLIENT_SECRET=ENC_...`
 
-### Шаг 5: Создайте OAuth Client ID
-1. **APIs & Services** → **Credentials**
-2. Нажмите **+ CREATE CREDENTIALS** → **OAuth client ID**
-3. Application type: **Web application**
-4. Name: `AutoRia NextAuth`
-5. **Authorized JavaScript origins**:
-   ```
-   http://localhost:3000
-   http://127.0.0.1:3000
-   ```
-6. **Authorized redirect URIs**:
-   ```
-   http://localhost:3000/api/auth/callback/google
-   http://127.0.0.1:3000/api/auth/callback/google
-   ```
-7. Нажмите **CREATE**
+2. **Backend OAuth ключи**: `env-config/.env.secrets`
+   - Аналогичные ключи для backend
 
-### Шаг 6: Скопируйте credentials
-После создания вы получите:
-- **Client ID** (например: `123456789-abc...xyz.apps.googleusercontent.com`)
-- **Client Secret** (например: `GOCSPX-...`)
+### Автоматическая дешифровка
 
-**ВАЖНО:** Сохраните их!
+Все ключи автоматически дешифруются при загрузке приложения через:
+- `frontend/src/utils/auth/simple-crypto.ts`
+- `frontend/src/lib/auth/authConfig.ts`
 
-### Шаг 7: Обновите ключи в проекте
+## 🚀 Быстрый старт OAuth
 
-Запустите команду для шифрования новых ключей:
+### 1. Проверить наличие зашифрованных ключей
 
 ```bash
-node update-oauth-keys.cjs
+# Проверить frontend ключи
+cat frontend/.env.local | grep "ENC_"
+
+# Проверить backend ключи  
+cat env-config/.env.secrets | grep "GOOGLE\|GITHUB"
 ```
 
-Скрипт спросит у вас:
-1. GOOGLE_CLIENT_ID
-2. GOOGLE_CLIENT_SECRET
+### 2. Запустить проект
 
-И автоматически обновит `env-config/.env.secrets`
+```bash
+docker-compose up -d
+```
+
+### 3. OAuth должен работать автоматически
+
+- Google OAuth: `http://localhost:3000`
+- GitHub OAuth: `http://localhost:3000`
+
+## 🔧 Если OAuth не работает
+
+### Проверить логи
+
+```bash
+# Frontend логи
+docker-compose logs frontend
+
+# Backend логи
+docker-compose logs backend
+```
+
+### Проверить редирект URI
+
+Убедитесь, что в Google/GitHub Console настроены:
+- `http://localhost:3000/api/auth/callback/google`
+- `http://localhost:3000/api/auth/callback/github`
+
+## 📚 Дополнительная информация
+
+- **Шифрование**: `frontend/src/utils/auth/simple-crypto.ts`
+- **Конфигурация**: `frontend/src/lib/auth/authConfig.ts`
+- **Callback**: `frontend/src/app/api/auth/[...nextauth]/route.ts`
+
+## ⚠️ Для продакшн
+
+**НЕ ИСПОЛЬЗУЙТЕ** эти настройки в продакшн! 
+
+Для продакшн используйте:
+1. Настоящие environment variables
+2. Secret management системы (AWS Secrets Manager, HashiCorp Vault)
+3. Не коммитьте ключи в репозиторий
 
 ---
 
-## Альтернатива: Использовать Credentials Provider
-
-Если не хотите настраивать Google OAuth, можно использовать только email/password авторизацию:
-
-1. В файле `frontend/src/configs/auth.ts` закомментируйте GoogleProvider
-2. Используйте только CredentialsProvider
-
----
-
-## Проверка работы
-
-После настройки:
-1. Запустите `cd frontend && npm run dev`
-2. Откройте http://localhost:3000
-3. Нажмите на кнопку "Sign in with Google"
-4. Должна открыться страница входа Google
-
----
-
-## Полезные ссылки
-
-- 📖 NextAuth.js Google Provider: https://next-auth.js.org/providers/google
-- 🔗 Google Cloud Console: https://console.cloud.google.com/
-- 📋 OAuth 2.0 Scopes: https://developers.google.com/identity/protocols/oauth2/scopes
-
+✅ **Это учебный проект** - все ключи зашифрованы для демонстрационных целей.
