@@ -35,6 +35,7 @@ import threading
 import re
 import argparse
 from pathlib import Path
+import select
 
 class Colors:
     HEADER = '\033[95m'
@@ -45,6 +46,49 @@ class Colors:
     FAIL = '\033[91m'
     ENDC = '\033[0m'
     BOLD = '\033[1m'
+
+def input_with_timeout(prompt, timeout=10, default=""):
+    """Input с таймаутом. Если пользователь не вводит ничего за timeout секунд, возвращает default"""
+    # Показываем предзаполненное значение
+    if default:
+        print(f"{prompt}{default}", end='', flush=True)
+    else:
+        print(prompt, end='', flush=True)
+    
+    if sys.platform == 'win32':
+        # Windows
+        import msvcrt
+        start_time = time.time()
+        input_chars = []
+        
+        while True:
+            if msvcrt.kbhit():
+                char = msvcrt.getwche()
+                if char == '\r':  # Enter
+                    print()
+                    return ''.join(input_chars)
+                elif char == '\b':  # Backspace
+                    if input_chars:
+                        input_chars.pop()
+                        print('\b \b', end='', flush=True)
+                else:
+                    input_chars.append(char)
+            
+            if time.time() - start_time > timeout:
+                if not input_chars:
+                    print(f"\n⏱️  Таймаут {timeout}с - используем значение по умолчанию: {default}")
+                    return default
+            
+            time.sleep(0.01)
+    else:
+        # Unix/Linux
+        import select
+        ready, _, _ = select.select([sys.stdin], [], [], timeout)
+        if ready:
+            return sys.stdin.readline().rstrip('\n')
+        else:
+            print(f"\n⏱️  Таймаут {timeout}с - используем значение по умолчанию: {default}")
+            return default
 
 def print_step(step, message):
     """Виводить крок з кольоровим форматуванням"""
@@ -110,10 +154,11 @@ def show_service_selection_menu():
     print("  0/00 - швидкий вибір всіх режимів")
     print()
     print("🎯 За замовчуванням: 0 (Backend в Docker + Frontend локально)")
+    print("💡 Автоматичний вибір через 10 секунд: опція 0")
 
     while True:
         try:
-            choice = input("\nВаш вибір [0]: ").strip()
+            choice = input_with_timeout("\nВаш вибір: ", timeout=10, default="0").strip()
             if not choice:  # Если пользователь просто нажал Enter
                 choice = "0"
 
@@ -161,9 +206,9 @@ def show_service_selection_menu():
                 print(f"\n✅ Обрано сервіси: {', '.join(selected_services)}")
                 print("🏠 Frontend буде запущено локально")
 
-            confirm = input("Продовжити? (y/n): ").strip().lower()
+            confirm = input_with_timeout("Продовжити? (y/n): ", timeout=10, default="y").strip().lower()
 
-            if confirm in ['y', 'yes', 'так', 'т']:
+            if not confirm or confirm in ['y', 'yes', 'так', 'т']:
                 return selected_services, frontend_mode
             else:
                 print("Оберіть знову:")
@@ -1336,24 +1381,29 @@ def choose_deploy_mode():
     print("🔧 РЕЖИМ ДЕПЛОЯ")
     print("=" * 50)
     print("1. 🔄 Быстрый перезапуск (использовать существующие образы)")
-    print("2. 🏗️  Полная переустановка (пересобрать все образы)")
+    print("2. 🏗️  Полная переустановка (пересобрать все образы) [ПО УМОЛЧАНИЮ]")
     print("3. 🎯 Выборочная переустановка (выбрать сервисы для пересборки)")
     print("=" * 50)
+    print("💡 Автоматический выбор через 10 секунд: режим 2 (полная переустановка)")
+    print()
 
-    while True:
-        try:
-            choice = input("Выберите режим (1-3): ").strip()
-            if choice == "1":
-                return "restart", []
-            elif choice == "2":
-                return "full_rebuild", []
-            elif choice == "3":
-                return "selective_rebuild", choose_services_to_rebuild()
-            else:
-                print("❌ Неверный выбор. Введите 1, 2 или 3.")
-        except KeyboardInterrupt:
-            print("\n❌ Отменено пользователем")
-            sys.exit(1)
+    try:
+        choice = input_with_timeout("Выберите режим (1-3): ", timeout=10, default="2").strip()
+        if not choice:
+            choice = "2"
+        
+        if choice == "1":
+            return "restart", []
+        elif choice == "2":
+            return "full_rebuild", []
+        elif choice == "3":
+            return "selective_rebuild", choose_services_to_rebuild()
+        else:
+            print("❌ Неверный выбор. Используем режим 2 (полная переустановка)")
+            return "full_rebuild", []
+    except KeyboardInterrupt:
+        print("\n❌ Отменено пользователем")
+        sys.exit(1)
 
 def choose_services_to_rebuild():
     """Выбор сервисов для пересборки"""
@@ -1602,13 +1652,55 @@ def selective_rebuild_services(selected_services, services_to_rebuild, frontend_
 def full_rebuild_services(selected_services, frontend_mode):
     """Полная пересборка всех сервисов"""
     print("🏗️ Полная пересборка всех сервисов...")
-
-    # Видаляємо конфліктуючі контейнери для всіх обраних сервісів
-    print("🧹 Видалення конфліктуючих контейнерів...")
-    remove_conflicting_containers(selected_services)
-
-    # Останавливаем и удаляем все контейнеры проекту
-    print("🛑 Полная очистка проекту...")
+    print("🧹 АГРЕССИВНАЯ ОЧИСТКА: Остановка ВСЕХ контейнеров на используемых портах...")
+    
+    # 1. ОСТАНАВЛИВАЕМ ВСЕ КОНТЕЙНЕРЫ НА НУЖНЫХ ПОРТАХ (не только нашего проекта)
+    critical_ports = [3000, 8000, 8001, 5432, 6379, 5672, 15672, 5555, 5540]
+    
+    print(f"🔍 Поиск контейнеров на портах: {', '.join(map(str, critical_ports))}")
+    for port in critical_ports:
+        try:
+            # Находим контейнеры, использующие порт
+            result = subprocess.run(
+                f'docker ps --filter "publish={port}" --format "{{{{.ID}}}}"',
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.stdout.strip():
+                container_ids = result.stdout.strip().split('\n')
+                print(f"   ⚠️  Найдено {len(container_ids)} контейнеров на порту {port}")
+                for container_id in container_ids:
+                    if container_id:
+                        print(f"      🛑 Остановка контейнера {container_id[:12]}...")
+                        subprocess.run(f"docker stop {container_id}", shell=True, capture_output=True, timeout=30)
+                        subprocess.run(f"docker rm -f {container_id}", shell=True, capture_output=True, timeout=30)
+        except Exception as e:
+            print(f"   ⚠️  Ошибка при очистке порта {port}: {e}")
+    
+    # 2. УДАЛЯЕМ ВСЕ КОНТЕЙНЕРЫ С ПОХОЖИМИ ИМЕНАМИ
+    print("\n🧹 Удаление всех контейнеров с похожими именами...")
+    project_patterns = ["final_drf_next", "autoria", "app", "pg", "redis", "rabbitmq", "celery", "mailing", "nginx"]
+    for pattern in project_patterns:
+        try:
+            result = subprocess.run(
+                f'docker ps -a --filter "name={pattern}" --format "{{{{.ID}}}}"',
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.stdout.strip():
+                container_ids = result.stdout.strip().split('\n')
+                for container_id in container_ids:
+                    if container_id:
+                        subprocess.run(f"docker rm -f {container_id}", shell=True, capture_output=True, timeout=30)
+        except:
+            pass
+    
+    # 3. ОСТАНАВЛИВАЕМ И УДАЛЯЕМ ВСЕ КОНТЕЙНЕРЫ ТЕКУЩЕГО ПРОЕКТА
+    print("\n🛑 Полная очистка проекта...")
     run_command("docker-compose down -v --remove-orphans", capture_output=True)
 
     # Визначаємо project name для видалення образів
@@ -1616,8 +1708,8 @@ def full_rebuild_services(selected_services, frontend_mode):
     if not project_name:
         project_name = Path.cwd().name.lower().replace(' ', '_').replace('-', '_')
 
-    # Удаляем все образы проекта
-    print("🗑️ Удаление всех образов проекта...")
+    # 4. УДАЛЯЕМ ВСЕ ОБРАЗЫ ПРОЕКТА
+    print("\n🗑️ Удаление всех образов проекта...")
     # Windows PowerShell не підтримує xargs, тому використовуємо альтернативний підхід
     result = subprocess.run(
         f'docker images --format "{{{{.Repository}}}}" | Select-String -Pattern "{project_name}" | ForEach-Object {{ docker rmi -f $_ }}',
@@ -1629,6 +1721,19 @@ def full_rebuild_services(selected_services, frontend_mode):
         # Якщо PowerShell команда не спрацювала, пробуємо bash стиль (для Git Bash / WSL)
         run_command(f"docker images -q {project_name}-* {project_name}_* 2>/dev/null | xargs -r docker rmi -f 2>/dev/null || true",
                capture_output=True, check=False)
+    
+    # 5. ОЧИЩАЕМ DOCKER МУСОР (неиспользуемые volumes, networks, images)
+    print("\n🧹 Очистка неиспользуемых Docker ресурсов...")
+    try:
+        # Удаляем неиспользуемые volumes
+        subprocess.run("docker volume prune -f", shell=True, capture_output=True, timeout=30)
+        # Удаляем неиспользуемые networks
+        subprocess.run("docker network prune -f", shell=True, capture_output=True, timeout=30)
+        # Удаляем dangling images
+        subprocess.run("docker image prune -f", shell=True, capture_output=True, timeout=30)
+        print("✅ Docker мусор очищен")
+    except Exception as e:
+        print(f"⚠️  Ошибка при очистке Docker мусора: {e}")
 
     # Продолжаем с обычной логикой полной пересборки
     return continue_full_rebuild(selected_services, frontend_mode)
