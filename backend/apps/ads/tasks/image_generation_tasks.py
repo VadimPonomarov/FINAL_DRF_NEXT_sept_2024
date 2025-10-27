@@ -55,9 +55,11 @@ def generate_single_car_image_async(self, car_data: Dict, angle: str, style: str
         english_prompt = mock_cmd._simple_translate_to_english(prompt, canonical_data)
         
         # 🚀 БЫСТРАЯ ГЕНЕРАЦИЯ через pollinations.ai
+        # ВАЖНО: seed РАЗНЫЙ для каждого ракурса, чтобы генерировать РАЗНЫЕ изображения одного объекта
+        # Используем angle в seed для вариативности + nologo=true для чистых изображений
+        angle_seed = abs(hash(f"{car_session_id}_{angle}_{canonical_data['brand']}_{canonical_data['model']}")) % 1000000
         encoded_prompt = urllib.parse.quote(english_prompt)
-        seed = abs(hash(car_session_id + angle)) % 1000000
-        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&model=flux&enhance=true&seed={seed}"
+        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&model=flux&enhance=true&seed={angle_seed}&nologo=true"
         
         # Проверяем доступность изображения (быстрая проверка)
         import requests

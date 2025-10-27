@@ -83,8 +83,11 @@ const AutoRiaUserBadge: React.FC = () => {
         <TooltipContent 
           side="left" 
           align="end"
-          className="max-w-[250px] p-3"
-          sideOffset={5}
+          alignOffset={-10}
+          className="max-w-[250px] sm:max-w-[280px] p-3 z-[100000]"
+          sideOffset={16}
+          avoidCollisions={true}
+          collisionPadding={10}
         >
           <div className="space-y-2">
             <div>

@@ -17,10 +17,14 @@ const TopRightControls: React.FC = () => {
   if (pathname?.startsWith('/autoria')) {
     return (
       <>
-        {/* Бейджи: Email из сессии (сверху) + AutoRia пользователь (снизу) */}
-        <div className="fixed top-[60px] right-2 z-[99998] flex flex-col items-end gap-2">
-          <AuthBadge />
-          <AutoRiaUserBadge />
+        {/* Бейджи: Email из сессии (сверху, оранжевый) + AutoRia пользователь с тултипом (снизу) */}
+        <div className="fixed top-[60px] right-2 flex flex-col items-end gap-3">
+          <div className="relative z-10">
+            <AuthBadge />
+          </div>
+          <div className="relative z-50">
+            <AutoRiaUserBadge />
+          </div>
         </div>
         <FixedLanguageSwitch />
       </>

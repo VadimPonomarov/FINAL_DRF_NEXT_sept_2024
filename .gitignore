@@ -245,8 +245,8 @@ redis/
 # =============================================================================
 # IDE
 # =============================================================================
-# VSCode
-.vscode/
+# VSCode - allow settings.json for proper .env file handling
+.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json

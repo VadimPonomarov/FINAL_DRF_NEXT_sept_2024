@@ -12,7 +12,7 @@ const AuthBadge: React.FC = () => {
   return (
     <Badge
       variant="outline"
-      className="badge cursor-pointer"
+      className="cursor-pointer"
     >
       <Link href="/profile" className="px-2">
         {sessionData?.email || "Guest"}

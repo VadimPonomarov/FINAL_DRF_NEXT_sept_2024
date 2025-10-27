@@ -537,18 +537,18 @@ const SearchPage = () => {
     }
   };
 
-  // Простые функции для действий
-  const handleViewAd = (carId: number) => {
+  // Простые функции для действий (мемоизированы для предотвращения ререндера дочерних компонентов)
+  const handleViewAd = useCallback((carId: number) => {
     window.location.href = `/autoria/ads/view/${carId}`;
-  };
+  }, []);
 
-  const handleEditAd = (carId: number) => {
+  const handleEditAd = useCallback((carId: number) => {
     window.location.href = `/autoria/ads/edit/${carId}`;
-  };
+  }, []);
 
   const { toast } = useToast();
 
-  const handleFavoriteToggle = async (carId: number, event?: React.MouseEvent) => {
+  const handleFavoriteToggle = useCallback(async (carId: number, event?: React.MouseEvent) => {
     if (event) {
       event.stopPropagation();
       event.preventDefault();
@@ -644,10 +644,10 @@ const SearchPage = () => {
         return next;
       });
     }
-  };
+  }, [togglingIds, quickFilters, invertFilters, toast]);
 
   // Функция удаления объявления
-  const handleDeleteAd = async (carId: number, event?: React.MouseEvent) => {
+  const handleDeleteAd = useCallback(async (carId: number, event?: React.MouseEvent) => {
     if (event) {
       event.stopPropagation();
       event.preventDefault();

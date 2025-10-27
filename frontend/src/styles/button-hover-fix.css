@@ -1,31 +1,58 @@
 /* Глобальные стили для исправления проблем с ховером кнопок */
+/* КРИТИЧНО: текст должен оставаться видимым при hover */
 
-/* Базовые кнопки с белым текстом */
-button.bg-green-600:hover,
-button.bg-red-600:hover,
-button.bg-blue-600:hover,
-button.bg-gray-600:hover {
-  color: white !important;
-}
-
-/* Кнопки с outline */
-button[class*="variant-outline"]:hover {
-  background-color: rgb(243 244 246) !important; /* gray-100 */
-  color: rgb(17 24 39) !important; /* gray-900 */
-}
-
-/* Принудительное применение белого цвета для всех цветных кнопок при ховере */
+/* Принудительное применение белого цвета для ВСЕХ цветных кнопок при ховере */
+button[class*="bg-orange"]:hover,
 button[class*="bg-green"]:hover,
 button[class*="bg-red"]:hover,
 button[class*="bg-blue"]:hover,
-button[class*="bg-gray"]:hover {
+button[class*="bg-gray"]:hover,
+button[class*="bg-black"]:hover,
+button[class*="bg-purple"]:hover,
+button[class*="bg-indigo"]:hover,
+button[class*="bg-yellow"]:hover,
+button.bg-primary:hover {
   color: white !important;
 }
 
-/* Специально для кнопок модерации */
-button[class*="bg-green-600"]:hover,
-button[class*="bg-red-600"]:hover,
-button[class*="bg-blue-600"]:hover,
-button[class*="bg-gray-600"]:hover {
+/* Темная тема - белый текст для цветных кнопок */
+.dark button[class*="bg-orange"]:hover,
+.dark button[class*="bg-green"]:hover,
+.dark button[class*="bg-red"]:hover,
+.dark button[class*="bg-blue"]:hover,
+.dark button[class*="bg-gray"]:hover,
+.dark button[class*="bg-black"]:hover,
+.dark button.bg-primary:hover {
+  color: white !important;
+}
+
+/* Кнопки с outline - светлая тема */
+button[class*="variant-outline"]:hover,
+button[class*="border"]:hover:not([class*="bg-"]) {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+/* Кнопки с outline - темная тема */
+.dark button[class*="variant-outline"]:hover,
+.dark button[class*="border"]:hover:not([class*="bg-"]) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+/* Ссылки-кнопки */
+a[class*="bg-orange"]:hover,
+a[class*="bg-green"]:hover,
+a[class*="bg-red"]:hover,
+a[class*="bg-blue"]:hover,
+a.bg-primary:hover {
+  color: white !important;
+}
+
+.dark a[class*="bg-orange"]:hover,
+.dark a[class*="bg-green"]:hover,
+.dark a[class*="bg-red"]:hover,
+.dark a[class*="bg-blue"]:hover,
+.dark a.bg-primary:hover {
   color: white !important;
 }

@@ -732,6 +732,7 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         car_session_id = hashlib.md5(session_data.encode()).hexdigest()[:8]
 
     # Reusable consistency cues (avoid changing object between shots)
+    # КРИТИЧНО: Генерировать РАЗНЫЕ ракурсы ОДНОГО объекта, а не одинаковые фото!
     consistency_elements = [
         f"SAME EXACT unique vehicle across all images (vehicle ID: CAR-{car_session_id})",
         "IDENTICAL proportions, trims, and options in every shot",
@@ -741,7 +742,10 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         "same lighting conditions and color temperature",
         "same photographic style and post-processing",
         "single subject, no people, clean set",
-        "DO NOT generate different vehicles or variants - must be THE EXACT SAME vehicle from different angles"
+        "DO NOT generate different vehicles or variants - must be THE EXACT SAME vehicle from different angles",
+        f"THIS IS {angle.upper()} ANGLE - show the vehicle from THIS SPECIFIC perspective, NOT the same angle as other shots",
+        f"IMPORTANT: Each angle must show DIFFERENT VIEW of the same car - vary camera position for {angle} perspective",
+        "Generate CONSISTENT object but DIFFERENT camera viewpoint - like a car photoshoot from multiple angles"
     ]
 
     # Realism enforcement (physical correctness)
