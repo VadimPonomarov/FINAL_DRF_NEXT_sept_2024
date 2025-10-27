@@ -693,6 +693,7 @@ const ModerationPage = () => {
                           <SelectItem value="active">✅ {t('autoria.moderation.status.active')}</SelectItem>
                           <SelectItem value="rejected">❌ {t('autoria.moderation.status.rejected')}</SelectItem>
                           <SelectItem value="blocked">🚫 {t('autoria.moderation.status.blocked')}</SelectItem>
+                          <SelectItem value="sold">💰 {t('autoria.moderation.status.sold')}</SelectItem>
                           <SelectItem value="archived">📦 {t('autoria.moderation.status.archived')}</SelectItem>
                         </SelectContent>
                       </Select>
@@ -832,6 +833,7 @@ const ModerationPage = () => {
                               <SelectItem value="active">✅ {t('autoria.moderation.status.active')}</SelectItem>
                               <SelectItem value="rejected">❌ {t('autoria.moderation.status.rejected')}</SelectItem>
                               <SelectItem value="blocked">🚫 {t('autoria.moderation.status.blocked')}</SelectItem>
+                              <SelectItem value="sold">💰 {t('autoria.moderation.status.sold')}</SelectItem>
                               <SelectItem value="archived">📦 {t('autoria.moderation.status.archived')}</SelectItem>
                             </SelectContent>
                           </Select>

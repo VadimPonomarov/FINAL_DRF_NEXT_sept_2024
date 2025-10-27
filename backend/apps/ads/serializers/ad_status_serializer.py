@@ -37,17 +37,26 @@ class AdStatusUpdateSerializer(serializers.Serializer):
     )
     
     def validate_status(self, value):
-        """Validate status transitions."""
+        """Validate status transitions for superusers."""
         instance = self.instance
         current_status = instance.status if instance else None
+        request = self.context.get('request')
         
+        # Superusers can transition to ANY status without restrictions
+        if request and request.user and request.user.is_superuser:
+            return value
+        
+        # For regular users (if this serializer is ever used by non-superusers)
         # Define valid status transitions
         valid_transitions = {
-            AdStatusEnum.DRAFT: [AdStatusEnum.ACTIVE, AdStatusEnum.NEEDS_REVIEW, AdStatusEnum.REJECTED],
-            AdStatusEnum.NEEDS_REVIEW: [AdStatusEnum.ACTIVE, AdStatusEnum.REJECTED, AdStatusEnum.INACTIVE],
-            AdStatusEnum.ACTIVE: [AdStatusEnum.INACTIVE, AdStatusEnum.NEEDS_REVIEW, AdStatusEnum.REJECTED],
-            AdStatusEnum.REJECTED: [AdStatusEnum.NEEDS_REVIEW, AdStatusEnum.ACTIVE],
-            AdStatusEnum.INACTIVE: [AdStatusEnum.ACTIVE, AdStatusEnum.NEEDS_REVIEW]
+            AdStatusEnum.DRAFT: [AdStatusEnum.PENDING, AdStatusEnum.ACTIVE, AdStatusEnum.NEEDS_REVIEW, AdStatusEnum.REJECTED],
+            AdStatusEnum.PENDING: [AdStatusEnum.ACTIVE, AdStatusEnum.NEEDS_REVIEW, AdStatusEnum.REJECTED, AdStatusEnum.BLOCKED],
+            AdStatusEnum.NEEDS_REVIEW: [AdStatusEnum.ACTIVE, AdStatusEnum.REJECTED, AdStatusEnum.BLOCKED, AdStatusEnum.PENDING],
+            AdStatusEnum.ACTIVE: [AdStatusEnum.SOLD, AdStatusEnum.ARCHIVED, AdStatusEnum.BLOCKED, AdStatusEnum.NEEDS_REVIEW, AdStatusEnum.REJECTED],
+            AdStatusEnum.REJECTED: [AdStatusEnum.NEEDS_REVIEW, AdStatusEnum.PENDING, AdStatusEnum.ACTIVE],
+            AdStatusEnum.BLOCKED: [AdStatusEnum.ACTIVE, AdStatusEnum.NEEDS_REVIEW, AdStatusEnum.ARCHIVED],
+            AdStatusEnum.SOLD: [AdStatusEnum.ARCHIVED, AdStatusEnum.ACTIVE],
+            AdStatusEnum.ARCHIVED: [AdStatusEnum.ACTIVE, AdStatusEnum.NEEDS_REVIEW]
         }
         
         if current_status and value not in valid_transitions.get(current_status, []):
