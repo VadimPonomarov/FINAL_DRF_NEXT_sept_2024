@@ -1087,7 +1087,7 @@ export default {
     titleCharacters: "Заголовок: {count} символів",
     descriptionCharacters: "Опис: {count} символів"
   },
-  "navigation.search": "search (uk)",
+  "navigation.search": "Пошук",
   "navigation.createAd": "create ad (uk)",
   "autoria.admin": "admin (uk)",
   "autoria.loading": "Завантаження...",

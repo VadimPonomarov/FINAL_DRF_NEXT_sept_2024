@@ -11,6 +11,7 @@ from apps.ads.models import CarAd
 from apps.ads.models.reference import CarMarkModel, RegionModel, CityModel, CarColorModel
 from apps.accounts.models import AddsAccount
 from core.enums.cars import SellerType, ExchangeStatus, Currency
+from core.enums.ads import AdStatusEnum
 
 
 class Command(BaseCommand):
@@ -266,6 +267,18 @@ class Command(BaseCommand):
         
         description = random.choice(descriptions)
         
+        # Генерируем разные статусы для реалистичных тестовых данных
+        # 50% - активные, 20% - на модерации, 15% - черновики, 10% - требуют проверки, 5% - отклоненные
+        status_weights = [
+            (AdStatusEnum.ACTIVE, 50),
+            (AdStatusEnum.PENDING, 20),
+            (AdStatusEnum.DRAFT, 15),
+            (AdStatusEnum.NEEDS_REVIEW, 10),
+            (AdStatusEnum.REJECTED, 5),
+        ]
+        statuses, weights = zip(*status_weights)
+        ad_status = random.choices(statuses, weights=weights)[0]
+        
         return {
             'account': account,
             'mark': mark,
@@ -279,7 +292,8 @@ class Command(BaseCommand):
             'seller_type': random.choice([SellerType.PRIVATE, SellerType.DEALER]),
             'exchange_status': random.choice([ExchangeStatus.POSSIBLE, ExchangeStatus.NOT_POSSIBLE, None]),
             'dynamic_fields': dynamic_fields,
-            'is_validated': random.choice([True, False]),
+            'status': ad_status,
+            'is_validated': (ad_status == AdStatusEnum.ACTIVE),  # Валидированы только активные
         }
 
     def _show_statistics(self):
