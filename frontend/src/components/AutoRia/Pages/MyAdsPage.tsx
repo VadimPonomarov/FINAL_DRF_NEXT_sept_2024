@@ -212,7 +212,7 @@ const MyAdsPage = () => {
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
-  };
+  }, [t]);
 
   // Фильтрация теперь происходит на backend через API параметры
 

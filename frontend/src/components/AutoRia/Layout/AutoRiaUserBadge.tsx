@@ -2,61 +2,79 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
 import { useUserProfileData } from '@/hooks/useUserProfileData';
-import { User, Crown, Trash2 } from 'lucide-react';
+import { useI18n } from '@/contexts/I18nContext';
+import { User, Crown, X } from 'lucide-react';
 import { cleanupBackendTokens } from '@/lib/auth/cleanupAuth';
 import { useToast } from '@/hooks/use-toast';
 
 /**
- * Бейдж с информацией о залогиненном пользователе AutoRia
- * Показывается после успешной авторизации в контексте AutoRia
+ * Бейдж з інформацією про залогіненого користувача AutoRia
+ * Показується після успішної авторизації в контексті AutoRia
+ * ВАЖЛИВО: Потрібна NextAuth сессія + backend токени
  */
 const AutoRiaUserBadge: React.FC = () => {
+  const router = useRouter();
+  const { t } = useI18n();
+  const { data: session, status } = useSession();
   const { user, isAuthenticated } = useAutoRiaAuth();
   const { data: userProfileData } = useUserProfileData();
+  const { toast } = useToast();
 
-  // Отладка только при изменении статуса авторизации
+  // Відладка тільки при зміні статусу авторизації
   React.useEffect(() => {
     if (isAuthenticated) {
       console.log('[AutoRiaUserBadge] User authenticated:', {
         hasUser: !!user,
         hasProfileData: !!userProfileData,
+        sessionStatus: status,
       });
     }
-  }, [isAuthenticated]); // Только при изменении isAuthenticated!
+  }, [isAuthenticated, status]); // Тільки при зміні isAuthenticated!
 
-  // Если пользователь не авторизован, не показываем бейдж
-  // Проверяем либо user из useAutoRiaAuth, либо userProfileData
+  // КРИТИЧНО: Не показуємо бейдж якщо немає NextAuth сессії
+  // Неможливо мати backend токени без NextAuth сессії
+  if (status === 'loading') {
+    return null; // Ще завантажується
+  }
+  
+  if (status === 'unauthenticated' || !session) {
+    return null; // Немає NextAuth сессії - не може бути backend токенів
+  }
+
+  // Якщо користувач не авторизований в AutoRia, не показуємо бейдж
   if (!isAuthenticated && !user && !userProfileData?.user) {
     return null;
   }
 
-  // Получаем данные пользователя из доступных источников
+  // Отримуємо дані користувача з доступних джерел
   const actualUser = user || userProfileData?.user;
   if (!actualUser) {
     return null;
   }
 
-  // Определяем тип аккаунта
+  // Визначаємо тип акаунту
   const accountType = userProfileData?.account?.account_type?.toUpperCase() || 'BASIC';
   const isPremium = ['PREMIUM', 'VIP'].includes(accountType);
   
-  // Имя пользователя - НЕ показываем email (он уже в AuthBadge)
+  // Ім'я користувача - НЕ показуємо email (він вже в AuthBadge)
   const displayName = actualUser.username || 
                       (actualUser.first_name && actualUser.last_name 
                         ? `${actualUser.first_name} ${actualUser.last_name}` 
                         : actualUser.first_name || 'AutoRia');
   
-  // Определяем полномочия пользователя
+  // Визначаємо повноваження користувача
   const isSuperuser = actualUser?.is_superuser || false;
   const isStaff = actualUser?.is_staff || false;
   const isModerator = actualUser?.groups?.some((g: any) => g.name === 'Moderators') || false;
   
-  // Собираем список ролей
+  // Збираємо список ролей
   const roles = [];
   if (isSuperuser) roles.push('Суперадміністратор');
   if (isStaff && !isSuperuser) roles.push('Співробітник');
@@ -64,19 +82,50 @@ const AutoRiaUserBadge: React.FC = () => {
   if (isPremium) roles.push(`${accountType} акаунт`);
   if (roles.length === 0) roles.push('Користувач');
 
+  // Обробник LOGOUT (очистка Redis + localStorage, БЕЗ NextAuth сессії)
+  const handleClearTokens = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      // LOGOUT: Очищуємо Redis і backend токени (NextAuth сессія залишається)
+      await cleanupBackendTokens();
+      
+      toast({
+        title: `✅ ${t('common.success')}`,
+        description: t('auth.tokensCleared'),
+        duration: 2000,
+      });
+      
+      // Перенаправляємо на /login для повторного отримання backend токенів
+      // NextAuth сессія ще активна, тому не треба знову авторизуватись через OAuth
+      setTimeout(() => {
+        router.push('/login?message=' + encodeURIComponent(t('auth.tokensClearedPleaseLogin')));
+        router.refresh(); // Примусово оновлюємо роут
+      }, 500);
+    } catch (error) {
+      console.error('[AutoRiaUserBadge] Error during logout:', error);
+      toast({
+        title: `❌ ${t('common.error')}`,
+        description: t('auth.failedToClearTokens'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge
             variant="outline"
-            className={`cursor-pointer transition-all shadow-sm ${
+            className={`cursor-pointer transition-all shadow-sm text-xs py-0.5 px-2 ${
               isPremium 
                 ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white border-yellow-600 hover:from-amber-500 hover:to-yellow-600 font-semibold'
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
-            <Link href="/autoria/profile" className="flex items-center gap-1.5 px-2 py-0.5">
+            <Link href="/autoria/profile" className="flex items-center gap-1.5">
               {isPremium ? (
                 <Crown className="h-3 w-3" />
               ) : (
@@ -102,7 +151,7 @@ const AutoRiaUserBadge: React.FC = () => {
             </div>
             
             <div className="border-t pt-2">
-              <p className="text-xs font-medium mb-1">Полномочия:</p>
+              <p className="text-xs font-medium mb-1">Повноваження:</p>
               <div className="flex flex-wrap gap-1">
                 {roles.map((role, index) => (
                   <span
@@ -125,8 +174,20 @@ const AutoRiaUserBadge: React.FC = () => {
               </div>
             </div>
             
+            {/* LOGOUT - очистка Redis токенів (NextAuth сессія залишається) */}
+            <div className="border-t pt-2 flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Logout (Redis)</p>
+              <button
+                onClick={handleClearTokens}
+                className="group p-1 hover:bg-red-500 dark:hover:bg-red-600 rounded transition-colors"
+                title="Logout: очистити токени Redis (NextAuth сессія збережеться)"
+              >
+                <X className="h-4 w-4 text-red-600 dark:text-red-400 group-hover:text-white transition-colors" />
+              </button>
+            </div>
+            
             <p className="text-xs text-muted-foreground italic border-t pt-1">
-              👉 Клік → Профіль
+              👉 Клік на бейдж → Профіль
             </p>
           </div>
         </TooltipContent>
@@ -136,4 +197,3 @@ const AutoRiaUserBadge: React.FC = () => {
 };
 
 export default AutoRiaUserBadge;
-

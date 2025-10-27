@@ -6,11 +6,13 @@
 import { signOut } from 'next-auth/react';
 
 /**
- * Полная очистка всех данных авторизации
- * @param redirectUrl - URL для редиректа после очистки (опционально)
+ * Полная очистка всех данных авторизации - SIGNOUT
+ * Очищает: Redis + NextAuth сессия + localStorage + sessionStorage
+ * После этого пользователь должен быть перенаправлен на /api/auth/signin
+ * @param redirectUrl - URL для редиректа после очистки (по умолчанию /api/auth/signin)
  */
 export async function cleanupAuth(redirectUrl?: string): Promise<void> {
-  console.log('[CleanupAuth] Starting full authentication cleanup...');
+  console.log('[CleanupAuth] SIGNOUT: Starting full authentication cleanup (Redis + NextAuth + storage)...');
 
   try {
     // 1. Очищаем Redis на backend (провайдеры, токены)
@@ -68,7 +70,7 @@ export async function cleanupAuth(redirectUrl?: string): Promise<void> {
       }, 100);
     }
 
-    console.log('[CleanupAuth] ✅ Full cleanup completed successfully');
+    console.log('[CleanupAuth] ✅ SIGNOUT completed: Full cleanup successful (Redis + NextAuth + storage)');
   } catch (error) {
     console.error('[CleanupAuth] ❌ Error during cleanup:', error);
     
@@ -85,20 +87,54 @@ export async function cleanupAuth(redirectUrl?: string): Promise<void> {
 }
 
 /**
- * Очистка только backend токенов (без NextAuth сессии)
- * Используется при переключении провайдеров
+ * Очистка только backend токенов и Redis (БЕЗ NextAuth сессии)
+ * Это LOGOUT - очищает Redis, но оставляет NextAuth сессию
+ * После этого пользователь должен быть перенаправлен на /login
  */
-export function cleanupBackendTokens(): void {
-  console.log('[CleanupAuth] Clearing backend tokens only...');
+export async function cleanupBackendTokens(): Promise<void> {
+  console.log('[CleanupAuth] LOGOUT: Clearing backend tokens and Redis (keeping NextAuth session)...');
   
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('backend_auth');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    sessionStorage.removeItem('backend_auth');
+  try {
+    // 1. Очищаем Redis на backend
+    try {
+      console.log('[CleanupAuth] Clearing Redis data...');
+      const response = await fetch('/api/auth/cleanup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        console.log('[CleanupAuth] ✅ Redis data cleared successfully');
+      } else {
+        console.warn('[CleanupAuth] ⚠️ Failed to clear Redis data:', response.status);
+      }
+    } catch (redisError) {
+      console.error('[CleanupAuth] ❌ Error clearing Redis:', redisError);
+      // Продолжаем очистку даже если Redis не очистился
+    }
+
+    // 2. Очищаем localStorage backend токены
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('backend_auth');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('backend_auth');
+    }
+    
+    console.log('[CleanupAuth] ✅ LOGOUT completed: Backend tokens and Redis cleared, NextAuth session preserved');
+  } catch (error) {
+    console.error('[CleanupAuth] ❌ Error during logout:', error);
+    
+    // В крайнем случае очищаем хотя бы localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('backend_auth');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('backend_auth');
+    }
   }
-  
-  console.log('[CleanupAuth] ✅ Backend tokens cleared');
 }
 
 /**

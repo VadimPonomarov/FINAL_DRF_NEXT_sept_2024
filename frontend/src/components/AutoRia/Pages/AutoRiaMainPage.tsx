@@ -324,14 +324,13 @@ const AutoRiaMainPage = () => {
 
           <Button
             size="lg"
-            variant="outline"
             onClick={() => setShowTestAdsModal(true)}
             disabled={isGenerating}
-            className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0"
           >
             {isGenerating ? (
               <>
-                <div className="animate-spin h-4 md:h-5 w-4 md:w-5 mr-2 border-2 border-green-600 border-t-transparent rounded-full animate-pulse" />
+                <div className="animate-spin h-4 md:h-5 w-4 md:w-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-pulse" />
                 <span className="hidden sm:inline animate-pulse">{t('autoria.testAds.creatingDemo')}</span>
                 <span className="sm:hidden animate-pulse">{t('autoria.testAds.creating')}</span>
               </>
@@ -351,9 +350,8 @@ const AutoRiaMainPage = () => {
           {/* Кнопка управления аккаунтами */}
           <Button
             size="lg"
-            variant="outline"
             onClick={() => setShowAccountManager(true)}
-            className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200 text-orange-700 hover:from-orange-100 hover:to-red-100 whitespace-nowrap flex-shrink-0"
+            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold shadow-md whitespace-nowrap flex-shrink-0 border-0"
           >
             <Settings className="h-5 w-5 mr-2" />
             {t('autoria.testAds.manageAccounts')}
@@ -362,10 +360,9 @@ const AutoRiaMainPage = () => {
           {/* Кнопка очистки */}
           <Button
             size="lg"
-            variant="outline"
             onClick={clearAllAds}
             disabled={isGenerating}
-            className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-700 hover:from-red-100 hover:to-pink-100 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+            className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0"
           >
             <Trash2 className="h-5 w-5 mr-2" />
             {t('autoria.testAds.clearAll')}

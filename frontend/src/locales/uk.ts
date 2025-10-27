@@ -401,6 +401,7 @@ export default {
         description: "Отримайте результати швидко"
       }
     },
+    platformStats: "Статистика платформи",
     testAds: {
       howMany: "Скільки тестових оголошень створити? (1-10)",
       invalidNumber: "❌ Будь ласка, введіть число від 1 до 10",
@@ -642,12 +643,38 @@ export default {
       review: "Перевірка",
       viewDetails: "Переглянути",
       rejectionReason: "Причина відхилення",
+      rejectionReasonPrompt: "Введіть причину відхилення:",
+      blockReason: "Введіть причину блокування:",
       noAdsFound: "Оголошень не знайдено",
       noAdsDescription: "Немає оголошень для модерації з обраними фільтрами",
       searchPlaceholder: "Пошук за заголовком, описом, email...",
       allStatuses: "Всі статуси",
       createdAt: "Створено",
-      accessDenied: "У вас немає прав доступу до цієї сторінки"
+      accessDenied: "У вас немає прав доступу до цієї сторінки",
+      status: {
+        pending: "На модерації",
+        needsReview: "Потребує перевірки",
+        rejected: "Відхилено",
+        active: "Активно",
+        blocked: "Заблоковано",
+        draft: "Чернетка",
+        expired: "Закінчився термін"
+      },
+      statusUpdated: "Статус успішно оновлено",
+      statusUpdateFailed: "Не вдалося оновити статус",
+      confirmDelete: "Ви впевнені, що хочете видалити це оголошення?",
+      adDeleted: "Оголошення успішно видалено",
+      deleteFailed: "Не вдалося видалити оголошення",
+      block: "Заблокувати",
+      activate: "Активувати",
+      loadingModeration: "Завантаження...",
+      refresh: "Оновити",
+      sortBy: "Сортувати",
+      price: "Ціна",
+      brand: "Марка",
+      year: "Рік",
+      view: "Вигляд",
+      created: "Створено"
     },
     moderationInfo: "Інформація про модерацію",
     publishAd: "Опублікувати оголошення",
@@ -3187,6 +3214,20 @@ export default {
   "autoria.moderation.block": "Блокувати",
   "autoria.moderation.activate": "Активувати",
   "autoria.moderation.status": "Статус",
+  "autoria.moderation.changeStatus": "Змінити статус",
+  "autoria.moderation.status.draft": "Чернетка",
+  "autoria.moderation.status.pending": "Очікування",
+  "autoria.moderation.status.needsReview": "Потребує перевірки",
+  "autoria.moderation.status.active": "Активно",
+  "autoria.moderation.status.rejected": "Відхилено",
+  "autoria.moderation.status.blocked": "Заблоковано",
+  "autoria.moderation.status.archived": "Архівовано",
+  "autoria.moderation.status.sold": "Продано",
+  "autoria.moderation.statusUpdated": "Статус успішно оновлено",
+  "autoria.moderation.statusUpdateFailed": "Не вдалося оновити статус",
+  "autoria.moderation.confirmDelete": "Ви впевнені, що хочете видалити це оголошення?",
+  "autoria.moderation.adDeleted": "Оголошення успішно видалено",
+  "autoria.moderation.deleteFailed": "Не вдалося видалити оголошення",
   "autoria.moderation.user": "Користувач",
   "autoria.moderation.price": "Ціна",
   "autoria.moderation.brand": "Марка",
@@ -3572,5 +3613,11 @@ export default {
     // Generic
     tryAgain: "Спробуйте ще раз",
     unknownError: "Невідома помилка"
+  },
+  
+  auth: {
+    tokensCleared: "Токени очищено, перенаправлення...",
+    tokensClearedPleaseLogin: "Токени очищено. Будь ласка, увійдіть знову.",
+    failedToClearTokens: "Не вдалося очистити токени"
   }
 };

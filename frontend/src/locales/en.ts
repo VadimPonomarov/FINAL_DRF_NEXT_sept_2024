@@ -437,6 +437,7 @@ export default {
       generationStarted: "Start",
       backgroundGeneration: "Back"
     },
+    platformStats: "Platform Statistics",
     testAds: {
       howMany: "How many test ads to create? (1-10)",
       invalidNumber: "❌ Please enter a number from 1 to 10",
@@ -583,12 +584,31 @@ export default {
       review: "Review",
       viewDetails: "View Details",
       rejectionReason: "Rejection Reason",
+      rejectionReasonPrompt: "Enter rejection reason:",
+      blockReason: "Enter blocking reason:",
       noAdsFound: "No Ads Found",
       noAdsDescription: "No ads for moderation with selected filters",
       searchPlaceholder: "Search by title, description, email...",
       allStatuses: "All Statuses",
       createdAt: "Created",
       accessDenied: "You don't have access to this page",
+      status: {
+        pending: "Pending",
+        needsReview: "Needs Review",
+        rejected: "Rejected",
+        active: "Active",
+        blocked: "Blocked",
+        draft: "Draft",
+        expired: "Expired"
+      },
+      statusUpdated: "Status successfully updated",
+      statusUpdateFailed: "Failed to update status",
+      confirmDelete: "Are you sure you want to delete this ad?",
+      adDeleted: "Ad successfully deleted",
+      deleteFailed: "Failed to delete ad",
+      block: "Block",
+      activate: "Activate",
+      loadingModeration: "Loading...",
       filters: "Filters",
       refresh: "Refresh",
       view: "View",
@@ -597,6 +617,10 @@ export default {
       sortBy: "Sort by",
       sortOrder: "Sort Order",
       ascending: "Ascending",
+      price: "Price",
+      brand: "Brand",
+      year: "Year",
+      created: "Created",
       descending: "Descending",
       actions: "Actions",
       block: "Block",
@@ -1568,6 +1592,20 @@ export default {
   "autoria.moderation.block": "Block",
   "autoria.moderation.activate": "Activate",
   "autoria.moderation.status": "Status",
+  "autoria.moderation.changeStatus": "Change Status",
+  "autoria.moderation.status.draft": "Draft",
+  "autoria.moderation.status.pending": "Pending",
+  "autoria.moderation.status.needsReview": "Needs Review",
+  "autoria.moderation.status.active": "Active",
+  "autoria.moderation.status.rejected": "Rejected",
+  "autoria.moderation.status.blocked": "Blocked",
+  "autoria.moderation.status.archived": "Archived",
+  "autoria.moderation.status.sold": "Sold",
+  "autoria.moderation.statusUpdated": "Status updated successfully",
+  "autoria.moderation.statusUpdateFailed": "Failed to update status",
+  "autoria.moderation.confirmDelete": "Are you sure you want to delete this ad?",
+  "autoria.moderation.adDeleted": "Ad deleted successfully",
+  "autoria.moderation.deleteFailed": "Failed to delete ad",
   "autoria.moderation.user": "User",
   "autoria.moderation.price": "Price",
   "autoria.moderation.brand": "Brand",
@@ -3629,6 +3667,12 @@ export default {
     // Generic
     tryAgain: "Please try again",
     unknownError: "Unknown error"
+  },
+  
+  auth: {
+    tokensCleared: "Tokens cleared, redirecting...",
+    tokensClearedPleaseLogin: "Tokens cleared. Please log in again.",
+    failedToClearTokens: "Failed to clear tokens"
   }
 };
 

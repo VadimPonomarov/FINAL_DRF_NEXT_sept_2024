@@ -23,7 +23,8 @@ import {
   Clock,
   BarChart3,
   Grid,
-  List
+  List,
+  Settings
 } from 'lucide-react';
 import { CarAd } from '@/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
@@ -95,6 +96,9 @@ const ModerationPage = () => {
     }
   }, [authLoading, isAuthenticated, checkAuth]);
 
+  // Флаг для отслеживания первой загрузки
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
   const loadModerationQueue = useCallback(async () => {
     setLoading(true);
     try {
@@ -157,8 +161,11 @@ const ModerationPage = () => {
       setAds([]);
     } finally {
       setLoading(false);
+      if (!initialLoadDone) {
+        setInitialLoadDone(true);
+      }
     }
-  }, [statusFilter, searchQuery, sortBy, sortOrder, toast]);
+  }, [statusFilter, searchQuery, sortBy, sortOrder, toast, initialLoadDone]);
 
   const loadModerationStats = useCallback(async () => {
     try {
@@ -191,13 +198,23 @@ const ModerationPage = () => {
     }
   }, [toast]);
 
-  // Загрузка данных
+  // Начальная загрузка при монтировании
   useEffect(() => {
-    if (isAuthenticated) {
+    console.log('[ModerationPage] Initial mount - attempting to load data');
+    // Пробуем загрузить данные сразу при монтировании
+    loadModerationQueue();
+    loadModerationStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Выполняется только один раз при монтировании
+
+  // Загрузка данных при изменении фильтров
+  useEffect(() => {
+    if (isAuthenticated && initialLoadDone) {
+      console.log('[ModerationPage] Filters changed - reloading data');
       loadModerationQueue();
       loadModerationStats();
     }
-  }, [statusFilter, searchQuery, sortBy, sortOrder, isAuthenticated, loadModerationQueue, loadModerationStats]);
+  }, [statusFilter, searchQuery, sortBy, sortOrder, isAuthenticated, initialLoadDone, loadModerationQueue, loadModerationStats]);
 
   const moderateAd = useCallback(async (adId: number, action: 'approve' | 'reject' | 'review' | 'block' | 'activate', reason?: string) => {
     try {
@@ -263,27 +280,132 @@ const ModerationPage = () => {
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">⏳ На модерации</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200">⏳ {t('autoria.moderation.status.pending')}</Badge>;
       case 'needs_review':
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-300">🔍 Требует проверки</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900 dark:text-orange-200">🔍 {t('autoria.moderation.status.needsReview')}</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 border-red-300">❌ Отклонено</Badge>;
+        return <Badge className="bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-200">❌ {t('autoria.moderation.status.rejected')}</Badge>;
       case 'active':
-        return <Badge className="bg-green-100 text-green-800 border-green-300">✅ Активно</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-200">✅ {t('autoria.moderation.status.active')}</Badge>;
       case 'blocked':
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-300">🚫 Заблокировано</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-200">🚫 {t('autoria.moderation.status.blocked')}</Badge>;
       case 'draft':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-300">📝 Черновик</Badge>;
-      case 'expired':
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-300">⏰ Истекло</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200">📝 {t('autoria.moderation.status.draft')}</Badge>;
+      case 'archived':
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900 dark:text-purple-200">📦 {t('autoria.moderation.status.archived')}</Badge>;
+      case 'sold':
+        return <Badge className="bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-900 dark:text-teal-200">💰 {t('autoria.moderation.status.sold')}</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-300">{status}</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-200">{status}</Badge>;
+    }
+  }, [t]);
+
+  // Курси валют (можна отримувати з API)
+  const exchangeRates = {
+    USD: 1,
+    EUR: 1.1,
+    UAH: 0.027
+  };
+
+  const formatPrice = (price: number, currency: string, targetCurrency?: string) => {
+    const symbols = { USD: '$', EUR: '€', UAH: '₴' };
+    
+    let finalPrice = price;
+    let finalCurrency = currency;
+    
+    // Конвертація якщо потрібно
+    if (targetCurrency && targetCurrency !== currency) {
+      const fromRate = exchangeRates[currency as keyof typeof exchangeRates] || 1;
+      const toRate = exchangeRates[targetCurrency as keyof typeof exchangeRates] || 1;
+      finalPrice = price * (toRate / fromRate);
+      finalCurrency = targetCurrency;
+    }
+    
+    const symbol = symbols[finalCurrency as keyof typeof symbols] || '$';
+    const formattedNumber = new Intl.NumberFormat('uk-UA', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(finalPrice);
+    
+    return `${symbol}${formattedNumber}`;
+  };
+
+  // Функція зміни статусу оголошення
+  const handleStatusChange = async (adId: number, newStatus: string) => {
+    try {
+      const response = await fetchWithAuth(`/api/ads/admin/${adId}/status/update/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: newStatus,
+          moderation_reason: `Статус изменен на ${newStatus} модератором ${user?.email || 'unknown'}`,
+          notify_user: true
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update status');
+      }
+
+      toast({
+        title: t('common.success'),
+        description: t('autoria.moderation.statusUpdated'),
+      });
+
+      // Оновлюємо локальний стан
+      setAds(prev => prev.map(ad => 
+        ad.id === adId ? { ...ad, status: newStatus } : ad
+      ));
+      
+      // Оновлюємо статистику
+      loadModerationStats();
+      loadModerationQueue();
+    } catch (error) {
+      console.error('[ModerationPage] Error updating status:', error);
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('autoria.moderation.statusUpdateFailed'),
+        variant: 'destructive',
+      });
     }
   };
 
-  const formatPrice = (price: number, currency: string) => {
-    const symbols = { USD: '$', EUR: '€', UAH: '₴' };
-    return `${symbols[currency as keyof typeof symbols] || '$'}${price.toLocaleString()}`;
+  // Функція видалення оголошення
+  const handleDeleteAd = async (adId: number) => {
+    if (!confirm(t('autoria.moderation.confirmDelete'))) {
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth(`/api/ads/${adId}/`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete ad');
+      }
+
+      toast({
+        title: t('common.success'),
+        description: t('autoria.moderation.adDeleted'),
+      });
+
+      // Оновлюємо локальний стан
+      setAds(prev => prev.filter(ad => ad.id !== adId));
+      
+      // Оновлюємо статистику
+      loadModerationStats();
+    } catch (error) {
+      console.error('[ModerationPage] Error deleting ad:', error);
+      toast({
+        title: t('common.error'),
+        description: t('autoria.moderation.deleteFailed'),
+        variant: 'destructive',
+      });
+    }
   };
 
   // Проверяем права доступа - только суперюзеры (используем уже объявленную переменную isSuperUser)
@@ -521,8 +643,22 @@ const ModerationPage = () => {
                     </p>
 
                     <div className="flex items-center justify-between">
-                      <div className="text-lg font-bold text-green-600">
-                        {formatPrice(ad.price, ad.currency)}
+                      <div className="space-y-1">
+                        <div className="text-lg font-bold text-green-600">
+                          {formatPrice(ad.price, ad.currency)}
+                        </div>
+                        {/* Конвертація в інші валюти */}
+                        <div className="flex gap-2 text-xs text-gray-500">
+                          {ad.currency !== 'USD' && (
+                            <span>≈ {formatPrice(ad.price, ad.currency, 'USD')}</span>
+                          )}
+                          {ad.currency !== 'EUR' && (
+                            <span>≈ {formatPrice(ad.price, ad.currency, 'EUR')}</span>
+                          )}
+                          {ad.currency !== 'UAH' && (
+                            <span>≈ {formatPrice(ad.price, ad.currency, 'UAH')}</span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <User className="h-4 w-4" />
@@ -536,76 +672,90 @@ const ModerationPage = () => {
                     </div>
 
                     {/* Moderation Actions */}
-                    <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedAd(ad)}
-                          className="h-8 w-32 flex items-center justify-center text-xs font-medium hover:bg-gray-100 hover:text-gray-900"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />{t('autoria.moderation.viewDetails')}
-                        </Button>
+                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t">
+                      {/* Селектор зміни статусу */}
+                      <Select
+                        value={ad.status}
+                        onValueChange={(newStatus) => handleStatusChange(ad.id, newStatus)}
+                      >
+                        <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs">
+                          <SelectValue>
+                            <span className="flex items-center gap-1">
+                              <Settings className="h-3 w-3" />
+                              <span>{t(`autoria.moderation.status.${ad.status}`)}</span>
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">📝 {t('autoria.moderation.status.draft')}</SelectItem>
+                          <SelectItem value="pending">⏳ {t('autoria.moderation.status.pending')}</SelectItem>
+                          <SelectItem value="needs_review">🔍 {t('autoria.moderation.status.needsReview')}</SelectItem>
+                          <SelectItem value="active">✅ {t('autoria.moderation.status.active')}</SelectItem>
+                          <SelectItem value="rejected">❌ {t('autoria.moderation.status.rejected')}</SelectItem>
+                          <SelectItem value="blocked">🚫 {t('autoria.moderation.status.blocked')}</SelectItem>
+                          <SelectItem value="archived">📦 {t('autoria.moderation.status.archived')}</SelectItem>
+                        </SelectContent>
+                      </Select>
 
-                      {ad.status === 'pending' || ad.status === 'needs_review' ? (
+                      {/* Швидкі дії для модерації */}
+                      {(ad.status === 'pending' || ad.status === 'needs_review') && (
                         <>
                           <Button
                             size="sm"
-                            className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
+                            className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white h-7 px-2.5 text-xs"
                             onClick={() => moderateAd(ad.id, 'approve')}
+                            title={t('autoria.moderation.approve')}
                           >
-                            <Check className="h-3 w-3 mr-1" />{t('autoria.moderation.approve')}
+                            <Check className="h-3.5 w-3.5" />
                           </Button>
 
                           <Button
                             size="sm"
-                            className="bg-red-600 hover:bg-red-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
+                            className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white h-7 px-2.5 text-xs"
                             onClick={() => {
                               const reason = prompt(t('autoria.moderation.rejectionReasonPrompt'));
                               if (reason) {
                                 moderateAd(ad.id, 'reject', reason);
                               }
                             }}
+                            title={t('autoria.moderation.reject')}
                           >
-                            <X className="h-3 w-3 mr-1" />{t('autoria.moderation.reject')}
+                            <X className="h-3.5 w-3.5" />
                           </Button>
                         </>
-                      ) : null}
+                      )}
 
-                      {ad.status === 'rejected' ? (
+                      {ad.status === 'blocked' && (
                         <Button
                           size="sm"
-                          className="bg-blue-600 hover:bg-blue-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
-                          onClick={() => moderateAd(ad.id, 'review')}
-                          style={{ color: 'white' }}
-                        >
-                          ⚠️{t('autoria.moderation.review')}
-                        </Button>
-                      ) : null}
-
-                      {ad.status === 'active' ? (
-                        <Button
-                          size="sm"
-                          className="bg-gray-600 hover:bg-gray-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
-                          onClick={() => {
-                            const reason = prompt(t('autoria.moderation.blockReason'));
-                            if (reason) {
-                              moderateAd(ad.id, 'block', reason);
-                            }
-                          }}
-                        >
-                          🚫 {t('autoria.moderation.block')}
-                        </Button>
-                      ) : null}
-
-                      {ad.status === 'blocked' ? (
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 flex items-center justify-center text-xs font-medium"
+                          className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white h-7 px-2.5 text-xs"
                           onClick={() => moderateAd(ad.id, 'activate')}
+                          title={t('autoria.moderation.activate')}
                         >
-                          ✅ {t('autoria.moderation.activate')}
+                          <Check className="h-3.5 w-3.5" />
                         </Button>
-                      ) : null}
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedAd(ad)}
+                        className="h-7 px-2.5 text-xs hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-white ml-auto"
+                        title={t('autoria.moderation.viewDetails')}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+
+                      {/* Кнопка видалення */}
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteAd(ad.id)}
+                        className="h-7 px-2.5 text-xs"
+                        title={t('common.delete')}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -662,36 +812,53 @@ const ModerationPage = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1 items-center justify-start">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedAd(ad)}
-                            className="h-8 w-32 text-xs font-medium flex items-center justify-center hover:bg-gray-100 hover:text-gray-900"
+                          {/* Селектор зміни статусу */}
+                          <Select
+                            value={ad.status}
+                            onValueChange={(newStatus) => handleStatusChange(ad.id, newStatus)}
                           >
-                            <Eye className="h-3 w-3 mr-1" />{t('autoria.moderation.viewDetails')}
-                          </Button>
+                            <SelectTrigger className="h-7 w-auto min-w-[130px] text-xs">
+                              <SelectValue>
+                                <span className="flex items-center gap-1">
+                                  <Settings className="h-3 w-3" />
+                                  <span>{t(`autoria.moderation.status.${ad.status}`)}</span>
+                                </span>
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="draft">📝 {t('autoria.moderation.status.draft')}</SelectItem>
+                              <SelectItem value="pending">⏳ {t('autoria.moderation.status.pending')}</SelectItem>
+                              <SelectItem value="needs_review">🔍 {t('autoria.moderation.status.needsReview')}</SelectItem>
+                              <SelectItem value="active">✅ {t('autoria.moderation.status.active')}</SelectItem>
+                              <SelectItem value="rejected">❌ {t('autoria.moderation.status.rejected')}</SelectItem>
+                              <SelectItem value="blocked">🚫 {t('autoria.moderation.status.blocked')}</SelectItem>
+                              <SelectItem value="archived">📦 {t('autoria.moderation.status.archived')}</SelectItem>
+                            </SelectContent>
+                          </Select>
 
                           {ad.status === 'pending' || ad.status === 'needs_review' ? (
                             <>
                               <Button
                                 size="sm"
-                                className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
+                                className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white h-7 px-2.5 text-xs"
                                 onClick={() => moderateAd(ad.id, 'approve')}
+                                title={t('autoria.moderation.approve')}
                               >
-                                <Check className="h-3 w-3 mr-1" />{t('autoria.moderation.approve')}
+                                <Check className="h-3.5 w-3.5" />
                               </Button>
 
                               <Button
                                 size="sm"
-                                className="bg-red-600 hover:bg-red-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
+                                className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white h-7 px-2.5 text-xs"
                                 onClick={() => {
                                   const reason = prompt(t('autoria.moderation.rejectionReasonPrompt'));
                                   if (reason) {
                                     moderateAd(ad.id, 'reject', reason);
                                   }
                                 }}
+                                title={t('autoria.moderation.reject')}
                               >
-                                <X className="h-3 w-3 mr-1" />{t('autoria.moderation.reject')}
+                                <X className="h-3.5 w-3.5" />
                               </Button>
                             </>
                           ) : null}
@@ -699,38 +866,61 @@ const ModerationPage = () => {
                           {ad.status === 'rejected' ? (
                             <Button
                               size="sm"
-                              className="bg-blue-600 hover:bg-blue-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
+                              className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white h-7 px-2.5 text-xs"
                               onClick={() => moderateAd(ad.id, 'review')}
-                              style={{ color: 'white' }}
+                              title={t('autoria.moderation.review')}
                             >
-                              ⚠️{t('autoria.moderation.review')}
+                              ⚠️
                             </Button>
                           ) : null}
 
                           {ad.status === 'active' ? (
                             <Button
                               size="sm"
-                              className="bg-gray-600 hover:bg-gray-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
+                              className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white h-7 px-2.5 text-xs"
                               onClick={() => {
                                 const reason = prompt(t('autoria.moderation.blockReason'));
                                 if (reason) {
                                   moderateAd(ad.id, 'block', reason);
                                 }
                               }}
+                              title={t('autoria.moderation.block')}
                             >
-                              🚫 {t('autoria.moderation.block')}
+                              🚫
                             </Button>
                           ) : null}
 
                           {ad.status === 'blocked' ? (
                             <Button
                               size="sm"
-                              className="bg-green-600 hover:bg-green-800 text-white hover:text-white h-8 w-32 text-xs font-medium flex items-center justify-center"
+                              className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white h-7 px-2.5 text-xs"
                               onClick={() => moderateAd(ad.id, 'activate')}
+                              title={t('autoria.moderation.activate')}
                             >
-                              ✅ {t('autoria.moderation.activate')}
+                              <Check className="h-3.5 w-3.5" />
                             </Button>
                           ) : null}
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedAd(ad)}
+                            className="h-7 px-2.5 text-xs hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-white"
+                            title={t('autoria.moderation.viewDetails')}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+
+                          {/* Кнопка видалення */}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteAd(ad.id)}
+                            className="h-7 px-2.5 text-xs"
+                            title={t('common.delete')}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>

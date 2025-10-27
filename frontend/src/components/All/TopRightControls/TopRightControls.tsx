@@ -17,19 +17,18 @@ const TopRightControls: React.FC = () => {
     <>
       {/* Контейнер для бейджей - справа с отступом 50px от viewport */}
       <div 
-        className="fixed flex flex-col items-end gap-2 z-[9999999] pointer-events-none"
-        style={{ top: '60px', right: '50px' }}
+        className="fixed flex flex-col items-end gap-2 pointer-events-none"
+        style={{ top: '60px', right: '50px', zIndex: 99999999 }}
       >
         {/* Email бейдж - белый/серый */}
         <div className="pointer-events-auto">
           <AuthBadge />
         </div>
-        {/* AutoRia пользователь - желтый/серый (только на /autoria) */}
-        {pathname?.startsWith('/autoria') && (
-          <div className="pointer-events-auto">
-            <AutoRiaUserBadge />
-          </div>
-        )}
+        {/* AutoRia пользователь - желтый/серый 
+            Показываем всегда, компонент сам решит показывать или нет на основе авторизации */}
+        <div className="pointer-events-auto">
+          <AutoRiaUserBadge />
+        </div>
       </div>
 
       {/* Language Selector - manages its own position */}
