@@ -823,11 +823,12 @@ Style: Photorealistic, automotive magazine quality"""
             return False
 
     def _create_car_advertisements(self):
-        """Create car advertisements (FINAL STEP - depends on all reference data)."""
-        self.stdout.write('🚗 Creating car advertisements...')
+        """Create car advertisements with images using frontend algorithm (FINAL STEP)."""
+        self.stdout.write('🚗 Creating car advertisements with images...')
 
         try:
             from apps.ads.models import CarAd
+            import os
 
             # Check if car ads already exist
             existing_ads = CarAd.objects.count()
@@ -835,11 +836,32 @@ Style: Photorealistic, automotive magazine quality"""
                 self.stdout.write(f'ℹ️ Car advertisements already exist: {existing_ads}')
                 return
 
-            # Run the car ads seeding command
-            call_command('seed_car_ads', count=50, verbosity=0)
+            # Check environment variable for test ads generation
+            generate_with_images = os.getenv('GENERATE_TEST_ADS_WITH_IMAGES', 'true').lower() in ('true', '1', 't', 'yes')
 
-            ads_count = CarAd.objects.count()
-            self.stdout.write(f'✅ Created {ads_count} car advertisements')
+            if generate_with_images:
+                # Use the new algorithm-consistent test ads generator
+                self.stdout.write('🎨 Using frontend-consistent image generation algorithm...')
+                call_command(
+                    'generate_test_ads_with_images',
+                    count=10,
+                    with_images=True,
+                    image_types='front,side',
+                    verbosity=1
+                )
+                
+                ads_count = CarAd.objects.count()
+                self.stdout.write(f'✅ Created {ads_count} test ads with images')
+            else:
+                # Fallback to old method without images
+                self.stdout.write('📝 Generating ads without images (legacy mode)...')
+                call_command('seed_car_ads', count=50, verbosity=0)
+                
+                ads_count = CarAd.objects.count()
+                self.stdout.write(f'✅ Created {ads_count} car advertisements')
+
+            return {'created': ads_count}
 
         except Exception as e:
             self.stdout.write(f'❌ Error creating car advertisements: {e}')
+            raise
