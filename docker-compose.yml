@@ -268,7 +268,7 @@ services:
       - redis-insight:/data
 
   rabbitmq:
-    image: rabbitmq:3.13
+    image: rabbitmq:3.13-management  # Образ с предустановленным Management UI
     container_name: rabbitmq
     ports:
       - "5672:5672"
@@ -283,6 +283,12 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   mailing:
     build:
