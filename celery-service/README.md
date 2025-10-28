@@ -286,3 +286,135 @@ print(f'Task ID: {result.id}')
 ## 📝 License
 
 This microservice is part of the main application and follows the same license terms.
+
+## ⏰ Періодичні задачі (celery-beat)
+
+Celery Beat запускає задачі за розкладом (cron/інтервали) і ставить їх у чергу для воркерів.
+
+### Як це працює в проекті
+
+- Планувальник: `celery -A config.celery_app beat`
+- Воркер(и): `celery -A config.celery_app worker -l info -Q email,notifications,data_processing,cleanup`
+- Моніторинг: Flower `http://localhost:5555`
+
+### Конфігурація розкладу
+
+```python
+# celery-service/config/celery_app.py
+from celery.schedules import crontab
+from celery import Celery
+
+app = Celery("celery_service")
+# ... інший конфіг ...
+
+app.conf.beat_schedule = {
+    # 1) Щоденний бекап БД о 02:00
+    "daily-db-backup": {
+        "task": "tasks.cleanup_tasks.daily_maintenance_task",
+        "schedule": crontab(hour=2, minute=0),
+        "options": {"queue": "cleanup"},
+    },
+    # 2) Оновлення курсів валют щогодини (для AutoRia)
+    "update-exchange-rates-hourly": {
+        "task": "tasks.data_processing_tasks.update_exchange_rates_task",
+        "schedule": crontab(minute=0),
+        "options": {"queue": "data_processing"},
+    },
+    # 3) Надсилання дайджесту email щоденно о 08:00
+    "send-daily-email-digest": {
+        "task": "tasks.email_tasks.send_daily_digest_task",
+        "schedule": crontab(hour=8, minute=0),
+        "options": {"queue": "email"},
+    },
+    # 4) Health-check сервісів кожні 5 хвилин
+    "system-health-check": {
+        "task": "tasks.cleanup_tasks.system_health_check_task",
+        "schedule": crontab(minute="*/5"),
+        "options": {"queue": "cleanup"},
+    },
+}
+```
+
+### Приклади задач
+
+```python
+# celery-service/tasks/email_tasks.py
+from celery import shared_task
+from core.http import http_post
+
+@shared_task(name="tasks.email_tasks.send_daily_digest_task")
+def send_daily_digest_task():
+    # Збираємо дані з бекенду
+    http_post("/internal/reports/daily-digest/trigger")
+    return "daily digest triggered"
+```
+
+```python
+# celery-service/tasks/data_processing_tasks.py
+from celery import shared_task
+from core.http import http_post
+
+@shared_task(name="tasks.data_processing_tasks.update_exchange_rates_task")
+def update_exchange_rates_task():
+    # Викликаємо бекенд ендпоінт для оновлення курсів
+    http_post("/internal/exchange-rates/update")
+    return "exchange rates update scheduled"
+```
+
+```python
+# celery-service/tasks/cleanup_tasks.py
+from celery import shared_task
+from core.http import http_get
+
+@shared_task(name="tasks.cleanup_tasks.system_health_check_task")
+def system_health_check_task():
+    # Перевірка здоров'я пов'язаних сервісів
+    services = [
+        "/health/redis",
+        "/health/rabbitmq",
+        "/health/postgres",
+        "/health/search-index",
+    ]
+    results = {path: http_get(path).status_code for path in services}
+    return results
+```
+
+### Посилання на пов’язані сервіси
+
+- Backend (Django API): `http://app:8000`
+  - `/internal/reports/daily-digest/trigger` — генерація дайджесту
+  - `/internal/exchange-rates/update` — оновлення курсів валют
+  - `/health/*` — ендпоінти здоров'я сервісів (internal)
+- RabbitMQ (брокер): `amqp://rabbitmq:5672`
+- Redis (результати/брокер, якщо потрібно): `redis://redis:6379/0`
+- Flower (моніторинг): `http://flower:5555`
+
+### Запуск у Docker Compose
+
+```yaml
+# docker-compose.yml (фрагмент)
+services:
+  celery-worker:
+    build: ./celery-service
+    command: celery -A config.celery_app worker -l info -Q email,notifications,data_processing,cleanup
+    depends_on: [rabbitmq, redis, app]
+
+  celery-beat:
+    build: ./celery-service
+    command: celery -A config.celery_app beat -l info
+    depends_on: [rabbitmq, redis, app]
+
+  flower:
+    image: mher/flower
+    command: flower --broker=amqp://guest:guest@rabbitmq:5672//
+    ports: ["5555:5555"]
+    depends_on: [rabbitmq]
+```
+
+### Best Practices
+
+- Використовуйте окремі черги для різних класів задач (`email`, `cleanup`, `data_processing`)
+- Ставте ідempotent логіку у періодичні задачі
+- Логування результатів у БД/ELK для аудиту
+- Обмежуйте runtime (soft/hard time limits) для важких задач
+- Перевіряйте доступність залежних сервісів перед викликом
