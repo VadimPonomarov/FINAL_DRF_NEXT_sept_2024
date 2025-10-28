@@ -1,30 +1,30 @@
 #!/usr/bin/env python3
 """
-АВТОМАТИЧЕСКИЙ ДЕПЛОЙ AutoRia Clone
+АВТОМАТИЧНИЙ ДЕПЛОЙ AutoRia Clone
 ===================================
 
-Оптимизированный скрипт для максимально быстрого деплоя с различными режимами.
-Поддерживает полную переустановку, быстрый перезапуск и выборочную пересборку.
+Оптимізований скрипт для максимально швидкого деплою з різними режимами.
+Підтримує повне перевстановлення, швидкий перезапуск та вибіркову перезбірку.
 
-Использование:
-    python deploy.py                                    # Интерактивный режим
-    python deploy.py --mode restart                     # Быстрый перезапуск
-    python deploy.py --mode full_rebuild                # Полная пересборка
-    python deploy.py --mode selective_rebuild --services app nginx  # Выборочная пересборка
-    python deploy.py --auto                             # Автоматический быстрый перезапуск
+Використання:
+    python deploy.py                                    # Інтерактивний режим
+    python deploy.py --mode restart                     # Швидкий перезапуск
+    python deploy.py --mode full_rebuild                # Повна перезбірка
+    python deploy.py --mode selective_rebuild --services app nginx  # Вибіркова перезбірка
+    python deploy.py --auto                             # Автоматичний швидкий перезапуск
 
-Режимы деплоя:
-- restart: Быстрый перезапуск существующих контейнеров (самый быстрый)
-- full_rebuild: Полная пересборка всех образов (как с нуля)
-- selective_rebuild: Пересборка только указанных сервисов
+Режими деплою:
+- restart: Швидкий перезапуск існуючих контейнерів (найшвидший)
+- full_rebuild: Повна перезбірка всіх образів (як з нуля)
+- selective_rebuild: Перезбірка тільки вказаних сервісів
 
-Что делает скрипт:
-- Проверяет наличие системных требований
-- Выбирает режим деплоя (интерактивно или через параметры)
-- Развертывает Docker сервисы согласно выбранному режиму
-- Собирает фронтенд в production режиме (если локальный режим)
-- Проверяет готовность ВСЕХ сервисов перед предоставлением ссылки
-- Предоставляет ссылку только когда ВСЕ сервисы healthy
+Що робить скрипт:
+- Перевіряє наявність системних вимог
+- Вибирає режим деплою (інтерактивно або через параметри)
+- Розгортає Docker сервіси згідно з обраним режимом
+- Збирає фронтенд в production режимі (якщо локальний режим)
+- Перевіряє готовність ВСІХ сервісів перед наданням посилання
+- Надає посилання тільки коли ВСІ сервіси healthy
 """
 
 import os
@@ -48,8 +48,8 @@ class Colors:
     BOLD = '\033[1m'
 
 def input_with_timeout(prompt, timeout=10, default=""):
-    """Input с таймаутом. Если пользователь не вводит ничего за timeout секунд, возвращает default"""
-    # Показываем предзаполненное значение
+    """Input з таймаутом. Якщо користувач не вводить нічого за timeout секунд, повертає default"""
+    # Показуємо попередньо заповнене значення
     if default:
         print(f"{prompt}{default}", end='', flush=True)
     else:
@@ -76,7 +76,7 @@ def input_with_timeout(prompt, timeout=10, default=""):
             
             if time.time() - start_time > timeout:
                 if not input_chars:
-                    print(f"\n⏱️  Таймаут {timeout}с - используем значение по умолчанию: {default}")
+                    print(f"\n⏱️  Таймаут {timeout}с - використовуємо значення за замовчуванням: {default}")
                     return default
             
             time.sleep(0.01)
@@ -87,7 +87,7 @@ def input_with_timeout(prompt, timeout=10, default=""):
         if ready:
             return sys.stdin.readline().rstrip('\n')
         else:
-            print(f"\n⏱️  Таймаут {timeout}с - используем значение по умолчанию: {default}")
+            print(f"\n⏱️  Таймаут {timeout}с - використовуємо значення за замовчуванням: {default}")
             return default
 
 def print_step(step, message):
@@ -107,13 +107,13 @@ def print_error(message):
     print(f"{Colors.FAIL}[ERROR] {message}{Colors.ENDC}")
 
 def show_progress_bar(current, total, description="", width=50):
-    """Показывает прогресс-бар"""
+    """Показує прогрес-бар"""
     percent = (current / total) * 100
     filled = int(width * current // total)
     bar = '█' * filled + '░' * (width - filled)
     print(f"\r{Colors.OKCYAN}[{bar}] {percent:.1f}% {description}{Colors.ENDC}", end='', flush=True)
     if current == total:
-        print()  # Новая строка в конце
+        print()  # Новий рядок в кінці
 
 def show_step_progress(step, total_steps, step_name):
     """Показує прогрес виконання етапів"""
@@ -159,7 +159,7 @@ def show_service_selection_menu():
     while True:
         try:
             choice = input_with_timeout("\nВаш вибір: ", timeout=10, default="0").strip()
-            if not choice:  # Если пользователь просто нажал Enter
+            if not choice:  # Якщо користувач просто натиснув Enter
                 choice = "0"
 
             if choice == "0":
@@ -175,7 +175,7 @@ def show_service_selection_menu():
                 print("❌ Будь ласка, введіть номери сервісів")
                 continue
 
-            # Парсимо вибір користувача
+            # Парсуємо вибір користувача
             selected_indices = []
             for part in choice.split(","):
                 part = part.strip()
@@ -292,10 +292,10 @@ def auto_fix_build_errors(service_name, error_log):
 def run_docker_build_with_progress(selected_services=None):
     """Запускає docker-compose build з відстеженням прогресу для кожного сервісу (послідовно, без паралелі)"""
 
-    # Флаг для зупинки збірки
+    # Прапор для зупинки збірки
     stop_build_flag = threading.Event()
 
-    # Словарь с человекочитаемыми названиями сервисов
+    # Словник з зручними для читання назвами сервісів
     service_display_names = {
         "app": "🐍 Django Backend",
         "frontend": "⚛️ Next.js Frontend",
@@ -371,12 +371,12 @@ def run_docker_build_with_progress(selected_services=None):
                 for service, data in services.items():
                     with data["lock"]:
                         progress_bar = "█" * int(data["progress"] / 10) + "░" * (10 - int(data["progress"] / 10))
-                        # Получаем человекочитаемое название сервиса
+                        # Отримуємо зручну для читання назву сервісу
                         display_name = service_display_names.get(service, service)
                         base_line = f"🔨 {display_name:20} [{progress_bar}] {data['progress']:3.0f}% {data['status']}"
 
                         if data["log_msg"]:
-                            # Фильтруем нежелательные предупреждения
+                            # Фільтруємо небажані попередження
                             filtered_msg = data["log_msg"]
                             if "Running pip as the 'root' user" in filtered_msg:
                                 filtered_msg = "Встановлення залежностей..."
@@ -468,11 +468,11 @@ def run_docker_build_with_progress(selected_services=None):
             if "installing" in line.lower():
                 match = re.search(r"installing\s+(.+)", line, re.IGNORECASE)
                 if match:
-                    return f"Installing {match.group(1).strip()}"
+                    return f"Встановлення {match.group(1).strip()}"
             elif "downloading" in line.lower():
-                return "Downloading dependencies..."
+                return "Завантаження залежностей..."
             elif "building" in line.lower():
-                return "Building..."
+                return "Збірка..."
 
         return ""
 
@@ -632,15 +632,15 @@ def run_docker_build_with_progress(selected_services=None):
 
 def start_nginx_with_retry(max_attempts=5, wait_between_attempts=10):
     """
-    Запускает nginx с циклическими попытками до успешного health check
+    Запускає nginx з циклічними спробами до успішного health check
     """
-    print("🌐 Запуск Nginx с проверкой готовности...")
+    print("🌐 Запуск Nginx з перевіркою готовності...")
 
     for attempt in range(1, max_attempts + 1):
-        print(f"🔄 Попытка {attempt}/{max_attempts}: Запуск Nginx...")
+        print(f"🔄 Спроба {attempt}/{max_attempts}: Запуск Nginx...")
 
         try:
-            # Останавливаем nginx если он уже запущен
+            # Зупиняємо nginx якщо він вже запущений
             subprocess.run(
                 "docker-compose stop nginx",
                 shell=True,
@@ -649,7 +649,7 @@ def start_nginx_with_retry(max_attempts=5, wait_between_attempts=10):
                 timeout=30
             )
 
-            # Удаляем контейнер nginx
+            # Видаляємо контейнер nginx
             subprocess.run(
                 "docker-compose rm -f nginx",
                 shell=True,
@@ -658,7 +658,7 @@ def start_nginx_with_retry(max_attempts=5, wait_between_attempts=10):
                 timeout=30
             )
 
-            # Запускаем nginx заново
+            # Запускаємо nginx заново
             nginx_result = subprocess.run(
                 "docker-compose up -d nginx",
                 shell=True,
@@ -668,22 +668,22 @@ def start_nginx_with_retry(max_attempts=5, wait_between_attempts=10):
             )
 
             if nginx_result.returncode != 0:
-                print_warning(f"⚠️ Ошибка запуска Nginx (попытка {attempt})")
+                print_warning(f"⚠️ Помилка запуску Nginx (спроба {attempt})")
                 if nginx_result.stderr:
-                    print(f"   Ошибка: {nginx_result.stderr}")
+                    print(f"   Помилка: {nginx_result.stderr}")
                 continue
 
-            print_success(f"✅ Nginx запущен (попытка {attempt})")
+            print_success(f"✅ Nginx запущено (спроба {attempt})")
 
-            # Ждем инициализации
-            print(f"⏳ Ожидание инициализации Nginx ({wait_between_attempts} сек)...")
+            # Чекаємо ініціалізації
+            print(f"⏳ Очікування ініціалізації Nginx ({wait_between_attempts} сек)...")
             time.sleep(wait_between_attempts)
 
-            # Проверяем health check nginx
-            print("🔍 Проверка health check Nginx...")
+            # Перевіряємо health check nginx
+            print("🔍 Перевірка health check Nginx...")
             health_check_passed = False
 
-            # Пытаемся несколько раз проверить health check
+            # Намагаємося кілька разів перевірити health check
             for health_attempt in range(3):
                 try:
                     health_result = subprocess.run(
@@ -698,29 +698,29 @@ def start_nginx_with_retry(max_attempts=5, wait_between_attempts=10):
                         health_check_passed = True
                         break
                     else:
-                        print(f"   Health check неудачен (попытка {health_attempt + 1}/3)")
+                        print(f"   Health check невдалий (спроба {health_attempt + 1}/3)")
                         time.sleep(3)
 
                 except Exception as e:
-                    print(f"   Ошибка health check: {e}")
+                    print(f"   Помилка health check: {e}")
                     time.sleep(3)
 
             if health_check_passed:
-                print_success("✅ Nginx успешно запущен и прошел health check!")
+                print_success("✅ Nginx успішно запущено і пройдено health check!")
                 return True
             else:
-                print_warning(f"⚠️ Nginx запущен, но health check не прошел (попытка {attempt})")
+                print_warning(f"⚠️ Nginx запущено, але health check не пройдено (спроба {attempt})")
 
         except Exception as e:
-            print_warning(f"⚠️ Ошибка при запуске Nginx (попытка {attempt}): {e}")
+            print_warning(f"⚠️ Помилка при запуску Nginx (спроба {attempt}): {e}")
 
         if attempt < max_attempts:
-            print(f"⏳ Ожидание перед следующей попыткой...")
+            print(f"⏳ Очікування перед наступною спробою...")
             time.sleep(5)
 
-    print_error("❌ Не удалось запустить Nginx после всех попыток")
-    print("🔧 Nginx может работать, но health check не проходит")
-    print("🔧 Проверьте доступность фронтенда на localhost:3000")
+    print_error("❌ Не вдалося запустити Nginx після всіх спроб")
+    print("🔧 Nginx може працювати, але health check не проходить")
+    print("🔧 Перевірте доступність фронтенда на localhost:3000")
     return False
 
 def check_services_health(frontend_mode="local"):
@@ -868,7 +868,7 @@ def check_services_health(frontend_mode="local"):
         print(f"⚠️  Працює {healthy_count}/{total_count} сервісів. Система НЕ готова!")
         print("🔧 Рекомендується перевірити логи проблемних сервісів перед використанням.")
         print()
-        print("❌ ССЫЛКА НЕ ПРЕДОСТАВЛЯЕТСЯ - СЕРВИСЫ НЕ ГОТОВЫ!")
+        print("❌ ПОСИЛАННЯ НЕ НАДАЄТЬСЯ - СЕРВІСИ НЕ ГОТОВІ!")
         return False
 
 def run_command(command, cwd=None, check=True, capture_output=False):
@@ -884,8 +884,8 @@ def run_command(command, cwd=None, check=True, capture_output=False):
                 text=True
             )
         else:
-            # Показываем вывод в реальном времени
-            print(f"Выполняется: {command}")
+            # Показуємо вивід в реальному часі
+            print(f"Виконується: {command}")
             result = subprocess.run(
                 command,
                 shell=True,
@@ -1263,27 +1263,27 @@ def deploy_docker_services(deploy_mode="full_rebuild", services_to_rebuild=None)
         print("Розкоментування frontend сервісу в docker-compose.yml...")
         comment_frontend_service(comment=False)
 
-    # Выполняем действия в зависимости от режима деплоя
+    # Виконуємо дії в залежності від режиму деплою
     if deploy_mode == "restart":
-        print("🔄 Режим: Быстрый перезапуск существующих контейнеров")
+        print("🔄 Режим: Швидкий перезапуск існуючих контейнерів")
         return restart_existing_containers(selected_services, frontend_mode)
     elif deploy_mode == "selective_rebuild":
-        print(f"🎯 Режим: Выборочная пересборка сервисов: {', '.join(services_to_rebuild)}")
+        print(f"🎯 Режим: Вибіркова перезбірка сервісів: {', '.join(services_to_rebuild)}")
         return selective_rebuild_services(selected_services, services_to_rebuild, frontend_mode)
     else:  # full_rebuild
-        print("🏗️ Режим: Полная пересборка всех сервисов")
+        print("🏗️ Режим: Повна перезбірка всіх сервісів")
         return full_rebuild_services(selected_services, frontend_mode)
 
 def deploy_full_docker():
-    """Полное развертывание в Docker включая фронтенд"""
+    """Повне розгортання в Docker включаючи фронтенд"""
     print_step(4, "Запуск фронтенда в Docker")
 
-    # Запускаем фронтенд в Docker
+    # Запускаємо фронтенд в Docker
     if not run_command("docker-compose up -d frontend", capture_output=True):
-        print_warning("Не удалось запустить фронтенд в Docker")
+        print_warning("Не вдалося запустити фронтенд в Docker")
         return False
 
-    print_success("Фронтенд запущен в Docker!")
+    print_success("Фронтенд запущено в Docker!")
     return True
 
 def start_local_frontend():
@@ -1377,18 +1377,18 @@ def check_services():
         return False
 
 def choose_deploy_mode():
-    """Выбор режима деплоя"""
-    print("🔧 РЕЖИМ ДЕПЛОЯ")
+    """Вибір режиму деплою"""
+    print("🔧 РЕЖИМ ДЕПЛОЮ")
     print("=" * 50)
-    print("1. 🔄 Быстрый перезапуск (использовать существующие образы)")
-    print("2. 🏗️  Полная переустановка (пересобрать все образы) [ПО УМОЛЧАНИЮ]")
-    print("3. 🎯 Выборочная переустановка (выбрать сервисы для пересборки)")
+    print("1. 🔄 Швидкий перезапуск (використовувати існуючі образи)")
+    print("2. 🏗️  Повне перевстановлення (перезібрати всі образи) [ЗА ЗАМОВЧУВАННЯМ]")
+    print("3. 🎯 Вибіркове перевстановлення (вибрати сервіси для перезбірки)")
     print("=" * 50)
-    print("💡 Автоматический выбор через 10 секунд: режим 2 (полная переустановка)")
+    print("💡 Автоматичний вибір через 10 секунд: режим 2 (повне перевстановлення)")
     print()
 
     try:
-        choice = input_with_timeout("Выберите режим (1-3): ", timeout=10, default="2").strip()
+        choice = input_with_timeout("Оберіть режим (1-3): ", timeout=10, default="2").strip()
         if not choice:
             choice = "2"
         
@@ -1399,32 +1399,32 @@ def choose_deploy_mode():
         elif choice == "3":
             return "selective_rebuild", choose_services_to_rebuild()
         else:
-            print("❌ Неверный выбор. Используем режим 2 (полная переустановка)")
+            print("❌ Невірний вибір. Використовуємо режим 2 (повне перевстановлення)")
             return "full_rebuild", []
     except KeyboardInterrupt:
-        print("\n❌ Отменено пользователем")
+        print("\n❌ Скасовано користувачем")
         sys.exit(1)
 
 def choose_services_to_rebuild():
-    """Выбор сервисов для пересборки"""
+    """Вибір сервісів для перезбірки"""
     available_services = ["app", "celery-worker", "celery-beat", "flower", "mailing", "nginx"]
 
-    print("\n🎯 ВЫБОРОЧНАЯ ПЕРЕСБОРКА")
+    print("\n🎯 ВИБІРКОВА ПЕРЕЗБІРКА")
     print("=" * 40)
-    print("Доступные сервисы для пересборки:")
+    print("Доступні сервіси для перезбірки:")
     for i, service in enumerate(available_services, 1):
         print(f"{i}. {service}")
     print("=" * 40)
-    print("Введите номера сервисов через запятую (например: 1,3,5)")
-    print("Или 'all' для всех сервисов")
+    print("Введіть номери сервісів через кому (наприклад: 1,3,5)")
+    print("Або 'all' для всіх сервісів")
 
     while True:
         try:
-            choice = input("Ваш выбор: ").strip()
+            choice = input("Ваш вибір: ").strip()
             if choice.lower() == 'all':
                 return available_services
 
-            # Парсим номера
+            # Парсуємо номери
             indices = [int(x.strip()) for x in choice.split(',')]
             selected_services = []
 
@@ -1432,16 +1432,16 @@ def choose_services_to_rebuild():
                 if 1 <= idx <= len(available_services):
                     selected_services.append(available_services[idx - 1])
                 else:
-                    print(f"❌ Неверный номер: {idx}")
+                    print(f"❌ Невірний номер: {idx}")
                     break
             else:
                 if selected_services:
-                    print(f"✅ Выбраны сервисы: {', '.join(selected_services)}")
+                    print(f"✅ Обрано сервіси: {', '.join(selected_services)}")
                     return selected_services
                 else:
-                    print("❌ Не выбрано ни одного сервиса")
+                    print("❌ Не обрано жодного сервісу")
         except (ValueError, KeyboardInterrupt):
-            print("❌ Неверный формат. Используйте номера через запятую.")
+            print("❌ Невірний формат. Використовуйте номери через кому.")
 
 def remove_conflicting_containers(services_list):
     """Видаляє конфліктуючі контейнери для вказаних сервісів"""
@@ -1602,15 +1602,15 @@ def restart_existing_containers(selected_services, frontend_mode):
     return frontend_mode
 
 def selective_rebuild_services(selected_services, services_to_rebuild, frontend_mode):
-    """Выборочная пересборка указанных сервисов"""
-    print(f"🎯 Выборочная пересборка сервисов: {', '.join(services_to_rebuild)}")
+    """Вибіркова перезбірка вказаних сервісів"""
+    print(f"🎯 Вибіркова перезбірка сервісів: {', '.join(services_to_rebuild)}")
 
     # Видаляємо конфліктуючі контейнери для сервісів, які перебудовуються
     print("🧹 Видалення конфліктуючих контейнерів...")
     remove_conflicting_containers(services_to_rebuild)
 
-    # Останавливаем все контейнеры проекту
-    print("🛑 Остановка контейнеров проекта...")
+    # Зупиняємо всі контейнери проекту
+    print("🛑 Зупинка контейнерів проекту...")
     run_command("docker-compose down", capture_output=True)
 
     # Визначаємо project name (з директорії або змінної COMPOSE_PROJECT_NAME)
@@ -1619,9 +1619,9 @@ def selective_rebuild_services(selected_services, services_to_rebuild, frontend_
         # Використовуємо назву директорії як project name (lowercase)
         project_name = Path.cwd().name.lower().replace(' ', '_').replace('-', '_')
 
-    # Удаляем образы только для выбранных сервисов
+    # Видаляємо образи тільки для обраних сервісів
     for service in services_to_rebuild:
-        print(f"🗑️ Удаление образа для {service}...")
+        print(f"🗑️ Видалення образу для {service}...")
         # Пробуємо різні можливі назви образів
         possible_image_names = [
             f"{project_name}-{service}",
@@ -1633,34 +1633,34 @@ def selective_rebuild_services(selected_services, services_to_rebuild, frontend_
             run_command(f"docker rmi {image_name} 2>/dev/null || true",
                    capture_output=True, check=False)
 
-    # Пересобираем только выбранные сервисы
+    # Перезбираємо тільки обрані сервіси
     services_str = " ".join(services_to_rebuild)
-    print(f"🔨 Пересборка сервисов: {services_str}")
+    print(f"🔨 Перезбірка сервісів: {services_str}")
     if not run_command(f"docker-compose build --no-cache {services_str}", capture_output=True):
-        print_error("❌ Ошибка при пересборке сервисов")
+        print_error("❌ Помилка при перезбірці сервісів")
         return None
 
-    # Запускаем все сервисы
-    print("🚀 Запуск всех сервисов...")
+    # Запускаємо всі сервіси
+    print("🚀 Запуск всіх сервісів...")
     if not run_command("docker-compose up -d", capture_output=True):
-        print_error("❌ Ошибка при запуске контейнеров")
+        print_error("❌ Помилка при запуску контейнерів")
         return None
 
-    print_success("✅ Выборочная пересборка завершена!")
+    print_success("✅ Вибіркова перезбірка завершена!")
     return frontend_mode
 
 def full_rebuild_services(selected_services, frontend_mode):
-    """Полная пересборка всех сервисов"""
-    print("🏗️ Полная пересборка всех сервисов...")
-    print("🧹 АГРЕССИВНАЯ ОЧИСТКА: Остановка ВСЕХ контейнеров на используемых портах...")
+    """Повна перезбірка всіх сервісів"""
+    print("🏗️ Повна перезбірка всіх сервісів...")
+    print("🧹 АГРЕСИВНЕ ОЧИЩЕННЯ: Зупинка ВСІХ контейнерів на використовуваних портах...")
     
-    # 1. ОСТАНАВЛИВАЕМ ВСЕ КОНТЕЙНЕРЫ НА НУЖНЫХ ПОРТАХ (не только нашего проекта)
+    # 1. ЗУПИНЯЄМО ВСІ КОНТЕЙНЕРИ НА ПОТРІБНИХ ПОРТАХ (не тільки нашого проекту)
     critical_ports = [3000, 8000, 8001, 5432, 6379, 5672, 15672, 5555, 5540]
     
-    print(f"🔍 Поиск контейнеров на портах: {', '.join(map(str, critical_ports))}")
+    print(f"🔍 Пошук контейнерів на портах: {', '.join(map(str, critical_ports))}")
     for port in critical_ports:
         try:
-            # Находим контейнеры, использующие порт
+            # Знаходимо контейнери, що використовують порт
             result = subprocess.run(
                 f'docker ps --filter "publish={port}" --format "{{{{.ID}}}}"',
                 shell=True,
@@ -1670,17 +1670,17 @@ def full_rebuild_services(selected_services, frontend_mode):
             )
             if result.stdout.strip():
                 container_ids = result.stdout.strip().split('\n')
-                print(f"   ⚠️  Найдено {len(container_ids)} контейнеров на порту {port}")
+                print(f"   ⚠️  Знайдено {len(container_ids)} контейнерів на порту {port}")
                 for container_id in container_ids:
                     if container_id:
-                        print(f"      🛑 Остановка контейнера {container_id[:12]}...")
+                        print(f"      🛑 Зупинка контейнера {container_id[:12]}...")
                         subprocess.run(f"docker stop {container_id}", shell=True, capture_output=True, timeout=30)
                         subprocess.run(f"docker rm -f {container_id}", shell=True, capture_output=True, timeout=30)
         except Exception as e:
-            print(f"   ⚠️  Ошибка при очистке порта {port}: {e}")
+            print(f"   ⚠️  Помилка при очищенні порту {port}: {e}")
     
-    # 2. УДАЛЯЕМ ВСЕ КОНТЕЙНЕРЫ С ПОХОЖИМИ ИМЕНАМИ
-    print("\n🧹 Удаление всех контейнеров с похожими именами...")
+    # 2. ВИДАЛЯЄМО ВСІ КОНТЕЙНЕРИ З ПОДІБНИМИ ІМЕНАМИ
+    print("\n🧹 Видалення всіх контейнерів з подібними іменами...")
     project_patterns = ["final_drf_next", "autoria", "app", "pg", "redis", "rabbitmq", "celery", "mailing", "nginx"]
     for pattern in project_patterns:
         try:
@@ -1699,8 +1699,8 @@ def full_rebuild_services(selected_services, frontend_mode):
         except:
             pass
     
-    # 3. ОСТАНАВЛИВАЕМ И УДАЛЯЕМ ВСЕ КОНТЕЙНЕРЫ ТЕКУЩЕГО ПРОЕКТА
-    print("\n🛑 Полная очистка проекта...")
+    # 3. ЗУПИНЯЄМО І ВИДАЛЯЄМО ВСІ КОНТЕЙНЕРИ ПОТОЧНОГО ПРОЕКТУ
+    print("\n🛑 Повне очищення проекту...")
     run_command("docker-compose down -v --remove-orphans", capture_output=True)
 
     # Визначаємо project name для видалення образів
@@ -1708,8 +1708,8 @@ def full_rebuild_services(selected_services, frontend_mode):
     if not project_name:
         project_name = Path.cwd().name.lower().replace(' ', '_').replace('-', '_')
 
-    # 4. УДАЛЯЕМ ВСЕ ОБРАЗЫ ПРОЕКТА
-    print("\n🗑️ Удаление всех образов проекта...")
+    # 4. ВИДАЛЯЄМО ВСІ ОБРАЗИ ПРОЕКТУ
+    print("\n🗑️ Видалення всіх образів проекту...")
     # Windows PowerShell не підтримує xargs, тому використовуємо альтернативний підхід
     result = subprocess.run(
         f'docker images --format "{{{{.Repository}}}}" | Select-String -Pattern "{project_name}" | ForEach-Object {{ docker rmi -f $_ }}',
@@ -1722,24 +1722,24 @@ def full_rebuild_services(selected_services, frontend_mode):
         run_command(f"docker images -q {project_name}-* {project_name}_* 2>/dev/null | xargs -r docker rmi -f 2>/dev/null || true",
                capture_output=True, check=False)
     
-    # 5. ОЧИЩАЕМ DOCKER МУСОР (неиспользуемые volumes, networks, images)
-    print("\n🧹 Очистка неиспользуемых Docker ресурсов...")
+    # 5. ОЧИЩАЄМО DOCKER МУСОР (невикористовувані volumes, networks, images)
+    print("\n🧹 Очищення невикористовуваних Docker ресурсів...")
     try:
-        # Удаляем неиспользуемые volumes
+        # Видаляємо невикористовувані volumes
         subprocess.run("docker volume prune -f", shell=True, capture_output=True, timeout=30)
-        # Удаляем неиспользуемые networks
+        # Видаляємо невикористовувані networks
         subprocess.run("docker network prune -f", shell=True, capture_output=True, timeout=30)
-        # Удаляем dangling images
+        # Видаляємо dangling images
         subprocess.run("docker image prune -f", shell=True, capture_output=True, timeout=30)
-        print("✅ Docker мусор очищен")
+        print("✅ Docker мусор очищено")
     except Exception as e:
-        print(f"⚠️  Ошибка при очистке Docker мусора: {e}")
+        print(f"⚠️  Помилка при очищенні Docker мусору: {e}")
 
-    # Продолжаем с обычной логикой полной пересборки
+    # Продовжуємо зі звичайною логікою повної перезбірки
     return continue_full_rebuild(selected_services, frontend_mode)
 
 def continue_full_rebuild(selected_services, frontend_mode):
-    """Продолжение полной пересборки (оригинальная логика)"""
+    """Продовження повної перезбірки (оригінальна логіка)"""
 
     # СТВОРЕННЯ ТА ЗБІРКА ВСІХ КОНТЕЙНЕРІВ З НУЛЯ
     show_progress_bar(4, 6, "🔨 Збірка всіх образів...")
@@ -1770,18 +1770,18 @@ def continue_full_rebuild(selected_services, frontend_mode):
 def main():
     """Головна функція"""
     try:
-        # Парсим аргументы командной строки
+        # Парсуємо аргументи командного рядка
         parser = argparse.ArgumentParser(description='AutoRia Clone Deploy Script')
         parser.add_argument('--mode', choices=['restart', 'full_rebuild', 'selective_rebuild'],
-                          help='Режим деплоя')
+                          help='Режим деплою')
         parser.add_argument('--services', nargs='*',
-                          help='Сервисы для выборочной пересборки')
+                          help='Сервіси для вибіркової перезбірки')
         parser.add_argument('--auto', action='store_true',
-                          help='Автоматический режим без интерактивных запросов')
+                          help='Автоматичний режим без інтерактивних запитів')
 
         args = parser.parse_args()
 
-        # Устанавливаем кодировку для Windows
+        # Встановлюємо кодування для Windows
         if sys.platform == "win32":
             import codecs
             sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
@@ -1793,7 +1793,7 @@ def main():
         print("🚀 ЕМУЛЯЦІЯ РОЗГОРТАННЯ З НУЛЯ (як після git clone)")
         print(f"{Colors.ENDC}")
 
-        # Определяем режим деплоя
+        # Визначаємо режим деплою
         if args.mode:
             deploy_mode = args.mode
             services_to_rebuild = args.services or []
@@ -1803,9 +1803,9 @@ def main():
         else:
             deploy_mode, services_to_rebuild = choose_deploy_mode()
 
-        print(f"🔧 Режим деплоя: {deploy_mode}")
+        print(f"🔧 Режим деплою: {deploy_mode}")
         if services_to_rebuild:
-            print(f"🎯 Сервисы для пересборки: {', '.join(services_to_rebuild)}")
+            print(f"🎯 Сервіси для перезбірки: {', '.join(services_to_rebuild)}")
         print()
 
         print("📋 План розгортання:")
@@ -1816,31 +1816,31 @@ def main():
         print("   4️⃣  Запуск системи")
         print()
 
-        # ЭТАП 1: Проверка системных требований
+        # ЕТАП 1: Перевірка системних вимог
         if not check_requirements():
             sys.exit(1)
 
-        # ЭТАП 1.5: Проверка файлов проекта
+        # ЕТАП 1.5: Перевірка файлів проекту
         if not check_project_files():
             sys.exit(1)
 
-        # ЭТАП 2: Развертывание сервисов в Docker
+        # ЕТАП 2: Розгортання сервісів в Docker
         frontend_mode = deploy_docker_services(deploy_mode, services_to_rebuild)
-        if frontend_mode is None:  # Ошибка развертывания
+        if frontend_mode is None:  # Помилка розгортання
             sys.exit(1)
 
-        # ЭТАП 3: Подготовка фронтенда
+        # ЕТАП 3: Підготовка фронтенда
         if frontend_mode == "local":
-            # Сборка фронтенда в production режиме для локального запуска
+            # Збірка фронтенда в production режимі для локального запуску
             if not build_frontend():
                 sys.exit(1)
         else:  # frontend_mode == "docker"
-            # Для Docker режима фронтенд уже должен быть собран в контейнере
-            print("🐳 Фронтенд будет запущен в Docker контейнере")
+            # Для Docker режиму фронтенд вже повинен бути зібраний в контейнері
+            print("🐳 Фронтенд буде запущено в Docker контейнері")
 
-        # ЭТАП 4: Финальный запуск фронтенда
+        # ЕТАП 4: Фінальний запуск фронтенда
         print("\n" + "="*60)
-        print("🚀 ФИНАЛЬНЫЙ ЭТАП: Запуск фронтенда")
+        print("🚀 ФІНАЛЬНИЙ ЕТАП: Запуск фронтенда")
         print("="*60)
 
         if frontend_mode == "local":
@@ -1899,18 +1899,18 @@ def main():
                     )
 
                     if nginx_result.returncode == 0:
-                        print_success("✅ Nginx запущен")
-                        time.sleep(3)  # Даем nginx время на инициализацию
+                        print_success("✅ Nginx запущено")
+                        time.sleep(3)  # Даємо nginx час на ініціалізацію
                     else:
-                        print_warning("⚠️ Проблема с запуском Nginx")
+                        print_warning("⚠️ Проблема з запуском Nginx")
                         if nginx_result.stderr:
-                            print(f"Ошибка Nginx: {nginx_result.stderr}")
+                            print(f"Помилка Nginx: {nginx_result.stderr}")
 
                 except Exception as e:
-                    print_warning(f"⚠️ Ошибка запуска Nginx: {e}")
+                    print_warning(f"⚠️ Помилка запуску Nginx: {e}")
 
-                # Теперь проверяем ВСЕ сервисы включая фронтенд И nginx
-                print("🔍 Финальная проверка готовности ВСЕХ сервисов (включая Nginx)...")
+                # Тепер перевіряємо ВСІ сервіси включаючи фронтенд І nginx
+                print("🔍 Фінальна перевірка готовності ВСІХ сервісів (включаючи Nginx)...")
                 all_services_healthy = check_services_health("local")
 
                 if all_services_healthy:
@@ -1931,18 +1931,18 @@ def main():
                     print()
                     print("💡 Фронтенд: локально в production режимі (порт 3000)")
                     print("💡 Backend: Docker контейнери + Nginx reverse proxy")
-                    print("💡 Nginx: проксирует запросы между фронтендом и бекендом")
+                    print("💡 Nginx: проксує запити між фронтендом і бекендом")
                 else:
                     print_warning("⚠️ Деякі сервіси не готові. Система може працювати некоректно.")
-                    print("❌ ССЫЛКИ НЕ ПРЕДОСТАВЛЯЮТСЯ - НЕ ВСЕ СЕРВИСЫ ГОТОВЫ!")
+                    print("❌ ПОСИЛАННЯ НЕ НАДАЮТЬСЯ - НЕ ВСІ СЕРВІСИ ГОТОВІ!")
                     print("🔧 Рекомендується перевірити логи проблемних сервісів перед використанням.")
             else:
                 print_error("❌ Не вдалося запустити локальний фронтенд!")
                 print("🔧 Перевірте логи та спробуйте запустити вручну: npm run start")
         else:  # frontend_mode == "docker"
-            print("🐳 Режим: Фронтенд в Docker контейнере")
+            print("🐳 Режим: Фронтенд в Docker контейнері")
 
-            # Убеждаемся что фронтенд контейнер запущен
+            # Переконуємося що фронтенд контейнер запущено
             print("🚀 Запуск фронтенда в Docker...")
             try:
                 result = subprocess.run(
@@ -1954,33 +1954,33 @@ def main():
                 )
 
                 if result.returncode == 0:
-                    print_success("✅ Фронтенд контейнер запущен")
+                    print_success("✅ Фронтенд контейнер запущено")
                 else:
-                    print_warning("⚠️ Проблема с запуском фронтенд контейнера")
+                    print_warning("⚠️ Проблема з запуском фронтенд контейнера")
                     if result.stderr:
-                        print(f"Ошибка: {result.stderr}")
+                        print(f"Помилка: {result.stderr}")
 
             except Exception as e:
-                print_warning(f"⚠️ Ошибка запуска фронтенда: {e}")
+                print_warning(f"⚠️ Помилка запуску фронтенда: {e}")
 
-            # Ожидание готовности фронтенда в Docker
-            print("⏳ Ожидание готовности фронтенда в Docker...")
+            # Очікування готовності фронтенда в Docker
+            print("⏳ Очікування готовності фронтенда в Docker...")
             wait_time = 20
             for i in range(wait_time):
                 progress = (i + 1) / wait_time * 100
-                print(f"\r⏳ Инициализация фронтенда: {i+1}/{wait_time} сек ({progress:.0f}%)", end="", flush=True)
+                print(f"\r⏳ Ініціалізація фронтенда: {i+1}/{wait_time} сек ({progress:.0f}%)", end="", flush=True)
                 time.sleep(1)
             print()
 
-            # Запускаем nginx ПОСЛЕ готовности фронтенда с циклическими попытками
-            print("🌐 Запуск Nginx (reverse proxy) ПОСЛЕ готовности фронтенда...")
+            # Запускаємо nginx ПІСЛЯ готовності фронтенда з циклічними спробами
+            print("🌐 Запуск Nginx (reverse proxy) ПІСЛЯ готовності фронтенда...")
             nginx_healthy = start_nginx_with_retry()
 
-            # Финальная проверка готовности ВСЕХ сервисов включая nginx
-            print("🔍 Финальная проверка готовности ВСЕХ сервисов (включая Nginx)...")
+            # Фінальна перевірка готовності ВСІХ сервісів включаючи nginx
+            print("🔍 Фінальна перевірка готовності ВСІХ сервісів (включаючи Nginx)...")
             all_services_healthy = check_services_health("docker")
 
-            # Проверяем, работает ли nginx хотя бы частично
+            # Перевіряємо, чи працює nginx хоча б частково
             nginx_running = False
             try:
                 nginx_status = subprocess.run(
@@ -1994,7 +1994,7 @@ def main():
             except:
                 pass
 
-            # Предоставляем ссылки если основные сервисы работают
+            # Надаємо посилання якщо основні сервіси працюють
             if all_services_healthy:
                 print_success("🎉 ВСІ СЕРВІСИ ГОТОВІ! Система повністю функціональна!")
                 print()
@@ -2032,7 +2032,7 @@ def main():
                 print("🔧 Рекомендується перевірити логи якщо виникнуть проблеми")
             else:
                 print_warning("⚠️ Деякі сервіси не готові. Система може працювати некоректно.")
-                print("❌ ССЫЛКИ НЕ ПРЕДОСТАВЛЯЮТСЯ - НЕ ВСЕ СЕРВИСЫ ГОТОВЫ!")
+                print("❌ ПОСИЛАННЯ НЕ НАДАЮТЬСЯ - НЕ ВСІ СЕРВІСИ ГОТОВІ!")
                 print("🔧 Рекомендується перевірити логи проблемних сервісів перед використанням.")
 
     except KeyboardInterrupt:

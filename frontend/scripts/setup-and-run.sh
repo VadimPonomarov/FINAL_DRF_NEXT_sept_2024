@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 # Проверяем, установлен ли Playwright
 if ! npm list playwright > /dev/null 2>&1; then
     echo "📦 Installing Playwright..."
-    npm install playwright
+    npm install playwright --legacy-peer-deps
     npx playwright install chromium
 else
     echo "✅ Playwright already installed"

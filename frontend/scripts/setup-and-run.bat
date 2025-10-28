@@ -7,7 +7,7 @@ REM Проверяем, установлен ли Playwright
 npm list playwright >nul 2>&1
 if errorlevel 1 (
     echo 📦 Installing Playwright...
-    npm install playwright
+    npm install playwright --legacy-peer-deps
     npx playwright install chromium
 ) else (
     echo ✅ Playwright already installed
