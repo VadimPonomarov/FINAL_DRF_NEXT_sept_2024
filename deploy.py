@@ -152,13 +152,14 @@ def show_service_selection_menu():
     print("  2  - тільки frontend в Docker")
     print("  1,3,4 - вибрані сервіси (наприклад: app+pg+redis)")
     print("  0/00 - швидкий вибір всіх режимів")
+    print("  s - skip (пропустити вибір сервісів)")
     print()
     print("🎯 За замовчуванням: 0 (Backend в Docker + Frontend локально)")
     print("💡 Автоматичний вибір через 10 секунд: опція 0")
 
     while True:
         try:
-            choice = input_with_timeout("\nВаш вибір: ", timeout=10, default="0").strip()
+            choice = input_with_timeout("\nВаш вибір: ", timeout=10, default="0").strip().lower()
             if not choice:  # Якщо користувач просто натиснув Enter
                 choice = "0"
 
@@ -170,6 +171,10 @@ def show_service_selection_menu():
             if choice == "00":
                 # Всі сервіси в Docker
                 return services, "docker"
+
+            if choice == "s" or choice == "skip":
+                # Skip - повертаємо порожній список і skip режим
+                return [], "skip"
 
             if not choice:
                 print("❌ Будь ласка, введіть номери сервісів")
@@ -1251,6 +1256,10 @@ def deploy_docker_services(deploy_mode="full_rebuild", services_to_rebuild=None)
     # Показуємо меню вибору сервісів та режиму frontend
     selected_services, frontend_mode = show_service_selection_menu()
 
+    # Якщо обрано skip - одразу повертаємо
+    if frontend_mode == "skip":
+        return "skip"
+
     # Налаштовуємо docker-compose.yml відповідно до режиму frontend
     if frontend_mode == "local":
         show_step_progress(3, 4, "Розгортання backend сервісів в Docker")
@@ -1383,12 +1392,13 @@ def choose_deploy_mode():
     print("1. 🔄 Швидкий перезапуск (використовувати існуючі образи)")
     print("2. 🏗️  Повне перевстановлення (перезібрати всі образи) [ЗА ЗАМОВЧУВАННЯМ]")
     print("3. 🎯 Вибіркове перевстановлення (вибрати сервіси для перезбірки)")
+    print("s. ⏭️  Skip - пропустити деплой (тільки показати статус)")
     print("=" * 50)
     print("💡 Автоматичний вибір через 10 секунд: режим 2 (повне перевстановлення)")
     print()
 
     try:
-        choice = input_with_timeout("Оберіть режим (1-3): ", timeout=10, default="2").strip()
+        choice = input_with_timeout("Оберіть режим (1-3/s): ", timeout=10, default="2").strip().lower()
         if not choice:
             choice = "2"
         
@@ -1398,6 +1408,8 @@ def choose_deploy_mode():
             return "full_rebuild", []
         elif choice == "3":
             return "selective_rebuild", choose_services_to_rebuild()
+        elif choice == "s" or choice == "skip":
+            return "skip", []
         else:
             print("❌ Невірний вибір. Використовуємо режим 2 (повне перевстановлення)")
             return "full_rebuild", []
@@ -1917,6 +1929,29 @@ def main():
             print(f"🎯 Сервіси для перезбірки: {', '.join(services_to_rebuild)}")
         print()
 
+        # Якщо обрано skip - показуємо тільки статус і завершуємо
+        if deploy_mode == "skip":
+            print("⏭️  SKIP режим: Пропускаємо деплой, показуємо поточний статус")
+            print("=" * 60)
+            print()
+            print("📊 Поточний стан Docker контейнерів:")
+            print()
+            try:
+                result = subprocess.run(
+                    "docker-compose ps",
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                print(result.stdout)
+            except Exception as e:
+                print(f"❌ Помилка отримання статусу: {e}")
+            
+            print()
+            print("💡 Для розгортання запустіть скрипт знову без опції skip")
+            sys.exit(0)
+
         print("📋 План розгортання:")
         print("   1️⃣  Перевірка системних вимог")
         print("   1️⃣.5️⃣ Перевірка файлів проекту")
@@ -1935,6 +1970,30 @@ def main():
 
         # ЕТАП 2: Розгортання сервісів в Docker
         frontend_mode = deploy_docker_services(deploy_mode, services_to_rebuild)
+        
+        # Якщо frontend_mode == "skip" - також пропускаємо
+        if frontend_mode == "skip":
+            print("⏭️  SKIP режим: Пропускаємо вибір сервісів")
+            print("=" * 60)
+            print()
+            print("📊 Поточний стан Docker контейнерів:")
+            print()
+            try:
+                result = subprocess.run(
+                    "docker-compose ps",
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                print(result.stdout)
+            except Exception as e:
+                print(f"❌ Помилка отримання статусу: {e}")
+            
+            print()
+            print("💡 Для розгортання запустіть скрипт знову без опції skip")
+            sys.exit(0)
+        
         if frontend_mode is None:  # Помилка розгортання
             sys.exit(1)
 
