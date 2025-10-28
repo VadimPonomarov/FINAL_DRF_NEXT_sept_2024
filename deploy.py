@@ -1279,6 +1279,9 @@ def deploy_docker_services(deploy_mode="full_rebuild", services_to_rebuild=None)
     elif deploy_mode == "selective_rebuild":
         print(f"🎯 Режим: Вибіркова перезбірка сервісів: {', '.join(services_to_rebuild)}")
         return selective_rebuild_services(selected_services, services_to_rebuild, frontend_mode)
+    elif deploy_mode == "fast_rebuild":
+        print("⚡ Режим: FAST - швидка паралельна збірка без очищення")
+        return fast_rebuild_services(selected_services, frontend_mode)
     else:  # full_rebuild
         print("🏗️ Режим: Повна перезбірка всіх сервісів")
         return full_rebuild_services(selected_services, frontend_mode)
@@ -1392,13 +1395,14 @@ def choose_deploy_mode():
     print("1. 🔄 Швидкий перезапуск (використовувати існуючі образи)")
     print("2. 🏗️  Повне перевстановлення (перезібрати всі образи) [ЗА ЗАМОВЧУВАННЯМ]")
     print("3. 🎯 Вибіркове перевстановлення (вибрати сервіси для перезбірки)")
+    print("f. ⚡ FAST режим - швидка збірка БЕЗ очищення (паралельна збірка)")
     print("s. ⏭️  Skip - пропустити деплой (тільки показати статус)")
     print("=" * 50)
     print("💡 Автоматичний вибір через 10 секунд: режим 2 (повне перевстановлення)")
     print()
 
     try:
-        choice = input_with_timeout("Оберіть режим (1-3/s): ", timeout=10, default="2").strip().lower()
+        choice = input_with_timeout("Оберіть режим (1-3/f/s): ", timeout=10, default="2").strip().lower()
         if not choice:
             choice = "2"
         
@@ -1408,6 +1412,8 @@ def choose_deploy_mode():
             return "full_rebuild", []
         elif choice == "3":
             return "selective_rebuild", choose_services_to_rebuild()
+        elif choice == "f" or choice == "fast":
+            return "fast_rebuild", []
         elif choice == "s" or choice == "skip":
             return "skip", []
         else:
@@ -1728,6 +1734,56 @@ def check_and_fix_postgres_volume():
         # Створюємо папку якщо не існує
         pg_data_path.mkdir(parents=True, exist_ok=True)
         print("✅ Створено PostgreSQL volume")
+
+def fast_rebuild_services(selected_services, frontend_mode):
+    """⚡ ШВИДКА перезбірка БЕЗ агресивного очищення (паралельна збірка)"""
+    print("⚡ FAST режим: Швидка перезбірка без очищення...")
+    print("🚀 Використовується паралельна збірка для прискорення")
+    
+    # Просто зупиняємо існуючі контейнери (не видаляємо)
+    print("🛑 Зупинка існуючих контейнерів...")
+    run_command("docker-compose stop", capture_output=True)
+    
+    show_progress_bar(4, 6, "🔨 Паралельна збірка образів...")
+    
+    # Визначаємо які сервіси збирати
+    services_to_build = [s for s in selected_services if s not in ["pg", "redis", "redis-insight", "rabbitmq"]]
+    
+    print(f"📦 Паралельна збірка образів ({len(services_to_build)} сервісів)...")
+    print(f"🎯 Сервіси: {', '.join(services_to_build)}")
+    
+    # Паралельна збірка - НАБАГАТО швидше!
+    build_cmd = f"docker-compose build --parallel {' '.join(services_to_build)}"
+    
+    result = run_command(build_cmd, capture_output=False)  # Показуємо вивід для прогресу
+    
+    if not result:
+        print_error("Не вдалося зібрати образи!")
+        return None
+    
+    print_success("✅ Паралельна збірка завершена!")
+    
+    show_progress_bar(5, 6, "🚀 Запуск контейнерів...")
+    
+    # Запускаємо контейнери
+    print("🚀 Запуск контейнерів (швидкий режим - без тривалих перевірок)...")
+    
+    result = run_command("docker-compose up -d --force-recreate", capture_output=True)
+    if not result:
+        print_error("Не вдалося запустити Docker сервіси!")
+        return None
+    
+    print_success("✅ Всі контейнери запущені!")
+    
+    # Коротка пауза замість 60 секунд
+    show_progress_bar(6, 6, "⏳ Короткочасне очікування готовності...")
+    print("⏳ Очікування ініціалізації сервісів (15 секунд замість 60)...")
+    time.sleep(15)  # Замість 60 секунд
+    
+    print()
+    print_success("⚡ FAST режим завершено! Перевірте статус: docker-compose ps")
+    
+    return frontend_mode
 
 def full_rebuild_services(selected_services, frontend_mode):
     """Повна перезбірка всіх сервісів"""
