@@ -67,33 +67,44 @@ services:
       start_period: 60s  # Даємо PostgreSQL 60 секунд на ініціалізацію
 
 
+  # =============================================================================
+  # FRONTEND SERVICE (Next.js)
+  # =============================================================================
+  # 
+  # ⚠️  ВАЖНО: Frontend по умолчанию закомментирован
+  # 
+  # Использование:
+  # 1. Для полного Docker развертывания: раскомментируйте секцию ниже
+  # 2. Для deploy.py: будет автоматически управляться скриптом
+  #
   #   frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   env_file:
-  #     - ./env-config/.env.base
-  #     - ./env-config/.env.secrets
-  #     - ./env-config/.env.docker
-  #   environment:
-  #     IS_DOCKER: true
-  #     NEXT_PUBLIC_IS_DOCKER: true
-  #     REDIS_HOST: redis
-  #     BACKEND_URL: http://app:8000
-  #     NEXTAUTH_URL_INTERNAL: http://frontend:3000
-  #   ports:
-  #     - "3000:3000"
-    # Production mode - no volume mounts for better performance
-  #   depends_on:
-  #     - redis
-  #     - app
-  #   restart: unless-stopped
-  #   healthcheck:
-  #     test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 60s
+  #     build:
+  #       context: ./frontend
+  #       dockerfile: Dockerfile
+  #     env_file:
+  #       - ./env-config/.env.base
+  #       - ./env-config/.env.secrets
+  #       - ./env-config/.env.docker
+  #     environment:
+  #       IS_DOCKER: "true"
+  #       NEXT_PUBLIC_IS_DOCKER: "true"
+  #       REDIS_HOST: redis
+  #       REDIS_URL: redis://redis:6379/0
+  #       BACKEND_URL: http://app:8000
+  #       NEXT_PUBLIC_BACKEND_URL: http://app:8000
+  #       NEXTAUTH_URL_INTERNAL: http://frontend:3000
+  #     ports:
+  #       - "3000:3000"
+  #     depends_on:
+  #       - redis
+  #       - app
+  #     restart: unless-stopped
+  #     healthcheck:
+  #       test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
+  #       interval: 30s
+  #       timeout: 10s
+  #       retries: 3
+  #       start_period: 60s
 
 
   # =============================================================================
