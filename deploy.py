@@ -1649,10 +1649,81 @@ def selective_rebuild_services(selected_services, services_to_rebuild, frontend_
     print_success("✅ Вибіркова перезбірка завершена!")
     return frontend_mode
 
+def check_port_available(port, service_name="сервіс"):
+    """Перевіряє чи порт вільний"""
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)
+    result = sock.connect_ex(('localhost', port))
+    sock.close()
+    
+    if result == 0:
+        print(f"⚠️  Порт {port} зайнятий ({service_name})")
+        print(f"💡 Спробуйте: netstat -ano | findstr :{port}")
+        return False
+    else:
+        print(f"✅ Порт {port} вільний ({service_name})")
+        return True
+
+def check_and_fix_postgres_volume():
+    """Перевіряє та виправляє проблеми з PostgreSQL volume"""
+    print("\n🔍 Перевірка PostgreSQL...")
+    
+    # Перевіряємо чи порт вільний
+    if not check_port_available(5432, "PostgreSQL"):
+        print("⚠️  PostgreSQL не зможе стартувати через зайнятий порт!")
+        print("🔧 Спробуйте зупинити процес що використовує порт 5432")
+        
+        # Спробуємо знайти процес
+        try:
+            result = subprocess.run(
+                "netstat -ano | findstr :5432",
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.stdout:
+                print(f"📊 Процеси на порту 5432:\n{result.stdout}")
+        except:
+            pass
+    
+    # Перевіряємо volume
+    pg_data_path = Path("pg/data")
+    
+    # Якщо папка існує і не порожня, перевіряємо права доступу
+    if pg_data_path.exists():
+        try:
+            # Спробуємо прочитати вміст папки
+            list(pg_data_path.iterdir())
+            print("✅ PostgreSQL volume доступний")
+        except PermissionError:
+            print("⚠️  Проблема з правами доступу до PostgreSQL volume")
+            print("🔧 Спроба виправлення...")
+            try:
+                # На Windows спробуємо просто створити нову папку
+                import shutil
+                backup_path = Path("pg/data_backup_" + str(int(time.time())))
+                if pg_data_path.exists():
+                    shutil.move(str(pg_data_path), str(backup_path))
+                    print(f"📦 Створено backup: {backup_path}")
+                pg_data_path.mkdir(parents=True, exist_ok=True)
+                print("✅ PostgreSQL volume перестворено")
+            except Exception as e:
+                print(f"⚠️  Не вдалося виправити: {e}")
+                print("💡 Рекомендація: вручну видаліть папку pg/data")
+    else:
+        # Створюємо папку якщо не існує
+        pg_data_path.mkdir(parents=True, exist_ok=True)
+        print("✅ Створено PostgreSQL volume")
+
 def full_rebuild_services(selected_services, frontend_mode):
     """Повна перезбірка всіх сервісів"""
     print("🏗️ Повна перезбірка всіх сервісів...")
     print("🧹 АГРЕСИВНЕ ОЧИЩЕННЯ: Зупинка ВСІХ контейнерів на використовуваних портах...")
+    
+    # 0. ПЕРЕВІРЯЄМО ТА ВИПРАВЛЯЄМО POSTGRESQL VOLUME
+    check_and_fix_postgres_volume()
     
     # 1. ЗУПИНЯЄМО ВСІ КОНТЕЙНЕРИ НА ПОТРІБНИХ ПОРТАХ (не тільки нашого проекту)
     critical_ports = [3000, 8000, 8001, 5432, 6379, 5672, 15672, 5555, 5540]
@@ -1754,16 +1825,54 @@ def continue_full_rebuild(selected_services, frontend_mode):
     show_progress_bar(5, 6, "🚀 Запуск всіх контейнерів...")
 
     # Запускаємо контейнери з захопленням виводу
+    print("🚀 Запуск контейнерів (це може зайняти 1-2 хвилини)...")
+    print("⏳ PostgreSQL потребує ~60 секунд для ініціалізації...")
+    
     result = run_command("docker-compose up -d --force-recreate", capture_output=True)
     if not result:
         print_error("Не вдалося запустити Docker сервіси!")
+        print("")
+        print("🔍 Діагностика проблеми:")
+        print("1. Перевірте логи PostgreSQL: docker-compose logs pg")
+        print("2. Перевірте чи порт 5432 вільний: netstat -an | findstr 5432")
+        print("3. Спробуйте видалити volume: docker-compose down -v")
+        print("4. Перезапустіть Docker Desktop")
         return None
 
     print_success("Всі контейнери запущені!")
 
-    # Чекаємо готовності сервісів
+    # Чекаємо готовності сервісів (особливо PostgreSQL)
     show_progress_bar(6, 6, "⏳ Очікування готовності сервісів...")
-    time.sleep(10)
+    print("")
+    print("⏳ Очікування ініціалізації PostgreSQL (60 секунд)...")
+    
+    # Показуємо прогрес очікування
+    for i in range(60):
+        print(f"\r⏳ Ініціалізація PostgreSQL: {i+1}/60 сек ({(i+1)/60*100:.0f}%)", end="", flush=True)
+        time.sleep(1)
+        
+        # Кожні 10 секунд перевіряємо статус
+        if (i + 1) % 10 == 0:
+            print()  # Новий рядок
+            try:
+                result = subprocess.run(
+                    "docker-compose ps pg",
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if "healthy" in result.stdout.lower():
+                    print("✅ PostgreSQL готовий!")
+                    break
+                elif "unhealthy" in result.stdout.lower():
+                    print("⚠️  PostgreSQL ще ініціалізується...")
+                else:
+                    print("📊 Перевірка статусу PostgreSQL...")
+            except:
+                pass
+    
+    print()  # Новий рядок після прогресу
 
     return frontend_mode
 

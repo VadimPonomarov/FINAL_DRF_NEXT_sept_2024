@@ -60,10 +60,11 @@ services:
       - ./pg/data:/var/lib/postgresql/data  # Local data directory
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-autoria_db} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s  # Даємо PostgreSQL 60 секунд на ініціалізацію
 
 
   #   frontend:
