@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,9 @@ import {
   Eye,
   Edit,
   Trash2,
+  EyeOff,
+  Archive,
+  Check,
   MoreHorizontal,
   Car,
   Calendar,
@@ -38,22 +41,17 @@ import { CarAd } from '@/types/autoria';
 import CarAdsService from '@/services/autoria/carAds.service';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
+import { CurrencySelector } from '@/components/AutoRia/CurrencySelector/CurrencySelector';
+import { usePriceConverter } from '@/hooks/usePriceConverter';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 const MyAdsPage = () => {
   const { t } = useI18n();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, checkAuth } = useAutoRiaAuth();
 
-  // Функция форматирования цены
-  const formatPrice = (price: number, currency: string) => {
-    const currencyCode = currency === 'USD' ? 'USD' : currency === 'EUR' ? 'EUR' : 'UAH';
-    return new Intl.NumberFormat('uk-UA', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
+  // Унифицированный форматер цены c учетом выбранной валюты
+  const { formatPrice } = usePriceConverter();
 
   const [ads, setAds] = useState<CarAd[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +62,8 @@ const MyAdsPage = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   // Загрузка данных из API
   const loadAds = async () => {
@@ -113,7 +113,11 @@ const MyAdsPage = () => {
       console.log('[MyAdsPage] Number of ads received:', response.results?.length || 0);
       console.log('[MyAdsPage] First ad sample:', response.results?.[0]);
 
-      setAds(response.results || []);
+      const items = response.results || [];
+      const filtered = statusFilter === 'all' ? items.filter(a => a.status !== 'archived') : items;
+      setAds(filtered);
+      setSelectedIds(new Set());
+      setSelectAll(false);
       setLoading(false);
     } catch (error) {
       console.error('[MyAdsPage] Failed to load ads:', error);
@@ -302,7 +306,7 @@ const MyAdsPage = () => {
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -319,6 +323,8 @@ const MyAdsPage = () => {
                   )}
                 </div>
               </div>
+              {/* Currency selector */}
+              <div className="w-full sm:w-auto"><CurrencySelector className="w-full" showLabel={false} /></div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder={t('autoria.statusFilter')} />
@@ -345,6 +351,23 @@ const MyAdsPage = () => {
                   <SelectItem value="title_desc">По названию (Я-А)</SelectItem>
                 </SelectContent>
               </Select>
+              {/* View toggle */}
+              <div className="flex border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                  title="Сетка"
+                >
+                  <Grid className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                  title="Список"
+                >
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -358,6 +381,7 @@ const MyAdsPage = () => {
                 : `Найдено ${ads.length} ${ads.length === 1 ? 'объявление' : ads.length < 5 ? 'объявления' : 'объявлений'}`
               }
             </p>
+            <div className="flex items-center gap-4">
             {(statusFilter !== 'all' || debouncedSearchTerm) && (
               <Button
                 variant="outline"
@@ -372,6 +396,44 @@ const MyAdsPage = () => {
                 Сбросить фильтры
               </Button>
             )}
+              <label className="flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setSelectAll(checked);
+                    if (checked) setSelectedIds(new Set(ads.map(a => a.id)));
+                    else setSelectedIds(new Set());
+                  }}
+                />
+                Выбрать все
+              </label>
+              {selectedIds.size > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={async () => {
+                    await Promise.allSettled(Array.from(selectedIds).map(id => CarAdsService.updateMyAdStatus(id, 'active')));
+                    await loadAds();
+                  }}>Сделать активными</Button>
+                  <Button size="sm" variant="secondary" onClick={async () => {
+                    await Promise.allSettled(Array.from(selectedIds).map(id => CarAdsService.updateMyAdStatus(id, 'inactive')));
+                    await loadAds();
+                  }}>Скрыть</Button>
+                  <Button size="sm" variant="outline" onClick={async () => {
+                    await Promise.allSettled(Array.from(selectedIds).map(id => CarAdsService.updateMyAdStatus(id, 'archived')));
+                    await loadAds();
+                  }}>Архив</Button>
+                  <Button size="sm" variant="outline" onClick={async () => {
+                    await Promise.allSettled(Array.from(selectedIds).map(id => CarAdsService.updateMyAdStatus(id, 'sold')));
+                    await loadAds();
+                  }}>Продано</Button>
+                  <Button size="sm" variant="destructive" onClick={async () => {
+                    await CarAdsService.bulkDeleteMyAds(Array.from(selectedIds));
+                    await loadAds();
+                  }}>Удалить</Button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -401,23 +463,142 @@ const MyAdsPage = () => {
               </div>
             </CardContent>
           </Card>
-        ) : (
+        ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {ads.map((ad) => (
-              <Card key={ad.id} className="hover:shadow-lg transition-shadow duration-300 group">
+              <MyAdCard
+                key={ad.id}
+                ad={ad}
+                onClick={handleCardClick}
+                onDelete={async (id) => { await CarAdsService.deleteCarAd(id); await loadAds(); }}
+                onStatusChange={async (id, status) => { await CarAdsService.updateMyAdStatus(id, status); setAds(prev => prev.map(a => a.id===id ? { ...a, status } : a)); }}
+                formatPrice={(a) => formatPrice(a)}
+                selected={selectedIds.has(ad.id)}
+                onToggleSelected={(id, checked) => setSelectedIds(prev => { const next = new Set(prev); if (checked) next.add(id); else next.delete(id); return next; })}
+                viewLabel={t('view')}
+                editLabel={t('edit')}
+                activateLabel={t('autoria.moderation.activate')}
+                hideLabel={t('autoria.hide')}
+                archiveLabel={t('autoria.moderation.status.archived')}
+                soldLabel={t('autoria.moderation.status.sold')}
+                deleteLabel={t('delete')}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {ads.map((ad) => (
+              <div key={ad.id} className="flex gap-4 p-3 bg-white rounded-lg shadow-sm hover:shadow transition">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={selectedIds.has(ad.id)}
+                  onChange={(e) => setSelectedIds(prev => { const next = new Set(prev); if (e.target.checked) next.add(ad.id); else next.delete(ad.id); return next; })}
+                />
+                <img src={ad.images?.[0]?.image_display_url || ad.images?.[0]?.image || '/api/placeholder/200/150'} alt={ad.title} className="w-40 h-28 object-cover rounded cursor-pointer" onClick={() => handleCardClick(ad.id)} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-900 truncate">{ad.mark_name} {ad.model}</div>
+                      <div className="text-slate-600 text-sm truncate">{ad.description}</div>
+                      <div className="flex gap-2 mt-2">
+                        {ad.dynamic_fields?.year && <Badge variant="outline" className="text-xs">{ad.dynamic_fields.year}</Badge>}
+                        {ad.dynamic_fields?.mileage && <Badge variant="outline" className="text-xs">{ad.dynamic_fields.mileage.toLocaleString()} км</Badge>}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xl font-bold text-blue-600 tabular-nums">{formatPrice(ad)}</div>
+                      <div className="text-xs text-slate-500">{ad.status}</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3 items-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" onClick={() => window.location.href = `/autoria/ads/view/${ad.id}`} className="h-8 w-8"><Eye className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('view')}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" onClick={() => window.location.href = `/autoria/ads/edit/${ad.id}`} className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('edit')}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'active').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'active'}:a)))}><Check className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('autoria.moderation.activate')}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'inactive').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'inactive'}:a)))}><EyeOff className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('autoria.hide')}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'archived').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'archived'}:a)))}><Archive className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('autoria.moderation.status.archived')}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'sold').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'sold'}:a)))}><DollarSign className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('autoria.moderation.status.sold')}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => CarAdsService.deleteCarAd(ad.id).then(loadAds)}><Trash2 className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('delete')}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Мемоизированная карточка объявления в сетке
+const MyAdCard: React.FC<{
+  ad: CarAd;
+  onClick: (id: number) => void;
+  onDelete: (id: number) => Promise<void> | void;
+  onStatusChange: (id: number, status: string) => Promise<void> | void;
+  formatPrice: (ad: CarAd) => string;
+  selected: boolean;
+  onToggleSelected: (id: number, checked: boolean) => void;
+  viewLabel: string;
+  editLabel: string;
+  activateLabel: string;
+  hideLabel: string;
+  archiveLabel: string;
+  soldLabel: string;
+  deleteLabel: string;
+}> = memo(({ ad, onClick, onDelete, onStatusChange, formatPrice, selected, onToggleSelected, viewLabel, editLabel, activateLabel, hideLabel, archiveLabel, soldLabel, deleteLabel }) => {
+  return (
+    <Card className="hover:shadow-lg transition-shadow duration-300 group">
                 <CardContent className="p-0">
                   <div className="block">
-                    {/* Image */}
                     <div className="w-full h-48 relative">
                       <img
                         src={ad.images?.[0]?.image_display_url || ad.images?.[0]?.image || '/api/placeholder/400/300'}
                         alt={ad.title}
                         className="w-full h-full object-cover rounded-t-lg cursor-pointer"
-                        onClick={() => handleCardClick(ad.id)}
+              onClick={() => onClick(ad.id)}
                       />
+            <div className="absolute top-2 left-2 bg-white/90 rounded px-1.5 py-1 shadow">
+              <input type="checkbox" checked={selected} onChange={(e) => onToggleSelected(ad.id, e.target.checked)} />
+            </div>
                     </div>
-
-                    {/* Content */}
                     <div className="p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
@@ -430,23 +611,10 @@ const MyAdsPage = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xl font-bold text-blue-600">
-                            {formatPrice(ad.price, ad.currency)}
+                <div className="text-xl font-bold text-blue-600 tabular-nums">
+                  {formatPrice(ad)}
                           </div>
-                          <div className="flex items-center gap-3 mt-1">
-                            <div className="flex items-center gap-1 text-xs text-slate-500">
-                              <Eye className="h-3 w-3" />
-                              <span>{ad.view_count || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-slate-500">
-                              <Heart className="h-3 w-3" />
-                              <span>{ad.favorites_count || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-slate-500">
-                              <Phone className="h-3 w-3" />
-                              <span>{ad.phone_views_count || 0}</span>
-                            </div>
-                          </div>
+                <div className="text-xs text-slate-500">{ad.status}</div>
                         </div>
                       </div>
 
@@ -475,17 +643,71 @@ const MyAdsPage = () => {
                         )}
                       </div>
 
-
+            <div className="flex flex-wrap gap-2 items-center">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="ghost" onClick={() => window.location.href = `/autoria/ads/view/${ad.id}`} className="h-8 w-8">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{viewLabel}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="ghost" onClick={() => window.location.href = `/autoria/ads/edit/${ad.id}`} className="h-8 w-8">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{editLabel}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" onClick={() => onStatusChange(ad.id, 'active')} className="h-8 w-8">
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{activateLabel}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="secondary" onClick={() => onStatusChange(ad.id, 'inactive')} className="h-8 w-8">
+                      <EyeOff className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{hideLabel}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" onClick={() => onStatusChange(ad.id, 'archived')} className="h-8 w-8">
+                      <Archive className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{archiveLabel}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" onClick={() => onStatusChange(ad.id, 'sold')} className="h-8 w-8">
+                      <DollarSign className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{soldLabel}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="destructive" onClick={() => onDelete(ad.id)} className="h-8 w-8">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{deleteLabel}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
   );
-};
+});
 
 export default MyAdsPage;
