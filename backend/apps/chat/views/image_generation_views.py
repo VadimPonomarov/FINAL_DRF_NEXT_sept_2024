@@ -731,7 +731,7 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
 
     # Определяем angle_key и vt в начале
     angle_key = str(angle or '').lower().replace('-', '_')
-    vt = vehicle_type
+    vt = vehicle_type or 'car'  # Fallback to 'car' if vehicle_type is None
 
     # Простые элементы консистентности
     consistency_elements = [
