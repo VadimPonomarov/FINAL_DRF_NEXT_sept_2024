@@ -355,10 +355,9 @@ def generate_car_images(request):
 
         logger.info(f"🚗 Generating car images for {car_data['brand']} {car_data['model']}")
 
-        # Создаем уникальный session_id для всех изображений этого автомобиля
+        # Создаем стабильный session_id для всех изображений этого автомобиля (БЕЗ времени для консистентности)
         import hashlib
-        import time
-        session_data = f"{car_data.get('brand', '')}_{car_data.get('model', '')}_{car_data.get('year', '')}_{car_data.get('color', '')}_{int(time.time())}"
+        session_data = f"{car_data.get('brand', '')}_{car_data.get('model', '')}_{car_data.get('year', '')}_{car_data.get('color', '')}_{car_data.get('body_type', '')}"
         car_session_id = hashlib.md5(session_data.encode()).hexdigest()[:8]
 
         logger.info(f"🔗 Car session ID for consistency: CAR-{car_session_id}")
@@ -373,8 +372,8 @@ def generate_car_images(request):
             try:
                 prompt = create_car_image_prompt(car_data, angle, style, car_session_id)
 
-                # КРИТИЧНО: Переводим промпт на английский (простой перевод БЕЗ LLM, чтобы не исказить промпт)
-                english_prompt = translate_prompt_to_english(prompt)
+                # Используем наш упрощенный промпт напрямую
+                english_prompt = prompt
 
                 if G4F_AVAILABLE:
                     try:
@@ -561,11 +560,10 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
             car_data.get('vehicle_type', 'car')
         )
 
-        # Create session ID for consistency
+        # Create session ID for consistency (БЕЗ времени для стабильности)
         import hashlib
-        import time
         session_data = f"{canonical_data['brand']}_{canonical_data['model']}_{canonical_data['year']}_{canonical_data['color']}_{canonical_data['body_type']}"
-        car_session_id = hashlib.md5(f"{session_data}_{int(time.time())}".encode()).hexdigest()[:8]
+        car_session_id = hashlib.md5(session_data.encode()).hexdigest()[:8]
         canonical_data['session_id'] = f"CAR-{car_session_id}"
 
         logger.info(f"🔗 [mock_algorithm] Session ID: CAR-{car_session_id}")
@@ -578,11 +576,11 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
             try:
                 logger.info(f"🔄 [mock_algorithm] Generating image {index + 1}/{len(angles)} for angle: {angle}")
 
-                # Create prompt using mock algorithm
+                # Create prompt using our improved algorithm (NOT mock algorithm)
                 prompt = create_car_image_prompt(canonical_data, angle, style, car_session_id)
 
-                # Translate to English using mock algorithm
-                english_prompt = mock_cmd._simple_translate_to_english(prompt, canonical_data)
+                # Use our own simplified prompt directly (no translation needed)
+                english_prompt = prompt
 
                 # Generate image using OpenAI DALL-E 3
                 import os
@@ -725,104 +723,108 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         print(f"[ImageGen] ❌ No vehicle_type_name provided, using 'car' as last resort")
         vehicle_type = 'car'
 
-    # Stable series ID for consistency across angles
+    # Stable series ID for consistency across angles (БЕЗ времени для стабильности)
     if not car_session_id:
-        import hashlib, time
-        session_data = f"{brand}_{model}_{year}_{color}_{body_type}_{vehicle_type}_{int(time.time())}"
+        import hashlib
+        session_data = f"{brand}_{model}_{year}_{color}_{body_type}_{vehicle_type}"
         car_session_id = hashlib.md5(session_data.encode()).hexdigest()[:8]
 
-    # Reusable consistency cues (avoid changing object between shots)
-    # КРИТИЧНО: Генерировать РАЗНЫЕ ракурсы ОДНОГО объекта, а не одинаковые фото!
-    consistency_elements = [
-        f"SAME EXACT unique vehicle across all images (vehicle ID: CAR-{car_session_id})",
-        "IDENTICAL proportions, trims, and options in every shot",
-        "SAME body type/cabin type in ALL images (if truck - same cabin design, if car - same body style)",
-        "SAME wheel design and size in ALL images",
-        "SAME color shade and finish in ALL images",
-        "same lighting conditions and color temperature",
-        "same photographic style and post-processing",
-        "single subject, no people, clean set",
-        "DO NOT generate different vehicles or variants - must be THE EXACT SAME vehicle from different angles",
-        f"THIS IS {angle.upper()} ANGLE - show the vehicle from THIS SPECIFIC perspective, NOT the same angle as other shots",
-        f"IMPORTANT: Each angle must show DIFFERENT VIEW of the same car - vary camera position for {angle} perspective",
-        "Generate CONSISTENT object but DIFFERENT camera viewpoint - like a car photoshoot from multiple angles"
-    ]
-
-    # Realism enforcement (physical correctness)
-    realism_elements = [
-        f"PHYSICALLY CORRECT {vehicle_type} configuration",
-        "realistic and functional vehicle design",
-        "correct number of wheels and steering mechanisms",
-        "NO absurd or impossible features",
-        "professional quality, real-world engineering principles"
-    ]
-
-    # Styles
-    style_descriptions = {
-        'realistic': 'photorealistic, high quality, professional automotive photography',
-        'professional': 'studio lighting, clean background, commercial photography',
-        'artistic': 'artistic composition, dramatic lighting, creative angle'
-    }
-
-    # Angle dictionary incl. common synonyms
-    vt = vehicle_type
+    # Определяем angle_key и vt в начале
     angle_key = str(angle or '').lower().replace('-', '_')
-    angle_descriptions = {
-        'front': f'front view of the same {vt}, centered, showing grille, headlights, bumper',
-        'front_left': f'front-left three-quarter view of the same {vt}, dynamic perspective',
-        'front_right': f'front-right three-quarter view of the same {vt}, dynamic perspective',
-        'rear': f'rear view of the same {vt}, taillights and rear bumper visible',
-        'rear_left': f'rear-left three-quarter view of the same {vt}',
-        'rear_right': f'rear-right three-quarter view of the same {vt}',
-        'side': f'side profile of the same {vt}, complete silhouette, doors and windows visible',
-        'left': f'left side profile of the same {vt}',
-        'right': f'right side profile of the same {vt}',
-        'top': f'top view (bird-eye) of the same {vt}, roof and proportions visible',
-        'interior': f'interior cabin of the same {vt}, dashboard, steering wheel, seats',
-        'dashboard': f'dashboard close-up of the same {vt}, instrument cluster and center console',
-        'engine': f'engine bay of the same {vt}, engine block and components',
-        'trunk': f'cargo/trunk area of the same {vt}',
-        'wheels': f'wheels and tires detail of the same {vt}',
-        'details': f'close-up details of the same {vt}, materials and craftsmanship'
+    vt = vehicle_type
+
+    # Простые элементы консистентности
+    consistency_elements = [
+        f"Same vehicle (ID: CAR-{car_session_id})",
+        f"Different angle: {angle}",
+        "Professional photography"
+    ]
+
+    # Добавляем уникальные элементы для каждого ракурса
+    # Простые описания ракурсов
+    angle_specific_elements = {
+        'front': ["Front view", "Grille and headlights visible"],
+        'front_left': ["Front-left angle", "Three-quarter view"],
+        'front_right': ["Front-right angle", "Three-quarter view"],
+        'rear': ["Rear view", "Taillights and bumper visible"],
+        'rear_left': ["Rear-left angle", "Three-quarter view"],
+        'rear_right': ["Rear-right angle", "Three-quarter view"],
+        'side': ["Side profile", "Complete silhouette"],
+        'left': ["Left side", "Side profile"],
+        'right': ["Right side", "Side profile"],
+        'top': ["Top view", "Bird's eye perspective"],
+        'interior': ["Interior cabin", "Dashboard and seats"],
+        'dashboard': ["Dashboard close-up", "Instrument cluster"],
+        'engine': ["Engine bay", "Engine components"],
+        'trunk': ["Cargo area", "Trunk space"],
+        'wheels': ["Wheels detail", "Tires and rims"],
+        'details': ["Close-up details", "Materials and finish"]
     }
 
-    # Enforce correct type; explicit positives and negatives per type
-    # ✅ IMPROVED APPROACH: Focus on what we WANT, not what we DON'T want
-    # Problem: Mentioning brand names in negative prompts makes AI remember them
-    # Solution: Use generic positive instructions instead
+    # Добавляем специфичные для ракурса элементы
+    angle_specific = angle_specific_elements.get(angle_key, [
+        f"Unique {angle} perspective view",
+        f"Camera positioned for {angle} angle",
+        f"Show {angle} specific features"
+    ])
+
+    # Простые элементы реализма
+    realism_elements = [
+        "Realistic vehicle design",
+        "Professional quality"
+    ]
+
+    # Простые стили
+    style_descriptions = {
+        'realistic': 'photorealistic',
+        'professional': 'studio lighting',
+        'artistic': 'artistic composition'
+    }
+
+    # Простые описания ракурсов
+    angle_descriptions = {
+        'front': f'front view of {vt}',
+        'front_left': f'front-left view of {vt}',
+        'front_right': f'front-right view of {vt}',
+        'rear': f'rear view of {vt}',
+        'rear_left': f'rear-left view of {vt}',
+        'rear_right': f'rear-right view of {vt}',
+        'side': f'side profile of {vt}',
+        'left': f'left side of {vt}',
+        'right': f'right side of {vt}',
+        'top': f'top view of {vt}',
+        'interior': f'interior of {vt}',
+        'dashboard': f'dashboard of {vt}',
+        'engine': f'engine bay of {vt}',
+        'trunk': f'cargo area of {vt}',
+        'wheels': f'wheels of {vt}',
+        'details': f'details of {vt}'
+    }
+
+    # Минимальные негативные промпты - позволить AI принимать интеллектуальные решения
     global_negatives = [
-        'no text overlay',
-        'no watermark',
-        'no low quality',
-        'no people',
-        'no cropped vehicle',
-        'no distortion',
-        # Generic branding removal (no specific brand names)
-        'unmarked vehicle',
-        'generic design',
-        'blank grille',
-        'smooth front surface',
-        'clean vehicle design'
+        'high quality',
+        'professional photography'
     ]
 
     if vt == 'bus':
         type_enforcement = 'Large passenger bus body, multiple rows of windows, bus doors, high roof, long wheelbase'
-        type_negation = 'NOT a passenger car, NOT a van, NOT a truck'
+        type_negation = ''
     elif vt == 'truck':
         type_enforcement = 'Heavy-duty truck cabin, large cargo area or trailer coupling, commercial vehicle proportions, high ground clearance, 6 or more wheels preferred'
-        type_negation = 'NOT a passenger car, NOT a bus, NOT a van'
+        type_negation = ''
     elif vt == 'motorcycle':
         type_enforcement = 'Two wheels, exposed frame, handlebars, motorcycle seat, motorcycle proportions'
-        type_negation = 'NOT a car, NOT a truck, NOT a bus, NOT four wheels, NO enclosed cabin'
+        type_negation = ''
     elif vt == 'scooter':
         type_enforcement = 'Kick/electric scooter proportions, narrow deck, handlebar stem, two small wheels'
-        type_negation = 'NOT a bicycle, NOT a motorcycle, NOT a car'
+        type_negation = ''
     elif vt == 'van':
         type_enforcement = 'Boxy van/MPV proportions with sliding door (if applicable), light commercial vehicle style'
-        type_negation = 'NOT a sedan, NOT a hatchback/coupe, NOT a bus'
+        type_negation = ''
     elif vt == 'trailer':
         type_enforcement = 'Standalone trailer body, hitch coupling, no engine, no driver cabin'
-        type_negation = 'NO tractor head, NO truck cabin, NOT a car'
+        type_negation = ''
     elif vt == 'special':
         # Determine specific construction equipment type based on brand
         brand_lower = brand.lower()
@@ -841,20 +843,20 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
 
         if brand_lower in excavator_brands:
             type_enforcement = 'HYDRAULIC EXCAVATOR: tracked undercarriage with metal tracks, rotating upper structure (cab), articulated boom arm with bucket attachment, construction equipment proportions, industrial yellow/orange color scheme typical for construction machinery'
-            type_negation = 'ABSOLUTELY NOT a passenger car, NOT a truck, NOT a van, NOT a bus, NOT a tractor, NO car wheels, NO passenger vehicle design'
+            type_negation = ''
         elif brand_lower in loader_brands:
             if 'backhoe' in model.lower():
                 type_enforcement = 'BACKHOE LOADER: four-wheeled construction vehicle with front bucket loader and rear excavator arm, construction equipment design, industrial proportions'
             else:
                 type_enforcement = 'WHEEL LOADER: large front bucket, articulated steering frame, four large construction wheels, heavy-duty construction equipment proportions'
-            type_negation = 'ABSOLUTELY NOT a passenger car, NOT a sedan, NOT a hatchback, NOT a regular truck, NOT a van, NOT a bus'
+            type_negation = ''
         elif brand_lower in crane_brands:
             type_enforcement = 'MOBILE CRANE: telescopic boom, counterweights, outriggers, crane proportions, construction/industrial design'
-            type_negation = 'ABSOLUTELY NOT a passenger car, NOT a truck, NOT a van, NOT a bus'
+            type_negation = ''
         else:
             # Generic construction equipment
             type_enforcement = 'HEAVY CONSTRUCTION EQUIPMENT: industrial construction machinery with heavy-duty components, construction equipment proportions, industrial design elements, heavy attachments (boom, bucket, blade, or similar), tracks or large construction wheels'
-            type_negation = 'ABSOLUTELY NOT a passenger car, NOT a sedan, NOT a hatchback, NOT a coupe, NOT a regular truck, NOT a van, NOT a bus, NO passenger vehicle design'
+            type_negation = ''
     else:
         type_enforcement = 'Passenger car proportions'
         type_negation = ''
@@ -943,6 +945,14 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     style_prompt = style_descriptions.get(style, style if style else 'realistic')
     consistency_prompt = ", ".join(consistency_elements + [f"Series ID: CAR-{car_session_id}"])
     realism_prompt = ", ".join(realism_elements)
+    
+    # Добавляем специфичные для ракурса элементы
+    angle_specific = angle_specific_elements.get(angle_key, [
+        f"Unique {angle} perspective view",
+        f"Camera positioned for {angle} angle",
+        f"Show {angle} specific features"
+    ])
+    angle_specific_prompt = ", ".join(angle_specific)
 
     # 🚨 STRICT BRANDING CONTROL: Prevent incorrect badge assignments
     # Check if brand matches vehicle type to avoid wrong badges (e.g., Mercedes on Atlas)
@@ -1099,18 +1109,11 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     else:
         forbidden_instruction = ""
     
-    # Layer 2: Позитивное описание того, НА ЧТО обращать внимание
+    # Минимальная защита бренда - позволить AI принимать интеллектуальные решения
     brand_protection = (
-        f"{forbidden_instruction} "
-        f"FOCUS ATTENTION on these elements of the {brand} {model}: "
-        f"VEHICLE SHAPE and PROPORTIONS ({body_type} style), "
-        f"BODY COLOR ({color}), "
-        f"BODY LINES and STYLING, "
-        f"WINDOW DESIGN, "
-        f"HEADLIGHT and TAILLIGHT shapes, "
-        f"WHEEL design (rims without center logos), "
-        f"OVERALL SILHOUETTE and STANCE. "
-        f"IGNORE brand identity - treat this as a CONCEPT CAR or PROTOTYPE before branding is applied."
+        f"Focus on vehicle design elements: shape, proportions, color, styling, "
+        f"headlights, taillights, wheels, overall silhouette. "
+        f"Professional automotive photography style."
     )
 
     negatives = ", ".join(global_negatives + ([type_negation] if type_negation else []))
@@ -1252,19 +1255,13 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     else:
         condition_instruction = ""
     
+    # Простой финальный промпт с четким указанием брендинга
     final_prompt = (
-        f"{knowledge_instruction} "
-        f"Professional automotive photography of CONCEPT VEHICLE / DESIGN STUDY: "
-        f"{brand} {model} ({year}) in {color} color, {body_type} body configuration. "
-        f"{condition_instruction}"
-        f"PRE-PRODUCTION PROTOTYPE - show vehicle before branding/badges applied. "
-        f"{type_enforcement}. "
-        f"Camera angle: {angle_prompt}. "
-        f"Photographic style: {style_prompt}, high resolution, professional studio rendering. "
-        f"{strict_branding} "
-        f"{brand_protection} "
-        f"Technical consistency: {consistency_prompt}. "
-        f"Quality standards: clean background, sharp focus, realistic lighting, {negatives}."
+        f"{brand} {model} {year} {color} {body_type}, "
+        f"{angle_prompt}, "
+        f"{style_prompt}, "
+        f"with {brand} brand emblem and badges, "
+        f"series ID CAR-{car_session_id}"
     )
 
     # Log branding decision for debugging

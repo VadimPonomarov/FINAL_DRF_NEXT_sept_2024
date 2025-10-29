@@ -137,8 +137,8 @@ const ModerationPage = () => {
       if (response.status === 401) {
         const error = await response.json();
         toast({
-          title: "❌ Требуется аутентификация",
-          description: error.message || "Пожалуйста, войдите в систему",
+          title: t('moderation.toast.authRequired'),
+          description: error.message || t('moderation.toast.authRequiredDescription'),
           variant: "destructive",
         });
 
@@ -178,8 +178,8 @@ const ModerationPage = () => {
       if (response.status === 401) {
         const error = await response.json();
         toast({
-          title: "❌ Требуется аутентификация",
-          description: error.message || "Пожалуйста, войдите в систему",
+          title: t('moderation.toast.authRequired'),
+          description: error.message || t('moderation.toast.authRequiredDescription'),
           variant: "destructive",
         });
 
@@ -419,11 +419,47 @@ const ModerationPage = () => {
     setSelectedAd(ad);
   }, []);
 
+  const handleSaveModerationNotes = useCallback(async (adId: number, notes: string) => {
+    try {
+      const response = await fetchWithAuth(`/api/ads/moderation/${adId}/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save notes');
+      }
+
+      // Обновляем локальное состояние
+      setModerationQueue(prev => 
+        prev.map(ad => 
+          ad.id === adId 
+            ? { ...ad, moderation_reason: notes }
+            : ad
+        )
+      );
+
+      toast({
+        title: t('common.success'),
+        description: t('autoria.moderation.notesSaved'),
+      });
+    } catch (error) {
+      console.error('[ModerationPage] Error saving notes:', error);
+      toast({
+        title: t('common.error'),
+        description: t('autoria.moderation.notesSaveError'),
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  }, [fetchWithAuth, t, toast]);
+
   const handleCloseModal = useCallback(() => {
     setSelectedAd(null);
   }, []);
-
-  // Проверяем права доступа - только суперюзеры (используем уже объявленную переменную isSuperUser)
 
   if (!isSuperUser) {
     return (
@@ -681,6 +717,7 @@ const ModerationPage = () => {
           onClose={handleCloseModal}
           formatPrice={formatPrice}
           getStatusBadge={getStatusBadge}
+          onSaveNotes={handleSaveModerationNotes}
         />
       </div>
     </div>

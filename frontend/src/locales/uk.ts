@@ -3274,7 +3274,19 @@ export default {
 
   // Toast messages for moderation page
   "moderation.toast.authRequired": "❌ Потрібна аутентифікація",
-  "moderation.toast.authRequiredDescription": "Будь ласка, увійдіть в систему",
+  // Loading messages
+  "loading.searching": "Пошук...",
+  "loading.loadingModeration": "Завантаження модерації...",
+  "loading.loadingStats": "Завантаження статистики...",
+  "loading.loadingAds": "Завантаження оголошень...",
+  "loading.loadingData": "Завантаження даних...",
+  "autoria.mainImage": "Головне",
+  "autoria.moderation.editNotes": "Редагувати примітки",
+  "autoria.moderation.saveNotes": "Зберегти примітки",
+  "autoria.moderation.notesPlaceholder": "Введіть примітки модерації...",
+  "autoria.moderation.notesSaved": "Примітки збережено",
+  "common.saving": "Збереження...",
+  "common.cancel": "Скасувати",
   "basicInfo.formTab": "Форма",
   "basicInfo.demoTab": "Інструменти",
   "basicInfo.toolsTab": "Інструменти",

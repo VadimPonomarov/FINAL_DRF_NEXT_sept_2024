@@ -321,8 +321,8 @@ const SearchPage = () => {
       const msg = String(error?.message || '')
       if (quickFilters.favorites && (msg.includes('401') || /unauthorized/i.test(msg))) {
         toast({
-          title: 'Требуется вход',
-          description: 'Войдите, чтобы видеть избранные объявления',
+          title: t('search.toast.loginRequired'),
+          description: t('search.toast.loginRequiredDescription'),
           variant: 'destructive'
         });
       }
@@ -637,9 +637,9 @@ const SearchPage = () => {
 
       const msg = String(error?.message || '')
       if (msg.toLowerCase().includes('unauthorized') || msg.includes('401')) {
-        toast({ title: 'Требуется вход', description: 'Войдите в систему, чтобы добавлять в избранное', variant: 'destructive' });
+        toast({ title: t('search.toast.loginRequired'), description: t('search.toast.favoriteToggleErrorDescription'), variant: 'destructive' });
       } else {
-        toast({ title: 'Не удалось изменить избранное', description: 'Попробуйте еще раз', variant: 'destructive' });
+        toast({ title: t('search.toast.favoriteToggleError'), description: t('search.toast.favoriteToggleErrorDescription'), variant: 'destructive' });
       }
     } finally {
       setTogglingIds(prev => {
@@ -663,8 +663,8 @@ const SearchPage = () => {
     const car = searchResults.find(c => c.id === carId);
     if (!car || !isOwner(car)) {
       toast({
-        title: 'Нет доступа',
-        description: 'Вы можете удалять только свои объявления',
+        title: t('search.toast.noAccess'),
+        description: t('search.toast.noAccessDescription'),
         variant: 'destructive'
       });
       return;
@@ -694,8 +694,8 @@ const SearchPage = () => {
       setTotalCount(prev => Math.max(0, (prev || 0) - 1));
 
       toast({
-        title: '✅ Объявление удалено',
-        description: 'Объявление успешно удалено',
+        title: t('search.toast.adDeleted'),
+        description: t('search.toast.adDeletedDescription'),
       });
 
     } catch (error: any) {
@@ -704,20 +704,20 @@ const SearchPage = () => {
       const msg = String(error?.message || '');
       if (msg.toLowerCase().includes('unauthorized') || msg.includes('401')) {
         toast({
-          title: 'Требуется вход',
-          description: 'Войдите в систему, чтобы удалять объявления',
+          title: t('search.toast.loginRequiredDelete'),
+          description: t('search.toast.loginRequiredDeleteDescription'),
           variant: 'destructive'
         });
       } else if (msg.toLowerCase().includes('forbidden') || msg.includes('403')) {
         toast({
-          title: 'Нет доступа',
-          description: 'Вы можете удалять только свои объявления',
+          title: t('search.toast.noAccess'),
+          description: t('search.toast.noAccessDescription'),
           variant: 'destructive'
         });
       } else {
         toast({
-          title: 'Ошибка удаления',
-          description: 'Не удалось удалить объявление. Попробуйте еще раз.',
+          title: t('search.toast.deleteError'),
+          description: t('search.toast.deleteErrorDescription'),
           variant: 'destructive'
         });
       }
@@ -1515,7 +1515,7 @@ const SearchPage = () => {
                   </span>
                   {paginationLoading && (
                     <span className="text-xs text-blue-500 animate-pulse">
-                      Загрузка...
+                      {t('loading.pleaseWait')}
                     </span>
                   )}
                 </div>

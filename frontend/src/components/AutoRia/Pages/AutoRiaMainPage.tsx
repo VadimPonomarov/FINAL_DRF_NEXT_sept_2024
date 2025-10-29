@@ -326,7 +326,7 @@ const AutoRiaMainPage = () => {
             size="lg"
             onClick={() => setShowTestAdsModal(true)}
             disabled={isGenerating}
-            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0"
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0 drop-shadow-lg"
           >
             {isGenerating ? (
               <>
@@ -351,7 +351,7 @@ const AutoRiaMainPage = () => {
           <Button
             size="lg"
             onClick={() => setShowAccountManager(true)}
-            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold shadow-md whitespace-nowrap flex-shrink-0 border-0"
+            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold shadow-md whitespace-nowrap flex-shrink-0 border-0 drop-shadow-lg"
           >
             <Settings className="h-5 w-5 mr-2" />
             {t('autoria.testAds.manageAccounts')}
@@ -362,7 +362,7 @@ const AutoRiaMainPage = () => {
             size="lg"
             onClick={clearAllAds}
             disabled={isGenerating}
-            className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0"
+            className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0 drop-shadow-lg"
           >
             <Trash2 className="h-5 w-5 mr-2" />
             {t('autoria.testAds.clearAll')}

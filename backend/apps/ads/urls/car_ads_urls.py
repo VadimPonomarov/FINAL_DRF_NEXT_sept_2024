@@ -13,7 +13,8 @@ from ..views.car_ad_views import (
 
 from ..views.moderation_queue_views import (
     ModerationQueueView, approve_advertisement, reject_advertisement,
-    request_review, moderation_statistics, block_advertisement, activate_advertisement
+    request_review, moderation_statistics, block_advertisement, activate_advertisement,
+    save_moderation_notes
 )
 
 urlpatterns = [
@@ -44,5 +45,6 @@ urlpatterns = [
     path('moderation/<int:ad_id>/review', request_review, name='request_review'),
     path('moderation/<int:ad_id>/block', block_advertisement, name='block_ad'),
     path('moderation/<int:ad_id>/activate', activate_advertisement, name='activate_ad'),
+    path('moderation/<int:ad_id>/notes', save_moderation_notes, name='save_moderation_notes'),
     path('moderation/statistics', moderation_statistics, name='moderation_stats'),
 ]

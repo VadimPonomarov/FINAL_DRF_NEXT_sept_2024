@@ -194,7 +194,7 @@ const AdCard = memo<AdCardProps>(({
               size="sm"
               variant="outline"
               onClick={handleView}
-              className="h-7 px-2.5 text-xs hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-white ml-auto"
+              className="h-7 px-2.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700 dark:hover:border-blue-600 ml-auto"
               title={t('autoria.moderation.viewDetails')}
             >
               <Eye className="h-3.5 w-3.5" />
@@ -205,7 +205,7 @@ const AdCard = memo<AdCardProps>(({
               size="sm"
               variant="destructive"
               onClick={handleDelete}
-              className="h-7 px-2.5 text-xs"
+              className="h-7 px-2.5 text-xs bg-red-50 hover:bg-red-100 text-red-700 border-red-200 hover:border-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-300 dark:border-red-700 dark:hover:border-red-600"
               title={t('common.delete')}
             >
               <X className="h-3.5 w-3.5" />

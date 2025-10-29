@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Calendar,
   MapPin,
@@ -19,7 +21,9 @@ import {
   DollarSign,
   Mail,
   Phone,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Save,
+  Edit3
 } from 'lucide-react';
 import { CarAd } from '@/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
@@ -30,6 +34,7 @@ interface AdDetailsModalProps {
   onClose: () => void;
   formatPrice: (price: number, currency: string, targetCurrency?: string) => string;
   getStatusBadge: (status: string) => React.ReactNode;
+  onSaveNotes?: (adId: number, notes: string) => Promise<void>;
 }
 
 const AdDetailsModal: React.FC<AdDetailsModalProps> = ({
@@ -37,9 +42,40 @@ const AdDetailsModal: React.FC<AdDetailsModalProps> = ({
   isOpen,
   onClose,
   formatPrice,
-  getStatusBadge
+  getStatusBadge,
+  onSaveNotes
 }) => {
   const { t } = useI18n();
+  const [notes, setNotes] = useState('');
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+
+  // Инициализируем заметки при открытии модального окна
+  React.useEffect(() => {
+    if (ad && isOpen) {
+      setNotes(ad.moderation_reason || '');
+      setIsEditingNotes(false);
+    }
+  }, [ad, isOpen]);
+
+  const handleSaveNotes = async () => {
+    if (!ad || !onSaveNotes) return;
+    
+    setIsSavingNotes(true);
+    try {
+      await onSaveNotes(ad.id, notes);
+      setIsEditingNotes(false);
+    } catch (error) {
+      console.error('Error saving notes:', error);
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setNotes(ad?.moderation_reason || '');
+    setIsEditingNotes(false);
+  };
 
   if (!ad) return null;
 
@@ -181,34 +217,120 @@ const AdDetailsModal: React.FC<AdDetailsModalProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {ad.images.map((image, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={image.url || image}
-                        alt={`${ad.title} - ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.currentTarget.src = '/placeholder-car.jpg';
-                        }}
-                      />
-                    </div>
-                  ))}
+                  {ad.images.map((image, index) => {
+                    // Определяем URL изображения из различных возможных полей
+                    const imageUrl = image.image_url || image.image_display_url || image.url || image.image;
+                    
+                    // Если это строка, используем её как URL
+                    const finalUrl = typeof imageUrl === 'string' 
+                      ? (imageUrl.startsWith('http') ? imageUrl : `/api/media/${imageUrl.replace(/^\/+/, '')}`)
+                      : '/placeholder-car.jpg';
+                    
+                    return (
+                      <div key={image.id || index} className="relative">
+                        <img
+                          src={finalUrl}
+                          alt={`${ad.title} - ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            if (target.src !== '/placeholder-car.jpg') {
+                              target.src = '/placeholder-car.jpg';
+                            }
+                          }}
+                        />
+                        {image.is_main && (
+                          <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                            {t('autoria.mainImage')}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Сообщение если нет изображений */}
+          {(!ad.images || ad.images.length === 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  {t('autoria.moderation.images')} (0)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  <ImageIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>{t('autoria.noImages')}</p>
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* Модерационные заметки */}
-          {ad.moderation_reason && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('autoria.moderation.moderationNotes')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">{ad.moderation_reason}</p>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Edit3 className="h-5 w-5" />
+                  {t('autoria.moderation.moderationNotes')}
+                </div>
+                {!isEditingNotes && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditingNotes(true)}
+                    className="h-8 px-3 text-xs"
+                  >
+                    {notes ? t('autoria.moderation.editNotes') : t('autoria.moderation.addNotes')}
+                  </Button>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isEditingNotes ? (
+                <div className="space-y-4">
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder={t('autoria.moderation.notesPlaceholder')}
+                    className="min-h-[100px] resize-none"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveNotes}
+                      disabled={isSavingNotes}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      {isSavingNotes ? t('common.saving') : t('autoria.moderation.saveNotes')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      disabled={isSavingNotes}
+                      className="h-8 px-3 text-xs"
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {notes ? (
+                    <p className="text-gray-700 whitespace-pre-wrap">{notes}</p>
+                  ) : (
+                    <p className="text-gray-500 italic">{t('autoria.moderation.notesPlaceholder')}</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </DialogContent>
     </Dialog>

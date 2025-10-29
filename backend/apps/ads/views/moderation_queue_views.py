@@ -373,3 +373,68 @@ def moderation_statistics(request):
     }
 
     return Response(stats)
+
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="📝 Save Moderation Notes",
+    operation_description="Save moderation notes for an advertisement (staff/superuser only).",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'moderation_reason': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='Moderation notes/reason',
+                example='Advertisement violates platform rules'
+            ),
+        },
+        required=['moderation_reason']
+    ),
+    responses={
+        200: openapi.Response(
+            description="Notes saved successfully",
+            examples={
+                "application/json": {
+                    "success": True,
+                    "message": "Moderation notes saved successfully",
+                    "ad_id": 123,
+                    "moderation_reason": "Advertisement violates platform rules"
+                }
+            }
+        ),
+        400: openapi.Response(description="Bad request - missing moderation_reason"),
+        401: openapi.Response(description="Unauthorized"),
+        403: openapi.Response(description="Forbidden - not staff/superuser"),
+        404: openapi.Response(description="Advertisement not found"),
+    },
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsStaffOrSuperUser])
+def save_moderation_notes(request, ad_id):
+    """Save moderation notes for an advertisement."""
+    try:
+        ad = CarAd.objects.get(id=ad_id)
+    except CarAd.DoesNotExist:
+        return Response(
+            {"error": "Advertisement not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    moderation_reason = request.data.get('moderation_reason', '')
+    
+    if not moderation_reason:
+        return Response(
+            {"error": "moderation_reason is required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Update the advertisement with moderation notes
+    ad.moderation_reason = moderation_reason
+    ad.save(update_fields=['moderation_reason'])
+
+    return Response({
+        "success": True,
+        "message": "Moderation notes saved successfully",
+        "ad_id": ad.id,
+        "moderation_reason": moderation_reason
+    })

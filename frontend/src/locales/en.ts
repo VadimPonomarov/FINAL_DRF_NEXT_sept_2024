@@ -1652,7 +1652,19 @@ export default {
 
   // Toast messages for moderation page
   "moderation.toast.authRequired": "❌ Authentication Required",
-  "moderation.toast.authRequiredDescription": "Please log in to the system",
+  // Loading messages
+  "loading.searching": "Searching...",
+  "loading.loadingModeration": "Loading moderation...",
+  "loading.loadingStats": "Loading statistics...",
+  "loading.loadingAds": "Loading ads...",
+  "loading.loadingData": "Loading data...",
+  "autoria.mainImage": "Main",
+  "autoria.moderation.editNotes": "Edit Notes",
+  "autoria.moderation.saveNotes": "Save Notes",
+  "autoria.moderation.notesPlaceholder": "Enter moderation notes...",
+  "autoria.moderation.notesSaved": "Notes saved",
+  "common.saving": "Saving...",
+  "common.cancel": "Cancel",
   "basicInfo.formTab": "form tab",
   "basicInfo.demoTab": "demo tab",
   "benefits.security.title": "title",
