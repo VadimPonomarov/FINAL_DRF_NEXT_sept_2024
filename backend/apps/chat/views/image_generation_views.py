@@ -1255,12 +1255,12 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     else:
         condition_instruction = ""
     
-    # Простой финальный промпт с четким указанием брендинга
+    # Простой финальный промпт с четким указанием брендинга и реализма
     final_prompt = (
-        f"{brand} {model} {year} {color} {body_type}, "
+        f"Professional automotive photography of {brand} {model} {year} {color} {body_type}, "
         f"{angle_prompt}, "
-        f"{style_prompt}, "
         f"with {brand} brand emblem and badges, "
+        f"photorealistic, high quality, realistic lighting, "
         f"series ID CAR-{car_session_id}"
     )
 

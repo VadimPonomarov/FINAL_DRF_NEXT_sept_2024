@@ -438,11 +438,16 @@ export default {
       backgroundGeneration: "Back"
     },
     platformStats: "Platform Statistics",
+    auth: {
+      loginRequiredTitle: "❌ Login required",
+      loginRequiredDesc: "Please sign in to continue"
+    },
     testAds: {
       howMany: "How many test ads to create? (1-10)",
       invalidNumber: "❌ Please enter a number from 1 to 10",
       startingCreation: "🚀 Starting creation of {count} test ads with images!\n\n⏳ Process may take 1-2 minutes...\n\n📋 What will be created:\n- Various car brands\n- Realistic specifications\n- AI-generated images\n- Full descriptions in Ukrainian",
-      successCreated: "✅ Successfully created {count} test ads with images!\n\n📊 Statistics:\n- Ads: {count}\n- Images: {totalImages}\n- Time: {duration}\n\n🎉 All ads are ready to view!",
+      successCreatedTitle: "✅ Ads created!",
+      successCreatedDetailed: "Successfully created {count} ads!\n🖼️ Total images: {totalImages}\n⏱️ Time: {duration}{details}",
       errorCreating: "❌ Error creating test ads:\n\n{error}\n\n💡 Try:\n- Check internet connection\n- Reduce number of ads\n- Try again in a minute",
       confirmDelete: "⚠️ Are you sure you want to delete ALL your ads?\n\nThis action cannot be undone!",
       successDeleted: "✅ Successfully deleted {count} ads!",

@@ -40,7 +40,26 @@ export function withAutoRiaAuth<P extends object>(
           const backendAuth = localStorage.getItem('backend_auth');
           
           if (!backendAuth) {
-            console.log('[withAutoRiaAuth] ❌ No backend tokens, redirecting to /login');
+            // Попытка рефреша через внутренний API (он сам проверит наличие токенов в Redis)
+            console.log('[withAutoRiaAuth] ❌ No backend tokens in localStorage. Trying refresh via /api/auth/refresh ...');
+            try {
+              const resp = await fetch('/api/auth/refresh', { method: 'POST', cache: 'no-store' });
+              if (resp.ok) {
+                const data = await resp.json();
+                if (data?.access) {
+                  // Синхронизируем localStorage с обновлёнными токенами
+                  localStorage.setItem('backend_auth', JSON.stringify({ access: data.access, refresh: data.refresh }));
+                  console.log('[withAutoRiaAuth] ✅ Refresh succeeded via Redis; tokens saved to localStorage');
+                  setIsAuthorized(true);
+                  return;
+                }
+              }
+            } catch (e) {
+              console.warn('[withAutoRiaAuth] Refresh attempt failed:', e);
+            }
+
+            // Редиректим, только если рефреш не удался / в Redis нет токенов
+            console.log('[withAutoRiaAuth] ❌ Refresh not available or failed. Redirecting to /login');
             const callbackUrl = encodeURIComponent(pathname || '/autoria');
             router.replace(`/login?callbackUrl=${callbackUrl}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`);
             return;
@@ -49,8 +68,23 @@ export function withAutoRiaAuth<P extends object>(
           try {
             const authData = JSON.parse(backendAuth);
             if (!authData?.access || !authData?.refresh) {
-              console.log('[withAutoRiaAuth] ❌ Invalid backend tokens, redirecting to /login');
+              console.log('[withAutoRiaAuth] ❌ Invalid backend tokens in localStorage. Trying refresh via /api/auth/refresh ...');
               localStorage.removeItem('backend_auth');
+              try {
+                const resp = await fetch('/api/auth/refresh', { method: 'POST', cache: 'no-store' });
+                if (resp.ok) {
+                  const data = await resp.json();
+                  if (data?.access) {
+                    localStorage.setItem('backend_auth', JSON.stringify({ access: data.access, refresh: data.refresh }));
+                    console.log('[withAutoRiaAuth] ✅ Refresh succeeded; tokens repaired in localStorage');
+                    setIsAuthorized(true);
+                    return;
+                  }
+                }
+              } catch (e) {
+                console.warn('[withAutoRiaAuth] Refresh attempt failed:', e);
+              }
+
               const callbackUrl = encodeURIComponent(pathname || '/autoria');
               router.replace(`/login?callbackUrl=${callbackUrl}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`);
               return;

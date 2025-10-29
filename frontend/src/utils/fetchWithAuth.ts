@@ -20,12 +20,30 @@
 export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   console.log('[fetchWithAuth] Making request to:', input);
 
+  // Получаем токены из localStorage
+  const getAuthHeaders = () => {
+    if (typeof window === 'undefined') return {};
+    
+    try {
+      const backendAuth = localStorage.getItem('backend_auth');
+      if (backendAuth) {
+        const parsed = JSON.parse(backendAuth);
+        const token: string | undefined = parsed?.access_token || parsed?.access || parsed?.token;
+        if (token) {
+          return { 'Authorization': `Bearer ${token}` };
+        }
+      }
+    } catch (error) {
+      console.warn('[fetchWithAuth] Error parsing backend_auth:', error);
+    }
+    return {};
+  };
+
   const resp = await fetch(input, {
     ...init,
-    // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
-    // credentials: 'include' вызывает CORS ошибку с Access-Control-Allow-Origin: *
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
       ...(init.headers || {})
     },
     cache: 'no-store'
@@ -59,9 +77,9 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
 
       const retry = await fetch(input, {
         ...init,
-        // НЕ используем credentials: 'include'
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders(), // Используем обновленные токены
           ...(init.headers || {})
         },
         cache: 'no-store'

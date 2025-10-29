@@ -9,8 +9,16 @@ import type { CarAdFormData } from '@/types/autoria';
 async function createTestAdsServer(request: NextRequest, count: number, includeImages: boolean, imageTypes: string[], onProgress?: (progress: number, message: string) => void) {
   console.log(`🚀 Creating ${count} test ads on server...`);
 
-  // Create authenticated fetch function (will auto-refresh tokens if needed)
-  const authFetch = (url: string, init?: RequestInit) => ServerAuthManager.authenticatedFetch(request, url, init);
+  // Authenticated fetch: forward client Authorization header (fetchWithAuth does refresh on the client)
+  const authFetch = (url: string, init?: RequestInit) => {
+    const incomingAuth = request.headers.get('authorization') || request.headers.get('Authorization') || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(init?.headers || {}),
+      ...(incomingAuth ? { Authorization: incomingAuth } : {}),
+    } as Record<string, string>;
+    return fetch(url, { ...(init || {}), headers });
+  };
 
   // Уведомляем о начале
   onProgress?.(0, `Начинаем создание ${count} объявлений...`);

@@ -23,6 +23,7 @@ import AccountTypeManager from '@/components/AutoRia/AccountTypeManager';
 import TestAdsGenerationModal from '@/components/AutoRia/Components/TestAdsGenerationModal';
 
 import PlatformStatsWidget from '@/components/AutoRia/Statistics/PlatformStatsWidget';
+import { fetchWithAuth } from '@/utils/fetchWithAuth';
 
 const AutoRiaMainPage = () => {
   const { t, formatNumber } = useI18n();
@@ -71,7 +72,7 @@ const AutoRiaMainPage = () => {
     try {
       console.log(`🔄 Создаем ${count} тестовых объявлений с REVERSE-CASCADE алгоритмом, типы изображений:`, imageTypes);
 
-      const response = await fetch('/api/autoria/test-ads/generate', {
+      const response = await fetchWithAuth('/api/autoria/test-ads/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,20 +84,13 @@ const AutoRiaMainPage = () => {
         })
       });
 
-      // Handle 401 authentication error
-      if (response.status === 401) {
-        const error = await response.json();
+      // 401/403 после попытки авто-рефреша в fetchWithAuth → показываем локализованный тост и выходим
+      if (response.status === 401 || response.status === 403) {
         toast({
-          title: "❌ Требуется аутентификация",
-          description: error.message || "Пожалуйста, войдите в систему",
-          variant: "destructive",
+          title: t('auth.loginRequiredTitle'),
+          description: t('auth.loginRequiredDesc'),
+          variant: 'destructive',
         });
-
-        // Redirect to login with callback URL
-        const currentPath = window.location.pathname;
-        setTimeout(() => {
-          window.location.href = `/login?callbackUrl=${encodeURIComponent(currentPath)}`;
-        }, 1000);
         return;
       }
 
@@ -115,9 +109,9 @@ const AutoRiaMainPage = () => {
         }
 
         // Показываем красивое уведомление об успехе
-        const successMessage = `Успешно создано ${result.count} объявлений!\n🖼️ Всего изображений: ${result.totalImages || 0}\n⏱️ Время: ${result.duration || 'N/A'}${detailsText}`;
+        const successMessage = t('autoria.testAds.successCreatedDetailed', { count: result.count, totalImages: result.totalImages || 0, duration: result.duration || 'N/A', details: detailsText });
         toast({
-          title: "✅ Объявления созданы!",
+          title: t('autoria.testAds.successCreatedTitle'),
           description: successMessage,
           variant: "default",
         });
@@ -128,7 +122,7 @@ const AutoRiaMainPage = () => {
     } catch (error) {
       console.error('Error generating test ads:', error);
       toast({
-        title: "❌ Ошибка создания",
+        title: t('common.error'),
         description: t('autoria.testAds.errorCreating', {
           error: error instanceof Error ? error.message : 'Неизвестная ошибка'
         }),
