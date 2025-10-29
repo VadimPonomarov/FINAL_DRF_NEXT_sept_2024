@@ -48,7 +48,7 @@ export function withAutoRiaAuth<P extends object>(
                 const data = await resp.json();
                 if (data?.access) {
                   // Синхронизируем localStorage с обновлёнными токенами
-                  localStorage.setItem('backend_auth', JSON.stringify({ access: data.access, refresh: data.refresh }));
+                  localStorage.setItem('backend_auth', JSON.stringify({ access: data.access, access_token: data.access, refresh: data.refresh }));
                   console.log('[withAutoRiaAuth] ✅ Refresh succeeded via Redis; tokens saved to localStorage');
                   setIsAuthorized(true);
                   return;
@@ -75,7 +75,7 @@ export function withAutoRiaAuth<P extends object>(
                 if (resp.ok) {
                   const data = await resp.json();
                   if (data?.access) {
-                    localStorage.setItem('backend_auth', JSON.stringify({ access: data.access, refresh: data.refresh }));
+                    localStorage.setItem('backend_auth', JSON.stringify({ access: data.access, access_token: data.access, refresh: data.refresh }));
                     console.log('[withAutoRiaAuth] ✅ Refresh succeeded; tokens repaired in localStorage');
                     setIsAuthorized(true);
                     return;
@@ -91,6 +91,26 @@ export function withAutoRiaAuth<P extends object>(
             }
 
             console.log('[withAutoRiaAuth] ✅ Backend tokens present and valid format');
+
+            // Доп. гарантия: пробуем мягкий рефреш чтобы убедиться, что токены не протухли
+            try {
+              const soft = await fetch('/api/auth/refresh', { method: 'POST', cache: 'no-store' });
+              if (soft.ok) {
+                const data = await soft.json();
+                if (data?.access) {
+                  localStorage.setItem('backend_auth', JSON.stringify({ access: data.access, access_token: data.access, refresh: data.refresh }));
+                  console.log('[withAutoRiaAuth] 🔄 Soft refresh succeeded; tokens updated');
+                }
+              } else if (soft.status === 401) {
+                // Рефреш недоступен → редирект
+                console.log('[withAutoRiaAuth] ❌ Soft refresh returned 401; redirecting to /login');
+                const callbackUrl = encodeURIComponent(pathname || '/autoria');
+                router.replace(`/login?callbackUrl=${callbackUrl}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`);
+                return;
+              }
+            } catch (e) {
+              console.warn('[withAutoRiaAuth] Soft refresh check failed:', e);
+            }
           } catch (error) {
             console.error('[withAutoRiaAuth] ❌ Error parsing backend_auth:', error);
             localStorage.removeItem('backend_auth');

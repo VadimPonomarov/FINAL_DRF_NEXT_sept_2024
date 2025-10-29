@@ -192,9 +192,9 @@ const AdCard = memo<AdCardProps>(({
 
             <Button
               size="sm"
-              variant="outline"
+              variant="ghost"
               onClick={handleView}
-              className="h-7 px-2.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700 dark:hover:border-blue-600 ml-auto"
+              className="h-7 px-2.5 text-xs bg-blue-600 hover:bg-blue-700 hover:brightness-100 hover:saturate-100 text-white border-transparent focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ml-auto"
               title={t('autoria.moderation.viewDetails')}
             >
               <Eye className="h-3.5 w-3.5" />
@@ -203,9 +203,9 @@ const AdCard = memo<AdCardProps>(({
             {/* Кнопка видалення */}
             <Button
               size="sm"
-              variant="destructive"
+              variant="ghost"
               onClick={handleDelete}
-              className="h-7 px-2.5 text-xs bg-red-50 hover:bg-red-100 text-red-700 border-red-200 hover:border-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-300 dark:border-red-700 dark:hover:border-red-600"
+              className="h-7 px-2.5 text-xs bg-red-600 hover:bg-red-700 hover:brightness-100 hover:saturate-100 text-white border-transparent focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
               title={t('common.delete')}
             >
               <X className="h-3.5 w-3.5" />
