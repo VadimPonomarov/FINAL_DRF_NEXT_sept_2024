@@ -32,6 +32,9 @@ import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
 import { useUserProfileData } from '@/hooks/useUserProfileData';
 import { useToast } from '@/hooks/use-toast';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import AdCard from '@/components/AutoRia/Moderation/AdCard';
+import AdTableRow from '@/components/AutoRia/Moderation/AdTableRow';
+import AdDetailsModal from '@/components/AutoRia/Moderation/AdDetailsModal';
 
 interface ModerationStats {
   total_ads: number;
@@ -221,7 +224,7 @@ const ModerationPage = () => {
       console.log(`[Moderation] 🔧 ${action.toUpperCase()} ad ${adId}...`);
 
       const endpoint = `/api/ads/moderation/${adId}/${action}`;
-      const response = await fetch(endpoint, {
+      const response = await fetchWithAuth(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -233,6 +236,10 @@ const ModerationPage = () => {
       });
 
       const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || result.error || `Failed to ${action} ad`);
+      }
 
       if (result.success) {
         console.log(`[Moderation] ✅ Ad ${adId} ${action}ed successfully`);
@@ -330,8 +337,8 @@ const ModerationPage = () => {
     return `${symbol}${formattedNumber}`;
   };
 
-  // Функція зміни статусу оголошення
-  const handleStatusChange = async (adId: number, newStatus: string) => {
+  // Функція зміни статусу оголошення - оптимизированная версия
+  const handleStatusChange = useCallback(async (adId: number, newStatus: string) => {
     try {
       const response = await fetchWithAuth(`/api/ads/admin/${adId}/status/update/`, {
         method: 'PATCH',
@@ -355,14 +362,13 @@ const ModerationPage = () => {
         description: t('autoria.moderation.statusUpdated'),
       });
 
-      // Оновлюємо локальний стан
+      // Оптимизированное обновление - только локальный стейт, без перезагрузки
       setAds(prev => prev.map(ad => 
         ad.id === adId ? { ...ad, status: newStatus } : ad
       ));
       
-      // Оновлюємо статистику
+      // Обновляем только статистику, без перезагрузки списка
       loadModerationStats();
-      loadModerationQueue();
     } catch (error) {
       console.error('[ModerationPage] Error updating status:', error);
       toast({
@@ -371,10 +377,10 @@ const ModerationPage = () => {
         variant: 'destructive',
       });
     }
-  };
+  }, [user, t, toast, loadModerationStats]);
 
-  // Функція видалення оголошення
-  const handleDeleteAd = async (adId: number) => {
+  // Функція видалення оголошення - оптимизированная версия
+  const handleDeleteAd = useCallback(async (adId: number) => {
     if (!confirm(t('autoria.moderation.confirmDelete'))) {
       return;
     }
@@ -393,10 +399,10 @@ const ModerationPage = () => {
         description: t('autoria.moderation.adDeleted'),
       });
 
-      // Оновлюємо локальний стан
+      // Оптимизированное обновление - только локальный стейт
       setAds(prev => prev.filter(ad => ad.id !== adId));
       
-      // Оновлюємо статистику
+      // Обновляем только статистику
       loadModerationStats();
     } catch (error) {
       console.error('[ModerationPage] Error deleting ad:', error);
@@ -406,7 +412,16 @@ const ModerationPage = () => {
         variant: 'destructive',
       });
     }
-  };
+  }, [t, toast, loadModerationStats]);
+
+  // Обработчики для модального окна
+  const handleViewAd = useCallback((ad: CarAd) => {
+    setSelectedAd(ad);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setSelectedAd(null);
+  }, []);
 
   // Проверяем права доступа - только суперюзеры (используем уже объявленную переменную isSuperUser)
 
@@ -610,157 +625,16 @@ const ModerationPage = () => {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {ads.map(ad => (
-              <Card key={ad.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-2 mb-2">
-                        {ad.title}
-                      </CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <Car className="h-4 w-4" />
-                          {ad.brand} {ad.model}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {ad.year}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {ad.city}
-                        </span>
-                      </div>
-                    </div>
-                    {getStatusBadge(ad.status)}
-                  </div>
-                </CardHeader>
-
-                <CardContent>
-                  <div className="space-y-4">
-                    <p className="text-sm text-gray-600 line-clamp-3">
-                      {ad.description}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <div className="text-lg font-bold text-green-600">
-                          {formatPrice(ad.price, ad.currency)}
-                        </div>
-                        {/* Конвертація в інші валюти */}
-                        <div className="flex gap-2 text-xs text-gray-500">
-                          {ad.currency !== 'USD' && (
-                            <span>≈ {formatPrice(ad.price, ad.currency, 'USD')}</span>
-                          )}
-                          {ad.currency !== 'EUR' && (
-                            <span>≈ {formatPrice(ad.price, ad.currency, 'EUR')}</span>
-                          )}
-                          {ad.currency !== 'UAH' && (
-                            <span>≈ {formatPrice(ad.price, ad.currency, 'UAH')}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <User className="h-4 w-4" />
-                        {ad.user?.email}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <Clock className="h-4 w-4" />
-                      {t('autoria.moderation.created')}: {formatDate(new Date(ad.created_at))}
-                    </div>
-
-                    {/* Moderation Actions */}
-                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t">
-                      {/* Селектор зміни статусу */}
-                      <Select
-                        value={ad.status}
-                        onValueChange={(newStatus) => handleStatusChange(ad.id, newStatus)}
-                      >
-                        <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs">
-                          <SelectValue>
-                            <span className="flex items-center gap-1">
-                              <Settings className="h-3 w-3" />
-                              <span>{t(`autoria.moderation.status.${ad.status}`)}</span>
-                            </span>
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">📝 {t('autoria.moderation.status.draft')}</SelectItem>
-                          <SelectItem value="pending">⏳ {t('autoria.moderation.status.pending')}</SelectItem>
-                          <SelectItem value="needs_review">🔍 {t('autoria.moderation.status.needsReview')}</SelectItem>
-                          <SelectItem value="active">✅ {t('autoria.moderation.status.active')}</SelectItem>
-                          <SelectItem value="rejected">❌ {t('autoria.moderation.status.rejected')}</SelectItem>
-                          <SelectItem value="blocked">🚫 {t('autoria.moderation.status.blocked')}</SelectItem>
-                          <SelectItem value="sold">💰 {t('autoria.moderation.status.sold')}</SelectItem>
-                          <SelectItem value="archived">📦 {t('autoria.moderation.status.archived')}</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      {/* Швидкі дії для модерації */}
-                      {(ad.status === 'pending' || ad.status === 'needs_review') && (
-                        <>
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white h-7 px-2.5 text-xs"
-                            onClick={() => moderateAd(ad.id, 'approve')}
-                            title={t('autoria.moderation.approve')}
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white h-7 px-2.5 text-xs"
-                            onClick={() => {
-                              const reason = prompt(t('autoria.moderation.rejectionReasonPrompt'));
-                              if (reason) {
-                                moderateAd(ad.id, 'reject', reason);
-                              }
-                            }}
-                            title={t('autoria.moderation.reject')}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
-
-                      {ad.status === 'blocked' && (
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white h-7 px-2.5 text-xs"
-                          onClick={() => moderateAd(ad.id, 'activate')}
-                          title={t('autoria.moderation.activate')}
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedAd(ad)}
-                        className="h-7 px-2.5 text-xs hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-white ml-auto"
-                        title={t('autoria.moderation.viewDetails')}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
-
-                      {/* Кнопка видалення */}
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDeleteAd(ad.id)}
-                        className="h-7 px-2.5 text-xs"
-                        title={t('common.delete')}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <AdCard
+                key={ad.id}
+                ad={ad}
+                onStatusChange={handleStatusChange}
+                onModerate={moderateAd}
+                onDelete={handleDeleteAd}
+                onView={handleViewAd}
+                formatPrice={formatPrice}
+                getStatusBadge={getStatusBadge}
+              />
             ))}
           </div>
         ) : (
@@ -783,155 +657,31 @@ const ModerationPage = () => {
                 </TableHeader>
                 <TableBody>
                   {ads.map(ad => (
-                    <TableRow key={ad.id} className="hover:bg-gray-50">
-                      <TableCell className="font-mono text-sm">{ad.id}</TableCell>
-                      <TableCell>
-                        <div className="max-w-[200px]">
-                          <div className="font-medium line-clamp-2 mb-1">{ad.title}</div>
-                          <div className="text-xs text-gray-500 line-clamp-2">{ad.description}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">{ad.mark_name || ad.mark || '—'}</div>
-                          <div className="text-gray-500">{ad.model || '—'}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">{ad.year || '—'}</TableCell>
-                      <TableCell className="text-sm font-medium text-green-600">
-                        {formatPrice(ad.price, ad.currency)}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(ad.status)}</TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">{ad.user?.email || '—'}</div>
-                          <div className="text-gray-500">{ad.city_name || ad.city || '—'}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-500">
-                        {formatDate(new Date(ad.created_at))}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1 items-center justify-start">
-                          {/* Селектор зміни статусу */}
-                          <Select
-                            value={ad.status}
-                            onValueChange={(newStatus) => handleStatusChange(ad.id, newStatus)}
-                          >
-                            <SelectTrigger className="h-7 w-auto min-w-[130px] text-xs">
-                              <SelectValue>
-                                <span className="flex items-center gap-1">
-                                  <Settings className="h-3 w-3" />
-                                  <span>{t(`autoria.moderation.status.${ad.status}`)}</span>
-                                </span>
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="draft">📝 {t('autoria.moderation.status.draft')}</SelectItem>
-                              <SelectItem value="pending">⏳ {t('autoria.moderation.status.pending')}</SelectItem>
-                              <SelectItem value="needs_review">🔍 {t('autoria.moderation.status.needsReview')}</SelectItem>
-                              <SelectItem value="active">✅ {t('autoria.moderation.status.active')}</SelectItem>
-                              <SelectItem value="rejected">❌ {t('autoria.moderation.status.rejected')}</SelectItem>
-                              <SelectItem value="blocked">🚫 {t('autoria.moderation.status.blocked')}</SelectItem>
-                              <SelectItem value="sold">💰 {t('autoria.moderation.status.sold')}</SelectItem>
-                              <SelectItem value="archived">📦 {t('autoria.moderation.status.archived')}</SelectItem>
-                            </SelectContent>
-                          </Select>
-
-                          {ad.status === 'pending' || ad.status === 'needs_review' ? (
-                            <>
-                              <Button
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white h-7 px-2.5 text-xs"
-                                onClick={() => moderateAd(ad.id, 'approve')}
-                                title={t('autoria.moderation.approve')}
-                              >
-                                <Check className="h-3.5 w-3.5" />
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white h-7 px-2.5 text-xs"
-                                onClick={() => {
-                                  const reason = prompt(t('autoria.moderation.rejectionReasonPrompt'));
-                                  if (reason) {
-                                    moderateAd(ad.id, 'reject', reason);
-                                  }
-                                }}
-                                title={t('autoria.moderation.reject')}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </Button>
-                            </>
-                          ) : null}
-
-                          {ad.status === 'rejected' ? (
-                            <Button
-                              size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white h-7 px-2.5 text-xs"
-                              onClick={() => moderateAd(ad.id, 'review')}
-                              title={t('autoria.moderation.review')}
-                            >
-                              ⚠️
-                            </Button>
-                          ) : null}
-
-                          {ad.status === 'active' ? (
-                            <Button
-                              size="sm"
-                              className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white h-7 px-2.5 text-xs"
-                              onClick={() => {
-                                const reason = prompt(t('autoria.moderation.blockReason'));
-                                if (reason) {
-                                  moderateAd(ad.id, 'block', reason);
-                                }
-                              }}
-                              title={t('autoria.moderation.block')}
-                            >
-                              🚫
-                            </Button>
-                          ) : null}
-
-                          {ad.status === 'blocked' ? (
-                            <Button
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white h-7 px-2.5 text-xs"
-                              onClick={() => moderateAd(ad.id, 'activate')}
-                              title={t('autoria.moderation.activate')}
-                            >
-                              <Check className="h-3.5 w-3.5" />
-                            </Button>
-                          ) : null}
-
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedAd(ad)}
-                            className="h-7 px-2.5 text-xs hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-white"
-                            title={t('autoria.moderation.viewDetails')}
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-
-                          {/* Кнопка видалення */}
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteAd(ad.id)}
-                            className="h-7 px-2.5 text-xs"
-                            title={t('common.delete')}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <AdTableRow
+                      key={ad.id}
+                      ad={ad}
+                      onStatusChange={handleStatusChange}
+                      onModerate={moderateAd}
+                      onDelete={handleDeleteAd}
+                      onView={handleViewAd}
+                      formatPrice={formatPrice}
+                      getStatusBadge={getStatusBadge}
+                    />
                   ))}
                 </TableBody>
               </Table>
             </div>
           </Card>
         )}
+
+        {/* Модальное окно для просмотра деталей */}
+        <AdDetailsModal
+          ad={selectedAd}
+          isOpen={!!selectedAd}
+          onClose={handleCloseModal}
+          formatPrice={formatPrice}
+          getStatusBadge={getStatusBadge}
+        />
       </div>
     </div>
   );

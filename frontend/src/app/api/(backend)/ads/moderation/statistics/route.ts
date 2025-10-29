@@ -9,7 +9,10 @@ export async function GET(request: NextRequest) {
   try {
     console.log('[Moderation Statistics API] Fetching statistics...');
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // ВАЖНО: На сервере используем BACKEND_URL, а не NEXT_PUBLIC_BACKEND_URL
+    // NEXT_PUBLIC_BACKEND_URL используется в браузере и может быть /api (через nginx)
+    // Для SSR нужно напрямую обращаться к backend
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     const apiUrl = `${backendUrl}/api/ads/cars/moderation/statistics`;
 
     console.log('[Moderation Statistics API] Requesting:', apiUrl);

@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const queryString = searchParams.toString();
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // На сервере используем BACKEND_URL для прямого подключения
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     const apiUrl = `${backendUrl}/api/ads/cars/moderation/queue${queryString ? `?${queryString}` : ''}`;
 
     console.log('[Moderation Queue API] Requesting:', apiUrl);

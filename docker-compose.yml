@@ -90,8 +90,12 @@ services:
   #       NEXT_PUBLIC_IS_DOCKER: "true"
   #       REDIS_HOST: redis
   #       REDIS_URL: redis://redis:6379/0
+  #       # BACKEND_URL используется для SSR и API routes в Next.js
+  #       # Для Docker режима backend доступен по внутреннему DNS имени
   #       BACKEND_URL: http://app:8000
-  #       NEXT_PUBLIC_BACKEND_URL: http://app:8000
+  #       # NEXT_PUBLIC_BACKEND_URL - для клиентской части (браузер)
+  #       # Браузер делает запросы через nginx, поэтому используем относительный путь или nginx URL
+  #       NEXT_PUBLIC_BACKEND_URL: /api
   #       NEXTAUTH_URL_INTERNAL: http://frontend:3000
   #     ports:
   #       - "3000:3000"

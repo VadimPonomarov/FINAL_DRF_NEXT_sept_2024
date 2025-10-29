@@ -56,7 +56,7 @@ export function withAutoRiaAuth<P extends object>(
               return;
             }
 
-            console.log('[withAutoRiaAuth] ✅ Backend tokens valid');
+            console.log('[withAutoRiaAuth] ✅ Backend tokens present and valid format');
           } catch (error) {
             console.error('[withAutoRiaAuth] ❌ Error parsing backend_auth:', error);
             localStorage.removeItem('backend_auth');

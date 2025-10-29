@@ -40,6 +40,7 @@ import re
 import argparse
 from pathlib import Path
 import select
+from dotenv import load_dotenv
 
 class Colors:
     HEADER = '\033[95m'
@@ -998,34 +999,29 @@ def build_frontend():
         show_progress_bar(2, 5, "🧹 Видалення старої збірки...")
         run_command("rm -rf .next", cwd=frontend_dir, check=False, capture_output=False)
 
-    # ⚡ ВАЖЛИВО: Створюємо .env.production.local файл з правильними змінними
-    show_progress_bar(3, 5, "📝 Створення .env.production.local...")
+    # ⚡ ВАЖЛИВО: Завантажуємо змінні з env-config/ ПЕРЕД збіркою
+    show_progress_bar(2, 5, "📝 Завантаження змінних з env-config/...")
     
-    env_production_file = frontend_dir / ".env.production.local"
-    env_content = """NODE_ENV=production
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
-NEXT_PUBLIC_IS_DOCKER=false
-IS_DOCKER=false
-BACKEND_URL=http://localhost:8000
-REDIS_HOST=localhost
-REDIS_URL=redis://localhost:6379/0
-"""
+    root_dir = Path.cwd()
+    env_files = [
+        root_dir / "env-config" / ".env.base",
+        root_dir / "env-config" / ".env.secrets",
+        root_dir / "env-config" / ".env.local",
+    ]
     
-    try:
-        with open(env_production_file, 'w', encoding='utf-8') as f:
-            f.write(env_content)
-        print_success("Файл .env.production.local створено")
-    except Exception as e:
-        print_warning(f"Не вдалося створити .env.production.local: {e}")
+    # Завантажуємо змінні з env-config в process.env
+    for env_file in env_files:
+        if env_file.exists():
+            load_dotenv(env_file, override=True)
+            print(f"   ✅ Завантажено {env_file.name}")
     
-    # ⚡ ВАЖЛИВО: Встановлюємо правильні змінні оточення для production build
+    # Копіюємо в env для збірки
     env = os.environ.copy()
-    env['NEXT_PUBLIC_BACKEND_URL'] = 'http://localhost:8000'
-    env['NEXT_PUBLIC_IS_DOCKER'] = 'false'
     env['NODE_ENV'] = 'production'
     
     print("🔧 Змінні оточення для збірки:")
-    print(f"   NEXT_PUBLIC_BACKEND_URL: {env['NEXT_PUBLIC_BACKEND_URL']}")
+    print(f"   NEXT_PUBLIC_BACKEND_URL: {env.get('NEXT_PUBLIC_BACKEND_URL', 'NOT_SET')}")
+    print(f"   BACKEND_URL: {env.get('BACKEND_URL', 'NOT_SET')}")
     print(f"   NODE_ENV: {env['NODE_ENV']}")
 
     # Production збірка з правильними змінними
@@ -1211,32 +1207,37 @@ def start_local_frontend_background():
     print("💡 Використовується оптимізована production версія")
 
     try:
-        # ⚡ ЧИТАЄМО .env.production.local якщо він існує
-        env_production_file = frontend_dir / ".env.production.local"
+        # ⚡ ВАЖЛИВО: Завантажуємо змінні з env-config/ в process.env
+        root_dir = Path.cwd()
+        env_files = [
+            root_dir / "env-config" / ".env.base",
+            root_dir / "env-config" / ".env.secrets",
+            root_dir / "env-config" / ".env.local",
+        ]
+        
+        # Завантажуємо змінні з env-config в process.env
+        for env_file in env_files:
+            if env_file.exists():
+                load_dotenv(env_file, override=True)
+        
+        # Тепер копіюємо в env (включно з завантаженими змінними)
         env = os.environ.copy()
         
-        # Якщо файл існує, завантажуємо змінні з нього
-        if env_production_file.exists():
-            print("📝 Завантаження змінних з .env.production.local...")
-            with open(env_production_file, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        key, value = line.split('=', 1)
-                        env[key.strip()] = value.strip()
-        
-        # Додаємо/перевизначаємо критичні змінні
+        # Додаємо/перевизначаємо критичні змінні з значениями по умолчанию
         env['NODE_ENV'] = 'production'
         env['IS_DOCKER'] = 'false'
         env['NEXT_PUBLIC_IS_DOCKER'] = 'false'
-        env['NEXT_PUBLIC_BACKEND_URL'] = 'http://localhost:8000'
-        env['BACKEND_URL'] = 'http://localhost:8000'
-        env['REDIS_HOST'] = 'localhost'
-        env['REDIS_URL'] = 'redis://localhost:6379/0'
+        
+        # Используем переменные из env-config или значения по умолчанию
+        env['NEXT_PUBLIC_BACKEND_URL'] = env.get('NEXT_PUBLIC_BACKEND_URL', 'http://localhost/api')
+        env['BACKEND_URL'] = env.get('BACKEND_URL', 'http://localhost:8000')
+        env['REDIS_HOST'] = env.get('REDIS_HOST', 'localhost')
+        env['REDIS_URL'] = env.get('REDIS_URL', 'redis://localhost:6379/0')
 
         print("🔧 Змінні оточення для frontend:")
         print(f"   NODE_ENV: {env['NODE_ENV']}")
         print(f"   NEXT_PUBLIC_BACKEND_URL: {env['NEXT_PUBLIC_BACKEND_URL']}")
+        print(f"   BACKEND_URL: {env.get('BACKEND_URL', 'NOT_SET')}")
         print(f"   NEXT_PUBLIC_IS_DOCKER: {env['NEXT_PUBLIC_IS_DOCKER']}")
 
         # Запускаємо production build (npm run start)

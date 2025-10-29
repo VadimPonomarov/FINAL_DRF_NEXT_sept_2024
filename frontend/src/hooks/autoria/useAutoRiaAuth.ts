@@ -129,6 +129,7 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
         }
       }
 
+      console.log('[useAutoRiaAuth] ✅ Token present and user data loaded');
       setState(prev => ({
         ...prev,
         isAuthenticated: true,

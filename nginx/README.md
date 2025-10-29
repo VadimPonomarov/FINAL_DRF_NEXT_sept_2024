@@ -2,51 +2,60 @@
 
 ## 📋 Огляд
 
-Nginx налаштований як reverse proxy для маршрутизації запитів між frontend та backend сервісами. 
+**Упрощенная конфигурация nginx** - все запросы идут на frontend (localhost:3000), только `/api/`, `/admin/`, `/static/`, `/media/` проксируются на backend.
 
 ## 📁 Структура
 
 ```
 nginx/
-├── nginx.conf           # Головна конфігурація Nginx
-└── README.md           # Ця документація
+├── nginx.conf           # Упрощённая конфигурация Nginx
+└── README.md           # Эта документация
 ```
 
-## ⚙️ Конфігурація
+## ⚙️ Упрощённая конфигурация
 
-### Основні налаштування
-
-- **Порт**: 80 (HTTP)
-- **Worker Processes**: auto (автоматично визначається)
-- **Worker Connections**: 1024
-
-### Маршрутизація
+### Приоритет маршрутов
 
 ```nginx
-# Frontend (Next.js)
-location / {
-    proxy_pass http://frontend:3000;
-}
-
-# Backend API (Django)
+# 1. Backend API (высокий приоритет)
 location /api/ {
-    proxy_pass http://app:8000/api/;
+    proxy_pass http://backend;  # → http://app:8000
 }
 
-# Django Admin
+# 2. Django admin
 location /admin/ {
-    proxy_pass http://app:8000/admin/;
+    proxy_pass http://backend;
 }
 
-# Статичні файли Django
+# 3. Статические файлы
 location /static/ {
-    proxy_pass http://app:8000/static/;
+    proxy_pass http://backend;
 }
 
-# Медіа файли Django
 location /media/ {
-    proxy_pass http://app:8000/media/;
+    proxy_pass http://backend;
 }
+
+# 4. Frontend (всё остальное)
+location / {
+    proxy_pass http://host.docker.internal:3000;  # ← localhost:3000
+}
+```
+
+### Как это работает
+
+```
+http://localhost/ 
+    ↓
+Nginx → http://host.docker.internal:3000 (Frontend, Next.js)
+
+http://localhost/api/ads/
+    ↓
+Nginx → http://app:8000/api/ads/ (Backend, Django)
+
+http://localhost/admin/
+    ↓
+Nginx → http://app:8000/admin/ (Backend, Django Admin)
 ```
 
 ## 🚀 Використання
@@ -157,46 +166,44 @@ location /api/ {
 
 ## 🔧 Troubleshooting
 
-### Проблема: 502 Bad Gateway
+### Проблема: Frontend не доступен (502 Bad Gateway)
 
-**Причина:** Backend сервіс недоступний
+**Причина:** Frontend не запущен на localhost:3000
 
 **Рішення:**
 ```bash
-# Перевірте статус backend
+# Проверьте что frontend запущен локально
+# Откройте http://localhost:3000 в браузере
+
+# Если не работает, запустите frontend:
+cd frontend
+npm run start
+```
+
+### Проблема: 502 Bad Gateway для Backend API
+
+**Причина:** Backend сервис недоступен
+
+**Рішення:**
+```bash
+# Проверьте статус backend
 docker-compose ps app
 
-# Перевірте чи backend listening на порті 8000
-docker-compose exec app netstat -tulpn | grep 8000
-
-# Перезапустіть backend
+# Перезапустите backend
 docker-compose restart app
 ```
 
-### Проблема: 504 Gateway Timeout
+### Проблема: Frontend работает через localhost:3000, но не через nginx
 
-**Причина:** Backend відповідає занадто довго
-
-**Рішення:**
-```nginx
-# Збільшіть таймаути в nginx.conf
-proxy_connect_timeout 600;
-proxy_send_timeout 600;
-proxy_read_timeout 600;
-send_timeout 600;
-```
-
-### Проблема: Статичні файли не завантажуються
-
-**Причина:** Неправильний шлях або права доступу
+**Причина:** host.docker.internal недоступен или frontend не на том же порту
 
 **Рішення:**
 ```bash
-# Перевірте що статичні файли зібрані
-docker-compose exec app python manage.py collectstatic --noinput
+# Проверьте что frontend слушает на порту 3000
+netstat -ano | findstr ":3000"
 
-# Перевірте права доступу
-docker-compose exec app ls -la /backend/staticfiles
+# Проверьте логи nginx
+docker-compose logs nginx | grep "host.docker.internal"
 ```
 
 ## 📚 Додаткові ресурси
