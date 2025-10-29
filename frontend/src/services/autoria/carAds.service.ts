@@ -27,6 +27,9 @@ export class CarAdsService {
       page?: number;
       page_size?: number;
       ordering?: string;
+      status?: string;
+      mine?: boolean; // показывать только свои объявления (без принудительного статуса)
+      owner_id?: number | 'me';
     }
   ): Promise<PaginatedResponse<CarAd>> {
     const queryParams = new URLSearchParams();
@@ -83,12 +86,29 @@ export class CarAdsService {
             paramKey = 'transmission_type';
           }
 
+          // Маппинг фильтра "свои объявления"
+          if (key === 'mine' && value === true) {
+            // На backend предполагаем параметр created_by=me
+            paramKey = 'created_by';
+            paramValue = 'me';
+          }
+          if (key === 'owner_id') {
+            paramKey = 'created_by';
+          }
+
           // Примечание: маппинг параметров цены, года и пробега уже происходит в SearchPage.tsx
           // Здесь мы просто передаем параметры как есть
 
           queryParams.append(paramKey, paramValue);
         }
       });
+    }
+
+    // По умолчанию в публичном поиске показываем только видимые объявления
+    // Если явно не указали статус и не включили режим просмотра своих объявлений, фильтруем по active
+    const isOwnQuery = queryParams.get('created_by') === 'me' || queryParams.has('created_by');
+    if (!queryParams.has('status') && !isOwnQuery) {
+      queryParams.append('status', 'active');
     }
 
     // Используем API route для получения объявлений (с авторизацией)
@@ -237,6 +257,85 @@ export class CarAdsService {
     }
 
     console.log('[CarAdsService] Successfully deleted car ad');
+  }
+
+  // Массовое удаление моих объявлений по списку ID (с фолбэком на поштучное удаление)
+  static async bulkDeleteMyAds(ids: number[]): Promise<{ deleted: number[]; failed: number[] }> {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return { deleted: [], failed: [] };
+    }
+
+    try {
+      const url = `/api/ads/bulk-delete`;
+      const response = await fetchWithAuth(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      });
+
+      if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        return {
+          deleted: data?.deleted_ids || ids,
+          failed: data?.failed_ids || []
+        };
+      }
+      // если бэкенд не поддерживает bulk — падаем в фолбэк
+      console.warn('[CarAdsService] bulk endpoint not available, falling back to per-item deletes');
+    } catch (e) {
+      console.warn('[CarAdsService] bulk delete failed, fallback to per-item:', e);
+    }
+
+    const results = await Promise.allSettled(ids.map(id => this.deleteCarAd(id)));
+    const deleted: number[] = [];
+    const failed: number[] = [];
+    results.forEach((r, idx) => (r.status === 'fulfilled' ? deleted : failed).push(ids[idx]));
+    return { deleted, failed };
+  }
+
+  // Массовое удаление по статусу (если нет endpoint — выбираем мои объявления со статусом и удаляем)
+  static async bulkDeleteMyAdsByStatus(status: string): Promise<{ deleted: number; failed: number }> {
+    try {
+      const url = `/api/ads/bulk-delete?status=${encodeURIComponent(status)}`;
+      const response = await fetchWithAuth(url, { method: 'POST' });
+      if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        return {
+          deleted: Number(data?.deleted || 0),
+          failed: Number(data?.failed || 0)
+        };
+      }
+      console.warn('[CarAdsService] bulk-by-status endpoint not available, falling back to client bulk');
+    } catch (e) {
+      console.warn('[CarAdsService] bulk-by-status failed, fallback to client bulk:', e);
+    }
+
+    // Фолбэк: загрузить мои объявления с этим статусом и удалить по одному
+    const pageData = await this.getMyCarAds({ page: 1, limit: 1000, status });
+    const ids = (pageData.results || []).map(a => a.id as unknown as number);
+    const { deleted, failed } = await this.bulkDeleteMyAds(ids);
+    return { deleted: deleted.length, failed: failed.length };
+  }
+
+  // Обновление статуса объявления владельцем (доступные статусы: draft/active/archived/sold/inactive)
+  static async updateMyAdStatus(id: number, status: string): Promise<CarAd> {
+    console.log('[CarAdsService] Updating my ad status:', { id, status });
+
+    // Пытаемся использовать универсальный PATCH на ads
+    const url = `/api/ads/${id}/`;
+    const response = await fetchWithAuth(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[CarAdsService] Update status error:', response.status, errorText);
+      throw new Error(`Failed to update status: ${response.statusText}`);
+    }
+
+    return response.json();
   }
 
   // Создание нового объявления

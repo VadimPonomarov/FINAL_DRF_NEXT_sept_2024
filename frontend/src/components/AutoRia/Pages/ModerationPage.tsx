@@ -81,6 +81,9 @@ const ModerationPage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [targetCurrency, setTargetCurrency] = useState<'UAH' | 'USD' | 'EUR'>('UAH');
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   // Проверка прав доступа - временно отключена
   // useEffect(() => {
@@ -284,6 +287,59 @@ const ModerationPage = () => {
     }
   }, [user, t, toast, loadModerationQueue, loadModerationStats]);
 
+  // Bulk moderation (approve/reject/block/activate) with fallback per-item
+  const bulkModerate = useCallback(async (
+    action: 'approve' | 'reject' | 'review' | 'block' | 'activate',
+    reason?: string
+  ) => {
+    const ids = Array.from(selectedIds.values());
+    if (ids.length === 0) return;
+
+    try {
+      const resp = await fetchWithAuth('/api/ads/moderation/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, action, reason: reason || '' })
+      });
+      if (resp.ok) {
+        toast({ title: t('common.success'), description: t('autoria.moderation.bulkDone') });
+      } else {
+        // fallback
+        await Promise.allSettled(ids.map(id => moderateAd(id, action, reason)));
+      }
+    } catch {
+      await Promise.allSettled(ids.map(id => moderateAd(id, action, reason)));
+    }
+
+    setSelectedIds(new Set());
+    setSelectAll(false);
+    loadModerationQueue();
+    loadModerationStats();
+  }, [selectedIds, moderateAd, t, toast, loadModerationQueue, loadModerationStats]);
+
+  const bulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds.values());
+    if (ids.length === 0) return;
+    if (!confirm(t('autoria.moderation.confirmBulkDelete') || 'Видалити вибрані оголошення?')) return;
+    try {
+      const resp = await fetchWithAuth('/api/ads/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      });
+      if (!resp.ok) {
+        await Promise.allSettled(ids.map(id => fetchWithAuth(`/api/ads/${id}/`, { method: 'DELETE' })));
+      }
+      toast({ title: t('common.success'), description: t('autoria.moderation.bulkDeleted') });
+    } catch (e) {
+      toast({ title: t('common.error'), description: t('autoria.moderation.deleteFailed'), variant: 'destructive' });
+    }
+    setSelectedIds(new Set());
+    setSelectAll(false);
+    loadModerationQueue();
+    loadModerationStats();
+  }, [selectedIds, t, toast, loadModerationQueue, loadModerationStats]);
+
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case 'pending':
@@ -307,25 +363,42 @@ const ModerationPage = () => {
     }
   }, [t]);
 
-  // Курси валют (можна отримувати з API)
-  const exchangeRates = {
-    USD: 1,
-    EUR: 1.1,
-    UAH: 0.027
-  };
+  // Актуальные курсы из БД (UAH как база)
+  const [currencyRates, setCurrencyRates] = useState<{ USD: number; EUR: number; UAH: number }>({ USD: 41.6, EUR: 45.5, UAH: 1 });
+  useEffect(() => {
+    const loadRates = async () => {
+      try {
+        const resp = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/currency/rates/`, { cache: 'no-store' });
+        if (resp.ok) {
+          const data = await resp.json();
+          const next = { USD: 41.6, EUR: 45.5, UAH: 1 } as { USD: number; EUR: number; UAH: number };
+          if (Array.isArray(data?.rates)) {
+            data.rates.forEach((r: any) => {
+              if (r?.target_currency === 'USD') next.USD = Number(r.rate) || next.USD;
+              if (r?.target_currency === 'EUR') next.EUR = Number(r.rate) || next.EUR;
+              if (r?.target_currency === 'UAH') next.UAH = 1;
+            });
+          }
+          setCurrencyRates(next);
+        }
+      } catch {}
+    };
+    loadRates();
+  }, []);
 
-  const formatPrice = (price: number, currency: string, targetCurrency?: string) => {
+  const formatPrice = (price: number, currency: string, targetCurrencyParam?: string) => {
     const symbols = { USD: '$', EUR: '€', UAH: '₴' };
     
     let finalPrice = price;
     let finalCurrency = currency;
     
     // Конвертація якщо потрібно
-    if (targetCurrency && targetCurrency !== currency) {
-      const fromRate = exchangeRates[currency as keyof typeof exchangeRates] || 1;
-      const toRate = exchangeRates[targetCurrency as keyof typeof exchangeRates] || 1;
-      finalPrice = price * (toRate / fromRate);
-      finalCurrency = targetCurrency;
+    const target = (targetCurrencyParam as 'UAH' | 'USD' | 'EUR') || targetCurrency;
+    if (target && target !== currency) {
+      const fromRateUAH = currencyRates[currency as keyof typeof currencyRates] || 1; // UAH per 1 unit
+      const toRateUAH = currencyRates[target as keyof typeof currencyRates] || 1;
+      finalPrice = (price * fromRateUAH) / toRateUAH;
+      finalCurrency = target;
     }
     
     const symbol = symbols[finalCurrency as keyof typeof symbols] || '$';
@@ -615,6 +688,18 @@ const ModerationPage = () => {
                   {sortOrder === 'asc' ? '↑' : '↓'}
                 </Button>
               </div>
+
+              {/* Валюта */}
+              <Select value={targetCurrency} onValueChange={(v) => setTargetCurrency(v as any)}>
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="UAH">₴ UAH</SelectItem>
+                  <SelectItem value="USD">$ USD</SelectItem>
+                  <SelectItem value="EUR">€ EUR</SelectItem>
+                </SelectContent>
+              </Select>
               
               {/* View mode toggle */}
               <div className="flex items-center gap-2">
@@ -680,6 +765,18 @@ const ModerationPage = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectAll}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectAll(checked);
+                          if (checked) setSelectedIds(new Set(ads.map(a => a.id)));
+                          else setSelectedIds(new Set());
+                        }}
+                      />
+                    </TableHead>
                     <TableHead className="w-12">ID</TableHead>
                     <TableHead className="min-w-[200px]">{t('title')}</TableHead>
                     <TableHead className="w-32">{t('autoria.moderation.brand')}/{t('autoria.moderation.model')}</TableHead>
@@ -693,19 +790,47 @@ const ModerationPage = () => {
                 </TableHeader>
                 <TableBody>
                   {ads.map(ad => (
-                    <AdTableRow
-                      key={ad.id}
-                      ad={ad}
-                      onStatusChange={handleStatusChange}
-                      onModerate={moderateAd}
-                      onDelete={handleDeleteAd}
-                      onView={handleViewAd}
-                      formatPrice={formatPrice}
-                      getStatusBadge={getStatusBadge}
-                    />
+                    <React.Fragment key={ad.id}>
+                      <TableRow className="hidden" />
+                      <TableRow>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(ad.id)}
+                            onChange={(e) => {
+                              setSelectedIds(prev => {
+                                const next = new Set(prev);
+                                if (e.target.checked) next.add(ad.id); else next.delete(ad.id);
+                                return next;
+                              });
+                            }}
+                          />
+                        </TableCell>
+                        {/* Render existing row content via component */}
+                        <AdTableRow
+                          ad={ad}
+                          onStatusChange={handleStatusChange}
+                          onModerate={moderateAd}
+                          onDelete={handleDeleteAd}
+                          onView={handleViewAd}
+                          formatPrice={formatPrice}
+                          getStatusBadge={getStatusBadge}
+                        />
+                      </TableRow>
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>
+            </div>
+            {/* Bulk actions bar */}
+            <div className="flex flex-wrap gap-2 items-center p-4 border-t bg-gray-50">
+              <span className="text-sm text-gray-600 mr-2">{t('autoria.moderation.selected') || 'Вибрано'}: {selectedIds.size}</span>
+              <Button size="icon" title={t('autoria.moderation.approve')} onClick={() => bulkModerate('approve')} disabled={selectedIds.size===0}>✅</Button>
+              <Button size="icon" variant="outline" title={t('autoria.moderation.review')} onClick={() => bulkModerate('review')} disabled={selectedIds.size===0}>🔄</Button>
+              <Button size="icon" variant="destructive" title={t('autoria.moderation.reject')} onClick={() => bulkModerate('reject')} disabled={selectedIds.size===0}>❌</Button>
+              <Button size="icon" variant="outline" title={t('autoria.moderation.block')} onClick={() => bulkModerate('block')} disabled={selectedIds.size===0}>🚫</Button>
+              <Button size="icon" variant="outline" title={t('autoria.moderation.activate')} onClick={() => bulkModerate('activate')} disabled={selectedIds.size===0}>✅</Button>
+              <Button size="icon" variant="destructive" title={t('common.delete')} onClick={bulkDelete} disabled={selectedIds.size===0}>🗑️</Button>
             </div>
           </Card>
         )}

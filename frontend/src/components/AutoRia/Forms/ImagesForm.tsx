@@ -704,33 +704,28 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
         return;
       }
 
-      // Запускаем генерацию асинхронно с использованием того же mock алгоритма, что и в тестовых объявлениях
-      console.log('[ImagesForm] 🎨 Using MOCK ALGORITHM (same as test ads) for consistency');
-      fetch('/api/llm/generate-car-images', {
+      // Запускаем генерацию через backend mock-алгоритм — идентично демо-объявлениям
+      console.log('[ImagesForm] 🎨 Calling backend /api/chat/generate-car-images-mock (same as test ads)');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      fetch(`${backendUrl}/api/chat/generate-car-images-mock/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          formData: {
-            brand: typeof data.brand === 'string' ? data.brand : (data.mark as any)?.name || (data.brand as any)?.name || '',
-            brand_name: data.brand_name || '',
+          car_data: {
+            brand: typeof data.brand === 'string' ? data.brand : (data as any).brand_name || (data as any).brand || '',
             model: typeof data.model === 'string' ? data.model : (data.model as any)?.name || '',
             year: data.year,
-            color: typeof data.color === 'string' ? data.color : (data.color as any)?.name || 'silver',
+            color: (typeof data.color === 'string' ? data.color : (data as any).color_name) || 'silver',
             body_type: data.body_type || 'sedan',
             vehicle_type: (data as any).vehicle_type,
-            vehicle_type_name: (data as any).vehicle_type_name,
+            vehicle_type_name: (data as any).vehicle_type_name || (data.body_type as any) || 'car',
             condition: data.condition || 'good',
-            fuel_type: data.fuel_type || '',
-            title: data.title || '',
-            description: data.description || '' // Передаем описание для улучшения промпта
+            description: data.description || ''
           },
-          angles: toGenerate, // Передаем выбранные типы изображений
+          angles: toGenerate,
           style: 'realistic',
-          useDescription: true, // Включаем использование описания
-          use_mock_algorithm: true // 🎯 КРИТИЧНО: Используем тот же mock алгоритм, что и в тестовых объявлениях
-        }),
+          use_mock_algorithm: true
+        })
       })
       .then(async (response): Promise<any> => {
         if (!response.ok) {
@@ -742,7 +737,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
       .then((result: any) => {
         console.log('🎨 [ImagesForm] ASYNC Generation completed:', result);
 
-        if (result.images && result.images.length > 0) {
+        if ((result.success || result.status === 'ok') && result.images && result.images.length > 0) {
           // Определяем, есть ли уже главное фото, чтобы не создавать дубликаты
           const hasExistingMain = typeof mainExistingImageIndex === 'number' && (mainExistingImageIndex as number) >= 0;
           const hasGeneratedMain = [...(aiImages as any[]), ...(localAiImages as any[])].some((im: any) => !!im?.isMain);

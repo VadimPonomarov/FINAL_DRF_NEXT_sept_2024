@@ -216,7 +216,7 @@ const SearchPage: React.FC = () => {
         </h3>
         
         {/* 💰 Цена */}
-        <div className="text-2xl font-bold text-green-600 mb-3">
+        <div className="text-2xl font-bold text-green-600 mb-3 text-right tabular-nums">
           {formatPrice(ad.price, ad.currency)}
         </div>
         

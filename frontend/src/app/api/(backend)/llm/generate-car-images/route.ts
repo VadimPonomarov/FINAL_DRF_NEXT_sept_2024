@@ -259,14 +259,12 @@ export async function POST(request: NextRequest) {
     try {
       generatedImages = await generateCarImagesWithBackend(formData, angles, style, carSessionId, use_mock_algorithm, request);
     } catch (error) {
-      console.error('Backend generation failed, using pollinations fallback:', error);
+      console.error('Backend generation failed, using placeholder fallback (pollinations disabled):', error);
 
-      // Fallback: generate real images via pollinations.ai (not placeholder)
-      const seed = hashToSeed(`CAR-${carSessionId}`);
+      // Fallback: deterministic placeholders to avoid external DNS failures
       generatedImages = angles.map((angle, i) => {
         const prompt = createCarImagePrompt(canonical, angle, style, carSessionId);
-        const encoded = encodeURIComponent(prompt);
-        const url = `https://image.pollinations.ai/prompt/${encoded}?width=800&height=600&model=flux&enhance=true&seed=${seed}`;
+        const url = generatePlaceholderImage(`${canonical.brand} ${canonical.model} ${angle}`);
         return {
           url,
           angle,
