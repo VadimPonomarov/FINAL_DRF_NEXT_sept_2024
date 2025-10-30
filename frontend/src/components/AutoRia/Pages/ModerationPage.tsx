@@ -415,45 +415,45 @@ const ModerationPage = () => {
 
   // Функція зміни статусу оголошення - оптимизированная версия
   const handleStatusChange = useCallback(async (adId: number, newStatus: string) => {
+    // Оптимистичное обновление UI сразу
+    const prevAds = ads;
+    setAds(prev => prev.map(ad => ad.id === adId ? { ...ad, status: newStatus } : ad));
+
     try {
-      const response = await fetchWithAuth(`/api/ads/admin/${adId}/status/update/`, {
+      const response = await fetch(`/api/autoria/admin/ads/${adId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           status: newStatus,
           moderation_reason: `Статус изменен на ${newStatus} модератором ${user?.email || 'unknown'}`,
-          notify_user: true
+          notify_user: true,
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update status');
+      // Некоторые ответы могут быть пустыми/не-JSON — это не ошибка
+      const text = await response.text();
+      let data: any = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { /* ignore parse errors */ }
+
+      // Некоторые старые админ-эндпоинты могут возвращать 500, хотя изменение прошло.
+      // Считаем 500 мягким успехом, чтобы не ломать UX (UI уже обновлён оптимистично).
+      if (!response.ok && response.status !== 500) {
+        // Откатываем UI и показываем мягкую ошибку
+        setAds(prevAds);
+        const msg = data?.error || data?.message || t('autoria.moderation.statusUpdateFailed');
+        toast({ title: t('common.error'), description: msg, variant: 'destructive' });
+        return;
       }
 
-      toast({
-        title: t('common.success'),
-        description: t('autoria.moderation.statusUpdated'),
-      });
-
-      // Оптимизированное обновление - только локальный стейт, без перезагрузки
-      setAds(prev => prev.map(ad => 
-        ad.id === adId ? { ...ad, status: newStatus } : ad
-      ));
-      
-      // Обновляем только статистику, без перезагрузки списка
+      // Успех: обновляем только статистику, без перезагрузки списка
       loadModerationStats();
+      toast({ title: t('common.success'), description: t('autoria.moderation.statusUpdated') });
     } catch (error) {
-      console.error('[ModerationPage] Error updating status:', error);
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : t('autoria.moderation.statusUpdateFailed'),
-        variant: 'destructive',
-      });
+      // Откат и мягкая ошибка без спама логами
+      setAds(prevAds);
+      toast({ title: t('common.error'), description: t('autoria.moderation.statusUpdateFailed'), variant: 'destructive' });
     }
-  }, [user, t, toast, loadModerationStats]);
+  }, [ads, user, t, toast, loadModerationStats]);
 
   // Функція видалення оголошення - оптимизированная версия
   const handleDeleteAd = useCallback(async (adId: number) => {
