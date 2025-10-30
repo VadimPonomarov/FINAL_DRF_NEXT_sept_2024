@@ -321,21 +321,37 @@ export class CarAdsService {
   static async updateMyAdStatus(id: number, status: string): Promise<CarAd> {
     console.log('[CarAdsService] Updating my ad status:', { id, status });
 
-    // Используем owner endpoint
-    const url = `/api/ads/cars/${id}/status`;
+    // Используем owner endpoint через бэкенд API роут
+    const url = `/api/autoria/cars/${id}/status`;
     const response = await fetchWithAuth(url, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      credentials: 'include',
       body: JSON.stringify({ status })
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[CarAdsService] Update status error:', response.status, errorText);
-      throw new Error(`Failed to update status: ${response.statusText}`);
+      let errorMessage = `Failed to update status: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.error || errorMessage;
+      } catch (e) {
+        // If we can't parse the error as JSON, use the status text
+        console.error('Error parsing error response:', e);
+      }
+      console.error('[CarAdsService] Update status error:', response.status, errorMessage);
+      throw new Error(errorMessage);
     }
 
-    return response.json();
+    try {
+      return await response.json();
+    } catch (e) {
+      console.error('Error parsing response:', e);
+      return { id, status } as CarAd; // Return minimal response if parsing fails
+    }
   }
 
   // Создание нового объявления

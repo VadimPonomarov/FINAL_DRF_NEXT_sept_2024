@@ -759,7 +759,8 @@ class MyCarAdsListView(generics.ListAPIView):
             )
         ).order_by('-created_at')
 
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -767,30 +768,41 @@ from core.enums.ads import AdStatusEnum
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
 def owner_update_ad_status(request, pk: int):
     """Allow ad owner to update status without superuser rights.
 
     Accepts JSON {"status": "<ad_status>"} where status is one of AdStatusEnum values.
     Validates that the ad belongs to the authenticated user.
     """
-    ad = get_object_or_404(CarAd, pk=pk)
-    if not getattr(ad, 'account', None) or not getattr(ad.account, 'user', None) or ad.account.user != request.user:
-        return Response({ 'error': 'forbidden' }, status=403)
+    try:
+        ad = get_object_or_404(CarAd, pk=pk)
+        if not getattr(ad, 'account', None) or not getattr(ad.account, 'user', None) or ad.account.user != request.user:
+            return Response({'error': 'forbidden'}, status=403)
 
-    new_status = (request.data or {}).get('status')
-    if not new_status:
-        return Response({ 'error': 'status is required' }, status=400)
+        # Get status from request data
+        new_status = request.data.get('status')
+        if not new_status:
+            return Response({'error': 'status is required'}, status=400)
 
-    valid_values = [c[0] for c in AdStatusEnum.choices]
-    if new_status not in valid_values:
-        return Response({ 'error': 'invalid status', 'allowed': valid_values }, status=400)
+        # Validate status
+        valid_values = [c[0] for c in AdStatusEnum.choices]
+        if new_status not in valid_values:
+            return Response({'error': 'invalid status', 'allowed': valid_values}, status=400)
 
-    # Apply new status. For owner actions, allow direct set to any valid status
-    ad.status = new_status
-    ad.is_validated = new_status == AdStatusEnum.ACTIVE
-    ad.save(update_fields=['status', 'is_validated'])
-
-    return Response({ 'success': True, 'id': ad.id, 'status': ad.status })
+        # Apply new status
+        ad.status = new_status
+        ad.is_validated = new_status == AdStatusEnum.ACTIVE
+        ad.save(update_fields=['status', 'is_validated', 'updated_at'])
+        
+        # Return success response with updated ad data
+        from apps.ads.serializers.car_ad_serializer import CarAdSerializer
+        serializer = CarAdSerializer(ad, context={'request': request})
+        return Response(serializer.data)
+        
+    except Exception as e:
+        logger.error(f'Error updating ad status: {str(e)}', exc_info=True)
+        return Response({'error': 'Internal server error'}, status=500)
 
 
 # Function-based views for additional functionality
