@@ -76055,7 +76055,7 @@ className={`${
 // Базовые типы
 export type Currency = 'USD' | 'EUR' | 'UAH';
 export type AccountType = 'basic' | 'premium';
-export type AdStatus = 'draft' | 'pending' | 'active' | 'needs_review' | 'rejected' | 'sold' | 'archived';
+export type AdStatus = 'draft' | 'pending' | 'active' | 'needs_review' | 'rejected' | 'blocked' | 'sold' | 'archived';
 export type UserRole = 'buyer' | 'seller' | 'manager' | 'admin';
 // Удален неиспользуемый тип ContactType
 

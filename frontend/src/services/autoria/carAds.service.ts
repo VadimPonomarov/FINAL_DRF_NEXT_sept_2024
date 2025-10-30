@@ -317,12 +317,12 @@ export class CarAdsService {
     return { deleted: deleted.length, failed: failed.length };
   }
 
-  // Обновление статуса объявления владельцем (доступные статусы: draft/active/archived/sold/inactive)
+  // Обновление статуса объявления владельцем (owner endpoint принимает только статус)
   static async updateMyAdStatus(id: number, status: string): Promise<CarAd> {
     console.log('[CarAdsService] Updating my ad status:', { id, status });
 
-    // Используем явный backend-совместимый путь
-    const url = `/api/ads/cars/${id}/update`;
+    // Используем owner endpoint
+    const url = `/api/ads/cars/${id}/status`;
     const response = await fetchWithAuth(url, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

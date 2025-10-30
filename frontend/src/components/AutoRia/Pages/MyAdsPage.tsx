@@ -44,6 +44,7 @@ import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
 import { CurrencySelector } from '@/components/AutoRia/CurrencySelector/CurrencySelector';
 import { usePriceConverter } from '@/hooks/usePriceConverter';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
 
 const MyAdsPage = () => {
   const { t } = useI18n();
@@ -64,6 +65,7 @@ const MyAdsPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const { toast } = useToast();
 
   // Загрузка данных из API
   const loadAds = useCallback(async () => {
@@ -97,6 +99,12 @@ const MyAdsPage = () => {
           break;
         case 'title_desc':
           ordering = '-title';
+          break;
+        case 'status_asc':
+          ordering = 'status';
+          break;
+        case 'status_desc':
+          ordering = '-status';
           break;
       }
 
@@ -206,18 +214,36 @@ const MyAdsPage = () => {
 
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{t('statusActive')}</Badge>;
+      case 'draft':
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">{t('autoria.moderation.status.draft')}</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{t('statusPending')}</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{t('autoria.moderation.status.pending')}</Badge>;
+      case 'needs_review':
+        return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">{t('autoria.moderation.status.needsReview')}</Badge>;
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{t('autoria.moderation.status.active')}</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{t('statusRejected')}</Badge>;
-      case 'inactive':
-        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{t('statusInactive')}</Badge>;
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{t('autoria.moderation.status.rejected')}</Badge>;
+      case 'blocked':
+        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{t('autoria.moderation.status.blocked')}</Badge>;
+      case 'sold':
+        return <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100">{t('autoria.moderation.status.sold')}</Badge>;
+      case 'archived':
+        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">{t('autoria.moderation.status.archived')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
   }, [t]);
+
+  const handleOwnerStatusChange = useCallback(async (adId: number, newStatus: string) => {
+    try {
+      await CarAdsService.updateMyAdStatus(adId, newStatus);
+      setAds(prev => prev.map(ad => ad.id === adId ? { ...ad, status: newStatus } : ad));
+      toast({ variant: 'default', title: t('notifications.success'), description: t('autoria.moderation.statusUpdated'), duration: 2000 });
+    } catch (e) {
+      toast({ variant: 'destructive', title: t('notifications.error'), description: t('autoria.moderation.statusUpdateFailed'), duration: 3000 });
+    }
+  }, [toast, t]);
 
   // Фильтрация теперь происходит на backend через API параметры
 
@@ -285,23 +311,13 @@ const MyAdsPage = () => {
           <div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('myAdsTitle')}</h1>
             <p className="text-slate-600">{t('myAdsDesc')}</p>
-            {user && (
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="text-xs">
-                  {user.email}
-                </Badge>
-                <Badge variant="secondary" className="text-xs capitalize">
-                  {user.account_type}
-                </Badge>
-              </div>
-            )}
+            <Link href="/autoria/create-ad">
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                <Plus className="h-4 w-4 mr-2" />
+                {t('autoria.createAd')}
+              </Button>
+            </Link>
           </div>
-          <Link href="/autoria/create-ad">
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-              <Plus className="h-4 w-4 mr-2" />
-              {t('autoria.createAd')}
-            </Button>
-          </Link>
         </div>
 
         {/* Filters */}
@@ -331,11 +347,15 @@ const MyAdsPage = () => {
                   <SelectValue placeholder={t('autoria.statusFilter')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('autoria.allStatuses')}</SelectItem>
-                  <SelectItem value="active">{t('autoria.active')}</SelectItem>
-                  <SelectItem value="pending">{t('autoria.pending')}</SelectItem>
-                  <SelectItem value="rejected">{t('autoria.rejected')}</SelectItem>
-                  <SelectItem value="inactive">{t('autoria.inactive')}</SelectItem>
+                  <SelectItem value="all">{t('autoria.moderation.allStatuses')}</SelectItem>
+                  <SelectItem value="draft">{t('autoria.moderation.status.draft')}</SelectItem>
+                  <SelectItem value="pending">{t('autoria.moderation.status.pending')}</SelectItem>
+                  <SelectItem value="needs_review">{t('autoria.moderation.status.needsReview')}</SelectItem>
+                  <SelectItem value="active">{t('autoria.moderation.status.active')}</SelectItem>
+                  <SelectItem value="rejected">{t('autoria.moderation.status.rejected')}</SelectItem>
+                  <SelectItem value="blocked">{t('autoria.moderation.status.blocked')}</SelectItem>
+                  <SelectItem value="sold">{t('autoria.moderation.status.sold')}</SelectItem>
+                  <SelectItem value="archived">{t('autoria.moderation.status.archived')}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={sortBy} onValueChange={setSortBy}>
@@ -350,6 +370,8 @@ const MyAdsPage = () => {
                   <SelectItem value="views_desc">{t('autoria.byViews')}</SelectItem>
                   <SelectItem value="title_asc">По названию (А-Я)</SelectItem>
                   <SelectItem value="title_desc">По названию (Я-А)</SelectItem>
+                  <SelectItem value="status_asc">{t('autoria.moderation.status')}</SelectItem>
+                  <SelectItem value="status_desc">{t('autoria.moderation.status')} ↓</SelectItem>
                 </SelectContent>
               </Select>
               {/* View toggle */}
@@ -510,6 +532,7 @@ const MyAdsPage = () => {
                 archiveLabel={t('autoria.moderation.status.archived')}
                 soldLabel={t('autoria.moderation.status.sold')}
                 deleteLabel={t('delete')}
+                getStatusBadge={getStatusBadge}
               />
             ))}
           </div>
@@ -536,7 +559,7 @@ const MyAdsPage = () => {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-xl font-bold text-blue-600 tabular-nums">{formatPrice(ad)}</div>
-                      <div className="text-xs text-slate-500">{ad.status}</div>
+                      <div className="mt-1">{getStatusBadge(ad.status)}</div>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-3 items-center">
@@ -561,7 +584,7 @@ const MyAdsPage = () => {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'inactive').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'inactive'}:a)))}><EyeOff className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'draft').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'draft'}:a)))}><EyeOff className="h-4 w-4" /></Button>
                         </TooltipTrigger>
                         <TooltipContent>{t('autoria.hide')}</TooltipContent>
                       </Tooltip>
@@ -611,7 +634,9 @@ const MyAdCard: React.FC<{
   archiveLabel: string;
   soldLabel: string;
   deleteLabel: string;
-}> = memo(({ ad, onClick, onDelete, onStatusChange, formatPrice, selected, onToggleSelected, viewLabel, editLabel, activateLabel, hideLabel, archiveLabel, soldLabel, deleteLabel }) => {
+  getStatusBadge: (status: string) => React.ReactNode;
+}> = memo(({ ad, onClick, onDelete, onStatusChange, formatPrice, selected, onToggleSelected, viewLabel, editLabel, activateLabel, hideLabel, archiveLabel, soldLabel, deleteLabel, getStatusBadge }) => {
+  const { t } = useI18n();
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 group">
                 <CardContent className="p-0">
@@ -639,10 +664,12 @@ const MyAdCard: React.FC<{
                           </div>
                         </div>
                         <div className="text-right">
-                <div className="text-xl font-bold text-blue-600 tabular-nums">
-                  {formatPrice(ad)}
+                          <div className="text-xl font-bold text-blue-600 tabular-nums">
+                            {formatPrice(ad)}
                           </div>
-                <div className="text-xs text-slate-500">{ad.status}</div>
+                          <div className="mt-1">
+                            {getStatusBadge(ad.status)}
+                          </div>
                         </div>
                       </div>
 

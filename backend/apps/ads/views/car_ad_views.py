@@ -759,6 +759,39 @@ class MyCarAdsListView(generics.ListAPIView):
             )
         ).order_by('-created_at')
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from core.enums.ads import AdStatusEnum
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def owner_update_ad_status(request, pk: int):
+    """Allow ad owner to update status without superuser rights.
+
+    Accepts JSON {"status": "<ad_status>"} where status is one of AdStatusEnum values.
+    Validates that the ad belongs to the authenticated user.
+    """
+    ad = get_object_or_404(CarAd, pk=pk)
+    if not getattr(ad, 'account', None) or not getattr(ad.account, 'user', None) or ad.account.user != request.user:
+        return Response({ 'error': 'forbidden' }, status=403)
+
+    new_status = (request.data or {}).get('status')
+    if not new_status:
+        return Response({ 'error': 'status is required' }, status=400)
+
+    valid_values = [c[0] for c in AdStatusEnum.choices]
+    if new_status not in valid_values:
+        return Response({ 'error': 'invalid status', 'allowed': valid_values }, status=400)
+
+    # Apply new status. For owner actions, allow direct set to any valid status
+    ad.status = new_status
+    ad.is_validated = new_status == AdStatusEnum.ACTIVE
+    ad.save(update_fields=['status', 'is_validated'])
+
+    return Response({ 'success': True, 'id': ad.id, 'status': ad.status })
+
 
 # Function-based views for additional functionality
 

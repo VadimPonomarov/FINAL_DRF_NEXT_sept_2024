@@ -7,7 +7,8 @@ from .views.car_ad_views import (
     CarAdListView, CarAdCreateView, CarAdDetailView,
     CarAdUpdateView, CarAdDeleteView, MyCarAdsListView,
     car_ad_check_limits, car_ad_statistics, car_ad_analytics,
-    cleanup_all_ads
+    cleanup_all_ads,
+    owner_update_ad_status
 )
 from .views.reference_views import (
     CarMarkListCreateView, CarMarkRetrieveUpdateDestroyView,
@@ -37,6 +38,7 @@ urlpatterns = [
     path('cars/<int:pk>/', CarAdDetailView.as_view(), name='car-ads-detail'),
     path('cars/<int:pk>/update', CarAdUpdateView.as_view(), name='car-ads-update'),
     path('cars/<int:pk>/delete', CarAdDeleteView.as_view(), name='car-ads-delete'),
+    path('cars/<int:pk>/status', owner_update_ad_status, name='car-ads-status-owner'),
 
     # Мои объявления
     path('cars/my', MyCarAdsListView.as_view(), name='my-car-ads'),

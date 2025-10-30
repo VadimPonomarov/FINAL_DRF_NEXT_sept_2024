@@ -8,7 +8,8 @@ from ..views.car_ad_views import (
     CarAdUpdateView, CarAdDeleteView, MyCarAdsListView,
     TestModerationView,
     validate_car_ad, car_ad_statistics, car_ad_analytics,
-    check_ad_creation_limits, cleanup_all_ads
+    check_ad_creation_limits, cleanup_all_ads,
+    owner_update_ad_status
 )
 
 from ..views.moderation_queue_views import (
@@ -30,6 +31,7 @@ urlpatterns = [
     path('my', MyCarAdsListView.as_view(), name='my_car_ads_list'),
     path('<int:pk>/update', CarAdUpdateView.as_view(), name='car_ads_update'),
     path('<int:pk>/delete', CarAdDeleteView.as_view(), name='car_ads_delete'),
+    path('<int:pk>/status', owner_update_ad_status, name='car_ads_status_owner_update'),
 
     # Additional functionality
     path('<int:pk>/validate', validate_car_ad, name='car_ads_validate'),

@@ -239,54 +239,56 @@ const ModerationPage = () => {
         })
       });
 
-      const result = await response.json();
+      // Try to parse JSON, but don't rely on specific shape
+      let result: any = null;
+      try { result = await response.json(); } catch { result = null; }
 
       if (!response.ok) {
-        throw new Error(result.message || result.error || `Failed to ${action} ad`);
+        const msg = result?.message || result?.error || `Failed to ${action} ad`;
+        throw new Error(msg);
       }
 
-      if (result.success) {
-        console.log(`[Moderation] ✅ Ad ${adId} ${action}ed successfully`);
+      // Success path: update local state optimistically without full reload
+      const actionMessages = {
+        approve: t('notifications.moderationApproved'),
+        reject: t('notifications.moderationRejected'),
+        review: t('notifications.moderationReviewSent'),
+        block: t('notifications.moderationBlocked'),
+        activate: t('notifications.moderationActivated')
+      } as const;
 
-        // Show success message
-        const actionMessages = {
-          approve: t('notifications.moderationApproved'),
-          reject: t('notifications.moderationRejected'),
-          review: t('notifications.moderationReviewSent'),
-          block: t('notifications.moderationBlocked'),
-          activate: t('notifications.moderationActivated')
-        };
+      // Map quick-action to resulting status
+      const nextStatusMap: Record<typeof action, string> = {
+        approve: 'active',
+        reject: 'rejected',
+        review: 'needs_review',
+        block: 'blocked',
+        activate: 'active'
+      };
 
-        toast({
-          variant: 'default',
-          title: t('notifications.success'),
-          description: actionMessages[action],
-          duration: 3000
-        });
+      const newStatus = nextStatusMap[action];
+      setAds(prev => prev.map(ad => ad.id === adId ? { ...ad, status: newStatus } : ad));
+      setSelectedAd(null);
+      // Update only stats, avoid reloading the whole list
+      loadModerationStats();
 
-        // Refresh the queue
-        loadModerationQueue();
-        loadModerationStats();
-        setSelectedAd(null);
-      } else {
-        console.error(`[Moderation] ❌ Failed to ${action} ad:`, result.message);
-        toast({
-          variant: 'destructive',
-          title: t('notifications.error'),
-          description: result.message || t('notifications.moderationActionError'),
-          duration: 4000
-        });
-      }
+      toast({
+        variant: 'default',
+        title: t('notifications.success'),
+        description: actionMessages[action],
+        duration: 2500
+      });
+
     } catch (error) {
       console.error(`[Moderation] ❌ Failed to ${action} ad:`, error);
       toast({
         variant: 'destructive',
         title: t('notifications.error'),
         description: t('notifications.moderationActionError'),
-        duration: 4000
+        duration: 3500
       });
     }
-  }, [user, t, toast, loadModerationQueue, loadModerationStats]);
+  }, [user, t, toast, loadModerationStats]);
 
   // Bulk moderation (approve/reject/block/activate) with fallback per-item
   const bulkModerate = useCallback(async (
