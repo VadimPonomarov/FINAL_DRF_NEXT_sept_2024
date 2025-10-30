@@ -1,5 +1,5 @@
 import AutoRiaLayout from "@/components/AutoRia/Layout/AutoRiaLayout";
-import { AutoRiaAuthGuard } from "@/components/AutoRia/Auth/AutoRiaAuthGuard";
+import BackendTokenPresenceGate from "@/components/AutoRia/Auth/BackendTokenPresenceGate";
 
 /**
  * Серверный layout для AutoRia
@@ -7,7 +7,7 @@ import { AutoRiaAuthGuard } from "@/components/AutoRia/Auth/AutoRiaAuthGuard";
  * 
  * Порядок проверок:
  * 1. Middleware: NextAuth сессия → если нет → /api/auth/signin
- * 2. AuthGuard (клиентский): Backend токены → если нет → /login
+ * 2. BackendTokenPresenceGate (клиентский): Проверяет ТОЛЬКО наличие токенов в Redis → если нет → /login
  * 3. API запросы: 401/403 → refresh токенов или редирект
  */
 export default function AutoRiaLayoutWrapper({
@@ -16,10 +16,10 @@ export default function AutoRiaLayoutWrapper({
   children: React.ReactNode;
 }) {
   return (
-    <AutoRiaAuthGuard requireBackendAuth={true}>
+    <BackendTokenPresenceGate>
       <AutoRiaLayout>
         {children}
       </AutoRiaLayout>
-    </AutoRiaAuthGuard>
+    </BackendTokenPresenceGate>
   );
 }

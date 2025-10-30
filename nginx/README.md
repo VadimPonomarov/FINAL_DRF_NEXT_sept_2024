@@ -2,7 +2,13 @@
 
 ## 📋 Огляд
 
-**Упрощенная конфигурация nginx** - все запросы идут на frontend (localhost:3000), только `/api/`, `/admin/`, `/static/`, `/media/` проксируются на backend.
+Конфигурация настраивает обратный прокси:
+
+- `/api/auth/*` обслуживает Next.js (NextAuth)
+- Все остальные `/api/*` идут в Django (`app:8000`)
+- WebSocket `channels` по пути `/api/chat/*` (с Upgrade/Connection заголовками)
+- `/admin/`, `/static/`, `/media/` — в Django
+- Все остальное — на frontend (localhost:3000 через `host.docker.internal`)
 
 ## 📁 Структура
 
@@ -17,10 +23,19 @@ nginx/
 ### Приоритет маршрутов
 
 ```nginx
-# 1. Backend API (высокий приоритет)
-location /api/ {
-    proxy_pass http://backend;  # → http://app:8000
+# 0. NextAuth (frontend)
+location ^~ /api/auth/ { proxy_pass http://frontend_localhost/api/auth/; }
+
+# 1. WebSocket Channels
+location ^~ /api/chat/ {
+    proxy_pass http://backend/api/chat/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
 }
+
+# 2. Backend REST API
+location ^~ /api/ { proxy_pass http://backend/api/; }
 
 # 2. Django admin
 location /admin/ {
@@ -36,7 +51,7 @@ location /media/ {
     proxy_pass http://backend;
 }
 
-# 4. Frontend (всё остальное)
+# 5. Frontend (всё остальное)
 location / {
     proxy_pass http://host.docker.internal:3000;  # ← localhost:3000
 }
@@ -52,6 +67,10 @@ Nginx → http://host.docker.internal:3000 (Frontend, Next.js)
 http://localhost/api/ads/
     ↓
 Nginx → http://app:8000/api/ads/ (Backend, Django)
+
+ws://localhost/api/chat/ws/room/123
+    ↓
+Nginx (Upgrade) → ws://app:8000/api/chat/ws/room/123 (Django Channels)
 
 http://localhost/admin/
     ↓
