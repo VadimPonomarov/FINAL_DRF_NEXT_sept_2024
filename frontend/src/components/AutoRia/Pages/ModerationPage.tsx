@@ -213,14 +213,15 @@ const ModerationPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Выполняется только один раз при монтировании
 
-  // Загрузка данных при изменении фильтров
+  // Загрузка данных при изменении фильтров - БЕЗ loadModerationQueue и loadModerationStats в зависимостях
   useEffect(() => {
     if (isAuthenticated && initialLoadDone) {
       console.log('[ModerationPage] Filters changed - reloading data');
       loadModerationQueue();
       loadModerationStats();
     }
-  }, [statusFilter, searchQuery, sortBy, sortOrder, isAuthenticated, initialLoadDone, loadModerationQueue, loadModerationStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, searchQuery, sortBy, sortOrder, isAuthenticated, initialLoadDone]);
 
   const moderateAd = useCallback(async (adId: number, action: 'approve' | 'reject' | 'review' | 'block' | 'activate', reason?: string) => {
     try {
@@ -249,11 +250,11 @@ const ModerationPage = () => {
 
         // Show success message
         const actionMessages = {
-          approve: 'одобрено',
-          reject: 'отклонено',
-          review: 'отправлено на повторную проверку',
-          block: 'заблокировано',
-          activate: 'активировано'
+          approve: t('notifications.moderationApproved'),
+          reject: t('notifications.moderationRejected'),
+          review: t('notifications.moderationReviewSent'),
+          block: t('notifications.moderationBlocked'),
+          activate: t('notifications.moderationActivated')
         };
 
         toast({
@@ -643,12 +644,12 @@ const ModerationPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">📋 {t('autoria.moderation.allStatuses')}</SelectItem>
-                  <SelectItem value="active">✅ {t('autoria.moderation.active')}</SelectItem>
-                  <SelectItem value="pending">⏳ {t('autoria.moderation.pendingModeration')}</SelectItem>
-                  <SelectItem value="draft">📝 {t('autoria.moderation.draft')}</SelectItem>
-                  <SelectItem value="needs_review">🔍 {t('autoria.moderation.needsReview')}</SelectItem>
-                  <SelectItem value="rejected">❌ {t('autoria.moderation.rejected')}</SelectItem>
-                  <SelectItem value="blocked">🚫 {t('autoria.moderation.block')}</SelectItem>
+                  <SelectItem value="active">✅ {t('autoria.moderation.status.active')}</SelectItem>
+                  <SelectItem value="pending">⏳ {t('autoria.moderation.status.pending')}</SelectItem>
+                  <SelectItem value="draft">📝 {t('autoria.moderation.status.draft')}</SelectItem>
+                  <SelectItem value="needs_review">🔍 {t('autoria.moderation.status.needsReview')}</SelectItem>
+                  <SelectItem value="rejected">❌ {t('autoria.moderation.status.rejected')}</SelectItem>
+                  <SelectItem value="blocked">🚫 {t('autoria.moderation.status.blocked')}</SelectItem>
                 </SelectContent>
               </Select>
               <Button

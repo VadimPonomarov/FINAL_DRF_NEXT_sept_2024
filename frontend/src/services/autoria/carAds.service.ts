@@ -321,8 +321,8 @@ export class CarAdsService {
   static async updateMyAdStatus(id: number, status: string): Promise<CarAd> {
     console.log('[CarAdsService] Updating my ad status:', { id, status });
 
-    // Пытаемся использовать универсальный PATCH на ads
-    const url = `/api/ads/${id}/`;
+    // Используем явный backend-совместимый путь
+    const url = `/api/ads/cars/${id}/update`;
     const response = await fetchWithAuth(url, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

@@ -3248,6 +3248,11 @@ export default {
   "autoria.moderation.moderationError": "Помилка при виконанні дії модерації",
   "autoria.moderation.loadingModeration": "Завантаження черги модерації...",
   "autoria.moderation.loadingStats": "Завантаження статистики модерації...",
+  "autoria.moderation.activated": "Активовано",
+  "autoria.moderation.reviewSent": "Відправлено на повторну перевірку",
+  "autoria.moderation.bulkDone": "Масова дія виконана успішно",
+  "autoria.moderation.confirmBulkDelete": "Ви впевнені, що хочете видалити вибрані оголошення?",
+  "autoria.moderation.bulkDeleted": "Вибрані оголошення видалено",
   "autoria.moderation.userStatus": "Статус користувача:",
   "autoria.moderation.superuser": "Суперкористувач:",
   "autoria.moderation.authStatus": "Статус авторизації:",
@@ -3609,6 +3614,8 @@ export default {
     moderationActionError: "Помилка виконання дії",
     moderationSaved: "Модерація збережена успішно",
     moderationSaveError: "Помилка при збереженні модерації",
+    moderationActivated: "Оголошення активовано!",
+    moderationReviewSent: "Відправлено на повторну перевірку",
     
     // User moderation
     userBlocked: "Користувач заблокований. Причина: {reason}",

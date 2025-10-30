@@ -272,7 +272,7 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
   useEffect(() => {
     const checkBackendAuth = async () => {
       try {
-        // Пытаемся получить данные из Redis
+        // Проверяем только Redis - токены НЕ хранятся в localStorage
         const response = await fetch('/api/redis?key=backend_auth');
         if (response.ok) {
           const data = await response.json();
@@ -283,25 +283,8 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
           }
         }
 
-        // Если в Redis нет данных, проверяем localStorage (только после гидратации)
-        if (isHydrated) {
-          const localData = localStorage.getItem('backend_auth');
-          if (localData) {
-            try {
-              const parsedData = JSON.parse(localData);
-              if (parsedData && (parsedData.access || parsedData.refresh)) {
-                console.log('Backend auth found in localStorage');
-                setHasBackendAuth(true);
-                return;
-              }
-            } catch (e) {
-              console.error('Error parsing backend_auth from localStorage:', e);
-            }
-          }
-        }
-
-        // Если нигде не нашли данных, устанавливаем false
-        console.log('No backend auth found');
+        // Если в Redis нет данных, устанавливаем false
+        console.log('No backend auth found in Redis');
         setHasBackendAuth(false);
       } catch (error) {
         console.error('Error checking backend auth:', error);

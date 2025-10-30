@@ -8,45 +8,31 @@
  * ════════════════════════════════════════════════════════════════════════
  *
  * Workflow:
- * 1. Делает запрос к API
+ * 1. Делает запрос к API (токены добавляются на сервере из Redis)
  * 2. При 401 → пытается refresh токена через /api/auth/refresh
  * 3. При успехе refresh → повторяет оригинальный запрос
  * 4. При провале refresh или 403 → redirect на /login
  *
  * Цель: Обрабатывать протухшие токены во время работы (runtime)
  *
+ * ВАЖНО: Токены НЕ хранятся в localStorage на клиенте!
+ * Токены хранятся в Redis и добавляются на сервере в API routes через getAuthorizationHeaders()
+ *
  * Usage: await fetchWithAuth('/api/autoria/favorites/toggle', { method: 'POST', body: JSON.stringify({ car_ad_id }) })
  */
 export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   console.log('[fetchWithAuth] Making request to:', input);
 
-  // Получаем токены из localStorage
-  const getAuthHeaders = () => {
-    if (typeof window === 'undefined') return {};
-    
-    try {
-      const backendAuth = localStorage.getItem('backend_auth');
-      if (backendAuth) {
-        const parsed = JSON.parse(backendAuth);
-        const token: string | undefined = parsed?.access_token || parsed?.access || parsed?.token;
-        if (token) {
-          return { 'Authorization': `Bearer ${token}` };
-        }
-      }
-    } catch (error) {
-      console.warn('[fetchWithAuth] Error parsing backend_auth:', error);
-    }
-    return {};
-  };
-
+  // Делаем запрос БЕЗ добавления токенов на клиенте
+  // Токены добавляются на сервере в API routes через getAuthorizationHeaders() из Redis
   const resp = await fetch(input, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...getAuthHeaders(),
       ...(init.headers || {})
     },
-    cache: 'no-store'
+    cache: 'no-store',
+    credentials: 'include' // Важно для передачи cookies с сессией
   });
 
   // Проверяем статус ответа - обрабатываем 401 и 403
@@ -70,7 +56,11 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
   // Try to refresh once via internal API
   try {
     const origin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const refresh = await fetch(`${origin}/api/auth/refresh`, { method: 'POST', cache: 'no-store' });
+    const refresh = await fetch(`${origin}/api/auth/refresh`, {
+      method: 'POST',
+      cache: 'no-store',
+      credentials: 'include'
+    });
 
     if (refresh.ok) {
       console.log('[fetchWithAuth] ✅ Token refresh successful, retrying original request...');
@@ -79,10 +69,10 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
         ...init,
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders(), // Используем обновленные токены
           ...(init.headers || {})
         },
-        cache: 'no-store'
+        cache: 'no-store',
+        credentials: 'include'
       });
 
       if (retry.status !== 401) {

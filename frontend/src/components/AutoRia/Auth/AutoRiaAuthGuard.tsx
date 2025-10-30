@@ -37,29 +37,29 @@ export const AutoRiaAuthGuard: React.FC<AutoRiaAuthGuardProps> = ({
 
       // Проверяем backend токены (если требуется)
       if (requireBackendAuth) {
-        const backendAuth = localStorage.getItem('backend_auth');
-        
-        if (!backendAuth) {
-          console.log('[AutoRiaAuthGuard] ❌ No backend tokens, redirecting to /login');
-          const callbackUrl = encodeURIComponent(pathname || '/autoria');
-          router.replace(`/login?callbackUrl=${callbackUrl}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`);
-          return;
-        }
-
+        // Проверяем токены в Redis (НЕ в localStorage)
         try {
-          const authData = JSON.parse(backendAuth);
-          if (!authData?.access || !authData?.refresh) {
-            console.log('[AutoRiaAuthGuard] ❌ Invalid backend tokens, redirecting to /login');
-            localStorage.removeItem('backend_auth');
+          const response = await fetch('/api/redis?key=backend_auth', { cache: 'no-store' });
+
+          if (!response.ok) {
+            console.log('[AutoRiaAuthGuard] ❌ Failed to check Redis, redirecting to /login');
             const callbackUrl = encodeURIComponent(pathname || '/autoria');
             router.replace(`/login?callbackUrl=${callbackUrl}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`);
             return;
           }
 
-          console.log('[AutoRiaAuthGuard] ✅ Backend tokens valid');
+          const data = await response.json();
+
+          if (!data.exists || !data.value) {
+            console.log('[AutoRiaAuthGuard] ❌ No backend tokens in Redis, redirecting to /login');
+            const callbackUrl = encodeURIComponent(pathname || '/autoria');
+            router.replace(`/login?callbackUrl=${callbackUrl}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`);
+            return;
+          }
+
+          console.log('[AutoRiaAuthGuard] ✅ Backend tokens found in Redis');
         } catch (error) {
-          console.error('[AutoRiaAuthGuard] ❌ Error parsing backend_auth:', error);
-          localStorage.removeItem('backend_auth');
+          console.error('[AutoRiaAuthGuard] ❌ Error checking backend_auth in Redis:', error);
           const callbackUrl = encodeURIComponent(pathname || '/autoria');
           router.replace(`/login?callbackUrl=${callbackUrl}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`);
           return;

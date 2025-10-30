@@ -1626,6 +1626,11 @@ export default {
   "autoria.moderation.moderationError": "Error performing moderation action",
   "autoria.moderation.loadingModeration": "Loading moderation queue...",
   "autoria.moderation.loadingStats": "Loading moderation statistics...",
+  "autoria.moderation.activated": "Activated",
+  "autoria.moderation.reviewSent": "Sent for re-review",
+  "autoria.moderation.bulkDone": "Bulk action completed successfully",
+  "autoria.moderation.confirmBulkDelete": "Are you sure you want to delete selected ads?",
+  "autoria.moderation.bulkDeleted": "Selected ads deleted",
   "autoria.moderation.userStatus": "User Status:",
   "autoria.moderation.superuser": "Superuser:",
   "autoria.moderation.authStatus": "Auth Status:",
@@ -3663,6 +3668,8 @@ export default {
     moderationActionError: "Action execution error",
     moderationSaved: "Moderation saved successfully",
     moderationSaveError: "Error saving moderation",
+    moderationActivated: "Ad activated!",
+    moderationReviewSent: "Sent for re-review",
     
     // User moderation
     userBlocked: "User blocked. Reason: {reason}",

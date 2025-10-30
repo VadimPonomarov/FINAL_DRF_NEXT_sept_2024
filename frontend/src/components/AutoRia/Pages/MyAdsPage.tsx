@@ -411,26 +411,53 @@ const MyAdsPage = () => {
               </label>
               {selectedIds.size > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={async () => {
-                    await Promise.allSettled(Array.from(selectedIds).map(id => CarAdsService.updateMyAdStatus(id, 'active')));
-                    await loadAds();
-                  }}>Сделать активными</Button>
-                  <Button size="sm" variant="secondary" onClick={async () => {
-                    await Promise.allSettled(Array.from(selectedIds).map(id => CarAdsService.updateMyAdStatus(id, 'inactive')));
-                    await loadAds();
-                  }}>Скрыть</Button>
-                  <Button size="sm" variant="outline" onClick={async () => {
-                    await Promise.allSettled(Array.from(selectedIds).map(id => CarAdsService.updateMyAdStatus(id, 'archived')));
-                    await loadAds();
-                  }}>Архив</Button>
-                  <Button size="sm" variant="outline" onClick={async () => {
-                    await Promise.allSettled(Array.from(selectedIds).map(id => CarAdsService.updateMyAdStatus(id, 'sold')));
-                    await loadAds();
-                  }}>Продано</Button>
-                  <Button size="sm" variant="destructive" onClick={async () => {
-                    await CarAdsService.bulkDeleteMyAds(Array.from(selectedIds));
-                    await loadAds();
-                  }}>Удалить</Button>
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      const ids = Array.from(selectedIds);
+                      await Promise.allSettled(ids.map(id => CarAdsService.updateMyAdStatus(id, 'active')));
+                      await loadAds();
+                    }}
+                  >{t('autoria.moderation.status.active')}</Button>
+
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={async () => {
+                      const ids = Array.from(selectedIds);
+                      await Promise.allSettled(ids.map(id => CarAdsService.updateMyAdStatus(id, 'draft')));
+                      await loadAds();
+                    }}
+                  >{t('autoria.hide')}</Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const ids = Array.from(selectedIds);
+                      await Promise.allSettled(ids.map(id => CarAdsService.updateMyAdStatus(id, 'archived')));
+                      await loadAds();
+                    }}
+                  >{t('autoria.moderation.status.archived')}</Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const ids = Array.from(selectedIds);
+                      await Promise.allSettled(ids.map(id => CarAdsService.updateMyAdStatus(id, 'sold')));
+                      await loadAds();
+                    }}
+                  >{t('autoria.moderation.status.sold')}</Button>
+
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={async () => {
+                      await CarAdsService.bulkDeleteMyAds(Array.from(selectedIds));
+                      await loadAds();
+                    }}
+                  >{t('delete')}</Button>
                 </div>
               )}
             </div>
@@ -647,7 +674,7 @@ const MyAdCard: React.FC<{
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" onClick={() => window.location.href = `/autoria/ads/view/${ad.id}`} className="h-8 w-8">
+                          <Button size="icon" variant="outline" onClick={() => window.location.href = `/autoria/ads/view/${ad.id}`} className="h-8 w-8">
                       <Eye className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
@@ -655,7 +682,7 @@ const MyAdCard: React.FC<{
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" onClick={() => window.location.href = `/autoria/ads/edit/${ad.id}`} className="h-8 w-8">
+                          <Button size="icon" variant="outline" onClick={() => window.location.href = `/autoria/ads/edit/${ad.id}`} className="h-8 w-8">
                       <Edit className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
@@ -663,7 +690,7 @@ const MyAdCard: React.FC<{
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button size="icon" onClick={() => onStatusChange(ad.id, 'active')} className="h-8 w-8">
+                          <Button size="icon" onClick={() => onStatusChange(ad.id, 'active')} className="h-8 w-8" variant="default">
                       <Check className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
@@ -671,7 +698,7 @@ const MyAdCard: React.FC<{
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button size="icon" variant="secondary" onClick={() => onStatusChange(ad.id, 'inactive')} className="h-8 w-8">
+                          <Button size="icon" variant="secondary" onClick={() => onStatusChange(ad.id, 'draft')} className="h-8 w-8">
                       <EyeOff className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>

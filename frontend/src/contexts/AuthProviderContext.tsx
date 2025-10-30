@@ -35,22 +35,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Priority 2: Custom Backend Auth from localStorage
-    try {
-      const storedAuth = localStorage.getItem("backend_auth");
-      if (storedAuth) {
-        const authData = JSON.parse(storedAuth);
-        if (authData?.user && authData?.access) {
-          setUser(authData.user);
-          setIsAuthenticated(true);
-          return;
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse backend_auth from localStorage", e);
-      // Clear corrupted data
-      localStorage.removeItem("backend_auth");
-    }
+    // Priority 2: Custom Backend Auth from Redis (NOT localStorage)
+    // Токены хранятся только в Redis, не в localStorage
+    // Проверка наличия токенов происходит через BackendTokenPresenceGate
 
     // If no valid auth found
     setUser(null);
@@ -74,12 +61,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
   
   const login = useCallback((user: User, accessToken: string, refreshToken: string) => {
-      const authPayload = {
-          access: accessToken,
-          refresh: refreshToken,
-          user: user,
-      };
-      localStorage.setItem('backend_auth', JSON.stringify(authPayload));
+      // Токены сохраняются в Redis через API route, НЕ в localStorage
+      // Здесь только обновляем локальный state
       setUser(user);
       setIsAuthenticated(true);
   }, []);
