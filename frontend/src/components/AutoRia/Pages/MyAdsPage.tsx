@@ -66,10 +66,10 @@ const MyAdsPage = () => {
   const [selectAll, setSelectAll] = useState(false);
 
   // Загрузка данных из API
-  const loadAds = async () => {
+  const loadAds = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('[MyAdsPage] Loading user ads...', { statusFilter, sortBy, searchTerm });
+      console.log('[MyAdsPage] Loading user ads...', { statusFilter, sortBy, debouncedSearchTerm });
 
       // Преобразуем параметры сортировки для API
       let ordering = '-created_at'; // по умолчанию
@@ -125,7 +125,7 @@ const MyAdsPage = () => {
       setAds([]);
       setLoading(false);
     }
-  };
+  }, [statusFilter, sortBy, debouncedSearchTerm]);
 
   // Проверка авторизации при загрузке компонента
   useEffect(() => {
@@ -150,7 +150,8 @@ const MyAdsPage = () => {
     };
 
     checkAuthAndLoadAds();
-  }, [isAuthenticated, authLoading, statusFilter, sortBy, debouncedSearchTerm, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, authLoading, statusFilter, sortBy, debouncedSearchTerm]);
 
   // Дебаунс для поискового запроса
   useEffect(() => {

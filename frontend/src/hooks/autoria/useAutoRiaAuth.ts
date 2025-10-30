@@ -175,7 +175,8 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
     if (status !== 'loading') {
       checkAuth();
     }
-  }, [status, provider, session, checkAuth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, provider]);
 
   // Автоматическое обновление токена при изменении провайдера
   useEffect(() => {
