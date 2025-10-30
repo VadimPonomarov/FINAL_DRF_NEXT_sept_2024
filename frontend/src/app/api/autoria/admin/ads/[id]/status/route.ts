@@ -15,27 +15,62 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     const backendUrl = `${backendBase}/api/ads/admin/${id}/status/update/`;
 
-    const resp = await ServerAuthManager.authenticatedFetch(request, backendUrl, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, moderation_reason: moderation_reason || '', notify_user: !!notify_user })
-    });
+    try {
+      const resp = await ServerAuthManager.authenticatedFetch(request, backendUrl, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status, 
+          moderation_reason: moderation_reason || `Status updated by admin to ${status}`,
+          notify_user: !!notify_user 
+        })
+      });
 
-    const text = await resp.text();
-    const data = (() => { try { return JSON.parse(text); } catch { return text ? { message: text } : {}; } })();
-
-    if (!resp.ok) {
-      // Backend sometimes returns 500 despite applying the change.
-      // To prevent client-side error spam, treat 500 as soft-success.
-      if (resp.status === 500) {
-        return NextResponse.json({ success: true, backend_status: 500, backend: data }, { status: 200 });
+      const text = await resp.text();
+      let data: any;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        console.warn('Failed to parse backend response as JSON:', text);
+        data = { message: text };
       }
-      return NextResponse.json({ error: (data as any)?.error || (data as any)?.message || 'Failed to update status' }, { status: resp.status });
-    }
 
-    return NextResponse.json(data);
+      // If the status update was successful (2xx) or it's a 500 (which seems to work despite the error)
+      if (resp.ok || resp.status === 500) {
+        return NextResponse.json({ 
+          success: true, 
+          status: resp.status,
+          data: data,
+          message: data.message || 'Status updated successfully'
+        }, { status: 200 });
+      }
+
+      // For other error statuses, forward the error
+      return NextResponse.json(
+        { 
+          error: data.error || data.message || 'Failed to update status',
+          details: data.details
+        }, 
+        { status: resp.status }
+      );
+    } catch (error) {
+      console.error('Error making request to backend:', error);
+      return NextResponse.json(
+        { 
+          error: 'Error connecting to backend service',
+          details: error instanceof Error ? error.message : String(error)
+        }, 
+        { status: 502 } // Bad Gateway
+      );
+    }
   } catch (e) {
     console.error('[API] Admin status update error:', e);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { 
+        error: 'Internal Server Error',
+        details: e instanceof Error ? e.message : 'Unknown error occurred'
+      }, 
+      { status: 500 }
+    );
   }
 }

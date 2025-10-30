@@ -413,10 +413,12 @@ const ModerationPage = () => {
     return `${symbol}${formattedNumber}`;
   };
 
-  // Функція зміни статусу оголошення - оптимизированная версия
+  // Функція зміни статусу оголошення - оптимізированная версия
   const handleStatusChange = useCallback(async (adId: number, newStatus: string) => {
-    // Оптимистичное обновление UI сразу
-    const prevAds = ads;
+    // Сохраняем текущее состояние для возможного отката
+    const prevAds = [...ads];
+    
+    // Оптимистичное обновление UI
     setAds(prev => prev.map(ad => ad.id === adId ? { ...ad, status: newStatus } : ad));
 
     try {
@@ -430,28 +432,42 @@ const ModerationPage = () => {
         }),
       });
 
-      // Некоторые ответы могут быть пустыми/не-JSON — это не ошибка
-      const text = await response.text();
-      let data: any = {};
-      try { data = text ? JSON.parse(text) : {}; } catch { /* ignore parse errors */ }
-
-      // Некоторые старые админ-эндпоинты могут возвращать 500, хотя изменение прошло.
-      // Считаем 500 мягким успехом, чтобы не ломать UX (UI уже обновлён оптимистично).
-      if (!response.ok && response.status !== 500) {
-        // Откатываем UI и показываем мягкую ошибку
-        setAds(prevAds);
-        const msg = data?.error || data?.message || t('autoria.moderation.statusUpdateFailed');
-        toast({ title: t('common.error'), description: msg, variant: 'destructive' });
-        return;
+      // Обработка ответа
+      const responseData = await response.json();
+      
+      // Проверяем наличие ошибок в ответе
+      if (!response.ok) {
+        throw new Error(responseData?.error || responseData?.message || 'Unknown error');
       }
-
-      // Успех: обновляем только статистику, без перезагрузки списка
-      loadModerationStats();
-      toast({ title: t('common.success'), description: t('autoria.moderation.statusUpdated') });
+      
+      // Обновляем статистику
+      await loadModerationStats();
+      
+      // Показываем уведомление об успехе
+      toast({
+        title: t('common.success'),
+        description: responseData.message || t('autoria.moderation.statusUpdated'),
+        duration: 2000
+      });
+      
+      return responseData;
+      
     } catch (error) {
-      // Откат и мягкая ошибка без спама логами
+      console.error('Error updating status:', error);
+      
+      // Восстанавливаем предыдущее состояние
       setAds(prevAds);
-      toast({ title: t('common.error'), description: t('autoria.moderation.statusUpdateFailed'), variant: 'destructive' });
+      
+      // Показываем ошибку пользователю
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('autoria.moderation.statusUpdateFailed'),
+        variant: 'destructive',
+        duration: 3000
+      });
+      
+      // Пробрасываем ошибку дальше, если нужно обработать её в вызывающем коде
+      throw error;
     }
   }, [ads, user, t, toast, loadModerationStats]);
 
