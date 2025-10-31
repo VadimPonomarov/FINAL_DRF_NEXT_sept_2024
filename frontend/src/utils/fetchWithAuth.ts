@@ -82,18 +82,32 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
 
       console.log('[fetchWithAuth] ❌ Retry still returned 401, tokens are invalid');
     } else {
-      console.log('[fetchWithAuth] ❌ Token refresh failed, status:', refresh.status);
+      const refreshStatus = refresh.status;
+      console.log('[fetchWithAuth] ❌ Token refresh failed, status:', refreshStatus);
+      
+      // Если refresh вернул 404 - токены не найдены в Redis
+      // Используем правильный редирект с учетом многоуровневой системы
+      if (refreshStatus === 404) {
+        console.log('[fetchWithAuth] ❌ Tokens not found in Redis (404), checking NextAuth session and redirecting');
+        if (typeof window !== 'undefined') {
+          const { redirectToAuth } = await import('./auth/redirectToAuth');
+          const currentPath = window.location.pathname + window.location.search;
+          redirectToAuth(currentPath, 'tokens_not_found');
+          return resp; // Return early to prevent further processing
+        }
+      }
     }
   } catch (error) {
     console.error('[fetchWithAuth] ❌ Error during token refresh:', error);
   }
 
-  // Still unauthorized: redirect to /login with callback
-  // Обработчики 401/403 ошибок - редиректим на /login для получения backend токенов
+  // Still unauthorized: redirect with proper auth level checking
+  // Обработчики 401/403 ошибок - правильный редирект с учетом многоуровневой системы
   if (typeof window !== 'undefined') {
-    console.log('[fetchWithAuth] ❌ Token refresh failed, redirecting to /login');
-    const callback = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.href = `/login?callbackUrl=${callback}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`;
+    console.log('[fetchWithAuth] ❌ Token refresh failed, checking NextAuth session and redirecting');
+    const { redirectToAuth } = await import('./auth/redirectToAuth');
+    const currentPath = window.location.pathname + window.location.search;
+    redirectToAuth(currentPath, 'auth_required');
   }
 
   return resp; // Return the 401 response for callers on the server side

@@ -106,11 +106,28 @@ class TokenRefreshManager {
           lastError = `HTTP ${response.status}: ${errorText}`;
           console.error(`[TokenRefreshManager] Attempt ${attempt} failed:`, lastError);
           
-          // Если это 401 или 403, не пытаемся повторно
-          if (response.status === 401 || response.status === 403) {
+          // Если это 401, 403 или 404 - токены не найдены или невалидны, нужен логин
+          // 404 означает, что токены не найдены в Redis (пользователь не авторизован)
+          if (response.status === 401 || response.status === 403 || response.status === 404) {
+            console.error(`[TokenRefreshManager] Token refresh failed with ${response.status} - tokens not found or invalid`);
+            
+            // Импортируем утилиту для правильного редиректа с учетом многоуровневой системы
+            if (typeof window !== 'undefined') {
+              const { redirectToAuth } = await import('./redirectToAuth');
+              const currentPath = window.location.pathname + window.location.search;
+              const reason = response.status === 404 ? 'tokens_not_found' : 'session_expired';
+              
+              // Правильный редирект: проверяет NextAuth сессию и редиректит на /signin или /login
+              setTimeout(() => {
+                redirectToAuth(currentPath, reason);
+              }, 500);
+            }
+            
             return {
               success: false,
-              error: 'Authentication failed - please login again'
+              error: response.status === 404 
+                ? 'Tokens not found - please login again' 
+                : 'Authentication failed - please login again'
             };
           }
           

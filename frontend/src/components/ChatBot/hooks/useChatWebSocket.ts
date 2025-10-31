@@ -57,9 +57,9 @@ export const useChatWebSocket = ({
   // Максимальное количество попыток обновления токена
   const MAX_TOKEN_REFRESH_ATTEMPTS = 3;
 
-  // Функция для показа уведомления об ошибке аутентификации
+  // Функция для показа уведомления об ошибке аутентификации и правильного редиректа
   const redirectToLogin = useCallback(
-    (message: string) => {
+    async (message: string) => {
       // Показываем уведомление с таймаутом
       toast({
         title: "Authentication Error",
@@ -72,16 +72,14 @@ export const useChatWebSocket = ({
       if (typeof window !== "undefined") {
         sessionStorage.setItem("auth_error", message);
 
-        // Создаем URL логина с callback на текущую страницу
-        const currentUrl = window.location.href;
-        const loginUrl = new URL('/login', window.location.origin);
-        loginUrl.searchParams.set('callbackUrl', currentUrl);
-        loginUrl.searchParams.set('message', message);
-
+        // Используем правильный редирект с учетом многоуровневой системы
+        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        const currentPath = window.location.pathname + window.location.search;
+        
         // Добавляем задержку перед перенаправлением
         setTimeout(() => {
-          console.log(`[ChatWebSocket] Redirecting to login with callback: ${loginUrl.href}`);
-          window.location.href = loginUrl.href;
+          console.log(`[ChatWebSocket] Redirecting with proper auth level checking`);
+          redirectToAuth(currentPath, 'auth_required');
         }, 10000); // Перенаправляем через 10 секунд
       }
     },
@@ -171,12 +169,20 @@ export const useChatWebSocket = ({
                 duration: 8000,
               });
 
-              // Если это последняя попытка, перенаправляем на логин
-              if (tokenRefreshAttemptsRef.current >= MAX_TOKEN_REFRESH_ATTEMPTS) {
-                redirectToLogin(
-                  "Failed to refresh authentication. Please login again.",
-                );
+              // Если это 404 (токены не найдены в Redis) или последняя попытка - перенаправляем с учетом многоуровневой системы
+              if (refreshResponse.status === 404 || tokenRefreshAttemptsRef.current >= MAX_TOKEN_REFRESH_ATTEMPTS) {
+                // Используем правильный редирект с проверкой NextAuth сессии
+                if (typeof window !== 'undefined') {
+                  const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+                  const currentPath = window.location.pathname + window.location.search;
+                  const reason = refreshResponse.status === 404 ? 'tokens_not_found' : 'session_expired';
+                  redirectToAuth(currentPath, reason);
+                }
+                return null;
               }
+              
+              // Увеличиваем счетчик попыток для других ошибок
+              tokenRefreshAttemptsRef.current += 1;
               return null;
             }
 

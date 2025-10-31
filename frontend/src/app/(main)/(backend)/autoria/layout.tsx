@@ -2,13 +2,24 @@ import AutoRiaLayout from "@/components/AutoRia/Layout/AutoRiaLayout";
 import BackendTokenPresenceGate from "@/components/AutoRia/Auth/BackendTokenPresenceGate";
 
 /**
- * Серверный layout для AutoRia
- * Использует клиентский AuthGuard для проверки backend токенов
+ * УНИВЕРСАЛЬНЫЙ Layout для всех страниц AutoRia
+ * ════════════════════════════════════════════════════════════════════════
+ * Двухуровневая система валидации:
  * 
- * Порядок проверок:
- * 1. Middleware: NextAuth сессия → если нет → /api/auth/signin
- * 2. BackendTokenPresenceGate (клиентский): Проверяет ТОЛЬКО наличие токенов в Redis → если нет → /login
- * 3. API запросы: 401/403 → refresh токенов или редирект
+ * УРОВЕНЬ 1: Middleware (универсальный гард сессии)
+ *   - Проверяет NextAuth сессию на КАЖДОМ запросе
+ *   - Если сессии нет → редирект на /api/auth/signin
+ *   - Если сессия есть → пропускает запрос дальше
+ * 
+ * УРОВЕНЬ 2: BackendTokenPresenceGate (HOC в Layout)
+ *   - Проверяет backend токены в Redis для ВСЕХ страниц AutoRia
+ *   - Если токенов нет → использует redirectToAuth для правильного редиректа:
+ *     * Если есть NextAuth сессия → редирект на /login для получения токенов
+ *     * Если нет NextAuth сессии → редирект на /api/auth/signin
+ *   - Если токены есть → разрешает доступ к содержимому
+ * 
+ * Этот Layout является контейнером для всех без исключения элементов интерфейса Autoria
+ * ════════════════════════════════════════════════════════════════════════
  */
 export default function AutoRiaLayoutWrapper({
   children,

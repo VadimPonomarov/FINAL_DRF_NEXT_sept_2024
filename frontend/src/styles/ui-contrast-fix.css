@@ -1,0 +1,236 @@
+/* 
+ * Глобальные стили для обеспечения контрастности при hover и focus
+ * КРИТИЧНО: текст должен быть читаемым на любом фоне в любой теме
+ * Этот файл дополняет button-hover-fix.css для всех UI компонентов
+ */
+
+/* ========================================
+ * ССЫЛКИ И НАВИГАЦИОННЫЕ ЭЛЕМЕНТЫ
+ * ======================================== */
+
+/* Ссылки с hover эффектом */
+a:hover:not([class*="bg-"]):not(button) {
+  color: rgb(37 99 235) !important; /* blue-600 */
+}
+
+.dark a:hover:not([class*="bg-"]):not(button) {
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+/* Ссылки с подчеркиванием */
+a[class*="underline"]:hover {
+  color: rgb(37 99 235) !important;
+  text-decoration-color: rgb(37 99 235) !important;
+}
+
+.dark a[class*="underline"]:hover {
+  color: rgb(96 165 250) !important;
+  text-decoration-color: rgb(96 165 250) !important;
+}
+
+/* ========================================
+ * МЕНЮ И ВЫПАДАЮЩИЕ СПИСКИ
+ * ======================================== */
+
+/* Элементы меню с hover (если не используются dark: классы) */
+[role="menuitem"]:hover,
+[role="menuitemcheckbox"]:hover,
+[role="menuitemradio"]:hover {
+  background-color: rgb(243 244 246) !important; /* gray-100 */
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.dark [role="menuitem"]:hover,
+.dark [role="menuitemcheckbox"]:hover,
+.dark [role="menuitemradio"]:hover {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+  color: rgb(255 255 255) !important;
+}
+
+/* Элементы с focus */
+[role="menuitem"]:focus,
+[role="menuitemcheckbox"]:focus,
+[role="menuitemradio"]:focus {
+  background-color: rgb(243 244 246) !important;
+  color: rgb(17 24 39) !important;
+  outline: 2px solid rgb(37 99 235) !important;
+  outline-offset: -2px !important;
+}
+
+.dark [role="menuitem"]:focus,
+.dark [role="menuitemcheckbox"]:focus,
+.dark [role="menuitemradio"]:focus {
+  background-color: rgb(55 65 81) !important;
+  color: rgb(255 255 255) !important;
+  outline-color: rgb(96 165 250) !important;
+}
+
+/* ========================================
+ * КАРТОЧКИ И КОНТЕЙНЕРЫ С HOVER
+ * ======================================== */
+
+/* Карточки с hover эффектом */
+[class*="card"]:hover,
+[class*="Card"]:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.dark [class*="card"]:hover,
+.dark [class*="Card"]:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ========================================
+ * INPUT И TEXTAREA
+ * ======================================== */
+
+/* Input поля с hover */
+input[type="text"]:hover:not(:disabled),
+input[type="email"]:hover:not(:disabled),
+input[type="password"]:hover:not(:disabled),
+input[type="number"]:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: rgb(156 163 175) !important; /* gray-400 */
+}
+
+.dark input[type="text"]:hover:not(:disabled),
+.dark input[type="email"]:hover:not(:disabled),
+.dark input[type="password"]:hover:not(:disabled),
+.dark input[type="number"]:hover:not(:disabled),
+.dark textarea:hover:not(:disabled) {
+  border-color: rgb(107 114 128) !important; /* gray-500 */
+}
+
+/* Input поля с focus */
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+  border-color: rgb(37 99 235) !important; /* blue-600 */
+  outline: none !important;
+  ring: 2px !important;
+  ring-color: rgb(37 99 235) !important;
+}
+
+.dark input[type="text"]:focus,
+.dark input[type="email"]:focus,
+.dark input[type="password"]:focus,
+.dark input[type="number"]:focus,
+.dark textarea:focus {
+  border-color: rgb(96 165 250) !important; /* blue-400 */
+  ring-color: rgb(96 165 250) !important;
+}
+
+/* ========================================
+ * CHECKBOX И RADIO BUTTON
+ * ======================================== */
+
+input[type="checkbox"]:hover:not(:disabled),
+input[type="radio"]:hover:not(:disabled) {
+  border-color: rgb(37 99 235) !important;
+}
+
+.dark input[type="checkbox"]:hover:not(:disabled),
+.dark input[type="radio"]:hover:not(:disabled) {
+  border-color: rgb(96 165 250) !important;
+}
+
+input[type="checkbox"]:focus,
+input[type="radio"]:focus {
+  outline: 2px solid rgb(37 99 235) !important;
+  outline-offset: 2px !important;
+}
+
+.dark input[type="checkbox"]:focus,
+.dark input[type="radio"]:focus {
+  outline-color: rgb(96 165 250) !important;
+}
+
+/* ========================================
+ * УНИВЕРСАЛЬНЫЕ ИСПРАВЛЕНИЯ
+ * ======================================== */
+
+/* Любой элемент с hover:bg-* должен иметь контрастный текст */
+[class*="hover:bg-gray-100"]:hover,
+[class*="hover:bg-gray-50"]:hover {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.dark [class*="hover:bg-gray-100"]:hover,
+.dark [class*="hover:bg-gray-50"]:hover,
+.dark [class*="hover:bg-gray-700"]:hover,
+.dark [class*="hover:bg-gray-800"]:hover {
+  color: rgb(255 255 255) !important;
+}
+
+/* Элементы с focus должны быть видимыми */
+[class*="focus:bg-"]:focus,
+[class*="focus:bg-gray-"]:focus {
+  outline: 2px solid rgb(37 99 235) !important;
+  outline-offset: 2px !important;
+}
+
+.dark [class*="focus:bg-"]:focus,
+.dark [class*="focus:bg-gray-"]:focus {
+  outline-color: rgb(96 165 250) !important;
+}
+
+/* Убеждаемся, что активные элементы видимы */
+[aria-selected="true"],
+[data-selected="true"],
+[data-state="selected"] {
+  background-color: rgb(239 246 255) !important; /* blue-50 */
+  color: rgb(37 99 235) !important; /* blue-600 */
+}
+
+.dark [aria-selected="true"],
+.dark [data-selected="true"],
+.dark [data-state="selected"] {
+  background-color: rgb(30 58 138 / 0.3) !important; /* blue-900 с прозрачностью */
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+/* ========================================
+ * BADGES И ТЕГИ
+ * ======================================== */
+
+/* Badge с hover */
+[class*="Badge"]:hover,
+[class*="badge"]:hover {
+  opacity: 0.9;
+}
+
+/* ========================================
+ * ИКОНКИ В КЛИКАБЕЛЬНЫХ ЭЛЕМЕНТАХ
+ * ======================================== */
+
+/* Иконки в кнопках и ссылках должны наследовать цвет текста */
+button svg,
+a svg,
+[role="button"] svg {
+  color: inherit !important;
+}
+
+/* Иконки в hover состоянии */
+button:hover svg,
+a:hover svg,
+[role="button"]:hover svg {
+  color: inherit !important;
+}
+
+/* ========================================
+ * ПОЛЕЗНЫЕ УТИЛИТЫ
+ * ======================================== */
+
+/* Принудительный контраст для важных элементов */
+.high-contrast-hover:hover {
+  background-color: rgb(243 244 246) !important;
+  color: rgb(17 24 39) !important;
+}
+
+.dark .high-contrast-hover:hover {
+  background-color: rgb(55 65 81) !important;
+  color: rgb(255 255 255) !important;
+}
+

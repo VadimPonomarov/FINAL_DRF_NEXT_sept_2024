@@ -178,9 +178,25 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
       });
 
       console.log('[ChatBotIcon] Token refresh result:', refreshResult);
+      
+      // Если refresh вернул ошибку с 404 - токены не найдены, нужно залогиниться
+      if (!refreshResult.success && refreshResult.error?.includes('not found')) {
+        console.error('[ChatBotIcon] Tokens not found (404), checking NextAuth session and redirecting');
+        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        const currentPath = window.location.pathname + window.location.search;
+        redirectToAuth(currentPath, 'tokens_not_found');
+        return; // Прекращаем открытие чата, если нужен логин
+      }
     } catch (error) {
       console.error('[ChatBotIcon] Error during smart token refresh:', error);
-      // Продолжаем открытие чата даже при ошибке рефреша
+      // Если ошибка связана с отсутствием токенов - редиректим с учетом многоуровневой системы
+      if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found'))) {
+        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        const currentPath = window.location.pathname + window.location.search;
+        redirectToAuth(currentPath, 'tokens_not_found');
+        return;
+      }
+      // Продолжаем открытие чата только если это не критическая ошибка
     }
 
     // Открываем чат - последний активный чат будет загружен автоматически

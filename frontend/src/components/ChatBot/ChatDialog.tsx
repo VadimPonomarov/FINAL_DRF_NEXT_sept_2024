@@ -340,12 +340,28 @@ export const ChatDialog = ({ onAuthError, useResizableSheet = false }: ChatDialo
       });
 
       if (!refreshResponse.ok) {
+        // Если 404 - токены не найдены в Redis, используем правильный редирект
+        if (refreshResponse.status === 404) {
+          console.error('[ChatDialog] Tokens not found in Redis (404), checking NextAuth session and redirecting');
+          const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+          const currentPath = window.location.pathname + window.location.search;
+          redirectToAuth(currentPath, 'tokens_not_found');
+          return; // Прекращаем выполнение, так как будет редирект
+        }
         throw new Error(`Token refresh failed: ${refreshResponse.status}`);
       }
 
       const refreshData = await refreshResponse.json();
 
       if (!refreshData.success) {
+        // Если refresh не успешен и это связано с отсутствием токенов
+        if (refreshData.error?.includes('not found') || refreshData.error?.includes('No tokens')) {
+          console.error('[ChatDialog] Tokens not found, checking NextAuth session and redirecting');
+          const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+          const currentPath = window.location.pathname + window.location.search;
+          redirectToAuth(currentPath, 'tokens_not_found');
+          return;
+        }
         throw new Error('Token refresh was not successful');
       }
 

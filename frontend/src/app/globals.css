@@ -7,6 +7,9 @@
 /* Импорт стилей для исправления ховера кнопок */
 @import '../styles/button-hover-fix.css';
 
+/* Импорт стилей для исправления контрастности всех UI элементов */
+@import '../styles/ui-contrast-fix.css';
+
 /* Стили для моноширинных шрифтов */
 code, pre, .font-mono {
   font-family: Consolas, Menlo, Monaco, 'Courier New', monospace;

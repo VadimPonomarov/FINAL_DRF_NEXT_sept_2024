@@ -82,16 +82,16 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// УРОВЕНЬ 1 (из 3): Middleware - проверка NextAuth сессии
+// УРОВЕНЬ 1 (из 2): Middleware - универсальный гард сессии
 // ════════════════════════════════════════════════════════════════════════
-// Трехуровневая система валидации:
+// Двухуровневая система валидации для AutoRia:
 // 1. [ЭТОТ УРОВЕНЬ] Middleware: NextAuth сессия → /api/auth/signin если нет
-// 2. HOC withAutoRiaAuth: Backend токены → /login если нет
-// 3. fetchWithAuth: Обработчики 401/403 → /login + auto-refresh
+// 2. BackendTokenPresenceGate (HOC в Layout): Backend токены → использует redirectToAuth
 // ════════════════════════════════════════════════════════════════════════
 //
-// ВАЖНО: Middleware проверяет ТОЛЬКО NextAuth сессию!
-// Backend токены (внешние API) НЕ проверяются здесь - это делает HOC (уровень 2)
+// ВАЖНО: Middleware проверяет ТОЛЬКО NextAuth сессию на КАЖДОМ запросе!
+// Это универсальный гард сессии для всех страниц AutoRia.
+// Backend токены НЕ проверяются здесь - это делает HOC в Layout (уровень 2)
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
     console.log(`[Middleware L1] Checking NextAuth session for Autoria access`);
@@ -108,8 +108,9 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
     }
 
     // NextAuth сессия существует - разрешаем доступ
-    // HOC (уровень 2) проверит наличие backend токенов и редиректнет на /login при необходимости
-    console.log(`[Middleware L1] ✅ NextAuth session valid (email: ${token.email}) - passing to L2 (HOC)`);
+    // BackendTokenPresenceGate в Layout (уровень 2) проверит наличие backend токенов
+    // и использует redirectToAuth для правильного редиректа при необходимости
+    console.log(`[Middleware L1] ✅ NextAuth session valid (email: ${token.email}) - passing to L2 (Layout HOC)`);
 
     return NextResponse.next();
   } catch (error) {

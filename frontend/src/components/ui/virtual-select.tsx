@@ -228,24 +228,33 @@ const VirtualSelectComponent = React.memo(function VirtualSelect({
     <div className="relative">
       <div
         className={`
-          flex items-center justify-between w-full px-3 py-2 text-sm border rounded-md cursor-pointer
-          ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-gray-400'}
-          ${open ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-300'}
+          flex items-center justify-between w-full px-3 py-2 text-sm border rounded-md cursor-pointer transition-colors
+          ${disabled 
+            ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed text-gray-400 dark:text-gray-500' 
+            : 'bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+          }
+          ${open 
+            ? 'border-blue-500 dark:border-blue-400 ring-1 ring-blue-500 dark:ring-blue-400' 
+            : 'border-gray-300 dark:border-gray-600'
+          }
         `}
         onClick={() => !disabled && handleOpenChange(!open)}
       >
-        <span className={selectedOption?.label ? 'text-gray-900' : 'text-gray-500'}>
+        <span className={selectedOption?.label 
+          ? 'text-gray-900 dark:text-gray-100' 
+          : 'text-gray-500 dark:text-gray-400'
+        }>
           {selectedOption?.label || placeholder}
         </span>
         <div className="flex items-center gap-1">
           {allowClear && selectedOption && (
             <X
-              className="h-4 w-4 text-gray-400 hover:text-gray-600"
+              className="h-4 w-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               onClick={handleClear}
             />
           )}
           <ChevronDown
-            className={`h-4 w-4 text-gray-400 transition-transform ${
+            className={`h-4 w-4 text-gray-400 dark:text-gray-500 transition-transform ${
               open ? 'rotate-180' : ''
             }`}
           />
@@ -253,14 +262,14 @@ const VirtualSelectComponent = React.memo(function VirtualSelect({
       </div>
 
       {open && (
-        <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden">
+        <div className="absolute z-[9999] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-hidden">
           {searchable && (
-            <div className="p-2 border-b border-gray-200">
+            <div className="p-2 border-b border-gray-200 dark:border-gray-700">
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
                 <input
                   type="text"
-                  className="w-full pl-8 pr-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-8 pr-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   placeholder={searchPlaceholder}
                   value={searchValue}
                   onChange={(e) => handleSearchChange(e.target.value)}
@@ -275,8 +284,11 @@ const VirtualSelectComponent = React.memo(function VirtualSelect({
               <div
                 key={option.value}
                 className={`
-                  px-3 py-2 text-sm cursor-pointer hover:bg-gray-100
-                  ${option.value === value ? 'bg-blue-50 text-blue-600' : 'text-gray-900'}
+                  px-3 py-2 text-sm cursor-pointer transition-colors
+                  ${option.value === value 
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' 
+                    : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }
                 `}
                 onClick={(e) => {
                   e.preventDefault();
@@ -296,20 +308,20 @@ const VirtualSelectComponent = React.memo(function VirtualSelect({
 
             {isLoading && (
               <div className="flex items-center justify-center py-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-sm text-gray-600">{loadingMessage}</span>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">{loadingMessage}</span>
               </div>
             )}
 
             {options.length === 0 && !isLoading && (
-              <div className="px-3 py-2 text-sm text-gray-500 text-center">
+              <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
                 {searchValue ? `${emptyMessage} (search)` : emptyMessage}
               </div>
             )}
 
             {Array.isArray(options) && options.length > 0 && (
-              <div className="flex items-center justify-center py-1 bg-gray-50 border-t">
-                <span className="text-xs text-gray-500">
+              <div className="flex items-center justify-center py-1 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {countMessage}: {options.length}
                 </span>
               </div>
