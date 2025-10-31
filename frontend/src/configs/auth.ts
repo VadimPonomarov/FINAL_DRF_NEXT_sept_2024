@@ -109,32 +109,23 @@ export const authConfig: AuthOptions = {
 
     // Session callback - формируем сессию из токена
     async session({ session, token }) {
-      console.log('[NextAuth Session] Callback triggered:', {
-        hasSession: !!session,
-        hasToken: !!token,
-        email: token.email
-      });
-
-      if (!session.expires) {
-        console.error('[NextAuth Session] Session expiration date is undefined');
-        throw new Error("Session expiration date is undefined.");
+      if (token) {
+        session.user = {
+          ...session.user,
+          id: token.id as string,
+          name: token.name || null,
+          email: token.email || null,
+          image: token.picture || null,
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+          accessTokenExpires: token.accessTokenExpires,
+          error: token.error,
+        } as any; // Используем any для совместимости
+        
+        // Добавляем токен доступа в сессию
+        session.accessToken = token.accessToken;
       }
-
-      const expiresTimestamp = new Date(session.expires).getTime();
-
-      if (isNaN(expiresTimestamp)) {
-        console.error('[NextAuth Session] Session expiration date is not a valid timestamp');
-        throw new Error("Session expiration date is not a valid timestamp.");
-      }
-
-      // Возвращаем плоский объект с email на верхнем уровне (как в примере)
-      // ВАЖНО: должны вернуть expires для корректной работы NextAuth
-      return {
-        email: token.email as string,
-        accessToken: token.accessToken,
-        expiresOn: new Date(expiresTimestamp).toLocaleString(),
-        expires: session.expires, // Обязательно для NextAuth
-      } as unknown as Session;
+      return session;
     },
 
     // Redirect callback для управления редиректами после входа
@@ -196,5 +187,5 @@ export const authConfig: AuthOptions = {
       // Разрешаем вход для всех других провайдеров
       return true;
     },
-  },
+  }
 };

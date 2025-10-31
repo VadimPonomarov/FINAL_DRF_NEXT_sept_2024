@@ -1,70 +1,137 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/toast-provider';
 
 /**
- * Level 2 auth gate for AutoRia area.
- * Checks only the PRESENCE of backend tokens in Redis (no validation).
- * If absent → redirect to /login with callback to return after obtaining tokens.
+ * Защитный компонент для проверки аутентификации в разделе AutoRia.
+ * 1. Проверяет валидность сессии NextAuth
+ * 2. Проверяет валидность backend токенов
+ * 3. При невалидной сессии - редирект на /signin
+ * 4. При невалидных токенах - редирект на /login
  */
 export default function BackendTokenPresenceGate({ children }: { children: React.ReactNode }) {
+  const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
-  const search = useSearchParams();
-  const [allowed, setAllowed] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
+  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
-    const checkPresence = async () => {
-      console.log('[BackendTokenPresenceGate] Checking backend tokens...');
+  /**
+   * Перенаправление на страницу входа в аккаунт (/login)
+   * Используется при невалидных токенах
+   */
+  const redirectToLogin = useCallback(() => {
+    const callbackUrl = encodeURIComponent(
+      `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
+    );
+    
+    toast({
+      title: 'Требуется авторизация',
+      description: 'Пожалуйста, войдите в аккаунт',
+      type: 'destructive',
+    });
+
+    router.replace(`/login?callbackUrl=${callbackUrl}`);
+  }, [pathname, searchParams, router, toast]);
+
+  /**
+   * Перенаправление на страницу входа в систему (/signin)
+   * Используется при невалидной сессии
+   */
+  const redirectToSignIn = useCallback(() => {
+    const callbackUrl = encodeURIComponent(
+      `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
+    );
+    
+    // Используем встроенный метод NextAuth для входа
+    signIn(undefined, { callbackUrl: `/${callbackUrl}` });
+  }, [pathname, searchParams]);
+
+  /**
+   * Проверка аутентификации
+   * 1. Сначала проверяем сессию NextAuth
+   * 2. Затем проверяем backend токены
+   */
+  const checkAuth = useCallback(async (isRetry = false) => {
+    try {
+      // 1. Проверяем сессию NextAuth
+      const sessionCheck = await fetch('/api/auth/session', {
+        credentials: 'include',
+      });
+
+      if (!sessionCheck.ok) {
+        // Сессия невалидна - редирект на /signin
+        console.log('Session check failed, redirecting to sign in');
+        return redirectToSignIn();
+      }
+
       try {
-        const resp = await fetch('/api/redis?key=backend_auth', { cache: 'no-store' });
-        if (!resp.ok) {
-          console.log('[BackendTokenPresenceGate] Redis endpoint failed');
-          throw new Error('redis endpoint failed');
-        }
-        const data = await resp.json();
-        const exists: boolean = Boolean(data?.exists && data?.value);
+        // 2. Проверяем backend токены
+        const tokenCheck = await fetch('/api/auth/me', {
+          credentials: 'include',
+        });
 
-        console.log('[BackendTokenPresenceGate] Token exists:', exists);
-
-        if (!exists) {
-          console.log('[BackendTokenPresenceGate] No tokens found, redirecting to /login');
-          const callback = encodeURIComponent(`${pathname}${search?.toString() ? `?${search.toString()}` : ''}`);
-          router.replace(`/login?callbackUrl=${callback}`);
+        if (tokenCheck.ok) {
+          // Обе проверки пройдены, доступ разрешен
+          console.log('Authentication successful');
+          setIsLoading(false);
           return;
         }
 
-        if (active) {
-          console.log('[BackendTokenPresenceGate] ✅ Tokens found, allowing access');
-          setAllowed(true);
-          setIsChecking(false);
+        // Обработка ошибок API
+        const errorData = await tokenCheck.json().catch(() => ({}));
+        console.log('Token check failed:', {
+          status: tokenCheck.status,
+          statusText: tokenCheck.statusText,
+          error: errorData
+        });
+
+        // Если получили 400, 401 и это первая попытка, пробуем обновить токен
+        if ((tokenCheck.status === 400 || tokenCheck.status === 401) && !isRetry) {
+          console.log('Attempting to refresh token...');
+          const refreshResponse = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            credentials: 'include',
+          });
+
+          if (refreshResponse.ok) {
+            console.log('Token refresh successful, retrying auth check...');
+            return checkAuth(true);
+          }
+          
+          console.log('Token refresh failed:', await refreshResponse.text());
         }
-      } catch (err) {
-        console.error('[BackendTokenPresenceGate] Error checking tokens:', err);
-        const callback = encodeURIComponent(`${pathname}${search?.toString() ? `?${search.toString()}` : ''}`);
-        router.replace(`/login?callbackUrl=${callback}`);
+      } catch (apiError) {
+        console.error('Error during token check:', apiError);
       }
-    };
 
-    checkPresence();
-    return () => { active = false; };
-  }, [router, pathname, search]);
+      // Если дошли сюда, значит не удалось обновить токен
+      console.log('Redirecting to login...');
+      redirectToLogin();
 
-  if (isChecking) {
+    } catch (error) {
+      console.error('Ошибка при проверке аутентификации:', error);
+      // При любой ошибке редиректим на вход
+      redirectToSignIn();
+    }
+  }, [redirectToLogin, redirectToSignIn]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Проверка авторизации...</p>
-        </div>
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!allowed) return null;
   return <>{children}</>;
 }
 
