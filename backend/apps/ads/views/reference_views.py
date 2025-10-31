@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
-from apps.ads.filters import CarMarkFilter, CarModelFilter
+from apps.ads.filters import CarMarkFilter, CarModelFilter, CityFilter
 from apps.ads.models.reference import (
     CarColorModel,
     CarGenerationModel,
@@ -1149,6 +1149,7 @@ class RegionListView(generics.ListAPIView):
 class CityListView(generics.ListAPIView):
     """
     Список городов с возможностью фильтрации по региону.
+    Поддерживает фильтрацию по параметрам region и region_id.
     """
 
     from apps.ads.models.reference import CityModel
@@ -1156,8 +1157,40 @@ class CityListView(generics.ListAPIView):
     queryset = CityModel.objects.filter(is_active=True).order_by("name")
     permission_classes: list = []  # Публичный доступ
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ["region_id"]  # Исправлено: используем region_id вместо region
+    filterset_class = CityFilter  # Используем CityFilter для правильной фильтрации
     search_fields = ["name"]  # Поддержка поиска по названию города
+
+    def get_queryset(self):
+        """
+        Переопределяем queryset для поддержки фильтрации по region и region_id.
+        API route передает 'region', но мы также поддерживаем 'region_id' для совместимости.
+        CityFilter также применяет фильтрацию через DjangoFilterBackend.
+        """
+        queryset = super().get_queryset()
+        
+        # Получаем параметры для отладки
+        region_param = self.request.query_params.get('region')
+        region_id_param = self.request.query_params.get('region_id')
+        
+        # Логируем параметры для отладки
+        if region_param or region_id_param:
+            print(f"🏙️ [CityListView] Filter params - region: {region_param}, region_id: {region_id_param}")
+        
+        # Получаем ID региона (приоритет: region, затем region_id)
+        region_id = region_param or region_id_param
+        
+        # Применяем фильтрацию по региону, если передан
+        if region_id:
+            try:
+                region_id_int = int(region_id)
+                queryset = queryset.filter(region_id=region_id_int)
+                print(f"🏙️ [CityListView] Filtered cities by region_id={region_id_int}, found {queryset.count()} cities")
+            except (ValueError, TypeError):
+                # Если не число, игнорируем
+                print(f"⚠️ [CityListView] Invalid region_id value: {region_id}")
+                pass
+        
+        return queryset
 
     def get_serializer_class(self):
         from apps.ads.serializers.cars.region import CitySerializer

@@ -293,9 +293,22 @@ export function GenericForm<T extends FieldValues>({
 
           if (currentRegion) {
             // Создаем новую функцию с актуальным значением region
+            // fetchCities имеет сигнатуру (search: string, regionId?: string) => Promise<ReferenceItem[]>
+            // Нужно обернуть ее в формат (search: string, page: number, pageSize: number) => Promise<{options, hasMore, total}>
             dynamicFetchOptions = async (search: string, page: number, pageSize: number) => {
               console.log(`[GenericForm] Fetching cities for region:`, currentRegion);
-              return field.fetchOptions!(currentRegion, search, page, pageSize);
+              
+              // Вызываем fetchCities с правильными параметрами: (search, regionId)
+              // Приводим тип, так как fetchCities имеет другую сигнатуру чем стандартный fetchOptions
+              const fetchCitiesFn = field.fetchOptions as any as (search: string, regionId?: string) => Promise<Array<{ value: string; label: string }>>;
+              const cities = await fetchCitiesFn(search, currentRegion);
+              
+              // Преобразуем результат в ожидаемый формат
+              return {
+                options: Array.isArray(cities) ? cities : [],
+                hasMore: false,
+                total: Array.isArray(cities) ? cities.length : 0
+              };
             };
           } else {
             // Если регион не выбран, возвращаем пустой результат

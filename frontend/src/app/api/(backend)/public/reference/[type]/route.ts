@@ -38,19 +38,82 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Строим URL для Django backend
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    const queryString = searchParams.toString();
+    // Перекладываем параметры запроса в соответствии с ожиданиями Django
+    const adjustedParams = new URLSearchParams(searchParams.toString());
+    if (djangoType === 'cities') {
+      // Бэкенд DRF обычно ждёт 'region', а фронт шлёт 'region_id'
+      const regionId = adjustedParams.get('region_id');
+      if (regionId && !adjustedParams.get('region')) {
+        adjustedParams.set('region', regionId);
+        // Удаляем region_id после преобразования для избежания дублирования
+        adjustedParams.delete('region_id');
+      }
+      // Увеличиваем размер страницы по умолчанию, если не передан
+      if (!adjustedParams.get('page_size')) {
+        adjustedParams.set('page_size', '1000');
+      }
+    }
+    if (djangoType === 'models/choices') {
+      // Для моделей бэкенд может ждать 'mark' вместо 'mark_id'
+      const markId = adjustedParams.get('mark_id');
+      if (markId && !adjustedParams.get('mark')) {
+        adjustedParams.set('mark', markId);
+      }
+    }
+    const queryString = adjustedParams.toString();
     // Django использует /api/ads/reference/ вместо /api/public/reference/
     const djangoUrl = `${backendUrl}/api/ads/reference/${djangoType}/${queryString ? `?${queryString}` : ''}`;
 
     console.log(`🔗 PUBLIC REFERENCE API: Proxying to Django: ${djangoUrl}`);
 
     // Проксируем запрос к Django
-    const response = await fetch(djangoUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // 1) Пробрасываем авторизацию если она пришла на публичный роут
+    let authHeader = request.headers.get('authorization') || '';
+    // 2) Если заголовка нет — пытаемся достать токен из Redis через внутренний API
+    if (!authHeader) {
+      try {
+        const tokenRes = await fetch(`${request.nextUrl.origin}/api/auth/token`, { cache: 'no-store' });
+        if (tokenRes.ok) {
+          const tokenData = await tokenRes.json();
+          if (tokenData?.access) {
+            authHeader = `Bearer ${tokenData.access}`;
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ PUBLIC REFERENCE API: Failed to load auth token from Redis:', e);
+      }
+    }
+
+    const doRequest = async (authorization?: string) => {
+      return fetch(djangoUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authorization ? { 'Authorization': authorization } : {}),
+        },
+        cache: 'no-store'
+      });
+    };
+
+    let response = await doRequest(authHeader || undefined);
+
+    // При 401 пробуем авто-рефреш токена и повторяем 1 раз
+    if (response.status === 401) {
+      console.warn('🔁 PUBLIC REFERENCE API: 401 from Django, trying to refresh token...');
+      try {
+        const refreshRes = await fetch(`${request.nextUrl.origin}/api/auth/refresh`, { method: 'POST', cache: 'no-store' });
+        if (refreshRes.ok) {
+          const tokenRes = await fetch(`${request.nextUrl.origin}/api/auth/token`, { cache: 'no-store' });
+          if (tokenRes.ok) {
+            const tokenData = await tokenRes.json();
+            const newAuth = tokenData?.access ? `Bearer ${tokenData.access}` : undefined;
+            response = await doRequest(newAuth);
+          }
+        }
+      } catch (e) {
+        console.error('❌ PUBLIC REFERENCE API: Refresh flow failed:', e);
+      }
+    }
 
     if (!response.ok) {
       console.error(`❌ PUBLIC REFERENCE API: Django returned ${response.status}`);
@@ -78,35 +141,41 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Choices endpoints возвращают массив напрямую, а не {results: [...]}
     const isChoicesEndpoint = djangoType.includes('/choices');
 
-    if (isChoicesEndpoint && Array.isArray(data)) {
-      // Choices endpoint возвращает массив напрямую: [{id, name, mark}, ...]
+    // 1) Некоторые не-choices эндпоинты (например, regions) тоже возвращают ПРЯМО массив
+    if (Array.isArray(data)) {
       rawData = data;
       options = data.map((item: any) => ({
         value: String(item.id),
         label: item.name,
-        // Сохраняем дополнительные поля для каскадных связей
-        // Choices endpoints используют 'mark' вместо 'mark_id', 'vehicle_type' вместо 'vehicle_type_id'
         ...(item.vehicle_type && { vehicle_type_id: item.vehicle_type }),
         ...(item.mark && { brand_id: item.mark }),
         ...(item.region && { region_id: item.region }),
       }));
-
+      console.log(`✅ PUBLIC REFERENCE API: Transformed ${options.length} array items for ${type}`);
+    } else if (isChoicesEndpoint) {
+      // 2) Choices endpoints: на всякий случай обработка, если вдруг формат изменится
+      const arr = Array.isArray(data) ? data : [];
+      rawData = arr;
+      options = arr.map((item: any) => ({
+        value: String(item.id),
+        label: item.name,
+        ...(item.vehicle_type && { vehicle_type_id: item.vehicle_type }),
+        ...(item.mark && { brand_id: item.mark }),
+        ...(item.region && { region_id: item.region }),
+      }));
       console.log(`✅ PUBLIC REFERENCE API: Transformed ${options.length} choices items for ${type}`);
     } else if (data.results && Array.isArray(data.results)) {
-      // Обычные endpoints возвращают {results: [...], count, next, previous}
+      // 3) Пагинированные ответы {results: [...], count, next, previous}
       rawData = data.results;
       options = data.results.map((item: any) => ({
         value: String(item.id),
         label: item.name,
         // Сохраняем дополнительные поля для каскадных связей
-        // Django использует vehicle_type для типов транспорта
         ...(item.vehicle_type && { vehicle_type_id: item.vehicle_type }),
         ...(item.vehicle_type_id && { vehicle_type_id: item.vehicle_type_id }),
-        // Django использует mark для марок (brands)
         ...(item.mark && { brand_id: item.mark }),
         ...(item.mark_id && { brand_id: item.mark_id }),
         ...(item.brand_id && { brand_id: item.brand_id }),
-        // Регионы
         ...(item.region && { region_id: item.region }),
         ...(item.region_id && { region_id: item.region_id }),
       }));
