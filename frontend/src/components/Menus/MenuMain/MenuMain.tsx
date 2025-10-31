@@ -2,7 +2,8 @@
 import { FC, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import { useRouter, usePathname } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
+import { cleanupAuth } from '@/lib/auth/cleanupAuth';
 import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield } from 'lucide-react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/common/constants/constants';
@@ -339,25 +340,12 @@ export const MenuMain: FC = () => {
           disabled: false,
           cb: async function() {
             console.log('Logout callback called');
-            console.log('signOut type:', typeof signOut);
-            console.log('signOut function:', signOut);
             try {
-              if (typeof signOut === 'function') {
-                console.log('Calling signOut with redirect: false...');
-                // ВАЖНО: используем redirect: false, чтобы избежать редиректа на /signin
-                await signOut({ redirect: false });
-                console.log('SignOut successful, redirecting to /api/auth/signin...');
-                // Вручную редиректим на страницу входа
-                window.location.href = '/api/auth/signin';
-              } else {
-                console.error('signOut function is not available');
-                // Fallback to manual logout
-                window.location.href = '/api/auth/signout';
-              }
+              console.log('Calling full cleanupAuth (Redis + NextAuth + storage)');
+              await cleanupAuth('/api/auth/signin');
             } catch (error) {
-              console.error('Error during signOut:', error);
-              // Fallback to manual logout
-              window.location.href = '/api/auth/signout';
+              console.error('Error during cleanupAuth, fallback redirect to signin:', error);
+              window.location.href = '/api/auth/signin';
             }
           },
           index: 100,

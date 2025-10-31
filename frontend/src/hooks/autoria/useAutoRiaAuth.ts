@@ -12,6 +12,7 @@ export interface AutoRiaAuthState {
   token: string | null;
   user: any | null;
   error: string | null;
+  hasBackendTokens: boolean;
 }
 
 export interface AutoRiaAuthActions {
@@ -34,7 +35,8 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
     isLoading: true,
     token: null,
     user: null,
-    error: null
+    error: null,
+    hasBackendTokens: false
   });
 
   // Получение токена из различных источников
@@ -48,14 +50,7 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
         }
       }
 
-      // Если используется NextAuth сессия
-      if (session?.user) {
-        // Проверяем, есть ли токен в сессии
-        const sessionToken = (session as any)?.accessToken;
-        if (sessionToken) {
-          return sessionToken;
-        }
-      }
+      // Не считаем сессионный токен признаком backend-авторизации
 
       return null;
     } catch (error) {
@@ -102,17 +97,40 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
   // Проверка авторизации
   const checkAuth = useCallback(async (): Promise<boolean> => {
     try {
+      // Если нет сессии, не проверяем токены
+      if (status === 'unauthenticated' || !session) {
+        console.log('[useAutoRiaAuth] No session, clearing auth state');
+        setState({
+          isAuthenticated: false,
+          isLoading: false,
+          token: null,
+          user: null,
+          error: null,
+          hasBackendTokens: false
+        });
+        return false;
+      }
+
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const token = await getToken();
-      
-      if (!token) {
+      // Проверяем наличие backend токенов напрямую
+      let token: string | null = null;
+      let hasBackendTokens = false;
+      if (provider === AuthProvider.MyBackendDocs) {
+        const tokens = await getAuthTokens();
+        token = tokens?.access || null;
+        hasBackendTokens = !!tokens?.access;
+      }
+
+      if (!token || !hasBackendTokens) {
+        console.log('[useAutoRiaAuth] No backend tokens found');
         setState(prev => ({ 
           ...prev, 
           isAuthenticated: false,
           isLoading: false,
           token: null,
-          user: null
+          user: null,
+          hasBackendTokens: false
         }));
         return false;
       }
@@ -124,22 +142,27 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
       } else if (typeof window !== 'undefined') {
         const storedAuth = localStorage.getItem('backend_auth');
         if (storedAuth) {
-          const authData = JSON.parse(storedAuth);
-          user = authData?.user;
+          try {
+            const authData = JSON.parse(storedAuth);
+            user = authData?.user;
+          } catch (e) {
+            console.warn('[useAutoRiaAuth] Failed to parse stored auth data');
+          }
         }
       }
 
       console.log('[useAutoRiaAuth] ✅ Token present and user data loaded');
       setState(prev => ({
         ...prev,
-        isAuthenticated: true,
+        isAuthenticated: hasBackendTokens,
         isLoading: false,
         token,
         user,
-        error: null
+        error: null,
+        hasBackendTokens
       }));
 
-      return true;
+      return hasBackendTokens;
     } catch (error) {
       console.error('[useAutoRiaAuth] Error checking auth:', error);
       setState(prev => ({
@@ -148,11 +171,12 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
         isLoading: false,
         token: null,
         user: null,
-        error: 'Authentication check failed'
+        error: 'Authentication check failed',
+        hasBackendTokens: false
       }));
       return false;
     }
-  }, [getToken, session]);
+  }, [getToken, session, status, provider]);
 
   // Выход из системы
   const logout = useCallback(() => {
@@ -170,13 +194,51 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
     }
   }, []);
 
-  // Инициализация при монтировании компонента
+  // Инициализация при монтировании компонента и при изменении сессии
   useEffect(() => {
-    if (status !== 'loading') {
-      checkAuth();
+    if (status === 'loading') {
+      return; // Ждем загрузки сессии
     }
+
+    // Если сессии нет, сразу очищаем состояние
+    if (status === 'unauthenticated' || !session) {
+      console.log('[useAutoRiaAuth] No session, clearing state');
+      setState({
+        isAuthenticated: false,
+        isLoading: false,
+        token: null,
+        user: null,
+        error: null,
+        hasBackendTokens: false
+      });
+      return;
+    }
+
+    // Если сессия есть, проверяем токены
+    checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, provider]);
+  }, [status, session, provider]);
+
+  // Дополнительная очистка при signout событии
+  useEffect(() => {
+    const handleSignout = (event: CustomEvent) => {
+      console.log('[useAutoRiaAuth] Signout event received, clearing auth state');
+      setState({
+        isAuthenticated: false,
+        isLoading: false,
+        token: null,
+        user: null,
+        error: null,
+        hasBackendTokens: false
+      });
+    };
+
+    window.addEventListener('auth:signout', handleSignout as EventListener);
+
+    return () => {
+      window.removeEventListener('auth:signout', handleSignout as EventListener);
+    };
+  }, []);
 
   // Автоматическое обновление токена при изменении провайдера
   useEffect(() => {

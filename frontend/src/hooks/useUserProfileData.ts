@@ -616,13 +616,15 @@ export const useUserProfileData = () => {
     }
 
     if (status === 'unauthenticated' || !session) {
-      // Пользователь не авторизован, не загружаем данные
-      if (DEBUG) console.log('[useUserProfileData] User not authenticated, skipping data load');
-      setState(prev => ({
-        ...prev,
+      // Пользователь не авторизован, очищаем данные
+      if (DEBUG) console.log('[useUserProfileData] User not authenticated, clearing data');
+      setState({
         loading: false,
-        error: 'User not authenticated'
-      }));
+        error: null,
+        data: null,
+        updating: false,
+        updateError: null
+      });
       return;
     }
 
@@ -630,6 +632,26 @@ export const useUserProfileData = () => {
     if (DEBUG) console.log('[useUserProfileData] User authenticated, loading data...');
     loadUserData();
   }, [status, session, loadUserData, DEBUG]);
+
+  // Очистка данных при signout
+  useEffect(() => {
+    const handleSignout = (event: CustomEvent) => {
+      if (DEBUG) console.log('[useUserProfileData] Signout event received, clearing user data');
+      setState({
+        loading: false,
+        error: null,
+        data: null,
+        updating: false,
+        updateError: null
+      });
+    };
+
+    window.addEventListener('auth:signout', handleSignout as EventListener);
+
+    return () => {
+      window.removeEventListener('auth:signout', handleSignout as EventListener);
+    };
+  }, [DEBUG]);
 
   return {
     // Состояние

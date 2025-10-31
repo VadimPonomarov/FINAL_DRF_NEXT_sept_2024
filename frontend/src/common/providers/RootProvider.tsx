@@ -56,6 +56,28 @@ const GlobalApiErrorHandler: FC = () => {
   return null; // Этот компонент не рендерит UI
 };
 
+// Компонент для очистки React Query кеша при signout
+const CacheCleanupHandler: FC = () => {
+  useEffect(() => {
+    const handleSignout = (event: CustomEvent) => {
+      console.log('[RootProvider] 🧹 Clearing React Query cache on signout...');
+      // Очищаем все запросы связанные с пользователем
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      queryClient.removeQueries({ queryKey: ['userProfile'] });
+      queryClient.clear(); // Полная очистка кеша
+      console.log('[RootProvider] ✅ React Query cache cleared');
+    };
+
+    window.addEventListener('auth:signout', handleSignout as EventListener);
+
+    return () => {
+      window.removeEventListener('auth:signout', handleSignout as EventListener);
+    };
+  }, []);
+
+  return null;
+};
+
 const RootProvider: FC<IProps> = ({ children }) => {
   // Preload critical data on app startup
   useEffect(() => {
@@ -87,10 +109,11 @@ const RootProvider: FC<IProps> = ({ children }) => {
               <NotificationProvider>
                 <AuthProviderProvider>
                   <ChatProvider>
-                    <ChatContextProvider>
-                      <GlobalApiErrorHandler />
-                      {children}
-                    </ChatContextProvider>
+                  <ChatContextProvider>
+                    <GlobalApiErrorHandler />
+                    <CacheCleanupHandler />
+                    {children}
+                  </ChatContextProvider>
                   </ChatProvider>
                 </AuthProviderProvider>
               </NotificationProvider>

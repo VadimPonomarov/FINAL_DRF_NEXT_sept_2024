@@ -23,7 +23,7 @@ const AutoRiaUserBadge: React.FC = () => {
   const router = useRouter();
   const { t } = useI18n();
   const { data: session, status } = useSession();
-  const { user, isAuthenticated } = useAutoRiaAuth();
+  const { user, isAuthenticated, hasBackendTokens } = useAutoRiaAuth();
   const { data: userProfileData } = useUserProfileData();
   const { toast } = useToast();
 
@@ -34,9 +34,10 @@ const AutoRiaUserBadge: React.FC = () => {
         hasUser: !!user,
         hasProfileData: !!userProfileData,
         sessionStatus: status,
+        hasBackendTokens,
       });
     }
-  }, [isAuthenticated, status]); // Тільки при зміні isAuthenticated!
+  }, [isAuthenticated, status, hasBackendTokens]); // Тільки при зміні isAuthenticated!
 
   // КРИТИЧНО: Не показуємо бейдж якщо немає NextAuth сессії
   // Неможливо мати backend токени без NextAuth сессії
@@ -44,12 +45,14 @@ const AutoRiaUserBadge: React.FC = () => {
     return null; // Ще завантажується
   }
   
+  // Если сессии нет или статус unauthenticated - скрываем бейдж
   if (status === 'unauthenticated' || !session) {
     return null; // Немає NextAuth сессії - не може бути backend токенів
   }
 
-  // Якщо користувач не авторизований в AutoRia, не показуємо бейдж
-  if (!isAuthenticated && !user && !userProfileData?.user) {
+  // Показуємо бейдж ТІЛЬКИ якщо є backend токени
+  // Проверяем что hasBackendTokens точно true
+  if (hasBackendTokens !== true) {
     return null;
   }
 

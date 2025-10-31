@@ -15,8 +15,7 @@
  */
 async function checkNextAuthSession(): Promise<boolean> {
   try {
-    // Используем /api/auth/status для проверки обоих уровней
-    const response = await fetch('/api/auth/status', {
+    const response = await fetch('/api/auth/session', {
       method: 'GET',
       credentials: 'include',
       cache: 'no-store'
@@ -27,7 +26,7 @@ async function checkNextAuthSession(): Promise<boolean> {
     }
     
     const data = await response.json();
-    return data?.success && data?.data?.hasNextAuthSession === true;
+    return !!data?.user;
   } catch (error) {
     console.error('[redirectToAuth] Error checking NextAuth session:', error);
     return false;
@@ -73,6 +72,11 @@ export async function redirectToAuth(
     // Уровень 1 не пройден (нет NextAuth сессии)
     // Редиректим на /api/auth/signin для получения сессии
     console.log('[redirectToAuth] ❌ No NextAuth session, redirecting to /api/auth/signin');
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', cache: 'no-store' });
+    } catch (e) {
+      console.warn('[redirectToAuth] Cleanup before signin failed (ignored)', e);
+    }
     const signinUrl = `/api/auth/signin?callbackUrl=${encodeURIComponent(path)}`;
     window.location.href = signinUrl;
   }

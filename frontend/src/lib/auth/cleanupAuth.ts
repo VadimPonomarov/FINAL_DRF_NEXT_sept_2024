@@ -15,30 +15,30 @@ export async function cleanupAuth(redirectUrl?: string): Promise<void> {
   console.log('[CleanupAuth] SIGNOUT: Starting full authentication cleanup (Redis + NextAuth + storage)...');
 
   try {
-    // 1. Очищаем Redis на backend (провайдеры, токены)
+    // 1. Бэкенд-очистка: Redis-токены + сессионные cookies через существующий endpoint
     try {
-      console.log('[CleanupAuth] Clearing Redis data...');
-      const response = await fetch('/api/auth/cleanup', {
+      console.log('[CleanupAuth] Calling /api/auth/logout (server-side full cleanup)...');
+      const response = await fetch('/api/auth/logout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (response.ok) {
-        console.log('[CleanupAuth] ✅ Redis data cleared successfully');
+        console.log('[CleanupAuth] ✅ /api/auth/logout completed');
       } else {
-        console.warn('[CleanupAuth] ⚠️ Failed to clear Redis data:', response.status);
+        console.warn('[CleanupAuth] ⚠️ /api/auth/logout returned status:', response.status);
       }
     } catch (redisError) {
-      console.error('[CleanupAuth] ❌ Error clearing Redis:', redisError);
-      // Продолжаем очистку даже если Redis не очистился
+      console.error('[CleanupAuth] ❌ Error calling /api/auth/logout:', redisError);
+      // Продолжаем локальную очистку даже если запрос не удался
     }
 
-    // 2. Очищаем NextAuth сессию
-    console.log('[CleanupAuth] Signing out from NextAuth...');
+    // 2. Дополнительно инвалидируем NextAuth (на случай клиентского состояния)
+    console.log('[CleanupAuth] Signing out from NextAuth (client-side)...');
     await signOut({ redirect: false });
-    console.log('[CleanupAuth] ✅ NextAuth session cleared');
+    console.log('[CleanupAuth] ✅ NextAuth client signOut called');
 
     // 3. Очищаем localStorage
     console.log('[CleanupAuth] Clearing localStorage...');
@@ -62,12 +62,23 @@ export async function cleanupAuth(redirectUrl?: string): Promise<void> {
     }
     console.log('[CleanupAuth] ✅ sessionStorage cleared');
 
-    // 5. Опциональный редирект
+    // 5. Очищаем React Query кеш через событие
+    if (typeof window !== 'undefined') {
+      console.log('[CleanupAuth] Clearing React Query cache...');
+      // Используем небольшую задержку чтобы убедиться что все очистки выполнены
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('auth:signout', { detail: { clearCache: true } }));
+        console.log('[CleanupAuth] ✅ auth:signout event dispatched');
+      }, 50);
+    }
+
+    // 6. Опциональный редирект
     if (redirectUrl && typeof window !== 'undefined') {
       console.log('[CleanupAuth] Redirecting to:', redirectUrl);
+      // Увеличиваем задержку чтобы дать время обработать событие signout
       setTimeout(() => {
         window.location.href = redirectUrl;
-      }, 100);
+      }, 200);
     }
 
     console.log('[CleanupAuth] ✅ SIGNOUT completed: Full cleanup successful (Redis + NextAuth + storage)');
