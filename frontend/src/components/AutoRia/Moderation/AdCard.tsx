@@ -138,10 +138,25 @@ const AdCard = memo<AdCardProps>(({
             >
               <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs">
                 <SelectValue>
-                  <span className="flex items-center gap-1">
-                    <Settings className="h-3 w-3" />
-                    <span>{t(`autoria.moderation.status.${ad.status}`)}</span>
-                  </span>
+                  {(() => {
+                    const statusKeyMap: Record<string, string> = {
+                      draft: 'autoria.moderation.status.draft',
+                      pending: 'autoria.moderation.status.pending',
+                      needs_review: 'autoria.moderation.status.needsReview',
+                      active: 'autoria.moderation.status.active',
+                      rejected: 'autoria.moderation.status.rejected',
+                      blocked: 'autoria.moderation.status.blocked',
+                      sold: 'autoria.moderation.status.sold',
+                      archived: 'autoria.moderation.status.archived',
+                    };
+                    const label = t(statusKeyMap[ad.status] || `autoria.moderation.status.${ad.status}`, ad.status);
+                    return (
+                      <span className="flex items-center gap-1">
+                        <Settings className="h-3 w-3" />
+                        <span>{label}</span>
+                      </span>
+                    );
+                  })()}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>

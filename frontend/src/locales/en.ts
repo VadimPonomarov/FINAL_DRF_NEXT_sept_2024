@@ -1601,6 +1601,8 @@ export default {
   "autoria.moderation.status.draft": "Draft",
   "autoria.moderation.status.pending": "Pending",
   "autoria.moderation.status.needsReview": "Needs Review",
+  "autoria.moderation.status.needs_review": "Needs Review",
+  "autoria.moderation.status.requires_verification": "Needs Verification",
   "autoria.moderation.status.active": "Active",
   "autoria.moderation.status.rejected": "Rejected",
   "autoria.moderation.status.blocked": "Blocked",

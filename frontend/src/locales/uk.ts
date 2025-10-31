@@ -3223,6 +3223,8 @@ export default {
   "autoria.moderation.status.draft": "Чернетка",
   "autoria.moderation.status.pending": "Очікування",
   "autoria.moderation.status.needsReview": "Потребує перевірки",
+  "autoria.moderation.status.needs_review": "Потребує перевірки",
+  "autoria.moderation.status.requires_verification": "Потребує перевірки",
   "autoria.moderation.status.active": "Активно",
   "autoria.moderation.status.rejected": "Відхилено",
   "autoria.moderation.status.blocked": "Заблоковано",

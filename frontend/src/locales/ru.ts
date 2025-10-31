@@ -2739,6 +2739,8 @@ export default {
   "autoria.moderation.status.draft": "Черновик",
   "autoria.moderation.status.pending": "Ожидание",
   "autoria.moderation.status.needsReview": "Требует проверки",
+  "autoria.moderation.status.needs_review": "Требует проверки",
+  "autoria.moderation.status.requires_verification": "Требует проверки",
   "autoria.moderation.status.active": "Активно",
   "autoria.moderation.status.rejected": "Отклонено",
   "autoria.moderation.status.blocked": "Заблокировано",

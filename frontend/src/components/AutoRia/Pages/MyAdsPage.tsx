@@ -239,9 +239,23 @@ const MyAdsPage = () => {
     try {
       await CarAdsService.updateMyAdStatus(adId, newStatus);
       setAds(prev => prev.map(ad => ad.id === adId ? { ...ad, status: newStatus } : ad));
-      toast({ variant: 'default', title: t('notifications.success'), description: t('autoria.moderation.statusUpdated'), duration: 2000 });
+      
+      // Get the translated status name for the toast message
+      const statusTranslation = t(`autoria.moderation.status.${newStatus.toLowerCase()}`, newStatus);
+      toast({ 
+        variant: 'default', 
+        title: t('notifications.success', 'Успех'), 
+        description: t('autoria.moderation.statusUpdated', `Статус изменен на: ${statusTranslation}`), 
+        duration: 2000 
+      });
     } catch (e) {
-      toast({ variant: 'destructive', title: t('notifications.error'), description: t('autoria.moderation.statusUpdateFailed'), duration: 3000 });
+      console.error('Error updating ad status:', e);
+      toast({ 
+        variant: 'destructive', 
+        title: t('notifications.error', 'Ошибка'), 
+        description: t('autoria.moderation.statusUpdateFailed', 'Не удалось обновить статус. Пожалуйста, попробуйте снова.'), 
+        duration: 3000 
+      });
     }
   }, [toast, t]);
 
@@ -584,19 +598,91 @@ const MyAdsPage = () => {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'draft').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'draft'}:a)))}><EyeOff className="h-4 w-4" /></Button>
+                          <Button 
+                            size="icon" 
+                            variant="secondary" 
+                            className="h-8 w-8" 
+                            onClick={async () => {
+                              try {
+                                await CarAdsService.updateMyAdStatus(ad.id, 'draft');
+                                setAds(p => p.map(a => a.id === ad.id ? {...a, status: 'draft'} : a));
+                                toast({
+                                  title: t('notifications.success', 'Успех'),
+                                  description: t('autoria.moderation.statusUpdated', 'Статус изменен на: ') + t('autoria.moderation.status.draft', 'Черновик'),
+                                  variant: 'default'
+                                });
+                              } catch (error) {
+                                console.error('Error updating status:', error);
+                                toast({
+                                  title: t('notifications.error', 'Ошибка'),
+                                  description: t('autoria.moderation.statusUpdateFailed', 'Не удалось обновить статус'),
+                                  variant: 'destructive'
+                                });
+                              }
+                            }}
+                          >
+                            <EyeOff className="h-4 w-4" />
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent>{t('autoria.hide')}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'archived').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'archived'}:a)))}><Archive className="h-4 w-4" /></Button>
+                          <Button 
+                            size="icon" 
+                            variant="outline" 
+                            className="h-8 w-8" 
+                            onClick={async () => {
+                              try {
+                                await CarAdsService.updateMyAdStatus(ad.id, 'archived');
+                                setAds(p => p.map(a => a.id === ad.id ? {...a, status: 'archived'} : a));
+                                toast({
+                                  title: t('notifications.success', 'Успех'),
+                                  description: t('autoria.moderation.statusUpdated', 'Статус изменен на: ') + t('autoria.moderation.status.archived', 'В архиве'),
+                                  variant: 'default'
+                                });
+                              } catch (error) {
+                                console.error('Error updating status:', error);
+                                toast({
+                                  title: t('notifications.error', 'Ошибка'),
+                                  description: t('autoria.moderation.statusUpdateFailed', 'Не удалось обновить статус'),
+                                  variant: 'destructive'
+                                });
+                              }
+                            }}
+                          >
+                            <Archive className="h-4 w-4" />
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent>{t('autoria.moderation.status.archived')}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'sold').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'sold'}:a)))}><DollarSign className="h-4 w-4" /></Button>
+                          <Button 
+                            size="icon" 
+                            variant="outline" 
+                            className="h-8 w-8" 
+                            onClick={async () => {
+                              try {
+                                await CarAdsService.updateMyAdStatus(ad.id, 'sold');
+                                setAds(p => p.map(a => a.id === ad.id ? {...a, status: 'sold'} : a));
+                                toast({
+                                  title: t('notifications.success', 'Успех'),
+                                  description: t('autoria.moderation.statusUpdated', 'Статус изменен на: ') + t('autoria.moderation.status.sold', 'Продано'),
+                                  variant: 'default'
+                                });
+                              } catch (error) {
+                                console.error('Error updating status:', error);
+                                toast({
+                                  title: t('notifications.error', 'Ошибка'),
+                                  description: t('autoria.moderation.statusUpdateFailed', 'Не удалось обновить статус'),
+                                  variant: 'destructive'
+                                });
+                              }
+                            }}
+                          >
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent>{t('autoria.moderation.status.sold')}</TooltipContent>
                       </Tooltip>

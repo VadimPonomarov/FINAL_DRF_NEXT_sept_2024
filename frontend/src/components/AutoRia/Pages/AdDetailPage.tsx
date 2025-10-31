@@ -52,14 +52,30 @@ import '@/styles/showroom.css';
 interface AdDetailPageProps {
   adId: number;
   showModerationControls?: boolean; // Для суперюзеров
+  onBack?: () => void; // Callback для кнопки "Назад"
+  onEdit?: () => void; // Callback для кнопки "Редактировать"
 }
 
-const AdDetailPage: React.FC<AdDetailPageProps> = ({ adId, showModerationControls = false }) => {
+const AdDetailPage: React.FC<AdDetailPageProps> = ({ 
+  adId, 
+  showModerationControls = false, 
+  onBack, 
+  onEdit 
+}) => {
   const { t, formatDate, formatCurrency } = useI18n();
   const tReact = useTranslation();
   const router = useRouter();
   const { user, isAuthenticated, getToken } = useAutoRiaAuth();
   const { toast } = useToast();
+
+  // Handle back navigation with callback support
+  const handleBack = useCallback(() => {
+    if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
+  }, [onBack, router]);
 
   // State
   const [adData, setAdData] = useState<CarAd | null>(null);
@@ -366,7 +382,7 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({ adId, showModerationControl
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push('/autoria/search')}
+                onClick={handleBack}
                 className="border-2 border-slate-200 text-slate-600 hover:bg-slate-50 px-6 py-3 rounded-xl font-semibold"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
@@ -380,45 +396,89 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({ adId, showModerationControl
   }
 
   const getStatusBadge = (status: string) => {
+    // Define status configurations with default labels
     const statusConfig = {
-      active: { label: 'Активное', variant: 'default' as const, icon: CheckCircle },
-      pending: { label: 'На модерации', variant: 'secondary' as const, icon: Clock },
-      rejected: { label: 'Отклонено', variant: 'destructive' as const, icon: AlertCircle },
-      draft: { label: 'Черновик', variant: 'outline' as const, icon: Clock }
+      active: { 
+        label: 'Активное',
+        variant: 'default' as const, 
+        icon: CheckCircle 
+      },
+      pending: { 
+        label: 'На модерации',
+        variant: 'secondary' as const, 
+        icon: Clock 
+      },
+      rejected: { 
+        label: 'Отклонено',
+        variant: 'destructive' as const, 
+        icon: AlertCircle 
+      },
+      draft: { 
+        label: 'Черновик',
+        variant: 'outline' as const, 
+        icon: Clock 
+      },
+      requires_verification: {
+        label: 'Требует проверки',
+        variant: 'secondary' as const,
+        icon: AlertCircle
+      },
+      // Add any other statuses that might be used
+      ...(status && !['active', 'pending', 'rejected', 'draft', 'requires_verification'].includes(status) 
+        ? { [status]: { label: status, variant: 'outline' as const, icon: AlertCircle } }
+        : {})
     };
+    
+    // Get the status config or default to a generic status
+    const config = statusConfig[status as keyof typeof statusConfig] || { 
+      label: status, 
+      variant: 'outline' as const, 
+      icon: AlertCircle 
+    };
+    
+    // First try with the full path, then with just the status
+    let translatedLabel = t(`autoria.moderation.status.${status}`, '');
+    if (!translatedLabel) {
+      translatedLabel = t(status, config.label);
+    }
+    
+    // Fallback to the status if no translation found
+    if (translatedLabel === status) {
+      translatedLabel = config.label || status;
+    }
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
     const Icon = config.icon;
 
     return (
       <Badge variant={config.variant} className="flex items-center gap-1">
         <Icon className="h-3 w-3" />
-        {config.label}
+        {translatedLabel}
       </Badge>
     );
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Main Container */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+    {/* Main Container */}
+    <div className="max-w-7xl mx-auto px-4 py-6">
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
-          <button
-            onClick={() => router.push('/autoria/search')}
-            className="flex items-center gap-1 hover:text-orange-500 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>{tReact('adView.backButton')}</span>
-          </button>
-          <span className="text-gray-400">/</span>
-          <span className="text-gray-900">{adData.mark_name} {adData.model}</span>
-          {showModerationControls && (
-            <>
-              <span className="text-gray-400">/</span>
-              {/* Кнопка сброса счетчиков для владельца/суперпользователя */}
-              {canShowResetButton && (
+      {/* Breadcrumb */}
+      <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-1 hover:text-orange-500 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>{tReact('adView.backButton')}</span>
+        </button>
+        <span className="text-gray-400">/</span>
+        <span className="text-gray-900">{adData.mark_name} {adData.model}</span>
+        {showModerationControls && (
+          <>
+            <span className="text-gray-400">/</span>
+            {/* Кнопка сброса счетчиков для владельца/суперпользователя */}
+            {canShowResetButton && (
+              <>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -437,13 +497,15 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({ adId, showModerationControl
                 >
                   Reset counters
                 </Button>
-              )}
+                <span className="text-gray-400">/</span>
+              </>
+            )}
 
-              <Link href={`/autoria/ads/moderate/${adId}`} className="text-orange-500 hover:text-orange-600">
-                Модерация
-              </Link>
-            </>
-          )}
+            <Link href={`/autoria/ads/moderate/${adId}`} className="text-orange-500 hover:text-orange-600">
+              Модерация
+            </Link>
+          </>
+        )}
         </nav>
 
         {/* Title and Actions */}
