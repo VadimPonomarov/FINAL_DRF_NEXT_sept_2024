@@ -34774,73 +34774,70 @@ if (AUTORIA_PATHS.some(path => pathname.startsWith(path))) {
 
 ---
 
-### 🏗️ Рівень 2: HOC (Higher-Order Component) - Друга лінія захисту
+### 🏗️ Рівень 2: BackendTokenPresenceGate (HOC) - Друга лінія захисту
 
-**Файл:** `frontend/src/hoc/withAutoRiaAuth.tsx`
+**Файл:** `frontend/src/components/AutoRia/Auth/BackendTokenPresenceGate.tsx`
 
-**Призначення:** Перевірка **backend токенів** (access/refresh) в localStorage
+**Призначення:** Перевірка **backend токенів** в Redis через API запит
 
-⚠️ **ВАЖЛИВО**: Backend токени можуть існувати **ТІЛЬКИ** при наявності NextAuth сессії!
+⚠️ **ВАЖЛИВО**: 
+- Backend токени зберігаються в **Redis**, а не в localStorage
+- Backend токени можуть існувати **ТІЛЬКИ** при наявності NextAuth сессії
+- Middleware (Рівень 1) вже перевірив NextAuth сессію
+
+**Логіка роботи:**
 
 ```typescript
-export function withAutoRiaAuth<P>(WrappedComponent: React.ComponentType<P>) {
-  return function WithAutoRiaAuthComponent(props: P) {
-    useEffect(() => {
-      // NextAuth сессія УЖЕ перевірена middleware
-      // Перевіряємо ТІЛЬКИ backend токени
-      
-      const backendAuth = localStorage.getItem('backend_auth');
-      
-      if (!backendAuth) {
-        // ❌ Немає backend токенів
-        router.replace('/login?callbackUrl=...');
-        return;
-      }
-      
-      // ✅ Backend токени валідні
-      setIsAuthorized(true);
-    }, []);
-    
-    if (!isAuthorized) {
-      return <LoadingScreen />;
-    }
-    
-    return <WrappedComponent {...props} />;
-  };
+// Перевірка backend токенів в Redis
+const response = await fetch('/api/redis?key=backend_auth', { 
+  cache: 'no-store' 
+});
+
+if (!response.ok || !data.exists || !data.value) {
+  // ❌ Немає backend токенів в Redis
+  router.replace('/login?callbackUrl=...&error=backend_auth_required');
+  return;
 }
+
+// ✅ Backend токени знайдені в Redis
+// Дозволяємо доступ до AutoRia секції
 ```
 
 **Використання:**
-```typescript
-// Захист сторінки AutoRia
-export default withAutoRiaAuth(AutoRiaHomePage);
-```
+- Автоматично обгортає всі сторінки AutoRia через Layout
+- Перевіряє токени **після** рендерингу (client-side)
+- Використовує `redirectToAuth()` для правильних редиректів
+
+**Альтернатива:** `withAutoRiaAuth()` HOC для окремих компонентів (використовує localStorage як fallback)
 
 ---
 
-### 🏗️ Рівень 3: fetchWithAuth - Третя лінія захисту
+### 🏗️ Рівень 3: fetchWithAuth / API Routes - Третя лінія захисту
 
-**Файл:** `frontend/src/utils/fetchWithAuth.ts`
+**Файл:** `frontend/src/utils/fetchWithAuth.ts` та API Routes (`frontend/src/app/api/*`)
 
 **Призначення:** Автоматичне оновлення токенів та обробка помилок під час API запитів
 
 **Функції:**
 1. **Auto Refresh**: Автоматичне оновлення access token при 401
 2. **Retry Logic**: Повторний запит після оновлення токена
-3. **Error Handling**: Редирект на /login при невдачі
+3. **Token Management**: Отримання токенів з Redis через API (`/api/auth/token`)
+4. **Error Handling**: Редирект на /login при невдачі
+
+**Ключова особливість:** Токени зберігаються в **Redis**, а не в localStorage!
 
 ```typescript
 export async function fetchWithAuth(url: string, options?: RequestInit) {
-  // 1. Отримуємо access token з localStorage
-  const authData = JSON.parse(localStorage.getItem('backend_auth') || '{}');
-  let accessToken = authData.access;
+  // 1. Отримуємо токени з Redis через API
+  const tokenResponse = await fetch('/api/auth/token');
+  const { access, refresh } = await tokenResponse.json();
   
   // 2. Додаємо Authorization header
   const response = await fetch(url, {
     ...options,
     headers: {
       ...options?.headers,
-      'Authorization': `Bearer ${accessToken}`,
+      'Authorization': `Bearer ${access}`,
     },
   });
   
@@ -34848,22 +34845,19 @@ export async function fetchWithAuth(url: string, options?: RequestInit) {
   if (response.status === 401) {
     const refreshResponse = await fetch('/api/auth/refresh', {
       method: 'POST',
-      body: JSON.stringify({ refresh: authData.refresh }),
     });
     
     if (refreshResponse.ok) {
-      // ✅ Токен оновлений, повторюємо запит
-      const { access } = await refreshResponse.json();
-      localStorage.setItem('backend_auth', JSON.stringify({ access, refresh: authData.refresh }));
+      // ✅ Токен оновлений в Redis, повторюємо запит
+      const { access: newAccess } = await refreshResponse.json();
       
       return fetch(url, {
         ...options,
-        headers: { ...options?.headers, 'Authorization': `Bearer ${access}` },
+        headers: { ...options?.headers, 'Authorization': `Bearer ${newAccess}` },
       });
     } else {
       // ❌ Refresh token також застарів
-      localStorage.removeItem('backend_auth');
-      window.location.href = '/login?error=token_expired';
+      // API route автоматично очистить Redis та перенаправить на /login
       throw new Error('Authentication expired');
     }
   }
@@ -34872,56 +34866,241 @@ export async function fetchWithAuth(url: string, options?: RequestInit) {
 }
 ```
 
+**API Routes для управління токенами:**
+- `GET /api/auth/token` - Отримання токенів з Redis
+- `POST /api/auth/token` - Збереження токенів в Redis
+- `POST /api/auth/refresh` - Оновлення access token через refresh token
+
 ---
 
-### 🔄 Процес аутентифікації
+### 🔄 Процес аутентифікації: SIGNIN → SIGNOUT
 
-#### 1. SIGNOUT - Повний вихід з системи
+Система реалізує двоетапну авторизацію з автоматичним управлінням UI елементами (бейджами) відображаючими стан авторизації.
 
-**Функція:** `cleanupAuth(redirectUrl?: string)`
+---
 
-**Що очищується:**
+#### 🔐 SIGNIN - Процес входу в систему
+
+Процес авторизації складається з двох етапів:
+
+##### Етап 1: NextAuth OAuth (Обов'язковий)
+
+**Коли:** При відсутності NextAuth сессії (перший візит або після повного виходу)
+
+**Шлях:** 
+```
+Middleware перевірка → Редирект на /api/auth/signin → OAuth провайдер (Google/Email)
+```
+
+**Процес:**
+1. Користувач намагається отримати доступ до захищеної сторінки (`/autoria/*`)
+2. Middleware перевіряє наявність NextAuth сессії
+3. Якщо сессії немає → редирект на `/api/auth/signin?callbackUrl=<original_url>`
+4. Користувач обирає OAuth провайдер (Google OAuth або Email Magic Link)
+5. Після успішної авторизації NextAuth створює сессію (HTTP-only cookie)
+6. Редирект на `/login` для отримання backend токенів
+
+**UI зміни:**
+- **До signin:** Обидва бейджа відсутні (AuthBadge та AutoRiaUserBadge не відображаються)
+- **Після signin (етап 1):** З'являється тільки **AuthBadge** з email користувача
+
+##### Етап 2: Backend JWT Tokens (Опціональний)
+
+**Коли:** Після отримання NextAuth сессії (потрібні для доступу до AutoRia API)
+
+**Шлях:**
+```
+/login → Вибір користувача зі списку → POST /api/auth/login → Збереження токенів в Redis
+```
+
+**Процес:**
+1. Користувач потрапляє на `/login` (через HOC або пряме відвідування)
+2. Відображається форма зі списком користувачів (якщо є NextAuth сессія)
+3. Користувач обирає акаунт та вводить credentials
+4. Frontend відправляє POST запит на `/api/auth/login` з credentials
+5. Backend валідує credentials та повертає JWT токени (access + refresh)
+6. Токени зберігаються:
+   - **Redis** (основне сховище): `backend_auth` ключ
+   - **localStorage** (опціонально): для швидкого доступу (може бути видалено в майбутньому)
+7. Редирект на `/autoria` або `callbackUrl`
+
+**UI зміни:**
+- **Після signin (етап 2):** З'являється другий бейдж **AutoRiaUserBadge** з ім'ям користувача
+- **Стани бейджів:**
+  - ✅ **AuthBadge** - завжди показується після NextAuth авторизації (email з сессії)
+  - ✅ **AutoRiaUserBadge** - показується тільки коли є backend токени в Redis
+
+**Компоненти UI:**
+- `AuthBadge` (`frontend/src/components/All/AuthBadge/AuthBadge.tsx`)
+  - Показує email з NextAuth сессії
+  - Схований при `status === 'unauthenticated' || !session`
+  - Відображається в правому верхньому куті (top: 60px, right: 50px)
+  
+- `AutoRiaUserBadge` (`frontend/src/components/AutoRia/Layout/AutoRiaUserBadge.tsx`)
+  - Показує ім'я користувача з backend профілю
+  - Схований якщо `!session || hasBackendTokens !== true`
+  - Відображається під AuthBadge з відступом
+  - Включає tooltip з детальною інформацією про користувача та ролі
+
+---
+
+#### 🚪 SIGNOUT - Повний вихід з системи
+
+**Функція:** `cleanupAuth(redirectUrl?: string)`  
+**Файл:** `frontend/src/lib/auth/cleanupAuth.ts`  
+**Виклик:** Кнопка "Sign Out" (стрілка) в головному меню
+
+**Повний алгоритм очистки:**
+
 ```typescript
 export async function cleanupAuth(redirectUrl?: string) {
-  // 1. Очищуємо Redis (backend токени, провайдери)
-  await fetch('/api/auth/cleanup', { method: 'POST' });
+  // 1. Бэкенд-очистка: Redis токены + сессионные cookies
+  await fetch('/api/auth/logout', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+  });
   
-  // 2. Очищуємо NextAuth сессію
+  // 2. Инвалидация NextAuth сессии (клиентская сторона)
   await signOut({ redirect: false });
   
-  // 3. Очищуємо localStorage (зберігаючи theme/language)
+  // 3. Очистка localStorage (сохраняя theme/language)
   const theme = localStorage.getItem('theme');
   const language = localStorage.getItem('language');
   localStorage.clear();
   if (theme) localStorage.setItem('theme', theme);
   if (language) localStorage.setItem('language', language);
   
-  // 4. Очищуємо sessionStorage
+  // 4. Очистка sessionStorage
   sessionStorage.clear();
   
-  // 5. Редирект
-  window.location.href = redirectUrl || '/api/auth/signin';
+  // 5. Отправка события auth:signout для очистки React Query кеша
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('auth:signout', { 
+      detail: { clearCache: true } 
+    }));
+  }, 50);
+  
+  // 6. Редирект на страницу входа
+  setTimeout(() => {
+    window.location.href = redirectUrl || '/api/auth/signin';
+  }, 200); // Задержка для обработки событий
 }
 ```
 
-**Коли використовується:**
-- Кнопка "Sign Out" в меню
-- Повний вихід з системи
-- **Редирект**: `/api/auth/signin` (потрібно знову авторизуватися через OAuth)
+**Що очищується:**
 
-#### 2. LOGOUT - Часткове очищення (тільки backend токени)
+1. **Redis (серверна сторона):**
+   - `backend_auth` - JWT токени
+   - `dummy_auth` - тестові токени (якщо є)
+   - `auth_provider` - інформація про провайдера
+   - Cookies сессії NextAuth
 
-**Функція:** `cleanupBackendTokens()`
+2. **NextAuth (клієнтська сторона):**
+   - HTTP-only cookie з сессією
+   - Клієнтський стан NextAuth
+
+3. **localStorage:**
+   - Всі дані очищаються, **крім:**
+     - `theme` (тема інтерфейсу)
+     - `language` (обрана мова)
+
+4. **sessionStorage:**
+   - Повна очистка
+
+5. **React Query кеш:**
+   - Очищується через слухача події `auth:signout` в `RootProvider`
+   - Всі запити користувача інвалідуються
+
+6. **React State:**
+   - `useUserProfileData` - очищує стан через слухача `auth:signout`
+   - `useAutoRiaAuth` - очищує стан авторизації
+   - `AuthProvider` - очищує `user` та `isAuthenticated`
+
+**UI зміни під час signout:**
+
+1. **Миттєві зміни (синхронні):**
+   - React компоненти отримують оновлений стан сессії через `useSession()`
+   - `status` змінюється на `'unauthenticated'`
+   - `session` стає `null`
+
+2. **Очистка бейджів (асинхронна через події):**
+   - **AuthBadge** - зникає одразу (перевірка `status === 'unauthenticated'`)
+   - **AutoRiaUserBadge** - зникає після очистки `hasBackendTokens` в `useAutoRiaAuth`
+
+3. **Після редиректу:**
+   - Повна перезагрузка сторінки на `/api/auth/signin`
+   - Всі бейджи відсутні
+   - Показується форма OAuth авторизації
+
+**Послідовність подій:**
+
+```
+Користувач натискає "Sign Out"
+    ↓
+cleanupAuth() викликається
+    ↓
+1. POST /api/auth/logout (очистка Redis + cookies)
+    ↓
+2. signOut({ redirect: false }) (очистка NextAuth)
+    ↓
+3. localStorage.clear() (збереження theme/language)
+    ↓
+4. sessionStorage.clear()
+    ↓
+5. dispatchEvent('auth:signout') (через 50ms)
+    ↓
+   ├→ CacheCleanupHandler очищає React Query
+    ├→ useUserProfileData очищає профіль
+    └→ useAutoRiaAuth очищає стан
+    ↓
+6. window.location.href = '/api/auth/signin' (через 200ms)
+    ↓
+Повна перезагрузка сторінки, всі бейджи зникли
+```
+
+**Редирект:** `/api/auth/signin` (потрібно знову авторизуватися через OAuth)
+
+---
+
+#### 🔄 LOGOUT - Часткове очищення (тільки backend токени)
+
+**Функція:** `cleanupBackendTokens()`  
+**Файл:** `frontend/src/lib/auth/cleanupAuth.ts`  
+**Виклик:** Кнопка "Logout (Redis)" в tooltip AutoRiaUserBadge
+
+**Алгоритм:**
+
+```typescript
+export async function cleanupBackendTokens() {
+  // 1. Очистка Redis (backend токени)
+  await fetch('/api/auth/cleanup', { method: 'POST' });
+  
+  // 2. Очистка localStorage backend токенів
+  localStorage.removeItem('backend_auth');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  sessionStorage.removeItem('backend_auth');
+  
+  // ⚠️ NextAuth сессія ЗАЛИШАЄТЬСЯ активною!
+}
+```
 
 **Що очищується:**
-- Redis backend токени
-- localStorage backend токени
-- ⚠️ **NextAuth сессія ЗАЛИШАЄТЬСЯ активною!**
+- ✅ Redis: `backend_auth`, `auth_provider`
+- ✅ localStorage: backend токени
+- ✅ sessionStorage: backend токени
+- ❌ **NextAuth сессія НЕ очищається**
+
+**UI зміни:**
+- **AuthBadge** - **залишається** видимим (NextAuth сессія активна)
+- **AutoRiaUserBadge** - **зникає** (немає backend токенів)
+- Редирект на `/login` для повторного вибору користувача
 
 **Коли використовується:**
-- Кнопка "Logout (Redis)" в AutoRiaUserBadge
+- Кнопка "Logout (Redis)" в tooltip AutoRiaUserBadge
 - Очистка backend токенів без виходу з NextAuth
-- **Редирект**: `/login` (NextAuth сессія ще активна, просто вибрати користувача з списку)
+- **Редирект:** `/login` (NextAuth сессія ще активна, просто вибрати користувача зі списку)
 
 ---
 
@@ -34953,22 +35132,30 @@ export async function cleanupAuth(redirectUrl?: string) {
 
 #### Backend Tokens (Django JWT)
 
-**Зберігається:** `localStorage.backend_auth` + Redis  
-**Структура:**
+**Зберігається:** **Redis** (основне сховище, ключ `backend_auth`)  
+**⚠️ ВАЖЛИВО:** Токени зберігаються тільки в Redis, НЕ в localStorage!
+
+**Структура в Redis:**
 ```json
 {
   "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "refreshAttempts": 0
 }
 ```
 
 **Призначення:** Авторизація запитів до Django API  
-**Отримання:** `/login` (вибір користувача з списку)  
+**Отримання:** `/login` (вибір користувача зі списку) → збереження через `/api/auth/token`  
 **Lifetime:**
 - Access token: 15 хвилин
 - Refresh token: 7 днів
 
-**⚠️ Залежність:** Потребує активну NextAuth сессію
+**Доступ до токенів:**
+- **Server-side:** Прямий доступ до Redis через API routes (`/api/auth/token`)
+- **Client-side:** Отримання через `GET /api/auth/token` перед кожним запитом
+- **Auto-refresh:** Автоматичне оновлення через `POST /api/auth/refresh` при 401 помилці
+
+**⚠️ Залежність:** Потребує активну NextAuth сессію (неможливо мати backend токени без NextAuth)
 
 ---
 
@@ -35018,12 +35205,27 @@ env-config/
 ├── .env.base       # Базові налаштування (порти, хости, імена БД)
 ├── .env.secrets    # API ключі, паролі (навчальні значення)
 ├── .env.docker     # Docker-specific перевизначення (хости контейнерів)
+├── .env.local      # Локальні перевизначення для розробки (опціонально)
 └── load-env.py     # Утиліта для завантаження змінних
 ```
 
-**Порядок завантаження** (кожен наступний перевизначає попередній):
+**⚠️ ВАЖЛИВО**: Файли `.env.*` в `env-config/` НЕ включені в Git (крім `.env.example` якщо є). Створіть їх на основі документації.
+
+**Порядок завантаження** залежить від середовища виконання:
+
+**Docker:**
 ```
 .env.base → .env.secrets → .env.docker
+```
+
+**Локальна розробка (Backend):**
+```
+.env.base → .env.secrets → .env.local → backend/.env
+```
+
+**Локальна розробка (Frontend):**
+```
+.env.base → .env.secrets → .env.local → .env.development
 ```
 
 ---
@@ -35136,21 +35338,48 @@ services:
 
 #### Локальна розробка (без Docker)
 
-**Backend:**
-```bash
-# Створити локальний .env в корені проекту
-cat env-config/.env.base env-config/.env.secrets > .env
+**Backend (Django):**
+Backend автоматично завантажує змінні в `backend/config/settings.py`:
 
-# Або використати symlink (Linux/Mac)
-ln -s env-config/.env.base .env
+```python
+# Визначаємо середовище виконання
+is_docker = os.environ.get("IS_DOCKER", "false").lower() == "true"
+
+# Порядок завантаження:
+env_files = [
+    root_dir / "env-config" / ".env.base",      # 1. Базові змінні
+    root_dir / "env-config" / ".env.secrets",   # 2. Секрети
+]
+
+# Додаємо файл залежно від середовища
+if is_docker:
+    env_files.append(root_dir / "env-config" / ".env.docker")  # 3. Docker
+else:
+    env_files.append(root_dir / "env-config" / ".env.local")  # 3. Локальний
+
+env_files.append(base_dir / ".env")  # 4. Backend-специфічні
+
+# Завантажуємо всі файли
+for env_file in env_files:
+    if env_file.exists():
+        load_dotenv(env_file, override=True)
 ```
 
-**Frontend:**
-```bash
-# Frontend використовує власний .env.local
-cd frontend
-cp .env.local.example .env.local  # Якщо є приклад
+**Frontend (Next.js):**
+Frontend завантажує змінні через `frontend/next.config.js`:
+
+```javascript
+// Порядок завантаження:
+const baseEnv = loadEnvFile(path.join(envConfigDir, '.env.base'));
+const secretsEnv = loadEnvFile(path.join(envConfigDir, '.env.secrets'));
+const localEnv = loadEnvFile(path.join(envConfigDir, '.env.local'));
+const developmentEnv = loadEnvFile(path.join(envConfigDir, '.env.development'));
+
+// Об'єднуємо (пізніші перезаписують ранні)
+const allEnv = { ...baseEnv, ...secretsEnv, ...localEnv, ...developmentEnv };
 ```
+
+**⚠️ УВАГА**: Next.js також шукає `.env.local` в директорії `frontend/`, але для централізації всі змінні краще тримати в `env-config/`.
 
 ---
 
@@ -35179,25 +35408,30 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 #### 2. Frontend (Next.js)
 
-**Локально (рекомендовано):**
+**Архітектура завантаження:**
+- ✅ Всі змінні зберігаються в `env-config/` (централізовано)
+- ✅ Next.js автоматично завантажує через `next.config.js` на етапі збірки
+- ✅ Порядок: `.env.base` → `.env.secrets` → `.env.local` → `.env.development`
+- ✅ Для локальної розробки додатково можна використовувати `frontend/.env.local` (буде мати вищий пріоритет)
+
+**Ключові змінні для Frontend:**
 ```bash
-# env-config/.env.local - централизованная конфигурация
-NEXT_PUBLIC_BACKEND_URL=http://localhost/api  # Через nginx
-BACKEND_URL=http://localhost:8000              # Напрямую для SSR
+# env-config/.env.local (для локальної розробки)
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000  # Для клієнтських запитів
+BACKEND_URL=http://localhost:8000               # Для SSR та API routes
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secret
-GOOGLE_CLIENT_ID=your-id
-GOOGLE_CLIENT_SECRET=your-secret
+NEXTAUTH_SECRET=your-secret                     # З .env.secrets
+GOOGLE_CLIENT_ID=your-id                        # З .env.secrets
+GOOGLE_CLIENT_SECRET=your-secret                # З .env.secrets
+REDIS_URL=redis://localhost:6379/0
+IS_DOCKER=false
+NEXT_PUBLIC_IS_DOCKER=false
 ```
 
-**Docker (опціонально):**
-- Може використовувати `env-config/` якщо розкоментувати в `docker-compose.yml`
-
-**⚠️ УВАГА: Изменена архитектура!**
-- ✅ Всі змінні тепер в `env-config/.env.local`
-- ✅ Next.js автоматично завантажує через `next.config.js`
-- ✅ НЕ потрібно створювати `frontend/.env.local` або `.env.production.local`
-- ✅ Єдине джерело правди - `env-config/`
+**Docker (закоментовано в docker-compose.yml):**
+- Frontend сервіс закоментований за замовчуванням
+- Для повного Docker розгортання розкоментуйте секцію `frontend:` в `docker-compose.yml`
+- Використовує ті ж файли з `env-config/`, але з `IS_DOCKER=true`
 
 ---
 
