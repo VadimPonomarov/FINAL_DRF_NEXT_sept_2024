@@ -91,9 +91,10 @@ services:
       # BACKEND_URL используется для SSR и API routes в Next.js
       # Для Docker режима backend доступен по внутреннему DNS имени
       BACKEND_URL: http://app:8000
-      # NEXT_PUBLIC_BACKEND_URL - для клиентской части (браузер)
-      # Браузер делает запросы через nginx, поэтому используем относительный путь или nginx URL
-      NEXT_PUBLIC_BACKEND_URL: /api
+      # NEXT_PUBLIC_BACKEND_URL - для клиентской части (браузер) и SSR
+      # В Docker режиме frontend делает SSR запросы и клиент обращается через nginx
+      # Поэтому нужен ПОЛНЫЙ URL с протоколом для SSR
+      NEXT_PUBLIC_BACKEND_URL: http://localhost/api
       NEXTAUTH_URL: http://localhost
       NEXTAUTH_URL_INTERNAL: http://frontend:3000
       # Prevent static generation issues during runtime
