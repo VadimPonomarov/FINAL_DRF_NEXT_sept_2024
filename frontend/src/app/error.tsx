@@ -6,6 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import Link from 'next/link';
 
+// Error component - always client-side
+// Next.js will skip static generation for client components automatically
+// This component is used as a client-side error boundary
+// It will catch errors in the client-side rendering
+// For server-side errors, use the global-error.tsx file
+
 export default function Error({
   error,
   reset,

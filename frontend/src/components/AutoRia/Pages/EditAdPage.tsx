@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -21,6 +21,7 @@ interface EditAdPageProps {
 const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
   const { t } = useI18n();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { data: session } = useSession();
 
@@ -402,9 +403,19 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
     }
   };
 
-  // Обработчик отмены
+  // Обработчик отмены - использует callbackUrl/returnUrl если доступны
   const handleCancel = () => {
-    router.push('/autoria/search');
+    // Приоритет: callbackUrl > returnUrl > дефолтный путь
+    const callbackUrl = searchParams.get('callbackUrl');
+    const returnUrl = searchParams.get('returnUrl');
+    const targetUrl = callbackUrl || returnUrl || '/autoria/search';
+    
+    // Декодируем URL если он закодирован
+    const decodedUrl = callbackUrl || returnUrl 
+      ? decodeURIComponent(targetUrl) 
+      : targetUrl;
+    
+    router.push(decodedUrl);
   };
 
   // Обработчик удаления объявления

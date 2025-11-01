@@ -4,6 +4,9 @@ import '@/lib/env-loader'; // Загружаем переменные окруж
 /**
  * Универсальный API эндпоинт для публичных reference данных
  * Проксирует запросы к Django backend для получения реальных каскадных данных
+ * 
+ * ДУБЛИКАТ route handler из (backend)/public/reference/[type]/route.ts
+ * для обеспечения совместимости в production build
  */
 
 // Маппинг типов Next.js → Django endpoints
@@ -15,7 +18,7 @@ const TYPE_MAPPING: Record<string, string> = {
   'regions': 'regions',
   'cities': 'cities',
   'colors': 'colors/choices',  // Используем choices endpoint
-  'fuel-types': 'fuel-types',
+
   'transmissions': 'transmissions',
   'body-types': 'body-types',
 };
@@ -42,6 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Значение по умолчанию: http://localhost/api (через nginx) или http://localhost:8000 (напрямую)
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:8000';
     console.log(`🔧 [PUBLIC REFERENCE API] Using backend URL: ${backendUrl}`);
+    
     // Перекладываем параметры запроса в соответствии с ожиданиями Django
     const adjustedParams = new URLSearchParams(searchParams.toString());
     if (djangoType === 'cities') {
@@ -102,120 +106,73 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let response = await doRequest(authHeader || undefined);
 
     // При 401 пробуем авто-рефреш токена и повторяем 1 раз
-    if (response.status === 401) {
-      console.warn('🔁 PUBLIC REFERENCE API: 401 from Django, trying to refresh token...');
+    if (response.status === 401 && authHeader) {
+      console.log('🔄 PUBLIC REFERENCE API: Got 401, attempting token refresh...');
       try {
-        const refreshRes = await fetch(`${request.nextUrl.origin}/api/auth/refresh`, { method: 'POST', cache: 'no-store' });
+        const refreshRes = await fetch(`${request.nextUrl.origin}/api/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store'
+        });
+
         if (refreshRes.ok) {
-          const tokenRes = await fetch(`${request.nextUrl.origin}/api/auth/token`, { cache: 'no-store' });
-          if (tokenRes.ok) {
-            const tokenData = await tokenRes.json();
-            const newAuth = tokenData?.access ? `Bearer ${tokenData.access}` : undefined;
-            response = await doRequest(newAuth);
+          const refreshData = await refreshRes.json();
+          if (refreshData?.access) {
+            console.log('✅ PUBLIC REFERENCE API: Token refreshed, retrying request');
+            response = await doRequest(`Bearer ${refreshData.access}`);
           }
         }
       } catch (e) {
-        console.error('❌ PUBLIC REFERENCE API: Refresh flow failed:', e);
+        console.warn('⚠️ PUBLIC REFERENCE API: Token refresh failed:', e);
       }
     }
 
     if (!response.ok) {
-      console.error(`❌ PUBLIC REFERENCE API: Django returned ${response.status}`);
       const errorText = await response.text();
-      console.error(`❌ Django error: ${errorText}`);
+      console.error(`❌ PUBLIC REFERENCE API: Django returned ${response.status}: ${errorText}`);
+      
       return NextResponse.json(
-        { error: 'Backend error', success: false, details: errorText },
+        {
+          error: 'Failed to fetch reference data',
+          details: errorText,
+          status: response.status
+        },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
+    const rawData = await response.json();
+    console.log(`✅ PUBLIC REFERENCE API: Received data from Django for type: ${type}`);
 
-    console.log(`📊 PUBLIC REFERENCE API: Django response for ${type}:`, {
-      isArray: Array.isArray(data),
-      hasResults: !!data.results,
-      dataLength: Array.isArray(data) ? data.length : (data.results?.length || 0),
-      sampleItem: Array.isArray(data) ? data[0] : data.results?.[0]
-    });
-
-    // Трансформируем данные в формат {value, label} для VirtualSelect
+    // Обрабатываем данные в зависимости от типа
     let options: any[] = [];
-    let rawData: any[] = [];
 
-    // Choices endpoints возвращают массив напрямую, а не {results: [...]}
-    const isChoicesEndpoint = djangoType.includes('/choices');
-
-    // 1) Некоторые не-choices эндпоинты (например, regions) тоже возвращают ПРЯМО массив
-    if (Array.isArray(data)) {
-      rawData = data;
-      options = data.map((item: any) => ({
-        value: String(item.id),
-        label: item.name,
-        ...(item.vehicle_type && { vehicle_type_id: item.vehicle_type }),
-        ...(item.mark && { brand_id: item.mark }),
-        ...(item.region && { region_id: item.region }),
-      }));
-      console.log(`✅ PUBLIC REFERENCE API: Transformed ${options.length} array items for ${type}`);
-    } else if (isChoicesEndpoint) {
-      // 2) Choices endpoints: на всякий случай обработка, если вдруг формат изменится
-      const arr = Array.isArray(data) ? data : [];
-      rawData = arr;
-      options = arr.map((item: any) => ({
-        value: String(item.id),
-        label: item.name,
-        ...(item.vehicle_type && { vehicle_type_id: item.vehicle_type }),
-        ...(item.mark && { brand_id: item.mark }),
-        ...(item.region && { region_id: item.region }),
-      }));
-      console.log(`✅ PUBLIC REFERENCE API: Transformed ${options.length} choices items for ${type}`);
-    } else if (data.results && Array.isArray(data.results)) {
-      // 3) Пагинированные ответы {results: [...], count, next, previous}
-      rawData = data.results;
-      options = data.results.map((item: any) => ({
-        value: String(item.id),
-        label: item.name,
-        // Сохраняем дополнительные поля для каскадных связей
-        ...(item.vehicle_type && { vehicle_type_id: item.vehicle_type }),
-        ...(item.vehicle_type_id && { vehicle_type_id: item.vehicle_type_id }),
-        ...(item.mark && { brand_id: item.mark }),
-        ...(item.mark_id && { brand_id: item.mark_id }),
-        ...(item.brand_id && { brand_id: item.brand_id }),
-        ...(item.region && { region_id: item.region }),
-        ...(item.region_id && { region_id: item.region_id }),
-      }));
+    // Django может возвращать данные в разных форматах
+    if (Array.isArray(rawData)) {
+      options = rawData;
+    } else if (rawData.results && Array.isArray(rawData.results)) {
+      options = rawData.results;
+    } else if (rawData.options && Array.isArray(rawData.options)) {
+      options = rawData.options;
+    } else if (rawData.data && Array.isArray(rawData.data)) {
+      options = rawData.data;
+    } else {
+      console.warn(`⚠️ PUBLIC REFERENCE API: Unexpected data format for type: ${type}`, rawData);
+      options = [];
     }
 
-    // Формируем ответ в формате совместимом с фронтендом
+    // Формируем ответ в едином формате
     const responseData = {
       success: true,
-      data: rawData,
-      options: options,
-      pagination: isChoicesEndpoint ? {
-        // Choices endpoints не возвращают пагинацию - возвращают все данные сразу
-        count: rawData.length,
-        page: 1,
-        page_size: rawData.length,
-        total_pages: 1,
-        has_next: false,
-        has_previous: false,
-        next: null,
-        previous: null,
-      } : {
-        count: data.count || 0,
-        page: parseInt(searchParams.get('page') || '1'),
-        page_size: parseInt(searchParams.get('page_size') || '20'),
-        total_pages: Math.ceil((data.count || 0) / parseInt(searchParams.get('page_size') || '20')),
-        has_next: !!data.next,
-        has_previous: !!data.previous,
-        next: data.next,
-        previous: data.previous,
-      }
+      type,
+      options,
+      count: options.length,
+      source: 'django_backend'
     };
 
     console.log(`✅ PUBLIC REFERENCE API: Returning ${options.length} items (${rawData.length} options) for type: ${type}`);
 
     return NextResponse.json(responseData);
-
 
 
   } catch (error) {
@@ -230,3 +187,4 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     );
   }
 }
+

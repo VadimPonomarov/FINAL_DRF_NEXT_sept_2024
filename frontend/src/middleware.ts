@@ -82,16 +82,15 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// УРОВЕНЬ 1 (из 2): Middleware - универсальный гард сессии
+// УРОВЕНЬ 1 и 2: Middleware - универсальный гард сессии И backend токенов
 // ════════════════════════════════════════════════════════════════════════
 // Двухуровневая система валидации для AutoRia:
-// 1. [ЭТОТ УРОВЕНЬ] Middleware: NextAuth сессия → /api/auth/signin если нет
-// 2. BackendTokenPresenceGate (HOC в Layout): Backend токены → использует redirectToAuth
+// 1. [УРОВЕНЬ 1] Middleware: NextAuth сессия → /api/auth/signin если нет
+// 2. [УРОВЕНЬ 2] Middleware: Backend токены в Redis → /login если нет (если есть сессия) или /api/auth/signin если нет сессии
+// 3. BackendTokenPresenceGate (HOC в Layout): Дополнительная проверка на клиенте
 // ════════════════════════════════════════════════════════════════════════
 //
-// ВАЖНО: Middleware проверяет ТОЛЬКО NextAuth сессию на КАЖДОМ запросе!
-// Это универсальный гард сессии для всех страниц AutoRia.
-// Backend токены НЕ проверяются здесь - это делает HOC в Layout (уровень 2)
+// ВАЖНО: Middleware проверяет ОБА уровня на сервере, чтобы нельзя было обойти защиту отключив JavaScript!
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
     console.log(`[Middleware L1] Checking NextAuth session for Autoria access`);
@@ -99,7 +98,7 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
 
     console.log(`[Middleware L1] getToken result:`, token ? 'Token exists' : 'No token', token ? `email: ${token.email}` : '');
 
-    // Если нет NextAuth сессии - редирект на signin
+    // УРОВЕНЬ 1: Если нет NextAuth сессии - редирект на signin
     if (!token || !token.email) {
       console.log(`[Middleware L1] ❌ No NextAuth session - redirecting to signin`);
       const signinUrl = new URL('/api/auth/signin', req.url);
@@ -107,12 +106,64 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
       return NextResponse.redirect(signinUrl);
     }
 
-    // NextAuth сессия существует - разрешаем доступ
-    // BackendTokenPresenceGate в Layout (уровень 2) проверит наличие backend токенов
-    // и использует redirectToAuth для правильного редиректа при необходимости
-    console.log(`[Middleware L1] ✅ NextAuth session valid (email: ${token.email}) - passing to L2 (Layout HOC)`);
+    console.log(`[Middleware L1] ✅ NextAuth session valid (email: ${token.email}) - checking backend tokens (L2)`);
 
-    return NextResponse.next();
+    // УРОВЕНЬ 2: Проверяем backend токены в Redis через прямой вызов API
+    try {
+      // Получаем базовый URL для внутреннего запроса
+      const protocol = req.headers.get('x-forwarded-proto') || req.url.split('://')[0];
+      const host = req.headers.get('host') || req.url.split('://')[1].split('/')[0];
+      const baseUrl = `${protocol}://${host}`;
+      
+      // Проверяем backend токены через /api/redis?key=backend_auth
+      const redisCheckUrl = `${baseUrl}/api/redis?key=backend_auth`;
+      console.log(`[Middleware L2] Checking backend tokens in Redis via: ${redisCheckUrl}`);
+      
+      // Создаем новый запрос с cookies из оригинального запроса
+      const cookies = req.headers.get('cookie') || '';
+      const checkResponse = await fetch(redisCheckUrl, {
+        method: 'GET',
+        headers: {
+          'Cookie': cookies,
+          'User-Agent': req.headers.get('user-agent') || 'middleware'
+        },
+        cache: 'no-store'
+      });
+
+      if (!checkResponse.ok) {
+        // Ошибка доступа к Redis API
+        console.log(`[Middleware L2] ❌ Redis API check failed: ${checkResponse.status}`);
+        const loginUrl = new URL('/login', req.url);
+        loginUrl.searchParams.set('callbackUrl', req.url);
+        loginUrl.searchParams.set('error', 'backend_auth_check_failed');
+        return NextResponse.redirect(loginUrl);
+      }
+
+      const redisData = await checkResponse.json();
+      const hasBackendTokens = redisData.exists && redisData.value;
+
+      if (!hasBackendTokens) {
+        // Backend токены не найдены в Redis
+        console.log(`[Middleware L2] ❌ Backend tokens not found in Redis`);
+        
+        // Если есть NextAuth сессия, но нет backend токенов → редирект на /login
+        const loginUrl = new URL('/login', req.url);
+        loginUrl.searchParams.set('callbackUrl', req.url);
+        loginUrl.searchParams.set('error', 'backend_auth_required');
+        loginUrl.searchParams.set('message', 'Потрібна авторизація для доступу до AutoRia');
+        return NextResponse.redirect(loginUrl);
+      }
+
+      console.log(`[Middleware L2] ✅ Backend tokens found in Redis - access granted`);
+      return NextResponse.next();
+    } catch (error) {
+      console.error('[Middleware L2] ❌ Error checking backend tokens:', error);
+      // При ошибке проверки токенов - редирект на /login (сессия есть, но токены не проверены)
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('callbackUrl', req.url);
+      loginUrl.searchParams.set('error', 'backend_auth_check_failed');
+      return NextResponse.redirect(loginUrl);
+    }
   } catch (error) {
     console.error('[Middleware L1] ❌ Error checking NextAuth session:', error);
     const signinUrl = new URL('/api/auth/signin', req.url);

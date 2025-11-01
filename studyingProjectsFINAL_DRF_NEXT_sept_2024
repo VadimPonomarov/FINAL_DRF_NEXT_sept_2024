@@ -1,7 +1,11 @@
 import "./globals.css";
 import "./fonts.css";
 import React from "react";
+import {PageTracker} from "react-page-tracker";
 import type { Metadata } from 'next';
+
+// Render PageTracker only in production (or explicitly enabled)
+const SHOW_PAGE_TRACKER = false; // Отключено по запросу пользователя
 import {MenuMain} from "@/components/Menus/MenuMain/MenuMain";
 import RootProvider from "@/common/providers/RootProvider";
 import {MagicBackButton} from "@/components/ui/magicBackButton";
@@ -13,9 +17,6 @@ import TopRightControls from "@/components/All/TopRightControls/TopRightControls
 import GlobalProviderToggle from "@/components/All/GlobalProviderToggle/GlobalProviderToggle";
 
 import { Geist, Geist_Mono } from "next/font/google";
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({
           <ToastProvider>
             <header className="header-container h-[50px]">
               <div className="relative">
+                {SHOW_PAGE_TRACKER && <PageTracker/>}
                 <div className="absolute top-1/2 -translate-y-1/2 translate-y-1 left-[10px] z-[1001] hidden md:block">
                   <MagicBackButton variant="ghost" className="w-5 h-5 z-[1001]" />
                 </div>

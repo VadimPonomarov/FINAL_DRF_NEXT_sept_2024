@@ -1,45 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
-export default function GlobalError({ error, reset }: {
+export default function GlobalError({
+  error,
+  reset,
+}: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  const [attemptedReload, setAttemptedReload] = useState(false)
-
-  useEffect(() => {
-    const isChunkError =
-      error?.name === 'ChunkLoadError' ||
-      /Loading chunk .* failed/i.test(error?.message || '') ||
-      /ChunkLoadError/i.test(error?.message || '')
-
-    if (isChunkError && typeof window !== 'undefined') {
-      const key = 'chunk-reload-once'
-      const already = sessionStorage.getItem(key)
-      if (!already) {
-        sessionStorage.setItem(key, '1')
-        setAttemptedReload(true)
-        // Small delay so the UI can render the message before refresh
-        setTimeout(() => window.location.reload(), 300)
-      }
-    }
-  }, [error])
-
   return (
     <html>
-      <body style={{ padding: 16, fontFamily: 'sans-serif' }}>
-        <h2>Something went wrong</h2>
-        {attemptedReload ? (
-          <p>Recovering… If this page doesn’t reload automatically, please click the button below.</p>
-        ) : (
-          <p>
-            {error?.name === 'ChunkLoadError' ? 'A network or cache issue prevented the app from loading.' : 'An unexpected error occurred.'}
-          </p>
-        )}
-        <button onClick={() => (typeof window !== 'undefined' ? window.location.reload() : reset())}>
-          Reload app
-        </button>
+      <body>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Something went wrong!</h2>
+            <button
+              onClick={() => reset()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
       </body>
     </html>
   )

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { CarAdFormData } from '@/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 const CreateAdPage: React.FC = () => {
   const { t } = useI18n();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   console.log('CreateAdPage rendered');
@@ -55,9 +56,19 @@ const CreateAdPage: React.FC = () => {
     }
   };
 
-  // Обработчик отмены
+  // Обработчик отмены - использует callbackUrl/returnUrl если доступны
   const handleCancel = () => {
-    router.push('/autoria/search');
+    // Приоритет: callbackUrl > returnUrl > дефолтный путь
+    const callbackUrl = searchParams.get('callbackUrl');
+    const returnUrl = searchParams.get('returnUrl');
+    const targetUrl = callbackUrl || returnUrl || '/autoria/search';
+    
+    // Декодируем URL если он закодирован
+    const decodedUrl = callbackUrl || returnUrl 
+      ? decodeURIComponent(targetUrl) 
+      : targetUrl;
+    
+    router.push(decodedUrl);
   };
 
   // Используем универсальный компонент CarAdForm

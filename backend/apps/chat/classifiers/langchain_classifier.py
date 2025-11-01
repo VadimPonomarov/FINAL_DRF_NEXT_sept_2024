@@ -64,10 +64,16 @@ DATA MODES:
 
 CLASSIFICATION RULES:
 1. Choose the most specific intent that matches the user's request
-2. If the request mentions "current", "latest", "recent", "now", "today", or asks about news/events, use REALTIME mode
-3. If the request is about general knowledge, creative tasks, or doesn't need current data, use HISTORICAL mode
-4. Provide a confidence score (0.0-1.0) based on how certain you are about the classification
-5. Give a brief reasoning for your decision
+2. If the request mentions "current", "latest", "recent", "now", "today", "who is", "who is the", "who currently", "who is currently", or asks about news/events/political figures/leaders, use FACTUAL_SEARCH with REALTIME mode
+3. Questions about current presidents, leaders, politicians, elections, or government positions should ALWAYS use FACTUAL_SEARCH with REALTIME mode
+4. Examples that require FACTUAL_SEARCH + REALTIME:
+   - "Who is the current president of [country]?"
+   - "Who is currently the [position]?"
+   - "What is the latest news about [topic]?"
+   - "Who won the recent election?"
+5. If the request is about general knowledge, creative tasks, or doesn't need current data, use HISTORICAL mode
+6. Provide a confidence score (0.0-1.0) based on how certain you are about the classification
+7. Give a brief reasoning for your decision
 
 {{format_instructions}}
 
@@ -138,12 +144,36 @@ User query: {{query}}"""
                 confidence=0.8,
                 reasoning="Fallback: detected image generation keywords"
             )
-        elif any(word in query for word in ["search", "find", "news", "latest", "поиск", "найди", "новости"]):
+        # Enhanced search detection - includes current events, political figures, recent news
+        search_keywords = [
+            "search", "find", "news", "latest", "current", "now", "today", "recent", "who is", "what is",
+            "president", "leader", "election", "party", "government", "minister", "prime minister",
+            "поиск", "найди", "новости", "сейчас", "текущий", "кто такой", "кто сейчас", "кто является",
+            "президент", "лидер", "выборы", "правительство", "министр", "премьер"
+        ]
+        
+        # Political figures, current events patterns
+        political_patterns = [
+            "president of", "who is the president", "current president", "acting president",
+            "leader of", "current leader", "who leads",
+            "кто президент", "кто сейчас президент", "действующий президент", "кто лидер",
+            "кто сейчас руководит", "кто является президентом"
+        ]
+        
+        # Check for current events queries (questions about "who", "what", "when" regarding current topics)
+        is_current_event_query = (
+            any(word in query for word in search_keywords) or
+            any(pattern in query.lower() for pattern in political_patterns) or
+            (("who" in query.lower() or "кто" in query.lower()) and 
+             any(word in query.lower() for word in ["now", "currently", "today", "current", "сейчас", "текущий", "сегодня"]))
+        )
+        
+        if is_current_event_query:
             return IntentClassificationResult(
                 intent=Intent.FACTUAL_SEARCH,
                 data_mode=DataMode.REALTIME,
-                confidence=0.6,
-                reasoning="Fallback: detected search-related keywords"
+                confidence=0.85,
+                reasoning="Fallback: detected search-related keywords or current events pattern"
             )
         elif any(word in query for word in ["http", "www", "site", "website", "сайт"]):
             return IntentClassificationResult(

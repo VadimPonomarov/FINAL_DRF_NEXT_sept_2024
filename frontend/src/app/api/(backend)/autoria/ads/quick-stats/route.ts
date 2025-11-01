@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import '@/lib/env-loader'; // Загружаем переменные окружения во время выполнения
 import { getAuthorizationHeaders } from '@/common/constants/headers';
 
 /**

@@ -84,8 +84,9 @@ pids
 .cache
 .parcel-cache
 
-# Next.js build output
+# Next.js build output (exclude entire .next directory)
 .next
+.next/*
 
 # Nuxt.js build / generate output
 .nuxt

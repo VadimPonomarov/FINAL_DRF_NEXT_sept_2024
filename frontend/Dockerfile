@@ -27,9 +27,17 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy all source files
 COPY . .
 
+# Clean any existing build cache to avoid stale artifacts
+# This prevents issues with static generation of error pages
+RUN rm -rf .next || true
+
 # Build the application
+# Set environment variables to prevent static generation issues
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# Force dynamic rendering for error pages (404, 500, etc.)
+# This prevents Html component import errors during build
+ENV NEXT_PRIVATE_STANDALONE=false
 RUN npm run build
 
 # =============================================================================

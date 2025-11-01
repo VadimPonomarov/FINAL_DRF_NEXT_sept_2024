@@ -1,11 +1,11 @@
 "use client"
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { usePageTrackerStore } from 'react-page-tracker';
 import { ChevronLeft } from 'lucide-react';
 import { Button, ButtonProps } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSession } from "next-auth/react";
+import { usePageTrackerStore } from '@/lib/react-page-tracker-adapter';
 
 export const MagicBackButton = React.forwardRef<
     HTMLButtonElement,
@@ -13,6 +13,7 @@ export const MagicBackButton = React.forwardRef<
 >(({className, onClick, children, backLink = '/', ...props}, ref) => {
     const router = useRouter();
     const { data: session, status } = useSession();
+    // Use safe adapter instead of react-page-tracker
     const isFirstPage = usePageTrackerStore((state) => state.isFirstPage);
 
     const handleNavigation = React.useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {

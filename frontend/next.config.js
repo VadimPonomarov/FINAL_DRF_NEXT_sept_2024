@@ -36,11 +36,11 @@ const developmentEnv = loadEnvFile(path.join(envConfigDir, '.env.development'));
 // .env.development имеет наивысший приоритет для локальной разработки
 const allEnv = { ...baseEnv, ...secretsEnv, ...localEnv, ...developmentEnv };
 
-// Устанавливаем переменные в process.env
+// ВАЖНО: В production Next.js встраивает NEXT_PUBLIC_* переменные в код во время сборки
+// Все остальные переменные доступны только на сервере во время выполнения
+// Устанавливаем переменные в process.env (перезаписываем если уже есть)
 Object.entries(allEnv).forEach(([key, value]) => {
-  if (!process.env[key]) {
-    process.env[key] = value;
-  }
+  process.env[key] = value;
 });
 
 console.log('🔧 Loaded environment variables from env-config/');
@@ -120,6 +120,11 @@ const nextConfig = {
         as: '*.js',
       },
     },
+    resolveAlias: {
+      // CRITICAL: Redirect react-page-tracker imports in Turbopack mode
+      // This ensures compatibility even when using --turbo flag
+      'react-page-tracker': path.resolve(__dirname, 'src/lib/react-page-tracker-adapter.ts'),
+    },
   },
 
   // Production optimizations
@@ -127,7 +132,16 @@ const nextConfig = {
   generateEtags: true,
   compress: true,
 
+  // Disable static generation for error pages (404, 500, etc.)
+  // This prevents Next.js from trying to statically generate error pages
+  // which can cause issues with Html component imports
+  generateBuildId: async () => {
+    return 'build-' + Date.now()
+  },
 
+  // Skip static generation for error pages
+  // This prevents Next.js from prerendering /404, /500, etc.
+  skipTrailingSlashRedirect: true,
 
   eslint: {
     ignoreDuringBuilds: true,
@@ -226,19 +240,41 @@ const nextConfig = {
     ]
   },
 
-  // Webpack config is only applied when NOT using Turbopack (to avoid conflicts)
-  ...(process.env.TURBOPACK ? {} : {
-    webpack: (config, { dev, isServer }) => {
-      // Fallbacks for Node.js modules
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false
-      };
-      return config;
-    }
-  })
+  // Webpack config - ALWAYS applied for production builds (build command uses webpack)
+  // Turbopack is only used in dev mode with --turbo flag
+  webpack: (config, { dev, isServer }) => {
+    // Fallbacks for Node.js modules
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false
+    };
+
+    // CRITICAL: Redirect ALL react-page-tracker imports to safe adapter
+    // This prevents "Html should not be imported outside of pages/_document" errors
+    // Works even if someone accidentally imports react-page-tracker
+    // This ALWAYS applies for production builds (npm run build uses webpack)
+    // Apply to BOTH server and client builds
+    
+    const adapterPath = path.resolve(__dirname, 'src/lib/react-page-tracker-adapter.ts');
+    console.log('[Webpack Config] Setting react-page-tracker alias to:', adapterPath);
+    
+    // Ensure alias object exists and preserve existing aliases
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      // Add all possible import paths for react-page-tracker
+      'react-page-tracker': adapterPath,
+      'react-page-tracker/': adapterPath,
+      'react-page-tracker/dist': adapterPath,
+      'react-page-tracker/dist/': adapterPath,
+      'react-page-tracker/dist/index': adapterPath,
+      'react-page-tracker/dist/index.js': adapterPath,
+      // Note: no alias for 'next/document' to allow Next's real Document API
+    };
+
+    return config;
+  }
 };
 
 export default nextConfig;

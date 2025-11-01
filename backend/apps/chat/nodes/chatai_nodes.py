@@ -4,7 +4,7 @@ ChatAI integration nodes for text and image generation.
 
 import logging
 from typing import List, Dict, Any, Optional
-from apps.chat.types.types import AgentState, ChatMessage
+from apps.chat.types.types import AgentState, ChatMessage, Intent
 import g4f
 from g4f.client import Client
 
@@ -357,9 +357,55 @@ def chatai_image_node(state: AgentState) -> AgentState:
         return state.model_copy(update={"error": error_msg})
 
 
+def _needs_search(query: str, data_mode: Optional[Any] = None) -> bool:
+    """
+    Determine if a query needs internet search for current information.
+    
+    Args:
+        query: User query
+        data_mode: Data mode from state
+        
+    Returns:
+        True if search is needed
+    """
+    query_lower = query.lower()
+    
+    # Check data mode first
+    if data_mode and hasattr(data_mode, 'value') and data_mode.value == "realtime":
+        return True
+    
+    # Keywords indicating need for current information
+    current_info_keywords = [
+        "current", "latest", "recent", "now", "today", "currently", "who is",
+        "who is the", "who is currently", "acting", "president", "leader",
+        "election", "news", "latest news", "current events",
+        "сейчас", "текущий", "текущий президент", "кто сейчас", "кто является",
+        "действующий", "президент", "лидер", "выборы", "новости", "последние новости"
+    ]
+    
+    # Political/leadership patterns
+    political_patterns = [
+        "president of", "who is the president", "current president",
+        "leader of", "current leader", "who leads", "prime minister",
+        "кто президент", "кто является президентом", "кто лидер"
+    ]
+    
+    # Check if query matches patterns
+    has_current_keywords = any(keyword in query_lower for keyword in current_info_keywords)
+    has_political_pattern = any(pattern in query_lower for pattern in political_patterns)
+    
+    # Questions about "who" with temporal context
+    is_who_question = (
+        ("who" in query_lower or "кто" in query_lower) and
+        any(word in query_lower for word in ["now", "current", "currently", "today", "сейчас", "текущий"])
+    )
+    
+    return has_current_keywords or has_political_pattern or is_who_question
+
+
 def chatai_enhanced_text_node(state: AgentState) -> AgentState:
     """
-    Enhanced text generation with context awareness.
+    Enhanced text generation with context awareness and automatic search when needed.
     
     Args:
         state: Current agent state
@@ -368,6 +414,20 @@ def chatai_enhanced_text_node(state: AgentState) -> AgentState:
         Updated state with enhanced response
     """
     try:
+        # Check if search context already exists (we're already processing with search)
+        has_search_context = state.context.get("enhanced_with_search", False)
+        search_already_performed = state.metadata.get("enhanced_with_tavily", False)
+        
+        # Check if this query needs search for current information
+        needs_search = _needs_search(state.query, state.data_mode)
+        
+        # If search is needed and not already performed, redirect to search-enhanced processing
+        if needs_search and state.intent != Intent.FACTUAL_SEARCH and not has_search_context and not search_already_performed:
+            logger.info(f"Query '{state.query}' needs search - redirecting to tavily_enhanced_search_node")
+            # Import here to avoid circular dependency
+            from .tavily_nodes import tavily_enhanced_search_node
+            return tavily_enhanced_search_node(state)
+        
         # Build enhanced system prompt
         system_parts = []
         
@@ -389,7 +449,7 @@ def chatai_enhanced_text_node(state: AgentState) -> AgentState:
             if state.data_mode.value == "realtime":
                 system_parts.append(
                     "Focus on providing current, up-to-date information. "
-                    "If you don't have recent data, acknowledge this limitation."
+                    "If you don't have recent data, acknowledge this limitation and suggest searching for current information."
                 )
             else:
                 system_parts.append(
@@ -432,7 +492,9 @@ def chatai_enhanced_text_node(state: AgentState) -> AgentState:
                 **state.metadata,
                 "enhanced_generation": True,
                 "system_prompt_length": len(system_prompt),
-                "context_messages": len(recent_messages)
+                "context_messages": len(recent_messages),
+                "search_check_performed": True,
+                "search_needed": needs_search
             }
         })
         
