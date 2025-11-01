@@ -73,9 +73,9 @@ export async function redirectToAuth(
     // Редиректим на /api/auth/signin для получения сессии
     console.log('[redirectToAuth] ❌ No NextAuth session, redirecting to /api/auth/signin');
     try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', cache: 'no-store' });
+      await fetch('/api/auth/signout-full', { method: 'POST', credentials: 'include', cache: 'no-store' });
     } catch (e) {
-      console.warn('[redirectToAuth] Cleanup before signin failed (ignored)', e);
+      console.warn('[redirectToAuth] Full cleanup before signin failed (ignored)', e);
     }
     const signinUrl = `/api/auth/signin?callbackUrl=${encodeURIComponent(path)}`;
     window.location.href = signinUrl;

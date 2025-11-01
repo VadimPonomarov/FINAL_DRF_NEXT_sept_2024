@@ -15,10 +15,10 @@ export async function cleanupAuth(redirectUrl?: string): Promise<void> {
   console.log('[CleanupAuth] SIGNOUT: Starting full authentication cleanup (Redis + NextAuth + storage)...');
 
   try {
-    // 1. Бэкенд-очистка: Redis-токены + сессионные cookies через существующий endpoint
+    // 1. Бэкенд-очистка: Redis-токены + сессионные cookies через signout endpoint
     try {
-      console.log('[CleanupAuth] Calling /api/auth/logout (server-side full cleanup)...');
-      const response = await fetch('/api/auth/logout', {
+      console.log('[CleanupAuth] Calling /api/auth/signout-full (server-side full cleanup)...');
+      const response = await fetch('/api/auth/signout-full', {
         method: 'POST',
         credentials: 'include',
         cache: 'no-store',
@@ -26,12 +26,12 @@ export async function cleanupAuth(redirectUrl?: string): Promise<void> {
       });
 
       if (response.ok) {
-        console.log('[CleanupAuth] ✅ /api/auth/logout completed');
+        console.log('[CleanupAuth] ✅ /api/auth/signout-full completed');
       } else {
-        console.warn('[CleanupAuth] ⚠️ /api/auth/logout returned status:', response.status);
+        console.warn('[CleanupAuth] ⚠️ /api/auth/signout-full returned status:', response.status);
       }
-    } catch (redisError) {
-      console.error('[CleanupAuth] ❌ Error calling /api/auth/logout:', redisError);
+    } catch (signoutError) {
+      console.error('[CleanupAuth] ❌ Error calling /api/auth/signout-full:', signoutError);
       // Продолжаем локальную очистку даже если запрос не удался
     }
 
@@ -106,24 +106,26 @@ export async function cleanupBackendTokens(): Promise<void> {
   console.log('[CleanupAuth] LOGOUT: Clearing backend tokens and Redis (keeping NextAuth session)...');
   
   try {
-    // 1. Очищаем Redis на backend
+    // 1. Очищаем только backend токены через logout endpoint
     try {
-      console.log('[CleanupAuth] Clearing Redis data...');
-      const response = await fetch('/api/auth/cleanup', {
+      console.log('[CleanupAuth] Calling /api/auth/logout (backend tokens only)...');
+      const response = await fetch('/api/auth/logout', {
         method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
       if (response.ok) {
-        console.log('[CleanupAuth] ✅ Redis data cleared successfully');
+        console.log('[CleanupAuth] ✅ Backend tokens cleared (NextAuth session preserved)');
       } else {
-        console.warn('[CleanupAuth] ⚠️ Failed to clear Redis data:', response.status);
+        console.warn('[CleanupAuth] ⚠️ Failed to clear backend tokens:', response.status);
       }
-    } catch (redisError) {
-      console.error('[CleanupAuth] ❌ Error clearing Redis:', redisError);
-      // Продолжаем очистку даже если Redis не очистился
+    } catch (logoutError) {
+      console.error('[CleanupAuth] ❌ Error during logout:', logoutError);
+      // Продолжаем очистку даже если запрос не удался
     }
 
     // 2. Очищаем localStorage backend токены

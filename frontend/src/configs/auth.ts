@@ -24,10 +24,6 @@ export const authConfig: AuthOptions = {
       }
   ),
 
-  // Отключаем server actions для предотвращения ошибок
-  experimental: {
-    enableWebAuthn: false,
-  },
 
   // Отладочная информация для диагностики
   debug: process.env.NODE_ENV === 'development',
@@ -123,7 +119,7 @@ export const authConfig: AuthOptions = {
         } as any; // Используем any для совместимости
         
         // Добавляем токен доступа в сессию
-        session.accessToken = token.accessToken;
+        (session as any).accessToken = (token as any).accessToken;
       }
       return session;
     },
@@ -186,6 +182,59 @@ export const authConfig: AuthOptions = {
 
       // Разрешаем вход для всех других провайдеров
       return true;
+    },
+  },
+  events: {
+    async signOut(message) {
+      try {
+        const { token, session } = message as any;
+        const email = token?.email || session?.user?.email;
+        const { redis } = await import('@/lib/redis');
+
+        if (email) {
+          const providerKey = `provider:${email}`;
+          const tokensKey = `tokens:${email}`;
+          const autoRiaTokensKey = `autoria:tokens:${email}`;
+          const backendAuthKey = `backend_auth`;
+          const dummyAuthKey = `dummy_auth`;
+          await Promise.all([
+            redis.del(providerKey),
+            redis.del(tokensKey),
+            redis.del(autoRiaTokensKey),
+            redis.del(backendAuthKey),
+            redis.del(dummyAuthKey),
+          ]);
+          console.log('[NextAuth events.signOut] Redis cleared for:', email);
+        } else {
+          await Promise.all([
+            redis.del('backend_auth'),
+            redis.del('dummy_auth'),
+          ]);
+          console.log('[NextAuth events.signOut] Redis cleared (no email)');
+        }
+      } catch (e) {
+        console.error('[NextAuth events.signOut] Error during Redis cleanup:', e);
+      }
+    },
+    async signIn(message) {
+      // Превентивно убираем старые токены пользователя перед новым входом
+      try {
+        const { user } = message as any;
+        const email = user?.email;
+        if (!email) return;
+        const { redis } = await import('@/lib/redis');
+        const providerKey = `provider:${email}`;
+        const tokensKey = `tokens:${email}`;
+        const autoRiaTokensKey = `autoria:tokens:${email}`;
+        await Promise.all([
+          redis.del(providerKey),
+          redis.del(tokensKey),
+          redis.del(autoRiaTokensKey),
+        ]);
+        console.log('[NextAuth events.signIn] Pre-clean Redis for:', email);
+      } catch (e) {
+        console.warn('[NextAuth events.signIn] Pre-clean failed (ignored):', e);
+      }
     },
   }
 };
