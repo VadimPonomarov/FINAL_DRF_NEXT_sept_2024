@@ -8,9 +8,14 @@ export async function GET(request: NextRequest) {
     console.log('[AutoRia Users API] 👥 Getting AutoRia users...');
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    
+
+    // Аккуратно собираем URL, чтобы избежать двойного "/api"
+    const base = backendUrl.replace(/\/$/, '');
+    const hasApi = /\/api\/?$/.test(base);
+    const apiBase = hasApi ? base : `${base}/api`;
+
     // Получаем пользователей через публичный endpoint (без аутентификации)
-    const usersResponse = await fetch(`${backendUrl}/api/users/public/list/`, {
+    const usersResponse = await fetch(`${apiBase}/users/public/list/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
