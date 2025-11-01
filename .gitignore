@@ -259,8 +259,8 @@ redis/
 *.sublime-project
 *.sublime-workspace
 
-# Cursor
-.cursorignore
+# Cursor - removed to allow reading env files
+# .cursorignore
 
 # =============================================================================
 # OS

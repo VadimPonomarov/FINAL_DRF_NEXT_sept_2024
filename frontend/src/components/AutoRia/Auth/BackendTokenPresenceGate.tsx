@@ -26,18 +26,34 @@ export default function BackendTokenPresenceGate({ children }: { children: React
   /**
    * Проверка backend токенов (уровень 2)
    * Middleware уже проверил NextAuth сессию (уровень 1), поэтому здесь проверяем только токены
+   * ОПТИМИЗАЦИЯ: Используем таймаут для предотвращения задержек редиректов
    */
   const checkBackendTokens = useCallback(async (isRetry = false) => {
     try {
       console.log('[BackendTokenPresenceGate] Level 2: Checking backend tokens...');
 
-      // Проверяем backend токены через /api/auth/me
-      // Этот endpoint проверяет наличие токенов в Redis
-      const tokenCheck = await fetch('/api/auth/me', {
+      // Проверяем backend токены через /api/auth/me с таймаутом (максимум 3 секунды)
+      const checkPromise = fetch('/api/auth/me', {
         method: 'GET',
         credentials: 'include',
         cache: 'no-store'
       });
+
+      const timeoutPromise = new Promise<Response>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout')), 3000);
+      });
+
+      let tokenCheck: Response;
+      try {
+        tokenCheck = await Promise.race([checkPromise, timeoutPromise]) as Response;
+      } catch (error) {
+        // Таймаут или другая ошибка - делаем редирект немедленно
+        console.log('[BackendTokenPresenceGate] ⚠️ Token check timeout or error, redirecting immediately');
+        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+        redirectToAuth(currentPath, 'auth_required');
+        return;
+      }
 
       if (tokenCheck.ok) {
         // Backend токены найдены и валидны
@@ -57,27 +73,43 @@ export default function BackendTokenPresenceGate({ children }: { children: React
       // Если получили 401 и это первая попытка, пробуем обновить токен
       if (tokenCheck.status === 401 && !isRetry) {
         console.log('[BackendTokenPresenceGate] Attempting to refresh token...');
-        const refreshResponse = await fetch('/api/auth/refresh', {
+        
+        const refreshPromise = fetch('/api/auth/refresh', {
           method: 'POST',
           credentials: 'include',
           cache: 'no-store'
         });
 
-        if (refreshResponse.ok) {
-          console.log('[BackendTokenPresenceGate] ✅ Token refresh successful, retrying...');
-          return checkBackendTokens(true);
-        }
-        
-        // Если refresh вернул 404 - токены не найдены в Redis
-        if (refreshResponse.status === 404) {
-          console.log('[BackendTokenPresenceGate] ❌ Tokens not found in Redis (404)');
+        const refreshTimeout = new Promise<Response>((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout')), 2000);
+        });
+
+        try {
+          const refreshResponse = await Promise.race([refreshPromise, refreshTimeout]) as Response;
+          
+          if (refreshResponse.ok) {
+            console.log('[BackendTokenPresenceGate] ✅ Token refresh successful, retrying...');
+            return checkBackendTokens(true);
+          }
+          
+          // Если refresh вернул 404 - токены не найдены в Redis
+          if (refreshResponse.status === 404) {
+            console.log('[BackendTokenPresenceGate] ❌ Tokens not found in Redis (404)');
+            const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+            const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+            redirectToAuth(currentPath, 'tokens_not_found');
+            return;
+          }
+          
+          console.log('[BackendTokenPresenceGate] ❌ Token refresh failed:', refreshResponse.status);
+        } catch (refreshError) {
+          // Таймаут при refresh - делаем редирект
+          console.log('[BackendTokenPresenceGate] ❌ Token refresh timeout');
           const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
           const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
           redirectToAuth(currentPath, 'tokens_not_found');
           return;
         }
-        
-        console.log('[BackendTokenPresenceGate] ❌ Token refresh failed:', refreshResponse.status);
       }
 
       // Если дошли сюда, значит не удалось получить/обновить токены
