@@ -190,8 +190,9 @@ export default async function middleware(req: NextRequest) {
   }
 
   // Check if this is an Autoria path that requires backend_auth tokens
-  if (AUTORIA_PATHS.some(path => pathname.startsWith(path))) {
-    console.log('[Middleware] Autoria path, checking backend_auth tokens in Redis');
+  // ВАЖНО: Проверяем ВСЕ пути, начинающиеся с /autoria
+  if (pathname.startsWith('/autoria')) {
+    console.log('[Middleware] Autoria path detected, checking NextAuth session (Level 1)');
     return await checkBackendAuth(req);
   }
 

@@ -67,7 +67,8 @@ export async function redirectToAuth(
     // Редиректим на /login для получения backend токенов (уровень 2)
     console.log('[redirectToAuth] ✅ NextAuth session exists, redirecting to /login for backend tokens');
     const loginUrl = `/login?callbackUrl=${encodeURIComponent(path)}&error=${reason}&message=${encodeURIComponent(message)}`;
-    window.location.href = loginUrl;
+    console.log('[redirectToAuth] Executing redirect to:', loginUrl);
+    window.location.replace(loginUrl); // Используем replace вместо href для принудительного редиректа
   } else {
     // Уровень 1 не пройден (нет NextAuth сессии)
     // Редиректим на /api/auth/signin для получения сессии
@@ -78,7 +79,8 @@ export async function redirectToAuth(
       console.warn('[redirectToAuth] Full cleanup before signin failed (ignored)', e);
     }
     const signinUrl = `/api/auth/signin?callbackUrl=${encodeURIComponent(path)}`;
-    window.location.href = signinUrl;
+    console.log('[redirectToAuth] Executing redirect to:', signinUrl);
+    window.location.replace(signinUrl); // Используем replace вместо href для принудительного редиректа
   }
 }
 
@@ -91,8 +93,8 @@ export function redirectToSignin(currentPath?: string): void {
 
   const path = currentPath || window.location.pathname + window.location.search;
   const signinUrl = `/api/auth/signin?callbackUrl=${encodeURIComponent(path)}`;
-  console.log('[redirectToSignin] Redirecting to signin:', signinUrl);
-  window.location.href = signinUrl;
+  console.log('[redirectToSignin] Executing redirect to signin:', signinUrl);
+  window.location.replace(signinUrl);
 }
 
 /**
@@ -115,7 +117,7 @@ export function redirectToLogin(currentPath?: string, reason?: string): void {
   }
 
   const loginUrl = `/login?${params.toString()}`;
-  console.log('[redirectToLogin] Redirecting to login:', loginUrl);
-  window.location.href = loginUrl;
+  console.log('[redirectToLogin] Executing redirect to login:', loginUrl);
+  window.location.replace(loginUrl);
 }
 
