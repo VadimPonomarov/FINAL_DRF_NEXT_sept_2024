@@ -49,7 +49,7 @@ const AUTORIA_PATHS = [
   '/autoria/analytics',   // Analytics page requires backend auth
   '/autoria/moderation',  // Moderation page requires backend auth
   '/autoria/profile',     // Profile page requires backend auth
-  '/autoria'              // Root autoria path and all other autoria paths require backend auth
+  // '/autoria'              // Root autoria path and all other autoria paths require backend auth
 ];
 
 // Additional paths for Next.js static files
@@ -189,11 +189,28 @@ export default async function middleware(req: NextRequest) {
     }
   }
 
-  // Check if this is an Autoria path that requires backend_auth tokens
-  // ВАЖНО: Проверяем ВСЕ пути, начинающиеся с /autoria, НО исключаем API routes
-  // API routes защищаются отдельно внутри самих route handlers
-  if (pathname.startsWith('/autoria') && !pathname.startsWith('/api/')) {
-    console.log('[Middleware] Autoria page detected, checking NextAuth session (Level 1)');
+  // Check only HTML page requests under /autoria
+  // Exclude API and static/asset routes entirely from auth middleware
+  const accept = req.headers.get('accept') || '';
+  const isHtmlPage = accept.includes('text/html');
+  const isApiRoute = pathname.startsWith('/api/');
+  const isStatic = (
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/static/') ||
+    pathname.startsWith('/assets/') ||
+    pathname.startsWith('/images/') ||
+    pathname.startsWith('/favicon') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.js')
+  );
+
+  if (pathname.startsWith('/autoria') && isHtmlPage && !isApiRoute && !isStatic) {
+    console.log('[Middleware] Autoria HTML page detected, checking NextAuth session (Level 1)');
     return await checkBackendAuth(req);
   }
 
