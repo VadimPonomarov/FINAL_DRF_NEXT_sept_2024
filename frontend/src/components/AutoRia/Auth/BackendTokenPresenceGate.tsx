@@ -31,50 +31,79 @@ export default function BackendTokenPresenceGate({ children }: { children: React
    * Логика:
    * 1. Проверяем наличие токенов в Redis
    * 2. Если нет → редирект на /login
-   * 3. Если есть → валидируем access token
+   * 3. Если есть → валидируем access token через backend API
    * 4. Если невалиден → автоматический рефреш
    * 5. Если рефреш не помог → редирект на /login
+   * 
+   * Таймаут: 10 секунд на всю проверку (включая рефреш)
    */
-  const checkBackendTokens = useCallback(async (isRetry = false) => {
-    try {
-      console.log('[BackendTokenPresenceGate] Level 2: Validating tokens with auto-refresh...');
+  const checkBackendTokens = useCallback(async () => {
+    let validationCompleted = false;
+    
+    // Добавляем общий таймаут для всей проверки
+    const validationPromise = (async () => {
+      try {
+        console.log('[BackendTokenPresenceGate] Level 2: Validating tokens with auto-refresh...');
 
-      // Используем новую систему валидации с автоматическим рефрешем
-      const result = await validateAndRefreshToken();
+        // Используем новую систему валидации с автоматическим рефрешем
+        const result = await validateAndRefreshToken();
 
-      if (result.isValid) {
-        // Токены валидны (возможно после рефреша)
-        console.log('[BackendTokenPresenceGate] ✅ Tokens valid:', result.message || 'OK');
-        setIsLoading(false);
-        return;
-      }
+        if (result.isValid) {
+          // Токены валидны (возможно после рефреша)
+          console.log('[BackendTokenPresenceGate] ✅ Tokens valid:', result.message || 'OK');
+          validationCompleted = true;
+          setIsLoading(false);
+          return;
+        }
 
-      // Токены невалидны и рефреш не помог
-      if (result.needsRedirect) {
-        console.log('[BackendTokenPresenceGate] ❌ Tokens invalid, redirecting to:', result.redirectTo);
+        // Токены невалидны и рефреш не помог
+        if (result.needsRedirect) {
+          console.log('[BackendTokenPresenceGate] ❌ Tokens invalid, redirecting to:', result.redirectTo);
+          validationCompleted = true;
+          const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+          const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+          
+          if (result.redirectTo === '/login') {
+            redirectToAuth(currentPath, 'tokens_not_found');
+          } else {
+            redirectToAuth(currentPath, 'auth_required');
+          }
+          return;
+        }
+
+        // Fallback: если что-то пошло не так
+        console.log('[BackendTokenPresenceGate] ⚠️ Unexpected validation result, redirecting for safety');
+        validationCompleted = true;
         const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
         const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+        redirectToAuth(currentPath, 'auth_required');
+
+      } catch (error) {
+        console.error('[BackendTokenPresenceGate] Error during validation:', error);
+        validationCompleted = true;
         
-        if (result.redirectTo === '/login') {
-          redirectToAuth(currentPath, 'tokens_not_found');
-        } else {
+        // При ошибке валидации - редиректим
+        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+        redirectToAuth(currentPath, 'auth_required');
+      }
+    })();
+
+    // Таймаут на всю проверку - 10 секунд
+    const timeoutPromise = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        if (!validationCompleted) {
+          console.error('[BackendTokenPresenceGate] ⚠️ Validation timeout (10s), redirecting for safety');
+          const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+          const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
           redirectToAuth(currentPath, 'auth_required');
         }
-        return;
-      }
+        resolve();
+      }, 10000);
+    });
 
-      // Fallback: если что-то пошло не так
-      console.log('[BackendTokenPresenceGate] ⚠️ Unexpected validation result, allowing access');
-      setIsLoading(false);
-
-    } catch (error) {
-      console.error('[BackendTokenPresenceGate] Error during validation:', error);
-      
-      // При ошибке валидации - редиректим
-      const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
-      const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-      redirectToAuth(currentPath, 'auth_required');
-    }
+    // Ждем либо завершения проверки, либо таймаута
+    await Promise.race([validationPromise, timeoutPromise]);
   }, [pathname, searchParams]);
 
   useEffect(() => {

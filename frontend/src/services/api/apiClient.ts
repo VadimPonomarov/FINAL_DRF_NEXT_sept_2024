@@ -22,9 +22,21 @@ class ApiClient {
   private retries: number;
   private useProxy: boolean;
 
+  private normalizeBackendBase(url: string): string {
+    try {
+      if (!url) return 'http://localhost:8000';
+      let u = url.trim().replace(/\/+$/, '');
+      u = u.replace(/\/(api)\/?$/i, '');
+      return u;
+    } catch {
+      return 'http://localhost:8000';
+    }
+  }
+
   constructor(options: ApiClientOptions = {}) {
     // Use environment variable for backend URL
-    const defaultBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const rawDefault = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const defaultBaseUrl = this.normalizeBackendBase(rawDefault);
     this.useProxy = false; // Direct backend requests
     this.baseUrl = options.baseUrl || defaultBaseUrl;
     this.timeout = options.timeout || 15000;

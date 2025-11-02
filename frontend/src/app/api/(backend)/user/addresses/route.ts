@@ -21,14 +21,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get backend URL from environment
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // Normalize backend base URL (remove trailing slashes and trailing /api)
+    const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const baseNoSlash = rawBase.replace(/\/+$/, '');
+    const backendBase = baseNoSlash.replace(/\/(api)\/?$/i, '');
 
     // Make authenticated request to backend
     // Backend expects /api/accounts/addresses/raw/ for raw addresses
     const response = await ServerAuthManager.authenticatedFetch(
       request,
-      `${backendUrl}/api/accounts/addresses/raw/`,
+      `${backendBase}/api/accounts/addresses/raw/`,
       {
         method: 'GET'
       }
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest) {
     // Make authenticated request to backend
     const response = await ServerAuthManager.authenticatedFetch(
       request,
-      `${backendUrl}/api/accounts/addresses/raw/`,
+      `${backendBase}/api/accounts/addresses/raw/`,
       {
         method: 'POST',
         body: JSON.stringify(body)

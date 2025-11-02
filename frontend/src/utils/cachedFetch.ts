@@ -76,7 +76,7 @@ export const fetchBrandsWithCache = async (search?: string, vehicleTypeId?: stri
   if (vehicleTypeId) params.append('vehicle_type_id', vehicleTypeId);
   params.append('page_size', '50');
 
-  return cachedFetch(`/api/public/reference/brands?${params}`, {
+  return cachedFetch(`/api/ads/reference/marks?${params}`, {
     cacheTime: 86400,  // 24 часа
     staleTime: 172800  // 48 часов stale
   });
@@ -88,7 +88,7 @@ export const fetchModelsWithCache = async (brandId: string) => {
   params.append('mark_id', brandId); // ИСПРАВЛЕНО: brand_id → mark_id
   params.append('page_size', '100');
 
-  return cachedFetch(`/api/public/reference/models?${params}`, {
+  return cachedFetch(`/api/ads/reference/models/by_mark/?${params}`, {
     cacheTime: 86400,  // 24 часа
     staleTime: 172800  // 48 часов stale
   });
@@ -96,21 +96,21 @@ export const fetchModelsWithCache = async (brandId: string) => {
 
 // 🚀 ВСЕ СПРАВОЧНЫЕ ДАННЫЕ: Унифицированное долгое кеширование (данные стабильные)
 export const fetchVehicleTypesWithCache = async () => {
-  return cachedFetch('/api/public/reference/vehicle-types?page_size=30', {
+  return cachedFetch('/api/ads/reference/vehicle-types?page_size=30', {
     cacheTime: 86400,  // 24 часа
     staleTime: 172800  // 48 часов stale
   });
 };
 
 export const fetchColorsWithCache = async () => {
-  return cachedFetch('/api/public/reference/colors?page_size=100', {
+  return cachedFetch('/api/ads/reference/colors?page_size=100', {
     cacheTime: 86400,  // 24 часа
     staleTime: 172800  // 48 часов stale
   });
 };
 
 export const fetchRegionsWithCache = async () => {
-  return cachedFetch('/api/public/reference/regions?page_size=30', {
+  return cachedFetch('/api/ads/reference/regions?page_size=30', {
     cacheTime: 86400,  // 24 часа
     staleTime: 172800  // 48 часов stale
   });
@@ -121,7 +121,7 @@ export const fetchCitiesWithCache = async (regionId: string) => {
   params.append('region_id', regionId);
   params.append('page_size', '50');
 
-  return cachedFetch(`/api/public/reference/cities?${params}`, {
+  return cachedFetch(`/api/ads/reference/cities?${params}`, {
     cacheTime: 86400,  // 24 часа
     staleTime: 172800  // 48 часов stale
   });

@@ -21,13 +21,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get backend URL from environment
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // Get backend base URL from environment and normalize (remove trailing slashes and trailing /api)
+    const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const baseNoSlash = rawBase.replace(/\/+$/, '');
+    const backendBase = baseNoSlash.replace(/\/(api)\/?$/i, '');
 
     // Make authenticated request to backend
     const response = await ServerAuthManager.authenticatedFetch(
       request,
-      `${backendUrl}/api/users/profile/`,
+      `${backendBase}/api/users/profile/`,
       {
         method: 'GET'
       }
@@ -72,8 +74,10 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Get backend URL from environment
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // Get backend base URL from environment and normalize (remove trailing slashes and trailing /api)
+    const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const baseNoSlash = rawBase.replace(/\/+$/, '');
+    const backendBase = baseNoSlash.replace(/\/(api)\/?$/i, '');
 
     // Get request body
     const body = await request.json();
@@ -82,7 +86,7 @@ export async function PATCH(request: NextRequest) {
     // Make authenticated request to backend
     const response = await ServerAuthManager.authenticatedFetch(
       request,
-      `${backendUrl}/api/users/profile/`,
+      `${backendBase}/api/users/profile/`,
       {
         method: 'PATCH',
         body: JSON.stringify(body)

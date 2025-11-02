@@ -40,17 +40,20 @@ export const authConfig: AuthOptions = {
   },
 
   providers: [
-    GoogleProvider({
-      clientId: AUTH_CONFIG.GOOGLE_CLIENT_ID,
-      clientSecret: AUTH_CONFIG.GOOGLE_CLIENT_SECRET,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code"
+    // GoogleProvider создается только если есть credentials
+    ...(AUTH_CONFIG.GOOGLE_CLIENT_ID && AUTH_CONFIG.GOOGLE_CLIENT_SECRET ? [
+      GoogleProvider({
+        clientId: AUTH_CONFIG.GOOGLE_CLIENT_ID,
+        clientSecret: AUTH_CONFIG.GOOGLE_CLIENT_SECRET,
+        authorization: {
+          params: {
+            prompt: "consent",
+            access_type: "offline",
+            response_type: "code"
+          }
         }
-      }
-    }),
+      })
+    ] : []),
     CredentialsProvider({
       credentials: {
         email: {
@@ -165,18 +168,23 @@ export const authConfig: AuthOptions = {
       console.log('  Account:', account);
       console.log('  Profile:', profile);
 
-      // ВАЖНО: Токены сохраняются в Redis клиентским кодом в useLoginForm.ts
-      // Здесь мы просто разрешаем вход для всех провайдеров
-
       if (account?.provider === 'credentials') {
         console.log('[NextAuth signIn] Credentials login - allowing signin');
-        // Токены уже сохранены в Redis клиентским кодом
+        // Токены уже сохранены в Redis клиентским кодом в useLoginForm.ts
         return true;
       }
 
       if (account?.provider === 'google') {
         console.log('[NextAuth signIn] Google OAuth - allowing signin');
-        // Для Google OAuth можно добавить логику создания пользователя в бэкенде
+        
+        // После Google OAuth пользователь должен получить backend токены
+        // Это делается на странице /login, куда пользователь будет редиректен
+        // если попытается зайти на /autoria без backend токенов
+        
+        // Примечание: Мы НЕ получаем backend токены здесь, потому что:
+        // 1. Пользователь должен выбрать аккаунт для входа (может быть несколько аккаунтов с одним email)
+        // 2. Это делается на странице /login для безопасности и контроля
+        
         return true;
       }
 

@@ -7,7 +7,8 @@ import { getAuthorizationHeaders } from '@/common/constants/headers';
  * Проксирует запросы к Django backend
  */
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const RAW_BACKEND = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_BASE = RAW_BACKEND.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     console.log('🔄 AUTORIA QUICK STATS API: force_refresh =', forceRefresh);
 
     // Проксируем запрос к Django backend
-    const backendUrl = `${BACKEND_URL}/api/ads/statistics/quick/${forceRefresh ? '?force_refresh=true' : ''}`;
+    const backendUrl = `${BACKEND_BASE}/api/ads/statistics/quick/${forceRefresh ? '?force_refresh=true' : ''}`;
     console.log('🔗 AUTORIA QUICK STATS API: Proxying to:', backendUrl);
 
     // Получаем заголовки авторизации

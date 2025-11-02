@@ -22,6 +22,18 @@ export async function GET(request: NextRequest) {
     let backendTokensValid = false;
     let backendError = null;
 
+    // Helper to normalize base URL (strip trailing / and trailing /api)
+    const normalizeBackendBase = (url: string) => {
+      try {
+        if (!url) return 'http://localhost:8000';
+        let u = url.trim().replace(/\/+$/, '');
+        u = u.replace(/\/(api)\/?$/i, '');
+        return u;
+      } catch {
+        return 'http://localhost:8000';
+      }
+    };
+
     if (hasBackendTokens) {
       // 3. Проверяем валидность backend токенов
       try {
@@ -30,7 +42,8 @@ export async function GET(request: NextRequest) {
         // Проверяем структуру токенов
         if (authData.access && authData.refresh) {
           // Тестируем токены на простом API endpoint
-          const testResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/ads/statistics/`, {
+          const backendBase = normalizeBackendBase(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
+          const testResponse = await fetch(`${backendBase}/api/ads/statistics/`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${authData.access}`,

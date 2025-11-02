@@ -13,6 +13,20 @@ import { resolveServiceUrl } from "@/utils/api/serviceUrlResolver";
 const __isServer = typeof window === 'undefined';
 const __frontendBaseUrl = __isServer ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' ? 'http://frontend:3000' : 'http://localhost:3000') : '';
 
+// Normalize backend base URL to ensure no trailing "/" and no trailing "/api"
+function normalizeBackendBase(url: string): string {
+  try {
+    if (!url) return 'http://localhost:8000';
+    // Remove trailing slashes
+    let u = url.trim().replace(/\/+$/, '');
+    // If ends with /api (optionally with trailing slash), strip it
+    u = u.replace(/\/(api)\/?$/i, '');
+    return u;
+  } catch {
+    return 'http://localhost:8000';
+  }
+}
+
 async function apiGetRedis(key: string): Promise<string | null> {
   try {
     const res = await fetch(`${__frontendBaseUrl}/api/redis?key=${encodeURIComponent(key)}`, { cache: 'no-store' });
@@ -82,7 +96,7 @@ export const fetchData = async (
   callbackUrl?: string,
   params?: Record<string, string>,
   retryCount = 0
-) => {
+): Promise<any> => {
   try {
     const urlSearchParams = new URLSearchParams(params).toString();
     const headers = await getAuthorizationHeaders();
@@ -280,9 +294,15 @@ export const fetchAuth = async (
     if (isUsingDummyAuth) {
       endpoint = `${API_URLS[AuthProvider.Dummy]}/auth/login`;
     } else {
-      // Используем NEXT_PUBLIC_BACKEND_URL напрямую для большей надежности
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || API_URLS[AuthProvider.MyBackendDocs];
-      endpoint = `${backendUrl}/api/auth/login`;
+      // Для клиента всегда используем прокси Next.js, чтобы избежать проблем домена/порта
+      if (typeof window !== 'undefined') {
+        endpoint = `/api/auth/login`;
+      } else {
+        // На сервере используем BACKEND_URL
+        const rawBackendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || API_URLS[AuthProvider.MyBackendDocs];
+        const backendUrl = normalizeBackendBase(rawBackendUrl);
+        endpoint = `${backendUrl}/api/auth/login`;
+      }
       console.log(`[fetchAuth] Using endpoint: ${endpoint}`);
     }
 
@@ -294,6 +314,9 @@ export const fetchAuth = async (
     });
 
     if (!response.ok) {
+      let bodyText = '';
+      try { bodyText = await response.text(); } catch {}
+      console.error(`[fetchAuth] Backend auth error ${response.status}: ${response.statusText}. Body:`, bodyText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 

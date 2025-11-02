@@ -39,19 +39,46 @@ async function checkTokensExist(): Promise<boolean> {
 
 /**
  * Валидация access токена через /api/auth/me
+ * Теперь /api/auth/me валидирует токен через backend API
  */
 async function validateAccessToken(): Promise<boolean> {
   try {
-    const response = await fetch('/api/auth/me', {
-      method: 'GET',
-      credentials: 'include',
-      cache: 'no-store',
-    });
+    console.log('[validateAccessToken] Checking token validity via /api/auth/me...');
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 секунды таймаут
+    
+    try {
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      
+      clearTimeout(timeoutId);
 
-    if (!response.ok) return false;
+      if (!response.ok) {
+        console.log('[validateAccessToken] ❌ /api/auth/me returned:', response.status);
+        return false;
+      }
 
-    const data = await response.json();
-    return data.authenticated === true;
+      const data = await response.json();
+      const isValid = data.authenticated === true;
+      console.log('[validateAccessToken] Token validity:', isValid);
+      return isValid;
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.error('[validateAccessToken] ⚠️ Request timeout');
+      } else {
+        console.error('[validateAccessToken] Error:', fetchError.message);
+      }
+      return false;
+    }
   } catch (error) {
     console.error('[validateAccessToken] Error:', error);
     return false;

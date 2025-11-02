@@ -33,6 +33,7 @@ export interface IBackendAuthResponse extends IBackendAuth {
         id: number;
         email: string;
     };
+    redisSaveSuccess?: boolean;
 }
 
 // Интерфейс для ответа от сервера Django
@@ -48,7 +49,7 @@ export interface IDjangoAuthResponse {
 
 // Type for response with error
 export type AuthResponse =
-    | (IBackendAuthResponse & { error?: never })
+    | (IBackendAuthResponse & { error?: never; redisSaveSuccess?: boolean })
     | { error: IAuthError | string };
 
 // Helper function to convert Django response to our format

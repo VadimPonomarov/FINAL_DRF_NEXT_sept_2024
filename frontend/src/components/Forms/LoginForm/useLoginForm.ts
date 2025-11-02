@@ -105,7 +105,7 @@ export const useLoginForm = () => {
     resolver: joiResolver(backendSchema),
     defaultValues: {
       email: sessionData?.email || "",
-      password: ""
+      password: "12345678"
     },
     mode: "onChange" // Change mode to onChange for instant validation
   });
@@ -123,7 +123,7 @@ export const useLoginForm = () => {
     if (provider === AuthProvider.MyBackendDocs) {
       backendForm.reset({
         email: sessionData?.email || "",
-        password: ""
+        password: "12345678"
       });
     } else if (provider === AuthProvider.Dummy) {
       dummyForm.reset({
@@ -167,7 +167,7 @@ export const useLoginForm = () => {
     } else if (provider === AuthProvider.MyBackendDocs) {
       backendForm.reset({
         email: sessionData?.email || "",
-        password: ""
+        password: "12345678"
       });
     }
 
@@ -180,6 +180,14 @@ export const useLoginForm = () => {
   }, [dummyForm, backendForm, sessionData?.email, provider]);
 
   const onSubmit = async (data: IDummyAuth | IBackendAuthCredentials) => {
+    console.log('[useLoginForm] onSubmit called with data:', {
+      provider,
+      hasUsername: 'username' in data,
+      hasEmail: 'email' in data,
+      passwordLength: data.password?.length || 0,
+      isLoading
+    });
+
     // Защита от повторных вызовов
     if (isLoading) {
       console.log('[Auth] Authentication already in progress, ignoring duplicate request');
@@ -190,6 +198,8 @@ export const useLoginForm = () => {
       setIsLoading(true);
       setError("");
       setMessage("");
+
+      console.log('[useLoginForm] Starting authentication process...');
 
       // Initial notification - убираем, чтобы избежать спама
       // toast({

@@ -109,7 +109,25 @@ const LoginForm: FC = () => {
                         </div>
 
                         {provider === AuthProvider.Dummy && (
-                            <form key={`dummy-form-${formKey}`} onSubmit={dummyForm.handleSubmit(onSubmit)} className="space-y-4">
+                            <form 
+                                key={`dummy-form-${formKey}`} 
+                                onSubmit={dummyForm.handleSubmit(
+                                    (data) => {
+                                        console.log('[LoginForm] Dummy form submitted with data:', data);
+                                        onSubmit(data);
+                                    },
+                                    (errors) => {
+                                        console.error('[LoginForm] Dummy form validation errors:', errors);
+                                        toast({
+                                            title: "Validation Error",
+                                            description: "Please fill in all required fields correctly",
+                                            variant: "destructive",
+                                            duration: 3000,
+                                        });
+                                    }
+                                )} 
+                                className="space-y-4"
+                            >
                                 <DummyUsersComboBox reset={dummyForm.reset} />
                                 <FormFieldsRenderer<IDummyAuth>
                                     fields={dummyFormFields}
@@ -118,12 +136,17 @@ const LoginForm: FC = () => {
                                     inputClassName="text-gray-800"
                                     defaultValues={dummyForm.getValues()}
                                 />
+                                {error && (
+                                    <div className="text-red-500 text-sm mt-2">
+                                        {error}
+                                    </div>
+                                )}
                                 <div className="pt-4 border-t border-gray-100">
                                     <ButtonGroup orientation="horizontal">
                                         <Button
                                             variant="outline"
                                             type="submit"
-                                            disabled={!dummyForm.formState.isValid || isLoading}
+                                            disabled={isLoading}
                                         >
                                             {isLoading ? (
                                                 <span className="animate-spin">⌛</span>
@@ -145,7 +168,25 @@ const LoginForm: FC = () => {
                         )}
 
                         {provider === AuthProvider.MyBackendDocs && (
-                            <form key={`backend-form-${formKey}`} onSubmit={backendForm.handleSubmit(onSubmit)} className="space-y-4">
+                            <form 
+                                key={`backend-form-${formKey}`} 
+                                onSubmit={backendForm.handleSubmit(
+                                    (data) => {
+                                        console.log('[LoginForm] Backend form submitted with data:', { email: data.email, passwordLength: data.password?.length });
+                                        onSubmit(data);
+                                    },
+                                    (errors) => {
+                                        console.error('[LoginForm] Backend form validation errors:', errors);
+                                        toast({
+                                            title: "Validation Error",
+                                            description: "Please fill in all required fields correctly",
+                                            variant: "destructive",
+                                            duration: 3000,
+                                        });
+                                    }
+                                )} 
+                                className="space-y-4"
+                            >
                                 <BackendUsersComboBox reset={backendForm.reset} />
                                 <FormFieldsRenderer<IBackendAuthCredentials>
                                     fields={backendFormFields}
@@ -154,12 +195,17 @@ const LoginForm: FC = () => {
                                     inputClassName="text-gray-800"
                                     defaultValues={backendForm.getValues()}
                                 />
+                                {error && (
+                                    <div className="text-red-500 text-sm mt-2">
+                                        {error}
+                                    </div>
+                                )}
                                 <div className="pt-4 border-t border-gray-100">
                                     <ButtonGroup orientation="horizontal">
                                         <Button
                                             variant="outline"
                                             type="submit"
-                                            disabled={!backendForm.formState.isValid || isLoading}
+                                            disabled={isLoading}
                                         >
                                             {isLoading ? (
                                                 <span className="animate-spin">⌛</span>

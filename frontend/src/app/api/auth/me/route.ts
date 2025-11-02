@@ -3,23 +3,84 @@ import { getServerSession } from 'next-auth/next';
 import { authConfig } from '@/configs/auth';
 import { Redis } from '@upstash/redis';
 
+/**
+ * Валидация access token через backend API
+ * Проверяет не только наличие токена в Redis, но и его валидность через Django API
+ */
+async function validateAccessTokenWithBackend(accessToken: string): Promise<{ valid: boolean; user?: any }> {
+  try {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    
+    // Используем endpoint который требует авторизации для валидации токена
+    // Используем /api/users/profile/ который требует авторизации и возвращает данные пользователя
+    const validationUrl = `${backendUrl}/api/users/profile/`;
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 секунд таймаут
+    
+    try {
+      const response = await fetch(validationUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+        cache: 'no-store',
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('[API /auth/me] ✅ Token validated via backend, user:', userData?.email || 'unknown');
+        return { valid: true, user: userData };
+      } else if (response.status === 401) {
+        console.log('[API /auth/me] ❌ Token invalid (401 from backend)');
+        return { valid: false };
+      } else {
+        console.log('[API /auth/me] ⚠️ Backend validation returned:', response.status);
+        // Если это не 401, считаем токен валидным (возможны временные ошибки backend)
+        return { valid: true };
+      }
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.error('[API /auth/me] ⚠️ Backend validation timeout');
+      } else {
+        console.error('[API /auth/me] ⚠️ Backend validation error:', fetchError.message);
+      }
+      // При ошибке сети считаем токен валидным (fallback для доступности)
+      return { valid: true };
+    }
+  } catch (error) {
+    console.error('[API /auth/me] Error validating token with backend:', error);
+    // При ошибке валидации считаем токен невалидным
+    return { valid: false };
+  }
+}
+
 export async function GET() {
   try {
-    // ВАЖНО: Сначала проверяем backend токены в Redis
-    // NextAuth сессия опциональна - она может быть не готова сразу после логина
-    console.log('[API /auth/me] Checking backend tokens in Redis...');
+    // УРОВЕНЬ 1: Проверка NextAuth сессии
+    const session = await getServerSession(authConfig);
+    const hasNextAuthSession = !!session?.user?.email;
     
-    let backendTokensValid = false;
+    console.log('[API /auth/me] Checking authentication:', {
+      hasNextAuthSession,
+      sessionEmail: session?.user?.email
+    });
+    
+    // УРОВЕНЬ 2: Проверка backend токенов в Redis
     let backendTokenData: any = null;
     
     try {
       const redis = Redis.fromEnv();
       const backendAuth = await redis.get('backend_auth');
-      backendTokensValid = !!backendAuth;
       
       if (backendAuth) {
         backendTokenData = typeof backendAuth === 'string' ? JSON.parse(backendAuth) : backendAuth;
-        console.log('[API /auth/me] Backend tokens found:', {
+        console.log('[API /auth/me] Backend tokens found in Redis:', {
           hasAccess: !!backendTokenData.access,
           hasRefresh: !!backendTokenData.refresh
         });
@@ -28,12 +89,11 @@ export async function GET() {
       }
     } catch (redisError) {
       console.error('[API /auth/me] Redis check failed:', redisError);
-      backendTokensValid = false;
     }
 
     // Если нет backend токенов - возвращаем 401
-    if (!backendTokensValid || !backendTokenData?.access) {
-      console.log('[API /auth/me] No valid backend tokens found');
+    if (!backendTokenData?.access) {
+      console.log('[API /auth/me] ❌ No backend tokens found');
       return NextResponse.json({
         authenticated: false,
         error: 'Backend tokens required',
@@ -46,20 +106,34 @@ export async function GET() {
       });
     }
 
-    // Токены есть - проверяем NextAuth сессию (опционально)
-    const session = await getServerSession(authConfig);
-    console.log('[API /auth/me] NextAuth session:', session ? 'present' : 'not yet ready');
+    // УРОВЕНЬ 3: Валидация access token через backend API
+    console.log('[API /auth/me] Validating access token with backend...');
+    const validationResult = await validateAccessTokenWithBackend(backendTokenData.access);
+    
+    if (!validationResult.valid) {
+      console.log('[API /auth/me] ❌ Access token invalid according to backend');
+      return NextResponse.json({
+        authenticated: false,
+        error: 'Access token invalid',
+        needsRefresh: true,
+      }, {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+    }
 
-    // Возвращаем успех даже если NextAuth сессия не готова
-    // Главное - наличие валидных backend токенов
-    console.log('[API /auth/me] ✅ Backend tokens valid');
-
+    // Все проверки пройдены
+    console.log('[API /auth/me] ✅ Authentication valid');
+    
     return NextResponse.json({
       authenticated: true,
-      user: session?.user || {
+      user: validationResult.user || session?.user || {
         email: backendTokenData.email || 'unknown',
-        // Дополнительные поля из токена если есть
-      }
+      },
+      hasNextAuthSession,
+      hasBackendTokens: true,
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -67,12 +141,12 @@ export async function GET() {
     });
     
   } catch (error) {
-    console.error('Error in /api/auth/me:', error);
-    return new NextResponse(
-      JSON.stringify({ 
+    console.error('[API /auth/me] Error:', error);
+    return NextResponse.json(
+      { 
         authenticated: false,
         error: 'Internal server error' 
-      }), 
+      }, 
       { 
         status: 500,
         headers: {

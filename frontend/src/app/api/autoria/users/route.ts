@@ -10,12 +10,14 @@ export async function GET(request: NextRequest) {
     console.log('[AutoRia Users API - proxy] Getting users...');
 
     // ВАЖНО: В Server-side API routes используем BACKEND_URL (без NEXT_PUBLIC_)
-    // NEXT_PUBLIC_ переменные доступны только в клиенте
-    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    console.log('[AutoRia Users API - proxy] Backend URL:', backendUrl);
+    // Если NEXT_PUBLIC_BACKEND_URL относительный ("/api"), используем локальный backend
+    const raw = process.env.BACKEND_URL
+      || (process.env.NEXT_PUBLIC_BACKEND_URL?.startsWith('http') ? process.env.NEXT_PUBLIC_BACKEND_URL : undefined)
+      || 'http://localhost:8000';
+    console.log('[AutoRia Users API - proxy] Raw backend URL:', raw);
 
     // Аккуратно собираем URL, чтобы избежать двойного "/api"
-    const base = backendUrl.replace(/\/$/, '');
+    const base = raw.replace(/\/$/, '');
     const hasApi = /\/api\/?$/.test(base);
     const apiBase = hasApi ? base : `${base}/api`;
     const fullUrl = `${apiBase}/users/public/list/`;
