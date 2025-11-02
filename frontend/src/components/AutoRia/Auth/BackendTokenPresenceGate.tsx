@@ -32,6 +32,27 @@ export default function BackendTokenPresenceGate({ children }: { children: React
     try {
       console.log('[BackendTokenPresenceGate] Level 2: Checking backend tokens...');
 
+      // SHORT-CIRCUIT: если в Redis нет backend_auth, сразу редиректим без попыток refresh
+      try {
+        const redisCheck = await Promise.race([
+          fetch(`/api/redis?key=${encodeURIComponent('backend_auth')}`, { cache: 'no-store' }),
+          new Promise<Response>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 1500))
+        ]) as Response;
+
+        if (redisCheck && redisCheck.ok) {
+          const redisData = await redisCheck.json();
+          if (!redisData?.exists) {
+            console.log('[BackendTokenPresenceGate] ❌ No backend_auth in Redis - short-circuit redirect');
+            const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+            const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+            redirectToAuth(currentPath, 'tokens_not_found');
+            return;
+          }
+        }
+      } catch (e) {
+        console.log('[BackendTokenPresenceGate] Redis check failed or timed out, continue with /api/auth/me');
+      }
+
       // Проверяем backend токены через /api/auth/me с таймаутом (максимум 3 секунды)
       const checkPromise = fetch('/api/auth/me', {
         method: 'GET',
