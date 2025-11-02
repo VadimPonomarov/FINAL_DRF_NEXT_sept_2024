@@ -13,6 +13,7 @@ import { IBackendAuthCredentials } from "@/common/interfaces/auth.interfaces";
 import { ISession } from "@/common/interfaces/session.interfaces";
 import { User } from "@/common/interfaces/user.interface";
 import { useAuthProvider, useAuth } from "@/contexts/AuthProviderContext";
+import { useTranslation } from "@/contexts/I18nContext";
 import { redirectManager } from "@/utils/auth/redirectManager";
 
 import { backendSchema, dummySchema } from "./index.joi";
@@ -60,6 +61,7 @@ const verifyTokensInRedis = async (provider: AuthProvider): Promise<boolean> => 
 };
 
 export const useLoginForm = () => {
+  const t = useTranslation();
   const { data: session } = useSession();
   const sessionData = session as unknown as ISession;
   const { provider } = useAuthProvider();
@@ -278,8 +280,8 @@ export const useLoginForm = () => {
           console.log('[LoginForm] ✅ Tokens confirmed saved to Redis by fetchAuth');
 
           toast({
-            title: "Authentication",
-            description: "Authentication successful!",
+            title: t('auth.loginSuccessTitle', 'Authentication Successful'),
+            description: t('auth.loginSuccess', 'You have successfully signed in'),
             duration: 2000,
             variant: "default",
           });
@@ -298,9 +300,9 @@ export const useLoginForm = () => {
           console.error('[LoginForm] ❌ Tokens were NOT saved to Redis');
 
           toast({
-            title: "Authentication Failed",
-            description: "Tokens were not saved properly",
-            duration: 4000, // Сокращаем время отображения
+            title: t('auth.tokensNotSavedTitle', 'Authentication Failed'),
+            description: t('auth.tokensNotSaved', 'Tokens were not saved properly'),
+            duration: 4000,
             variant: "destructive",
           });
 
@@ -348,16 +350,16 @@ export const useLoginForm = () => {
       console.error('[Auth] Error:', err);
 
       // Create a more user-friendly error message
-      let errorMessage = err instanceof Error ? err.message : 'Authentication failed';
-      let errorTitle = "Authentication Error";
+      let errorMessage = err instanceof Error ? err.message : t('auth.loginFailed', 'Authentication failed');
+      let errorTitle = t('auth.errorTitle', 'Authentication Error');
 
       // Check for specific error types
       if (errorMessage.includes('timed out') || errorMessage.includes('Failed to fetch')) {
-        errorMessage = 'Could not connect to the backend server. Please make sure the server is running and try again.';
-        errorTitle = "Connection Error";
+        errorMessage = t('auth.connectionError', 'Could not connect to the backend server. Please make sure the server is running and try again.');
+        errorTitle = t('auth.connectionErrorTitle', 'Connection Error');
       } else if (errorMessage.includes('401') || errorMessage.includes('403')) {
-        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-        errorTitle = "Authentication Failed";
+        errorMessage = t('auth.invalidCredentials', 'Invalid email or password. Please check your credentials and try again.');
+        errorTitle = t('auth.loginFailedTitle', 'Authentication Failed');
       }
 
       setError(errorMessage);

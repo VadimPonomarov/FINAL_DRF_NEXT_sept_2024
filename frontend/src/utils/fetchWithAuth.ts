@@ -41,12 +41,29 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
     return resp;
   }
 
-  // 403 Forbidden - нет прав доступа, редиректим на /login сразу
+  // 403 Forbidden - обработка как и 401, с защитой от циклов
   if (resp.status === 403) {
-    console.log('[fetchWithAuth] ❌ 403 Forbidden - redirecting to /login');
+    console.log('[fetchWithAuth] ❌ 403 Forbidden');
     if (typeof window !== 'undefined') {
-      const callback = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = `/login?callbackUrl=${callback}&error=forbidden&message=${encodeURIComponent('Необхідна авторизація для доступу до цього ресурсу')}`;
+      const currentPathname = window.location.pathname;
+      // Избегаем редиректа на страницах AutoRia — гард уровня 2 сам обработает
+      if (currentPathname.startsWith('/autoria/')) {
+        console.warn('[fetchWithAuth] Suppressing 403 redirect on /autoria/* (gate handles it)');
+        return resp;
+      }
+      // Глобальный троттлинг
+      try {
+        const now = Date.now();
+        const last = Number(window.sessionStorage.getItem('auth:lastRedirectTs') || '0');
+        if (now - last < 10000) {
+          console.warn('[fetchWithAuth] Suppressing 403 redirect (throttled)');
+          return resp;
+        }
+        window.sessionStorage.setItem('auth:lastRedirectTs', String(now));
+      } catch {}
+      const { redirectToAuth } = await import('./auth/redirectToAuth');
+      const currentPath = currentPathname + window.location.search;
+      redirectToAuth(currentPath, 'auth_required');
     }
     return resp;
   }
@@ -104,9 +121,27 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
   // Still unauthorized: redirect with proper auth level checking
   // Обработчики 401/403 ошибок - правильный редирект с учетом многоуровневой системы
   if (typeof window !== 'undefined') {
+    const currentPathname = window.location.pathname;
+    // Avoid redirect loops on AutoRia pages – BackendTokenPresenceGate will handle redirects centrally
+    if (currentPathname.startsWith('/autoria/')) {
+      console.warn('[fetchWithAuth] Suppressing redirect on /autoria/* (gate handles it)');
+      return resp;
+    }
+
+    // Global throttle to avoid rapid multiple redirects
+    try {
+      const now = Date.now();
+      const last = Number(window.sessionStorage.getItem('auth:lastRedirectTs') || '0');
+      if (now - last < 10000) {
+        console.warn('[fetchWithAuth] Suppressing redirect (throttled)');
+        return resp;
+      }
+      window.sessionStorage.setItem('auth:lastRedirectTs', String(now));
+    } catch {}
+
     console.log('[fetchWithAuth] ❌ Token refresh failed, checking NextAuth session and redirecting');
     const { redirectToAuth } = await import('./auth/redirectToAuth');
-    const currentPath = window.location.pathname + window.location.search;
+    const currentPath = currentPathname + window.location.search;
     redirectToAuth(currentPath, 'auth_required');
   }
 

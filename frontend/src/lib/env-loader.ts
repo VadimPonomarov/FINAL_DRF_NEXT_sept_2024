@@ -51,10 +51,10 @@ export function loadRuntimeEnv() {
 
     // Устанавливаем значения по умолчанию для критических переменных
     if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
-      // Для локальной разработки используем nginx proxy (http://localhost/api)
+      // Для локальной разработки используем прямое подключение к Django (http://localhost:8000)
       // Для production в Docker - используем внутренний сервис (http://app:8000)
       const isDocker = process.env.IS_DOCKER === 'true';
-      process.env.NEXT_PUBLIC_BACKEND_URL = isDocker ? 'http://app:8000' : 'http://localhost/api';
+      process.env.NEXT_PUBLIC_BACKEND_URL = isDocker ? 'http://app:8000' : 'http://localhost:8000';
     }
     
     if (!process.env.BACKEND_URL) {

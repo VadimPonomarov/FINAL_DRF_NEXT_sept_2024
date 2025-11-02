@@ -38,10 +38,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Строим URL для Django backend
-    // ВАЖНО: NEXT_PUBLIC_BACKEND_URL должен быть установлен для локальной разработки
-    // Значение по умолчанию: http://localhost/api (через nginx) или http://localhost:8000 (напрямую)
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:8000';
-    console.log(`🔧 [PUBLIC REFERENCE API] Using backend URL: ${backendUrl}`);
+    // На сервере ВСЕГДА используем BACKEND_URL (напрямую к Django),
+    // а не NEXT_PUBLIC_BACKEND_URL (который может указывать на nginx http://localhost/api)
+    const backendBaseRaw = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // Нормализуем до origin и убираем завершающий /api
+    const baseNoSlash = backendBaseRaw.replace(/\/+$/, '');
+    const baseWithoutApi = baseNoSlash.replace(/\/(api)\/?$/i, '');
+    let backendOrigin = baseWithoutApi;
+    try {
+      const u = new URL(backendBaseRaw);
+      backendOrigin = `${u.protocol}//${u.host}`;
+    } catch {}
+    console.log(`🔧 [PUBLIC REFERENCE API] Using backend origin: ${backendOrigin}`);
     // Перекладываем параметры запроса в соответствии с ожиданиями Django
     const adjustedParams = new URLSearchParams(searchParams.toString());
     if (djangoType === 'cities') {
@@ -66,7 +74,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
     const queryString = adjustedParams.toString();
     // Django использует /api/ads/reference/ вместо /api/public/reference/
-    const djangoUrl = `${backendUrl}/api/ads/reference/${djangoType}/${queryString ? `?${queryString}` : ''}`;
+    const djangoUrl = `${backendOrigin}/api/ads/reference/${djangoType}/${queryString ? `?${queryString}` : ''}`;
 
     console.log(`🔗 PUBLIC REFERENCE API: Proxying to Django: ${djangoUrl}`);
 

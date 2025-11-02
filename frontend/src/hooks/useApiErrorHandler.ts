@@ -122,6 +122,11 @@ class ApiErrorTracker {
       }
     }
 
+    // ЯВНАЯ обработка 401: считаем критической для API эндпоинтов (кроме auth/public/redis/autoria)
+    if (status === 401 && url.includes('/api/')) {
+      return true;
+    }
+
     // 400-499 ошибки НЕ критические (это клиентские ошибки - неправильный запрос, нет прав и т.д.)
     if (status >= 400 && status < 500) {
       return false;
@@ -177,16 +182,32 @@ export function useApiErrorHandler(options: ApiErrorHandlerOptions = {}) {
     console.log('[ApiErrorHandler] Handling critical error...');
 
     try {
+      // Guard: avoid loops if already on auth pages
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        if (path.startsWith('/login') || path.startsWith('/api/auth/signin')) {
+          console.warn('[ApiErrorHandler] Already on auth page, skip redirect to avoid loop');
+          return;
+        }
+      }
+
       // Сбрасываем счетчик ошибок
       tracker.reset();
 
       // Вызываем пользовательский обработчик
       onCriticalError?.();
 
-      // Перенаправляем на страницу первичной авторизации NextAuth (/api/auth/signin)
+      // Перенаправляем на страницу логина (/login) с callbackUrl
       // ТОЛЬКО если enableAutoRedirect === true
       if (enableAutoRedirect) {
-        console.log('[ApiErrorHandler] Auto-redirect enabled - clearing session and redirecting to /signin...');
+        console.log('[ApiErrorHandler] Auto-redirect enabled - clearing session and redirecting to /login...');
+
+        // Пытаемся очистить backend токены/Redis
+        try {
+          await fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', credentials: 'include' });
+        } catch (e) {
+          console.warn('[ApiErrorHandler] /api/auth/logout call failed (will continue cleanup):', e);
+        }
 
         // Очищаем NextAuth сессию
         await signOut({ redirect: false });
@@ -195,10 +216,15 @@ export function useApiErrorHandler(options: ApiErrorHandlerOptions = {}) {
         localStorage.clear();
         sessionStorage.clear();
 
-        const currentPath = window.location.pathname;
-        const redirectUrl = currentPath === '/api/auth/signin' ? '/api/auth/signin' : `/api/auth/signin?callbackUrl=${encodeURIComponent(currentPath)}`;
+        const currentPath = window.location.pathname + window.location.search;
+        const redirectUrl = `/login?callbackUrl=${encodeURIComponent(currentPath)}`;
 
         setTimeout(() => {
+          const path = window.location.pathname;
+          if (path.startsWith('/login') || path.startsWith('/api/auth/signin')) {
+            console.warn('[ApiErrorHandler] Suppress redirect while already on auth page');
+            return;
+          }
           window.location.href = redirectUrl;
         }, 100);
       } else {
@@ -215,9 +241,39 @@ export function useApiErrorHandler(options: ApiErrorHandlerOptions = {}) {
   }, [onCriticalError, enableAutoRedirect, router, tracker]);
 
   useEffect(() => {
-    const removeListener = tracker.addListener((errorData) => {
+    const unsubscribe = tracker.addListener((errorData) => {
       const { url, status, error, isCritical } = errorData;
       
+      // Немедленная реакция на первую 401 для API эндпоинтов (кроме auth)
+      if (status === 401 && url.includes('/api/') && !url.includes('/api/auth/')) {
+        console.warn('[ApiErrorHandler] 401 detected for API endpoint', { url });
+        if (typeof window !== 'undefined') {
+          const path = window.location.pathname;
+          // 1) Не редиректим на страницах AutoRia — BackendTokenPresenceGate сам обработает
+          if (path.startsWith('/autoria/')) {
+            console.warn('[ApiErrorHandler] Suppress 401 redirect on /autoria/* (gate handles it)');
+            return;
+          }
+          // 2) Не редиректим если уже на страницах авторизации
+          if (path.startsWith('/login') || path.startsWith('/api/auth/signin')) {
+            console.warn('[ApiErrorHandler] Suppress 401 redirect on auth page');
+            return;
+          }
+          // 3) Глобальный троттлинг: не чаще одного раза в 10 секунд
+          try {
+            const now = Date.now();
+            const last = Number(window.sessionStorage.getItem('auth:lastRedirectTs') || '0');
+            if (now - last < 10000) {
+              console.warn('[ApiErrorHandler] Suppress 401 redirect (throttled)');
+              return;
+            }
+            window.sessionStorage.setItem('auth:lastRedirectTs', String(now));
+          } catch {}
+        }
+        handleCriticalError();
+        return;
+      }
+
       if (isCritical) {
         console.warn('[ApiErrorHandler] Critical API error detected:', { url, status, error });
         
@@ -236,7 +292,7 @@ export function useApiErrorHandler(options: ApiErrorHandlerOptions = {}) {
       }
     });
 
-    return removeListener;
+    return () => { unsubscribe(); };
   }, [handleCriticalError, onBackendUnavailable, criticalErrorThreshold, tracker]);
 
   // Функция для ручного отслеживания ошибок
@@ -268,7 +324,7 @@ export function setupGlobalFetchErrorTracking(trackErrorCallback?: (url: string,
   window.fetch = async function(...args) {
     try {
       const response = await originalFetch.apply(this, args);
-      const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+      const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
 
       // Отслеживаем ошибки HTTP статусов
       if (!response.ok) {

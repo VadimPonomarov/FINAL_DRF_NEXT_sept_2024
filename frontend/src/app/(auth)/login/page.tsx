@@ -5,12 +5,14 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import LoginForm from "@/components/Forms/LoginForm/LoginForm";
+import { useTranslation } from "@/contexts/I18nContext";
 
 const LoginPage: FC = () => {
     const { data: session, status } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
+    const t = useTranslation();
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
     const message = searchParams.get("message");
@@ -40,8 +42,26 @@ const LoginPage: FC = () => {
         }
 
         if (status === 'unauthenticated' || !session) {
-            console.log('[LoginPage] ❌ No NextAuth session, redirecting to signin');
-            router.replace(`/api/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl || '/login')}`);
+            // Избегаем циклов: если пришли с ошибкой/алертом или уже недавно редиректили на signin — не редиректим автоматически
+            const hasAuthMessage = Boolean(error || alert);
+            let throttled = false;
+            try {
+                const now = Date.now();
+                const last = Number(window.sessionStorage.getItem('auth:lastSigninRedirectTs') || '0');
+                throttled = now - last < 10000; // 10s throttle
+                if (!throttled) {
+                    window.sessionStorage.setItem('auth:lastSigninRedirectTs', String(now));
+                }
+            } catch {}
+
+            if (!hasAuthMessage && !throttled) {
+                console.log('[LoginPage] ❌ No NextAuth session, redirecting to signin (throttled ok)');
+                router.replace(`/api/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl || '/login')}`);
+                return;
+            }
+
+            console.warn('[LoginPage] Skipping auto-redirect to signin (hasAuthMessage or throttled)');
+            setIsCheckingAuth(false);
             return;
         }
 
@@ -53,14 +73,14 @@ const LoginPage: FC = () => {
     useEffect(() => {
         if (error === 'backend_auth_required' || alert === 'backend_auth_required') {
             toast({
-                title: "Backend Authentication Required",
-                description: message || "Please log in with backend authentication to access AutoRia features",
+                title: t('auth.backendAuthRequiredTitle', 'Backend Authentication Required'),
+                description: message || t('auth.backendAuthRequired', 'Please log in with backend authentication to access AutoRia features'),
                 variant: "destructive",
                 duration: 8000, // 8 seconds
             });
         } else if (message) {
             toast({
-                title: "Authentication Required",
+                title: t('auth.noticeTitle', 'Authentication'),
                 description: message,
                 variant: "destructive",
                 duration: 6000, // 6 seconds

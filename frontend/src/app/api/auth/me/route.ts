@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authConfig } from '@/configs/auth';
-import { Redis } from '@upstash/redis';
 
 /**
  * Валидация access token через backend API
@@ -71,74 +70,36 @@ export async function GET() {
       sessionEmail: session?.user?.email
     });
     
-    // УРОВЕНЬ 2: Проверка backend токенов в Redis
-    let backendTokenData: any = null;
-    
-    try {
-      const redis = Redis.fromEnv();
-      const backendAuth = await redis.get('backend_auth');
-      
-      if (backendAuth) {
-        backendTokenData = typeof backendAuth === 'string' ? JSON.parse(backendAuth) : backendAuth;
-        console.log('[API /auth/me] Backend tokens found in Redis:', {
-          hasAccess: !!backendTokenData.access,
-          hasRefresh: !!backendTokenData.refresh
-        });
-      } else {
-        console.log('[API /auth/me] No backend tokens in Redis');
-      }
-    } catch (redisError) {
-      console.error('[API /auth/me] Redis check failed:', redisError);
-    }
-
-    // Если нет backend токенов - возвращаем 401
-    if (!backendTokenData?.access) {
-      console.log('[API /auth/me] ❌ No backend tokens found');
-      return NextResponse.json({
-        authenticated: false,
-        error: 'Backend tokens required',
-        needsBackendAuth: true,
-      }, {
-        status: 401,
-        headers: {
-          'Content-Type': 'application/json',
+    // Если нет NextAuth сессии — не аутентифицирован
+    if (!hasNextAuthSession) {
+      return NextResponse.json(
+        {
+          authenticated: false,
+          error: 'NextAuth session required',
+          needsBackendAuth: false,
+        },
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
         }
-      });
+      );
     }
 
-    // УРОВЕНЬ 3: Валидация access token через backend API
-    console.log('[API /auth/me] Validating access token with backend...');
-    const validationResult = await validateAccessTokenWithBackend(backendTokenData.access);
-    
-    if (!validationResult.valid) {
-      console.log('[API /auth/me] ❌ Access token invalid according to backend');
-      return NextResponse.json({
-        authenticated: false,
-        error: 'Access token invalid',
-        needsRefresh: true,
-      }, {
-        status: 401,
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-    }
+    // Без Redis: считаем пользователя аутентифицированным по сессии
+    // и не выполняем проверку backend токенов
+    console.log('[API /auth/me] ✅ NextAuth session valid; Redis disabled, skipping backend token validation');
 
-    // Все проверки пройдены
-    console.log('[API /auth/me] ✅ Authentication valid');
-    
-    return NextResponse.json({
-      authenticated: true,
-      user: validationResult.user || session?.user || {
-        email: backendTokenData.email || 'unknown',
+    return NextResponse.json(
+      {
+        authenticated: true,
+        user: session?.user,
+        hasNextAuthSession,
+        hasBackendTokens: false,
       },
-      hasNextAuthSession,
-      hasBackendTokens: true,
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
+      {
+        headers: { 'Content-Type': 'application/json' },
       }
-    });
+    );
     
   } catch (error) {
     console.error('[API /auth/me] Error:', error);

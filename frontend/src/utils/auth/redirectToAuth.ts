@@ -48,6 +48,17 @@ export async function redirectToAuth(
     return;
   }
 
+  // Глобальная защита от циклов редиректов: не чаще одного раза в 10 секунд
+  try {
+    const now = Date.now();
+    const last = Number(window.sessionStorage.getItem('auth:lastRedirectTs') || '0');
+    if (now - last < 10000) {
+      console.warn('[redirectToAuth] Suppress redirect (throttled)');
+      return;
+    }
+    window.sessionStorage.setItem('auth:lastRedirectTs', String(now));
+  } catch {}
+
   const path = currentPath || window.location.pathname + window.location.search;
   const messages: Record<string, string> = {
     session_expired: 'Сесія закінчилася. Будь ласка, увійдіть знову.',
@@ -56,6 +67,17 @@ export async function redirectToAuth(
   };
 
   const message = messages[reason] || messages.session_expired;
+
+  // Защита от циклов: если уже на /login или на странице signin — ничего не делаем
+  const currentPathname = window.location.pathname;
+  if (currentPathname.startsWith('/login')) {
+    console.warn('[redirectToAuth] Already on /login, skip redirect to avoid loop');
+    return;
+  }
+  if (currentPathname.startsWith('/api/auth/signin')) {
+    console.warn('[redirectToAuth] Already on /api/auth/signin, skip redirect to avoid loop');
+    return;
+  }
 
   console.log('[redirectToAuth] Checking NextAuth session before redirect...');
 

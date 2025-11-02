@@ -69,10 +69,14 @@ async function handleRequest(
     // Get backend URL
     // IMPORTANT: Frontend runs locally (not in Docker), so always use localhost
     // Backend runs in Docker but exposes port 8000 to localhost
-    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const rawBackend = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // Normalize to origin and strip trailing /api
+    const norm = rawBackend.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
+    let backendOrigin = norm;
+    try { const u = new URL(rawBackend); backendOrigin = `${u.protocol}//${u.host}`; } catch {}
 
     // Build full URL
-    const url = `${backendUrl}/${path}${request.nextUrl.search}`;
+    const url = `${backendOrigin}/${path}${request.nextUrl.search}`;
     console.log(`[Proxy API] Proxying to: ${url}`);
 
     // Get authorization headers
@@ -101,9 +105,27 @@ async function handleRequest(
     }
 
     // Make request to backend
-    const response = await fetch(url, requestOptions);
+    let response = await fetch(url, requestOptions);
 
     console.log(`[Proxy API] Backend response: ${response.status}`);
+
+    // If unauthorized, try to refresh tokens once and retry
+    if (response.status === 401 && !url.includes('/api/auth/')) {
+      try {
+        const refreshResp = await fetch(`${request.nextUrl.origin}/api/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store' });
+        if (refreshResp.ok) {
+          const data = await refreshResp.json();
+          const access = data?.access;
+          if (access) {
+            const retryHeaders = {
+              ...requestOptions.headers,
+              Authorization: `Bearer ${access}`,
+            } as Record<string, string>;
+            response = await fetch(url, { ...requestOptions, headers: retryHeaders });
+          }
+        }
+      } catch {}
+    }
 
     // Get response data
     let data;

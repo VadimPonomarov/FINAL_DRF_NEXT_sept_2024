@@ -34,10 +34,8 @@ export async function validateBearerToken(): Promise<boolean> {
  */
 export async function validateServerToken(): Promise<boolean> {
   try {
-    const { Redis } = await import('@upstash/redis');
-    const redis = Redis.fromEnv();
-    const backendAuth = await redis.get('backend_auth');
-    return !!backendAuth;
+    // Redis is disabled in this build; server-side validation is a no-op
+    return false;
   } catch (error) {
     console.error('[validateServerToken] Error:', error);
     return false;

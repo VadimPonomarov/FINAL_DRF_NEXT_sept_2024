@@ -23,7 +23,7 @@ const AutoRiaUserBadge: React.FC = () => {
   const router = useRouter();
   const { t } = useI18n();
   const { data: session, status } = useSession();
-  const { user, isAuthenticated, hasBackendTokens } = useAutoRiaAuth();
+  const { user, isAuthenticated, hasBackendTokens, logout } = useAutoRiaAuth();
   const { data: userProfileData } = useUserProfileData();
   const { toast } = useToast();
 
@@ -93,6 +93,11 @@ const AutoRiaUserBadge: React.FC = () => {
     try {
       // LOGOUT: Очищуємо Redis і backend токени (NextAuth сессія залишається)
       await cleanupBackendTokens();
+      // Немедленно скрываем бейдж локально
+      logout();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:signout', { detail: { clearCache: true } }));
+      }
       
       toast({
         title: `✅ ${t('common.success')}`,
@@ -104,7 +109,7 @@ const AutoRiaUserBadge: React.FC = () => {
       // NextAuth сессія ще активна, тому не треба знову авторизуватись через OAuth
       setTimeout(() => {
         router.push('/login?message=' + encodeURIComponent(t('auth.tokensClearedPleaseLogin')));
-        router.refresh(); // Примусово оновлюємо роут
+        // router.refresh(); // Необязательно; избегаем лишних перерисовок
       }, 500);
     } catch (error) {
       console.error('[AutoRiaUserBadge] Error during logout:', error);
@@ -128,14 +133,15 @@ const AutoRiaUserBadge: React.FC = () => {
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
-            <Link href="/autoria/profile" className="flex items-center gap-1.5">
+            {/* Backend-tokens badge: do NOT redirect to profile on click */}
+            <span className="flex items-center gap-1.5" role="button" tabIndex={0}>
               {isPremium ? (
                 <Crown className="h-3 w-3" />
               ) : (
                 <User className="h-3 w-3" />
               )}
               <span className="text-xs">{displayName}</span>
-            </Link>
+            </span>
           </Badge>
         </TooltipTrigger>
         <TooltipContent 

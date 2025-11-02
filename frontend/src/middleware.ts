@@ -150,8 +150,8 @@ export default async function middleware(req: NextRequest) {
     return await checkBackendAuth(req);
   }
 
-  // Protect other NextAuth-required pages
-  const requiresAuth = ['/login', '/profile', '/settings'].some(path => pathname.startsWith(path));
+  // Protect other NextAuth-required pages (do NOT protect /login to avoid loops)
+  const requiresAuth = ['/profile', '/settings'].some(path => pathname.startsWith(path));
   if (requiresAuth) {
     return await checkInternalAuth(req);
   }
