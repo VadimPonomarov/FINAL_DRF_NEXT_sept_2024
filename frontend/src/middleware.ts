@@ -190,9 +190,10 @@ export default async function middleware(req: NextRequest) {
   }
 
   // Check if this is an Autoria path that requires backend_auth tokens
-  // ВАЖНО: Проверяем ВСЕ пути, начинающиеся с /autoria
-  if (pathname.startsWith('/autoria')) {
-    console.log('[Middleware] Autoria path detected, checking NextAuth session (Level 1)');
+  // ВАЖНО: Проверяем ВСЕ пути, начинающиеся с /autoria, НО исключаем API routes
+  // API routes защищаются отдельно внутри самих route handlers
+  if (pathname.startsWith('/autoria') && !pathname.startsWith('/api/')) {
+    console.log('[Middleware] Autoria page detected, checking NextAuth session (Level 1)');
     return await checkBackendAuth(req);
   }
 
