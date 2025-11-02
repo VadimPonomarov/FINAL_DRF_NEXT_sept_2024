@@ -126,6 +126,12 @@ export default async function middleware(req: NextRequest) {
   );
   if (isStatic) return NextResponse.next();
 
+  // ВАЖНО: Пропускаем ВСЕ API routes без проверок (включая /api/autoria/*)
+  if (pathname.startsWith('/api/')) {
+    console.log('[Middleware] API route, allowing without auth checks');
+    return NextResponse.next();
+  }
+
   // Remove language prefix from protected paths
   const localeMatch = locales.find(locale => pathname.startsWith(`/${locale}/`));
   if (localeMatch) {
@@ -139,9 +145,8 @@ export default async function middleware(req: NextRequest) {
   // Protect AutoRia pages (Level 1: NextAuth session)
   const accept = req.headers.get('accept') || '';
   const isHtmlPage = accept.includes('text/html');
-  const isApiRoute = pathname.startsWith('/api/');
   
-  if (pathname.startsWith('/autoria') && isHtmlPage && !isApiRoute) {
+  if (pathname.startsWith('/autoria') && isHtmlPage) {
     return await checkBackendAuth(req);
   }
 
