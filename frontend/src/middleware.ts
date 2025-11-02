@@ -19,7 +19,6 @@ const PROTECTED_PATHS = [
   '/autoria',   // All AutoRia pages (Level 1: NextAuth, Level 2: Backend tokens in Layout)
   '/login',     // Login page
   '/profile',   // Profile page
-  '/settings'   // Settings page
 ];
 
 // Function to check internal NextAuth session using getToken
