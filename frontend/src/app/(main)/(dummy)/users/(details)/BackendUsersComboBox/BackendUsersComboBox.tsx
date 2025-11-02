@@ -6,6 +6,7 @@ import { IItem } from "@/components/All/ComboBox/interfaces";
 import { IBackendAuthCredentials } from "@/common/interfaces/auth.interfaces";
 import { UseFormReset } from "react-hook-form";
 import { useI18n } from "@/contexts/I18nContext";
+import { createBearerTokenQuery } from "@/utils/auth/bearerTokenWrapper";
 
 interface IBackendUser {
     id: number;
@@ -46,8 +47,8 @@ const BackendUsersComboBox: FC<IProps> = ({ reset }) => {
 
     const { data, isLoading, error } = useQuery<IBackendUsersResponse>({
         queryKey: ["backend-users"],
-        queryFn: async () => {
-            console.log('[BackendUsersComboBox] Fetching users...');
+        queryFn: createBearerTokenQuery(async () => {
+            console.log('[BackendUsersComboBox] Fetching public users list...');
             const startTime = Date.now();
 
             const response = await fetch("/api/autoria/users");
@@ -60,9 +61,11 @@ const BackendUsersComboBox: FC<IProps> = ({ reset }) => {
             console.log(`[BackendUsersComboBox] Fetched ${result.data?.count || 0} users in ${endTime - startTime}ms`);
 
             return result.data; // API возвращает { success: true, data: { results: [], count: number } }
-        },
+        }, {
+            skipValidation: true, // /api/autoria/users - публичный эндпоинт, токены не нужны
+        }),
         staleTime: 5 * 60 * 1000, // 5 минут
-        retry: 1, // Уменьшаем количество повторов
+        retry: 1, // Для публичных данных можно оставить повторы
     });
 
     const queryClient = useQueryClient();
@@ -217,10 +220,21 @@ const BackendUsersComboBox: FC<IProps> = ({ reset }) => {
 
     if (error) {
         console.error('[BackendUsersComboBox] Error loading users:', error);
+        
+        // Показываем разные сообщения для разных типов ошибок
+        const isTokenError = error instanceof Error && (
+            error.message === 'TOKEN_INVALID' || 
+            error.message === 'TOKEN_VALIDATION_FAILED' || 
+            error.message === 'TOKEN_NOT_AUTHENTICATED'
+        );
+        const placeholder = isTokenError 
+            ? `🔒 ${t('userSelector.tokenInvalid') || 'Требуется авторизация'}`
+            : `❌ ${t('userSelector.error')}`;
+        
         return (
             <Select disabled>
-                <SelectTrigger className="w-full border-red-300">
-                    <SelectValue placeholder={`❌ ${t('userSelector.error')}`} />
+                <SelectTrigger className="w-full border-orange-300">
+                    <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
             </Select>
         );
