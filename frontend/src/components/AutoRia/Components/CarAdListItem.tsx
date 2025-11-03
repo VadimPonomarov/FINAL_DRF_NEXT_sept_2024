@@ -232,6 +232,9 @@ const CarAdListItem: React.FC<CarAdListItemProps> = ({
               className="h-7 w-7 p-0 hover:bg-red-50 rounded-full"
               onClick={handleFavoriteToggle}
               disabled={isTogglingFavorite || togglingIds.has(ad.id)}
+              role="button"
+              aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+              aria-pressed={isFavorite}
               title={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
             >
               <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-slate-400'}`} />

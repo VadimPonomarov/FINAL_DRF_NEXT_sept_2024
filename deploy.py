@@ -514,6 +514,20 @@ def main():
         
         print_success("✅ npm install завершено успішно!")
 
+        # Очистка артефактів попередніх збірок для гарантовано чистого білду
+        print("🧹 Очищення артефактів попередніх збірок (.next/.turbo)...")
+        try:
+            for artefact in [frontend_dir / ".next", frontend_dir / ".turbo"]:
+                if artefact.exists():
+                    if artefact.is_dir():
+                        import shutil
+                        shutil.rmtree(artefact, ignore_errors=True)
+                        print(f"   🗑️ Видалено: {artefact}")
+                    else:
+                        artefact.unlink(missing_ok=True)
+        except Exception as e:
+            print_warning(f"⚠️ Не вдалося повністю очистити артефакти: {e}")
+
         # ЕТАП 5: npm run build
         print_step(5, "Збірка frontend (npm run build)")
         print("🔨 Запуск збірки frontend...")
@@ -537,7 +551,10 @@ def main():
         
         # Копіюємо env для збірки та перевіряємо критичні змінні
         env = os.environ.copy()
+        # Примусовий production-режим та вимкнення dev‑інструментів під час збірки
         env['NODE_ENV'] = 'production'
+        env['NEXT_DISABLE_DEVTOOLS'] = '1'
+        env['NEXT_TELEMETRY_DISABLED'] = '1'
         
         # Встановлюємо значення за замовчуванням для критичних змінних якщо вони не встановлені
         if 'NEXT_PUBLIC_BACKEND_URL' not in env or not env['NEXT_PUBLIC_BACKEND_URL']:
@@ -555,12 +572,14 @@ def main():
             env['NEXT_PUBLIC_IS_DOCKER'] = 'false'
         
         # Виводимо критичні змінні для перевірки
-        print("\n🔧 Змінні оточення для збірки:")
+        print("\n🔧 Змінні оточення для збірки (optimized):")
         print(f"   NODE_ENV: {env.get('NODE_ENV', 'NOT_SET')}")
         print(f"   NEXT_PUBLIC_BACKEND_URL: {env.get('NEXT_PUBLIC_BACKEND_URL', 'NOT_SET')}")
         print(f"   BACKEND_URL: {env.get('BACKEND_URL', 'NOT_SET')}")
         print(f"   IS_DOCKER: {env.get('IS_DOCKER', 'NOT_SET')}")
         print(f"   NEXT_PUBLIC_IS_DOCKER: {env.get('NEXT_PUBLIC_IS_DOCKER', 'NOT_SET')}")
+        print(f"   NEXT_DISABLE_DEVTOOLS: {env.get('NEXT_DISABLE_DEVTOOLS', 'NOT_SET')}")
+        print(f"   NEXT_TELEMETRY_DISABLED: {env.get('NEXT_TELEMETRY_DISABLED', 'NOT_SET')}")
         print()
         
         process = subprocess.Popen(
@@ -640,9 +659,15 @@ def main():
                 load_dotenv(env_file, override=True)
         
         env = os.environ.copy()
+        # Примусовий production-режим та вимкнення dev‑інструментів під час запуску
         env['NODE_ENV'] = 'production'
         env['IS_DOCKER'] = 'false'
         env['NEXT_PUBLIC_IS_DOCKER'] = 'false'
+        env['NEXT_DISABLE_DEVTOOLS'] = '1'
+        env['NEXT_TELEMETRY_DISABLED'] = '1'
+        # Гарантований коректний callback‑URL для NextAuth в прод‑режимі
+        if 'NEXTAUTH_URL' not in env or not env['NEXTAUTH_URL']:
+            env['NEXTAUTH_URL'] = 'http://localhost:3000'
         
         # Встановлюємо значення за замовчуванням для критичних змінних якщо вони не встановлені
         if 'NEXT_PUBLIC_BACKEND_URL' not in env or not env['NEXT_PUBLIC_BACKEND_URL']:
@@ -662,13 +687,15 @@ def main():
         print(f"   NEXT_PUBLIC_IS_DOCKER: {env.get('NEXT_PUBLIC_IS_DOCKER', 'NOT_SET')}")
         print()
         
-        print("🔨 Запуск npm run start...")
+        print("🔨 Запуск npm run start (optimized)...")
         # Запускаємо в фоновому режимі, але з можливістю бачити вивід
         # На Windows використовуємо CREATE_NEW_PROCESS_GROUP
         creationflags = 0
         if sys.platform == 'win32':
             creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
-        
+        # Фіксуємо порт щоб уникнути конфліктів і для коректних абсолютних URL
+        env['PORT'] = '3000'
+
         frontend_process = subprocess.Popen(
             "npm run start",
             shell=True,

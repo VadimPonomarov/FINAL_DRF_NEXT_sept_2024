@@ -284,6 +284,9 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
         <img
           src={getImageUrl()}
           alt={ad.title}
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
           className="w-full h-48 object-cover"
           onError={(e) => {
             // Fallback to placeholder if image fails to load
@@ -311,6 +314,10 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
           className="absolute top-2 right-2 bg-white/80 hover:bg-white"
           onClick={handleFavoriteToggle}
           disabled={isTogglingFavorite}
+          role="button"
+          aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+          aria-pressed={isFavorite}
+          title={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
         >
           <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
         </Button>

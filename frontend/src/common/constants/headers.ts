@@ -1,5 +1,18 @@
 import { HEADERS } from "@/common/constants/constants";
 
+/**
+ * Проверяет, истёк ли JWT токен
+ */
+function isTokenExpired(token: string, bufferSeconds: number = 300): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+    return payload.exp < (currentTime + bufferSeconds);
+  } catch {
+    return true;
+  }
+}
+
 // Optional baseUrlOverride lets API routes pass request.nextUrl.origin for reliability
 export const getAuthorizationHeaders = async (baseUrlOverride?: string): Promise<Record<string, string>> => {
   try {
@@ -22,6 +35,19 @@ export const getAuthorizationHeaders = async (baseUrlOverride?: string): Promise
         if (authData) {
           const parsedData = typeof authData === 'string' ? JSON.parse(authData) : authData;
           accessToken = parsedData?.access || parsedData?.token || parsedData?.access_token;
+          
+          // ПРОАКТИВНАЯ ПРОВЕРКА: если токен истёк, обновляем его СРАЗУ
+          if (accessToken && isTokenExpired(accessToken)) {
+            console.log('[getAuthorizationHeaders] Access token expired, refreshing proactively...');
+            const refreshResp = await fetch(`${baseUrl}/api/auth/refresh`, { method: 'POST', cache: 'no-store' });
+            if (refreshResp.ok) {
+              const refreshData = await refreshResp.json().catch(() => ({} as any));
+              accessToken = refreshData?.access;
+              console.log('[getAuthorizationHeaders] Token refreshed successfully');
+            } else {
+              console.warn('[getAuthorizationHeaders] Token refresh failed:', refreshResp.status);
+            }
+          }
         }
       }
 

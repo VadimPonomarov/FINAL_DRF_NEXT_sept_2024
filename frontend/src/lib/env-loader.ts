@@ -76,7 +76,7 @@ export function loadRuntimeEnv() {
     console.error('❌ [Runtime Env Loader] Failed to load environment variables:', error);
     // Устанавливаем значения по умолчанию даже при ошибке
     if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
-      process.env.NEXT_PUBLIC_BACKEND_URL = 'http://localhost/api';
+      process.env.NEXT_PUBLIC_BACKEND_URL = 'http://localhost:8000';
     }
     if (!process.env.BACKEND_URL) {
       process.env.BACKEND_URL = 'http://localhost:8000';

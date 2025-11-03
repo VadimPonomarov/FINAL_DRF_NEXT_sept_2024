@@ -363,7 +363,7 @@ export class CarAdsService {
   ): Promise<void> {
     console.log('[CarAdsService] Updating ad status as moderator:', { adId, status });
 
-    const response = await fetchWithAuth(`/api/ads/admin/${adId}/status/update`, {
+    const response = await fetchWithAuth(`/api/ads/moderation/${adId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

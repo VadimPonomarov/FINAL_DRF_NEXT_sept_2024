@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Формируем URL к backend
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     const apiUrl = `${backendUrl}/api/ads/favorites/toggle/`;
 
     // Получаем заголовки авторизации (пользователь определяется по токену)
@@ -356,7 +356,7 @@ export async function PATCH(request: NextRequest) {
     console.log('[Favorites PATCH API] Using auth headers for user identification');
 
     // Сначала проверяем текущий статус
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     const checkUrl = `${backendUrl}/api/ads/favorites/check/${car_ad_id}/`;
 
     const checkResponse = await fetch(checkUrl, {
