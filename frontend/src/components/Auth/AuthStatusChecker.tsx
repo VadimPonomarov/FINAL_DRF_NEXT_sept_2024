@@ -17,11 +17,11 @@ interface AuthStatus {
 }
 
 interface AuthStatusCheckerProps {
-  /** Показывать ли визуальные индикаторы проблем */
+  /** Чи показувати візуальні індикатори проблем */
   showVisualIndicators?: boolean;
-  /** Автоматически перенаправлять на login при проблемах */
+  /** Чи перенаправляти автоматично на login у разі проблем */
   autoRedirect?: boolean;
-  /** Проверять только на страницах AutoRia */
+  /** Чи виконувати перевірку лише на сторінках AutoRia */
   autoriaOnly?: boolean;
 }
 
@@ -40,12 +40,12 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
     error: null
   });
 
-  // Проверка состояния аутентификации
+  // Перевірка стану автентифікації
   const checkAuthStatus = async () => {
     setAuthStatus(prev => ({ ...prev, isChecking: true, error: null }));
 
     try {
-      // Используем новый API для проверки статуса
+      // Використовуємо новий API для перевірки статусу
       const response = await fetch('/api/auth/status');
       const result = await response.json();
 
@@ -63,24 +63,24 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
         error: statusData.backendError
       });
 
-      // Логика перенаправления
+      // Логіка перенаправлення
       if (autoRedirect) {
         const currentPath = window.location.pathname;
         const isAutoriaPath = currentPath.startsWith('/autoria');
 
-        // Если мы на странице AutoRia, но нет валидных backend токенов
+        // Якщо ми на сторінці AutoRia, але немає дійсних backend-токенів
         if (isAutoriaPath && (!statusData.hasBackendTokens || !statusData.backendTokensValid)) {
           console.log('[AuthStatusChecker] AutoRia page without valid backend tokens, redirecting to login');
 
-          // Показываем уведомление
+          // Показуємо сповіщення
           toast({
-            title: "Требуется аутентификация",
-            description: "Для доступа к AutoRia необходимо войти в систему с backend аутентификацией",
+            title: "Потрібна автентифікація",
+            description: "Для доступу до AutoRia потрібно увійти з backend-автентифікацією",
             variant: "destructive",
             duration: 5000,
           });
 
-          // Очищаем недействительные токены
+          // Очищаємо недійсні токени
           if (statusData.hasBackendTokens && !statusData.backendTokensValid) {
             await fetch('/api/redis', {
               method: 'POST',
@@ -89,12 +89,12 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
             });
           }
 
-          // Перенаправляем на login
-          router.push(`/login?alert=backend_auth_required&message=Please log in with backend authentication to access AutoRia features&callbackUrl=${encodeURIComponent(currentPath)}`);
+          // Перенаправляємо на login
+          router.push(`/login?alert=backend_auth_required&message=Будь%20ласка,%20увійдіть%20із%20backend-%D0%B0%D0%B2%D1%82%D0%B5%D0%BD%D1%82%D0%B8%D1%84%D1%96%D0%BA%D0%B0%D1%86%D1%96%D1%94%D1%8E%20%D0%B4%D0%BB%D1%8F%20доступу%20до%20функцій%20AutoRia&callbackUrl=${encodeURIComponent(currentPath)}`);
           return;
         }
 
-        // Если нет NextAuth сессии вообще
+        // Якщо немає сесії NextAuth взагалі
         if (!statusData.hasNextAuthSession && !currentPath.startsWith('/api/auth/signin')) {
           console.log('[AuthStatusChecker] No NextAuth session, signing out and redirecting');
 
@@ -114,14 +114,14 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
     }
   };
 
-  // Проверяем при монтировании и изменении сессии
+  // Перевіряємо під час монтування та змін сесії
   useEffect(() => {
     if (status !== 'loading') {
       checkAuthStatus();
     }
   }, [session, status]);
 
-  // Периодическая проверка каждые 30 секунд на страницах AutoRia
+  // Періодична перевірка кожні 30 секунд на сторінках AutoRia
   useEffect(() => {
     const currentPath = window.location.pathname;
     const isAutoriaPath = currentPath.startsWith('/autoria');
@@ -132,12 +132,12 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
     }
   }, []);
 
-  // Если не нужно показывать визуальные индикаторы, возвращаем null
+  // Якщо не потрібно показувати візуальні індикатори, повертаємо null
   if (!showVisualIndicators) {
     return null;
   }
 
-  // Показываем индикатор только если есть проблемы
+  // Показуємо індикатор лише якщо є проблеми
   const hasProblems = !authStatus.hasNextAuthSession || 
                      (window.location.pathname.startsWith('/autoria') && 
                       (!authStatus.hasBackendTokens || !authStatus.backendTokensValid));
@@ -155,13 +155,13 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
             {authStatus.error ? (
               authStatus.error
             ) : !authStatus.hasNextAuthSession ? (
-              "Сессия истекла"
+              "Сесію завершено"
             ) : !authStatus.hasBackendTokens ? (
-              "Нет backend токенов"
+              "Немає backend-токенів"
             ) : !authStatus.backendTokensValid ? (
-              "Backend токены недействительны"
+              "Backend-токени недійсні"
             ) : (
-              "Проблемы с аутентификацией"
+              "Проблеми з автентифікацією"
             )}
           </div>
           <div className="flex gap-2 ml-4">
@@ -175,7 +175,7 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
               {authStatus.isChecking ? (
                 <RefreshCw className="h-3 w-3 animate-spin" />
               ) : (
-                "Проверить"
+                "Перевірити"
               )}
             </Button>
             <Button
@@ -183,7 +183,7 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
               onClick={() => router.push('/login')}
               className="h-6 px-2 text-xs"
             >
-              Войти
+              Увійти
             </Button>
           </div>
         </AlertDescription>

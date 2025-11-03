@@ -1,17 +1,17 @@
 /**
- * Утилита для правильного редиректа с учетом многоуровневой системы авторизации
- * 
- * Порядок проверок:
- * 1. Уровень 1: NextAuth сессия (signin) - проверяется через API
- * 2. Уровень 2: Backend токены - проверяется на странице /login
- * 
- * Если токены не найдены (404 от refresh):
- * - Если есть NextAuth сессия → редирект на /login для получения backend токенов
- * - Если нет NextAuth сессии → редирект на /api/auth/signin для получения сессии
+ * Утиліта для коректного редиректу з урахуванням багаторівневої системи авторизації
+ *
+ * Порядок перевірок:
+ * 1. Рівень 1: сесія NextAuth (signin) — перевіряється через API
+ * 2. Рівень 2: backend-токени — перевіряються на сторінці /login
+ *
+ * Якщо токени не знайдено (404 від refresh):
+ * - Якщо є сесія NextAuth → редирект на /login для отримання backend-токенів
+ * - Якщо немає сесії NextAuth → редирект на /api/auth/signin для отримання сесії
  */
 
 /**
- * Проверяет наличие NextAuth сессии через API статуса
+ * Перевіряє наявність сесії NextAuth через API статусу
  */
 async function checkNextAuthSession(): Promise<boolean> {
   try {
@@ -28,32 +28,32 @@ async function checkNextAuthSession(): Promise<boolean> {
     const data = await response.json();
     return !!data?.user;
   } catch (error) {
-    console.error('[redirectToAuth] Error checking NextAuth session:', error);
+    console.error('[redirectToAuth] Помилка під час перевірки сесії NextAuth:', error);
     return false;
   }
 }
 
 /**
- * Правильно перенаправляет пользователя с учетом многоуровневой системы
- * 
- * @param currentPath - текущий путь для callbackUrl
- * @param reason - причина редиректа (для сообщения пользователю)
+ * Коректно перенаправляє користувача з урахуванням багаторівневої системи
+ *
+ * @param currentPath - поточний шлях для callbackUrl
+ * @param reason - причина редиректу (для повідомлення користувачу)
  */
 export async function redirectToAuth(
   currentPath?: string,
   reason: 'session_expired' | 'tokens_not_found' | 'auth_required' = 'session_expired'
 ): Promise<void> {
   if (typeof window === 'undefined') {
-    console.warn('[redirectToAuth] Called on server, skipping redirect');
+    console.warn('[redirectToAuth] Виклик на сервері, редирект пропущено');
     return;
   }
 
-  // Глобальная защита от циклов редиректов: не чаще одного раза в 10 секунд
+  // Глобальний захист від циклів редиректів: не частіше, ніж раз на 10 секунд
   try {
     const now = Date.now();
     const last = Number(window.sessionStorage.getItem('auth:lastRedirectTs') || '0');
     if (now - last < 10000) {
-      console.warn('[redirectToAuth] Suppress redirect (throttled)');
+      console.warn('[redirectToAuth] Редирект придушено (тротлінг)');
       return;
     }
     window.sessionStorage.setItem('auth:lastRedirectTs', String(now));
@@ -68,59 +68,59 @@ export async function redirectToAuth(
 
   const message = messages[reason] || messages.session_expired;
 
-  // Защита от циклов: если уже на /login или на странице signin — ничего не делаем
+  // Захист від циклів: якщо вже перебуваємо на /login або /api/auth/signin — нічого не робимо
   const currentPathname = window.location.pathname;
   if (currentPathname.startsWith('/login')) {
-    console.warn('[redirectToAuth] Already on /login, skip redirect to avoid loop');
+    console.warn('[redirectToAuth] Вже на /login, пропускаємо редирект щоб уникнути циклу');
     return;
   }
   if (currentPathname.startsWith('/api/auth/signin')) {
-    console.warn('[redirectToAuth] Already on /api/auth/signin, skip redirect to avoid loop');
+    console.warn('[redirectToAuth] Вже на /api/auth/signin, пропускаємо редирект щоб уникнути циклу');
     return;
   }
 
-  console.log('[redirectToAuth] Checking NextAuth session before redirect...');
+  console.log('[redirectToAuth] Перевіряємо сесію NextAuth перед редиректом...');
 
-  // Проверяем наличие NextAuth сессии
+  // Перевіряємо наявність сесії NextAuth
   const hasSession = await checkNextAuthSession();
 
   if (hasSession) {
-    // Уровень 1 пройден (NextAuth сессия есть)
-    // Редиректим на /login для получения backend токенов (уровень 2)
-    console.log('[redirectToAuth] ✅ NextAuth session exists, redirecting to /login for backend tokens');
+    // Рівень 1 пройдено (сесія NextAuth існує)
+    // Редиректимо на /login для отримання backend-токенів (рівень 2)
+    console.log('[redirectToAuth] ✅ Сесія NextAuth є, виконуємо редирект на /login за backend-токенами');
     const loginUrl = `/login?callbackUrl=${encodeURIComponent(path)}&error=${reason}&message=${encodeURIComponent(message)}`;
     console.log('[redirectToAuth] Executing redirect to:', loginUrl);
-    window.location.replace(loginUrl); // Используем replace вместо href для принудительного редиректа
+    window.location.replace(loginUrl); // Використовуємо replace замість href для примусового редиректу
   } else {
-    // Уровень 1 не пройден (нет NextAuth сессии)
-    // Редиректим на /api/auth/signin для получения сессии
-    console.log('[redirectToAuth] ❌ No NextAuth session, redirecting to /api/auth/signin');
+    // Рівень 1 не пройдено (сесії NextAuth немає)
+    // Редиректимо на /api/auth/signin для отримання сесії
+    console.log('[redirectToAuth] ❌ Сесія NextAuth відсутня, редирект на /api/auth/signin');
     try {
       await fetch('/api/auth/signout-full', { method: 'POST', credentials: 'include', cache: 'no-store' });
     } catch (e) {
-      console.warn('[redirectToAuth] Full cleanup before signin failed (ignored)', e);
+      console.warn('[redirectToAuth] Повне очищення перед signin не вдалося (ігноруємо)', e);
     }
     const signinUrl = `/api/auth/signin?callbackUrl=${encodeURIComponent(path)}`;
-    console.log('[redirectToAuth] Executing redirect to:', signinUrl);
-    window.location.replace(signinUrl); // Используем replace вместо href для принудительного редиректа
+    console.log('[redirectToAuth] Виконуємо редирект на:', signinUrl);
+    window.location.replace(signinUrl); // Використовуємо replace замість href для примусового редиректу
   }
 }
 
 /**
- * Синхронная версия (без проверки сессии через API)
- * Используется когда мы уверены, что сессии нет
+ * Синхронна версія (без перевірки сесії через API)
+ * Використовується, коли впевнені, що сесії немає
  */
 export function redirectToSignin(currentPath?: string): void {
   if (typeof window === 'undefined') return;
 
   const path = currentPath || window.location.pathname + window.location.search;
   const signinUrl = `/api/auth/signin?callbackUrl=${encodeURIComponent(path)}`;
-  console.log('[redirectToSignin] Executing redirect to signin:', signinUrl);
+  console.log('[redirectToSignin] Виконуємо редирект на signin:', signinUrl);
   window.location.replace(signinUrl);
 }
 
 /**
- * Синхронная версия для редиректа на /login (когда сессия точно есть)
+ * Синхронна версія для редиректу на /login (коли сесія точно є)
  */
 export function redirectToLogin(currentPath?: string, reason?: string): void {
   if (typeof window === 'undefined') return;
@@ -139,7 +139,7 @@ export function redirectToLogin(currentPath?: string, reason?: string): void {
   }
 
   const loginUrl = `/login?${params.toString()}`;
-  console.log('[redirectToLogin] Executing redirect to login:', loginUrl);
+  console.log('[redirectToLogin] Виконуємо редирект на login:', loginUrl);
   window.location.replace(loginUrl);
 }
 

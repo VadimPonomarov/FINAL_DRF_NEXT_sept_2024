@@ -4,22 +4,22 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 /**
- * HOC для защиты страниц AutoRia
- * 
- * ВАЖНО: 
- * - NextAuth сессия проверяется в middleware (первая линия защиты)
- * - HOC проверяет ТОЛЬКО backend токены (вторая линия защиты)
- * 
- * Порядок проверок:
- * 1. Middleware: NextAuth сессия → если нет → /api/auth/signin
- * 2. HOC: Backend токены → если нет → /login
- * 
- * При отсутствии backend токенов: redirect на /login
+ * HOC для захисту сторінок AutoRia
+ *
+ * ВАЖЛИВО:
+ * - Сесію NextAuth перевіряє middleware (перша лінія захисту)
+ * - HOC перевіряє ЛИШЕ backend-токени (друга лінія захисту)
+ *
+ * Порядок перевірок:
+ * 1. Middleware: сесія NextAuth → якщо немає → /api/auth/signin
+ * 2. HOC: backend-токени → якщо немає → /login
+ *
+ * За відсутності backend-токенів виконується редирект на /login
  */
 export function withAutoRiaAuth<P extends object>(
   WrappedComponent: React.ComponentType<P>,
   options: {
-    requireBackendAuth?: boolean; // По умолчанию true
+    requireBackendAuth?: boolean; // Типово true
   } = {}
 ) {
   const { requireBackendAuth = true } = options;
@@ -31,23 +31,23 @@ export function withAutoRiaAuth<P extends object>(
 
     useEffect(() => {
       const checkAuth = async () => {
-        // NextAuth сессия УЖЕ проверена middleware
-        // Здесь проверяем ТОЛЬКО backend токены
+        // Сесію NextAuth ВЖЕ перевірено middleware
+        // Тут перевіряємо ЛИШЕ backend-токени
         console.log('[withAutoRiaAuth] Checking backend tokens (session already validated by middleware)');
 
-        // Проверяем backend токены (если требуется)
+        // Перевіряємо backend-токени (якщо потрібно)
         if (requireBackendAuth) {
           const backendAuth = localStorage.getItem('backend_auth');
           
           if (!backendAuth) {
-            // Попытка рефреша через внутренний API (он сам проверит наличие токенов в Redis)
+            // Спроба оновлення через внутрішній API (він сам перевірить наявність токенів у Redis)
             console.log('[withAutoRiaAuth] ❌ No backend tokens in localStorage. Trying refresh via /api/auth/refresh ...');
             try {
               const resp = await fetch('/api/auth/refresh', { method: 'POST', cache: 'no-store' });
               if (resp.ok) {
                 const data = await resp.json();
                 if (data?.access) {
-                  // Синхронизируем localStorage с обновлёнными токенами
+                  // Синхронізуємо localStorage з оновленими токенами
                   localStorage.setItem('backend_auth', JSON.stringify({ access: data.access, access_token: data.access, refresh: data.refresh }));
                   console.log('[withAutoRiaAuth] ✅ Refresh succeeded via Redis; tokens saved to localStorage');
                   setIsAuthorized(true);
@@ -58,7 +58,7 @@ export function withAutoRiaAuth<P extends object>(
               console.warn('[withAutoRiaAuth] Refresh attempt failed:', e);
             }
 
-            // Редиректим, только если рефреш не удался / в Redis нет токенов
+            // Редиректимо лише якщо оновлення не вдалося / у Redis немає токенів
             console.log('[withAutoRiaAuth] ❌ Refresh not available or failed. Redirecting to /login');
             const callbackUrl = encodeURIComponent(pathname || '/autoria');
             router.replace(`/login?callbackUrl=${callbackUrl}&error=backend_auth_required&message=${encodeURIComponent('Необхідно авторизуватися для доступу до AutoRia')}`);
@@ -92,7 +92,7 @@ export function withAutoRiaAuth<P extends object>(
 
             console.log('[withAutoRiaAuth] ✅ Backend tokens present and valid format');
 
-            // Доп. гарантия: пробуем мягкий рефреш чтобы убедиться, что токены не протухли
+            // Додаткова гарантія: виконуємо м’яке оновлення, щоб переконатися, що токени не протерміновані
             try {
               const soft = await fetch('/api/auth/refresh', { method: 'POST', cache: 'no-store' });
               if (soft.ok) {
@@ -127,7 +127,7 @@ export function withAutoRiaAuth<P extends object>(
       checkAuth();
     }, [router, pathname, requireBackendAuth]);
 
-    // Показываем загрузку во время проверки backend токенов
+    // Показуємо індикатор завантаження під час перевірки backend-токенів
     if (!isAuthorized) {
       return (
         <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
@@ -139,7 +139,7 @@ export function withAutoRiaAuth<P extends object>(
       );
     }
 
-    // Рендерим компонент только после успешной проверки
+    // Рендеримо компонент лише після успішної перевірки
     return <WrappedComponent {...props} />;
   };
 }

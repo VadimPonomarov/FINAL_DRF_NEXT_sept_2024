@@ -16,6 +16,7 @@ from core.enums.ads import AdStatusEnum
 
 class Command(BaseCommand):
     help = 'Seed car advertisements (final step in seeding chain)'
+    MIN_REQUIRED_ADS = 5
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -46,8 +47,40 @@ class Command(BaseCommand):
             
             # Create car ads
             count = options['count']
+
+            existing_count = CarAd.objects.count()
+            required_extra = max(0, self.MIN_REQUIRED_ADS - existing_count)
+            if required_extra > 0:
+                if count < required_extra:
+                    self.stdout.write(
+                        f'\nℹ️ В наявності лише {existing_count} оголошень. '
+                        f'Для досягнення мінімуму {self.MIN_REQUIRED_ADS} буде створено {required_extra} записів.'
+                    )
+                    count = required_extra
+                else:
+                    self.stdout.write(
+                        f'\nℹ️ В наявності лише {existing_count} оголошень. '
+                        f'Після створення ще {count} записів мінімум {self.MIN_REQUIRED_ADS} буде забезпечено.'
+                    )
+
             self._create_car_ads(count)
-            
+
+            # Перевірка мінімального порогу після сидінга
+            total_after_seed = CarAd.objects.count()
+            if total_after_seed < self.MIN_REQUIRED_ADS:
+                missing = self.MIN_REQUIRED_ADS - total_after_seed
+                self.stdout.write(
+                    f'\n⚠️ Після сидінга залишилось лише {total_after_seed} оголошень. '
+                    f'Додаємо ще {missing}, щоб досягти мінімального порогу {self.MIN_REQUIRED_ADS}.'
+                )
+                self._create_car_ads(missing)
+                final_total = CarAd.objects.count()
+                if final_total < self.MIN_REQUIRED_ADS:
+                    self.stdout.write(
+                        f'❌ Не вдалося досягти мінімуму {self.MIN_REQUIRED_ADS} оголошень. '
+                        'Перевірте наявність довідників та акаунтів продавців.'
+                    )
+
             # Show statistics
             self._show_statistics()
             
@@ -97,6 +130,10 @@ class Command(BaseCommand):
 
     def _create_car_ads(self, count):
         """Create car advertisements respecting account type limitations."""
+        if count <= 0:
+            self.stdout.write('\nℹ️ Нові оголошення не потрібні — пропускаємо створення.')
+            return
+
         self.stdout.write(f'\n🚗 СОЗДАНИЕ {count} ОБЪЯВЛЕНИЙ О ПРОДАЖЕ')
         self.stdout.write('-' * 50)
 

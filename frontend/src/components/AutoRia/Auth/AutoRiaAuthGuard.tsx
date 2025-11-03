@@ -4,16 +4,16 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 /**
- * Клиентский компонент-защитник для проверки backend токенов AutoRia
- * Используется внутри серверного layout для сохранения SSR
- * 
- * ВАЖНО: 
- * - NextAuth сессия проверяется в middleware (первая линия защиты)
- * - Этот компонент проверяет ТОЛЬКО backend токены (вторая линия защиты)
- * 
- * Порядок проверок:
- * 1. Middleware: NextAuth сессия → если нет → /api/auth/signin
- * 2. AuthGuard: Backend токены → если нет → /login
+ * Клієнтський компонент-захисник для перевірки backend-токенів AutoRia
+ * Використовується всередині серверного layout, щоб зберегти SSR
+ *
+ * ВАЖЛИВО:
+ * - Сесію NextAuth перевіряє middleware (перша лінія захисту)
+ * - Цей компонент перевіряє ЛИШЕ backend-токени (друга лінія захисту)
+ *
+ * Порядок перевірок:
+ * 1. Middleware: сесія NextAuth → якщо немає → /api/auth/signin
+ * 2. AuthGuard: backend-токени → якщо немає → /login
  */
 interface AutoRiaAuthGuardProps {
   children: React.ReactNode;
@@ -31,13 +31,13 @@ export const AutoRiaAuthGuard: React.FC<AutoRiaAuthGuardProps> = ({
 
   useEffect(() => {
     const checkAuth = async () => {
-      // NextAuth сессия УЖЕ проверена middleware
-      // Здесь проверяем ТОЛЬКО backend токены
+      // Сесію NextAuth ВЖЕ перевірено middleware
+      // Тут перевіряємо ЛИШЕ backend-токени
       console.log('[AutoRiaAuthGuard] Checking backend tokens (session already validated by middleware)');
 
-      // Проверяем backend токены (если требуется)
+      // Перевіряємо backend-токени (якщо потрібно)
       if (requireBackendAuth) {
-        // Проверяем токены в Redis (НЕ в localStorage)
+        // Перевіряємо токени в Redis (НЕ в localStorage)
         try {
           const response = await fetch('/api/redis?key=backend_auth', { cache: 'no-store' });
 
@@ -66,7 +66,7 @@ export const AutoRiaAuthGuard: React.FC<AutoRiaAuthGuardProps> = ({
         }
       }
 
-      // Все проверки пройдены
+      // Усі перевірки пройдено
       setIsAuthorized(true);
       setIsChecking(false);
     };
@@ -74,7 +74,7 @@ export const AutoRiaAuthGuard: React.FC<AutoRiaAuthGuardProps> = ({
     checkAuth();
   }, [router, pathname, requireBackendAuth]);
 
-  // Показываем загрузку во время проверки backend токенов
+  // Показуємо індикатор завантаження під час перевірки backend-токенів
   if (isChecking || !isAuthorized) {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
@@ -86,7 +86,7 @@ export const AutoRiaAuthGuard: React.FC<AutoRiaAuthGuardProps> = ({
     );
   }
 
-  // Рендерим children только после успешной проверки
+  // Рендеримо children лише після успішної перевірки
   return <>{children}</>;
 };
 

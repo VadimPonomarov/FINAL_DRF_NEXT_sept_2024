@@ -303,6 +303,6 @@ $RECYCLE.BIN/
 *.log
 logs/
 log/
-# /docs/  # Uncommented - docs are needed for deployment
-# /frontend/docs/  # Uncommented - frontend docs are needed
+docs/
+frontend/docs/
 /rabbitmq/

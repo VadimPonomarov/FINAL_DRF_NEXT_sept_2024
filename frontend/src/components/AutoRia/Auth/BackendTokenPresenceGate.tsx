@@ -6,18 +6,18 @@ import { Loader2 } from 'lucide-react';
 import { validateAndRefreshToken } from '@/utils/auth/validateAndRefreshToken';
 
 /**
- * УРОВЕНЬ 2 (из 2): BackendTokenPresenceGate - проверка backend токенов
+ * РІВЕНЬ 2 (з 2): BackendTokenPresenceGate — перевірка backend-токенів
  * ════════════════════════════════════════════════════════════════════════
- * Двухуровневая система валидации для AutoRia:
- * 1. [Уровень 1] Middleware: NextAuth сессия → /api/auth/signin если нет
- * 2. [Уровень 2] BackendTokenPresenceGate (этот компонент): Backend токены → /login если нет
+ * Дворівнева система валідації для AutoRia:
+ * 1. [Рівень 1] Middleware: сесія NextAuth → /api/auth/signin, якщо немає
+ * 2. [Рівень 2] BackendTokenPresenceGate (цей компонент): backend-токени → /login, якщо немає
  * ════════════════════════════════════════════════════════════════════════
- * 
- * ВАЖНО:
- * - Middleware уже проверил NextAuth сессию (уровень 1)
- * - Этот компонент проверяет ТОЛЬКО backend токены (уровень 2)
- * - Использует универсальную утилиту redirectToAuth для правильного редиректа
- * - Используется в Layout для всех страниц AutoRia
+ *
+ * ВАЖЛИВО:
+ * - Middleware уже перевірив сесію NextAuth (рівень 1)
+ * - Цей компонент перевіряє ЛИШЕ backend-токени (рівень 2)
+ * - Використовує універсальну утиліту redirectToAuth для коректного редиректу
+ * - Застосовується в Layout для всіх сторінок AutoRia
  */
 export default function BackendTokenPresenceGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,64 +25,64 @@ export default function BackendTokenPresenceGate({ children }: { children: React
   const [isLoading, setIsLoading] = useState(true);
 
   /**
-   * Проверка backend токенов с автоматическим рефрешем (уровень 2)
-   * Middleware уже проверил NextAuth сессию (уровень 1)
-   * 
-   * Логика:
-   * 1. Проверяем наличие токенов в Redis
-   * 2. Если нет → редирект на /login
-   * 3. Если есть → валидируем access token через backend API
-   * 4. Если невалиден → автоматический рефреш
-   * 5. Если рефреш не помог → редирект на /login
-   * 
-   * Таймаут: 10 секунд на всю проверку (включая рефреш)
+   * Перевірка backend-токенів з автооновленням (рівень 2)
+   * Middleware вже перевірив сесію NextAuth (рівень 1)
+   *
+   * Логіка:
+   * 1. Перевіряємо наявність токенів у Redis
+   * 2. Якщо немає → редирект на /login
+   * 3. Якщо є → валідуємо access token через backend API
+   * 4. Якщо недійсний → автоматичне оновлення
+   * 5. Якщо оновлення не допомогло → редирект на /login
+   *
+   * Таймаут: 10 секунд на всю перевірку (включно з оновленням)
    */
   const checkBackendTokens = useCallback(async () => {
     try {
-      console.log('[BackendTokenPresenceGate] Level 2: Validating tokens with auto-refresh...');
+      console.log('[BackendTokenPresenceGate] Рівень 2: валідація токенів з автооновленням...');
 
       // Используем новую систему валидации с автоматическим рефрешем
       const result = await validateAndRefreshToken();
 
       if (result.isValid) {
-        // Токены валидны (возможно после рефреша)
-        console.log('[BackendTokenPresenceGate] ✅ Tokens valid:', result.message || 'OK');
+        // Токени дійсні (можливо після автооновлення)
+        console.log('[BackendTokenPresenceGate] ✅ Токени дійсні:', result.message || 'OK');
         setIsLoading(false);
         return;
       }
 
-      // Токены невалидны - ДОПУСКАЕМ доступ, чтобы избежать циклов редиректов
-      // Пользователь увидит страницу и сможет залогиниться через UI если нужно
-      console.warn('[BackendTokenPresenceGate] ⚠️ Tokens invalid, but allowing access to avoid redirect loops');
-      console.warn('[BackendTokenPresenceGate] User can re-login via UI if needed');
+      // Токени недійсні — пропускаємо доступ, щоб уникнути циклів редиректів
+      // Користувач побачить сторінку й за потреби зможе перелогінитися через UI
+      console.warn('[BackendTokenPresenceGate] ⚠️ Токени недійсні, але надаємо доступ, щоб уникнути циклів редиректів');
+      console.warn('[BackendTokenPresenceGate] Користувач може перелогінитися через інтерфейс за потреби');
       setIsLoading(false);
 
     } catch (error) {
-      console.error('[BackendTokenPresenceGate] Error during validation:', error);
-      // При ошибке валидации - ДОПУСКАЕМ доступ вместо редиректа (лучше показать страницу, чем цикл)
-      console.warn('[BackendTokenPresenceGate] Allowing access despite error to avoid loops');
+      console.error('[BackendTokenPresenceGate] Помилка під час валідації:', error);
+      // У разі помилки валідації — пропускаємо доступ замість редиректу (краще показати сторінку, ніж створити цикл)
+      console.warn('[BackendTokenPresenceGate] Надаємо доступ попри помилку, щоб уникнути циклу редиректів');
       setIsLoading(false);
     }
   }, [pathname, searchParams]);
 
   useEffect(() => {
-    // Запускаем проверку при монтировании
+    // Запускаємо перевірку під час монтування компонента
     checkBackendTokens();
   }, [checkBackendTokens]);
 
-  // Показываем лоадер пока проверяем токены
+  // Показуємо лоадер, доки триває перевірка токенів
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-gray-600">Проверка авторизации...</p>
+          <p className="text-sm text-gray-600">Перевірка авторизації...</p>
         </div>
       </div>
     );
   }
 
-  // Токены валидны - показываем контент
+  // Токени дійсні — відображаємо контент
   return <>{children}</>;
 }
 
