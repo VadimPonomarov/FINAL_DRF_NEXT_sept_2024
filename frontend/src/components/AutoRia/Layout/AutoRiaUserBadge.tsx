@@ -91,26 +91,26 @@ const AutoRiaUserBadge: React.FC = () => {
     e.stopPropagation();
     
     try {
-      // LOGOUT: Очищуємо Redis і backend токени (NextAuth сессія залишається)
+      toast({
+        title: `👋 ${t('common.success')}`,
+        description: t('auth.loggingOut'),
+        duration: 2000,
+      });
+
+      // LOGOUT: очищаємо лише Redis / backend токени (NextAuth сесія залишається)
       await cleanupBackendTokens();
+
       // Немедленно скрываем бейдж локально
       logout();
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('auth:signout', { detail: { clearCache: true } }));
       }
-      
-      toast({
-        title: `✅ ${t('common.success')}`,
-        description: t('auth.tokensCleared'),
-        duration: 2000,
-      });
-      
-      // Перенаправляємо на /login для повторного отримання backend токенів
-      // NextAuth сессія ще активна, тому не треба знову авторизуватись через OAuth
+
+      // Короткая пауза для отображения тоста и редирект на /login
+      const callbackUrl = '/login?message=' + encodeURIComponent(t('auth.tokensClearedPleaseLogin'));
       setTimeout(() => {
-        router.push('/login?message=' + encodeURIComponent(t('auth.tokensClearedPleaseLogin')));
-        // router.refresh(); // Необязательно; избегаем лишних перерисовок
-      }, 500);
+        router.push(callbackUrl);
+      }, 400);
     } catch (error) {
       console.error('[AutoRiaUserBadge] Error during logout:', error);
       toast({
@@ -146,17 +146,23 @@ const AutoRiaUserBadge: React.FC = () => {
         </TooltipTrigger>
         <TooltipContent 
           side="bottom" 
-          align="start"
-          className="max-w-[280px] p-3 z-[10000000]"
+          align="end"
+          className="max-w-[280px] p-3 z-[10000000] data-[align=end]:-translate-x-32"
           sideOffset={8}
-          alignOffset={-120}
-          avoidCollisions={true}
-          collisionPadding={20}
+          alignOffset={-130}
+          avoidCollisions
+          collisionPadding={{ top: 16, right: 24, bottom: 16, left: 16 }}
         >
           <div className="space-y-2">
             <div>
-              <p className="font-semibold text-sm truncate">{displayName}</p>
-              <p className="text-xs text-muted-foreground truncate">{actualUser.email}</p>
+              <button
+                type="button"
+                onClick={() => router.push('/autoria/profile')}
+                className="text-left w-full"
+              >
+                <p className="font-semibold text-sm truncate">{displayName}</p>
+                <p className="text-xs text-muted-foreground truncate">{actualUser.email}</p>
+              </button>
             </div>
             
             <div className="border-t pt-2">

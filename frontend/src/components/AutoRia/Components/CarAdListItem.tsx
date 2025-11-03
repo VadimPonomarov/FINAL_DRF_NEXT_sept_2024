@@ -14,7 +14,8 @@ import {
   Edit,
   Trash2,
   ExternalLink,
-  Phone
+  Phone,
+  Mail
 } from 'lucide-react';
 import { CarAd } from '@/types/autoria';
 import { FavoritesService } from '@/services/autoria/favorites.service';
@@ -316,6 +317,23 @@ const CarAdListItem: React.FC<CarAdListItemProps> = ({
             </span>
           </div>
         </div>
+
+        {(ad.user?.email || ad.created_at) && (
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 border-t border-slate-100 pt-2 mt-2">
+            {ad.created_at && (
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{new Date(ad.created_at).toLocaleDateString('uk-UA')}</span>
+              </span>
+            )}
+            {ad.user?.email && (
+              <span className="flex items-center gap-1" title={ad.user.email}>
+                <Mail className="h-3 w-3" />
+                <span className="truncate max-w-[240px]">{ad.user.email}</span>
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </Card>
   );

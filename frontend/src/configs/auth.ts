@@ -131,6 +131,13 @@ export const authConfig: AuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log('[NextAuth redirect] Callback triggered:', { url, baseUrl });
 
+      // После signin всегда редиректим на /login для получения backend токенов
+      // /login проверит наличие backend токенов и либо редиректнет на callbackUrl, либо покажет форму
+      if (url.includes('/api/auth/signin') || url.includes('/api/auth/callback')) {
+        console.log('[NextAuth redirect] After signin/callback, redirecting to /login');
+        return `${baseUrl}/login`;
+      }
+
       // Если это полный URL, начинающийся с baseUrl
       if (url.startsWith(baseUrl)) {
         console.log('[NextAuth redirect] Full URL with baseUrl, using it:', url);
@@ -158,9 +165,9 @@ export const authConfig: AuthOptions = {
         return baseUrl;
       }
 
-      // По умолчанию редиректим на главную
-      console.log('[NextAuth redirect] Default redirect to baseUrl');
-      return baseUrl;
+      // По умолчанию редиректим на /login
+      console.log('[NextAuth redirect] Default redirect to /login');
+      return `${baseUrl}/login`;
     },
     async signIn({ user, account, profile }) {
       console.log('[NextAuth signIn] Callback triggered:');
@@ -225,21 +232,33 @@ export const authConfig: AuthOptions = {
       }
     },
     async signIn(message) {
-      // Превентивно убираем старые токены пользователя перед новым входом
+      // Превентивно убираем ВСЕ токены (включая backend_auth, dummy_auth) перед новым входом
       try {
         const { user } = message as any;
         const email = user?.email;
-        if (!email) return;
         const { redis } = await import('@/lib/redis');
-        const providerKey = `provider:${email}`;
-        const tokensKey = `tokens:${email}`;
-        const autoRiaTokensKey = `autoria:tokens:${email}`;
-        await Promise.all([
-          redis.del(providerKey),
-          redis.del(tokensKey),
-          redis.del(autoRiaTokensKey),
-        ]);
-        console.log('[NextAuth events.signIn] Pre-clean Redis for:', email);
+        
+        if (email) {
+          const providerKey = `provider:${email}`;
+          const tokensKey = `tokens:${email}`;
+          const autoRiaTokensKey = `autoria:tokens:${email}`;
+          await Promise.all([
+            redis.del(providerKey),
+            redis.del(tokensKey),
+            redis.del(autoRiaTokensKey),
+            redis.del('backend_auth'),
+            redis.del('dummy_auth'),
+            redis.del('auth_provider'),
+          ]);
+          console.log('[NextAuth events.signIn] Full pre-clean Redis for:', email);
+        } else {
+          await Promise.all([
+            redis.del('backend_auth'),
+            redis.del('dummy_auth'),
+            redis.del('auth_provider'),
+          ]);
+          console.log('[NextAuth events.signIn] Full pre-clean Redis (no email)');
+        }
       } catch (e) {
         console.warn('[NextAuth events.signIn] Pre-clean failed (ignored):', e);
       }

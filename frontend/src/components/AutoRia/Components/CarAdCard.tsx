@@ -12,7 +12,8 @@ import {
   MapPin,
   Calendar,
   Fuel,
-  Star
+  Star,
+  Mail
 } from 'lucide-react';
 import { CarAd } from '@/types/autoria';
 import { FavoritesService } from '@/services/autoria/favorites.service';
@@ -271,6 +272,8 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     router.push(`/autoria/ad/${ad.id}`);
   };
 
+  const ownerEmail = ad.user?.email;
+
   return (
     <Card
       className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
@@ -405,10 +408,20 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
           </Button>
         </div>
         
-        {/* 📅 Дата создания */}
-        <div className="text-xs text-gray-400 mt-3 text-center">
-          {new Date(ad.created_at).toLocaleDateString(locale)}
-        </div>
+        {(ownerEmail || ad.created_at) && (
+          <div className="flex items-center justify-between text-xs text-gray-500 mt-3 gap-3">
+            <span className="flex items-center gap-1 text-gray-400">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>{new Date(ad.created_at).toLocaleDateString(locale)}</span>
+            </span>
+            {ownerEmail && (
+              <span className="flex items-center gap-1" title={ownerEmail}>
+                <Mail className="h-3.5 w-3.5" />
+                <span className="truncate max-w-[200px]">{ownerEmail}</span>
+              </span>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

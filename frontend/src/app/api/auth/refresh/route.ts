@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
     const providerResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=auth_provider`);
     let authKey = 'backend_auth'; // default
     let provider = 'backend';
-    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // Resolve and sanitize backend base URL
+    const rawBackend = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // remove trailing slashes and trailing /api, to avoid /api/api duplication
+    let backendUrl = rawBackend.replace(/\/+$/,'').replace(/\/api$/i,'');
 
     if (providerResponse.ok) {
       const providerData = await providerResponse.json();

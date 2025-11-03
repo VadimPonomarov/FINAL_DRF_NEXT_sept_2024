@@ -138,7 +138,10 @@ export default async function middleware(req: NextRequest) {
     const cleanPath = pathname.replace(`/${localeMatch}`, '');
     const protectedPaths = ['/autoria', '/docs', '/api', '/login', '/register'];
     if (protectedPaths.some(path => cleanPath.startsWith(path))) {
-      return NextResponse.redirect(new URL(cleanPath, req.url));
+      // Preserve original search params to keep callbackUrl and avoid auth loops
+      const url = new URL(req.url);
+      const redirectUrl = new URL(cleanPath + url.search, url.origin);
+      return NextResponse.redirect(redirectUrl);
     }
   }
 

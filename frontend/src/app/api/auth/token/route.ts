@@ -51,11 +51,16 @@ export async function GET(request: NextRequest) {
       ? JSON.parse(redisData.value) 
       : redisData.value;
 
-    console.log(`[Token API] Successfully retrieved tokens for provider: ${provider}`);
+    console.log(`[Token API] Successfully retrieved tokens for provider: ${provider}`, {
+      hasUser: !!tokenData.user,
+      userEmail: tokenData.user?.email,
+      isSuperuser: tokenData.user?.is_superuser
+    });
 
     return NextResponse.json({
       access: tokenData.access,
       refresh: tokenData.refresh,
+      user: tokenData.user || null,
       provider,
       refreshAttempts: tokenData.refreshAttempts || 0
     });

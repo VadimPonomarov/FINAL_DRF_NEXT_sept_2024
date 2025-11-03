@@ -261,14 +261,20 @@ export const useLoginForm = () => {
       if (response.data.user && response.data.access && response.data.refresh) {
         console.log('[LoginForm] ✅ All required data present, calling login()');
 
-        // Ensure user object matches the expected User interface
+        // Ensure user object matches the expected User interface with all backend fields
         const userForLogin: User = {
           id: response.data.user.id,
           email: response.data.user.email,
-          first_name: '',
-          last_name: '',
-          role: 'user'
+          first_name: response.data.user.first_name || '',
+          last_name: response.data.user.last_name || '',
+          role: response.data.user.role || 'user',
+          is_superuser: response.data.user.is_superuser || false
         };
+
+        console.log('[LoginForm] User data for login:', {
+          email: userForLogin.email,
+          isSuperuser: userForLogin.is_superuser
+        });
 
         login(userForLogin, response.data.access, response.data.refresh);
 

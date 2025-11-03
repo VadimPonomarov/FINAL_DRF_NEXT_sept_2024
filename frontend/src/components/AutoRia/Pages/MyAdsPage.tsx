@@ -34,7 +34,8 @@ import {
   ChevronUp,
   Gauge,
   Fuel,
-  Phone
+  Phone,
+  Mail
 } from 'lucide-react';
 import Link from 'next/link';
 import { CarAd } from '@/types/autoria';
@@ -50,6 +51,7 @@ const MyAdsPage = () => {
   const { t } = useI18n();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, checkAuth } = useAutoRiaAuth();
+  const ownerEmail = user?.email || '';
 
   // Унифицированный форматер цены c учетом выбранной валюты
   const { formatPrice } = usePriceConverter();
@@ -535,7 +537,8 @@ const MyAdsPage = () => {
                 ad={ad}
                 onClick={handleCardClick}
                 onDelete={async (id) => { await CarAdsService.deleteCarAd(id); await loadAds(); }}
-                onStatusChange={async (id, status) => { await CarAdsService.updateMyAdStatus(id, status); setAds(prev => prev.map(a => a.id===id ? { ...a, status } : a)); }}
+                onStatusChange={handleOwnerStatusChange}
+                ownerEmail={ownerEmail}
                 formatPrice={(a) => formatPrice(a)}
                 selected={selectedIds.has(ad.id)}
                 onToggleSelected={(id, checked) => setSelectedIds(prev => { const next = new Set(prev); if (checked) next.add(id); else next.delete(id); return next; })}
@@ -566,6 +569,12 @@ const MyAdsPage = () => {
                     <div className="min-w-0">
                       <div className="font-semibold text-slate-900 truncate">{ad.mark_name} {ad.model}</div>
                       <div className="text-slate-600 text-sm truncate">{ad.description}</div>
+                      {ownerEmail && (
+                        <div className="flex items-center gap-1 text-xs text-slate-500 mt-1" title={ownerEmail}>
+                          <Mail className="h-3 w-3" />
+                          <span className="truncate max-w-[180px]">{ownerEmail}</span>
+                        </div>
+                      )}
                       <div className="flex gap-2 mt-2">
                         {ad.dynamic_fields?.year && <Badge variant="outline" className="text-xs">{ad.dynamic_fields.year}</Badge>}
                         {ad.dynamic_fields?.mileage && <Badge variant="outline" className="text-xs">{ad.dynamic_fields.mileage.toLocaleString()} км</Badge>}
@@ -592,7 +601,7 @@ const MyAdsPage = () => {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="icon" className="h-8 w-8" onClick={() => CarAdsService.updateMyAdStatus(ad.id, 'active').then(() => setAds(p=>p.map(a=>a.id===ad.id?{...a,status:'active'}:a)))}><Check className="h-4 w-4" /></Button>
+                          <Button size="icon" className="h-8 w-8" onClick={() => handleOwnerStatusChange(ad.id, 'active')}><Check className="h-4 w-4" /></Button>
                         </TooltipTrigger>
                         <TooltipContent>{t('autoria.moderation.activate')}</TooltipContent>
                       </Tooltip>
@@ -602,24 +611,7 @@ const MyAdsPage = () => {
                             size="icon" 
                             variant="secondary" 
                             className="h-8 w-8" 
-                            onClick={async () => {
-                              try {
-                                await CarAdsService.updateMyAdStatus(ad.id, 'draft');
-                                setAds(p => p.map(a => a.id === ad.id ? {...a, status: 'draft'} : a));
-                                toast({
-                                  title: t('notifications.success', 'Успех'),
-                                  description: t('autoria.moderation.statusUpdated', 'Статус изменен на: ') + t('autoria.moderation.status.draft', 'Черновик'),
-                                  variant: 'default'
-                                });
-                              } catch (error) {
-                                console.error('Error updating status:', error);
-                                toast({
-                                  title: t('notifications.error', 'Ошибка'),
-                                  description: t('autoria.moderation.statusUpdateFailed', 'Не удалось обновить статус'),
-                                  variant: 'destructive'
-                                });
-                              }
-                            }}
+                            onClick={() => handleOwnerStatusChange(ad.id, 'draft')}
                           >
                             <EyeOff className="h-4 w-4" />
                           </Button>
@@ -632,24 +624,7 @@ const MyAdsPage = () => {
                             size="icon" 
                             variant="outline" 
                             className="h-8 w-8" 
-                            onClick={async () => {
-                              try {
-                                await CarAdsService.updateMyAdStatus(ad.id, 'archived');
-                                setAds(p => p.map(a => a.id === ad.id ? {...a, status: 'archived'} : a));
-                                toast({
-                                  title: t('notifications.success', 'Успех'),
-                                  description: t('autoria.moderation.statusUpdated', 'Статус изменен на: ') + t('autoria.moderation.status.archived', 'В архиве'),
-                                  variant: 'default'
-                                });
-                              } catch (error) {
-                                console.error('Error updating status:', error);
-                                toast({
-                                  title: t('notifications.error', 'Ошибка'),
-                                  description: t('autoria.moderation.statusUpdateFailed', 'Не удалось обновить статус'),
-                                  variant: 'destructive'
-                                });
-                              }
-                            }}
+                            onClick={() => handleOwnerStatusChange(ad.id, 'archived')}
                           >
                             <Archive className="h-4 w-4" />
                           </Button>
@@ -662,24 +637,7 @@ const MyAdsPage = () => {
                             size="icon" 
                             variant="outline" 
                             className="h-8 w-8" 
-                            onClick={async () => {
-                              try {
-                                await CarAdsService.updateMyAdStatus(ad.id, 'sold');
-                                setAds(p => p.map(a => a.id === ad.id ? {...a, status: 'sold'} : a));
-                                toast({
-                                  title: t('notifications.success', 'Успех'),
-                                  description: t('autoria.moderation.statusUpdated', 'Статус изменен на: ') + t('autoria.moderation.status.sold', 'Продано'),
-                                  variant: 'default'
-                                });
-                              } catch (error) {
-                                console.error('Error updating status:', error);
-                                toast({
-                                  title: t('notifications.error', 'Ошибка'),
-                                  description: t('autoria.moderation.statusUpdateFailed', 'Не удалось обновить статус'),
-                                  variant: 'destructive'
-                                });
-                              }
-                            }}
+                            onClick={() => handleOwnerStatusChange(ad.id, 'sold')}
                           >
                             <DollarSign className="h-4 w-4" />
                           </Button>
@@ -721,7 +679,8 @@ const MyAdCard: React.FC<{
   soldLabel: string;
   deleteLabel: string;
   getStatusBadge: (status: string) => React.ReactNode;
-}> = memo(({ ad, onClick, onDelete, onStatusChange, formatPrice, selected, onToggleSelected, viewLabel, editLabel, activateLabel, hideLabel, archiveLabel, soldLabel, deleteLabel, getStatusBadge }) => {
+  ownerEmail?: string;
+}> = memo(({ ad, onClick, onDelete, onStatusChange, formatPrice, selected, onToggleSelected, viewLabel, editLabel, activateLabel, hideLabel, archiveLabel, soldLabel, deleteLabel, getStatusBadge, ownerEmail }) => {
   const { t } = useI18n();
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 group">
@@ -748,6 +707,12 @@ const MyAdCard: React.FC<{
                             <MapPin className="h-3 w-3" />
                             <span>{ad.city_name}</span>
                           </div>
+                          {ownerEmail && (
+                            <div className="flex items-center gap-1 text-xs text-slate-500 mt-2" title={ownerEmail}>
+                              <Mail className="h-3 w-3" />
+                              <span className="truncate">{ownerEmail}</span>
+                            </div>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className="text-xl font-bold text-blue-600 tabular-nums">

@@ -322,19 +322,29 @@ export const fetchAuth = async (
 
     const data = await response.json();
 
-    // Сохраняем токены в Redis с обнулением счетчика попыток
+    // Сохраняем токены и user data в Redis с обнулением счетчика попыток
     const redisKey = isUsingDummyAuth ? "dummy_auth" : "backend_auth";
     const tokenData = isUsingDummyAuth
       ? {
           access: data.accessToken,
           refresh: data.refreshToken,
+          user: data.user || null,
           refreshAttempts: 0
         }
       : {
           access: data.access,
           refresh: data.refresh,
+          user: data.user || null,
           refreshAttempts: 0
         };
+    
+    console.log('[fetchAuth] Token data to save:', {
+      hasAccess: !!tokenData.access,
+      hasRefresh: !!tokenData.refresh,
+      hasUser: !!tokenData.user,
+      userEmail: tokenData.user?.email,
+      isSuperuser: tokenData.user?.is_superuser
+    });
 
     console.log(`[fetchAuth] Saving tokens to Redis with key: ${redisKey}`);
 

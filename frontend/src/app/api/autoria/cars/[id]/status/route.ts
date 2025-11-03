@@ -17,9 +17,13 @@ export async function PATCH(
       );
     }
 
-    // Forward the request to the backend
-    const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    const backendUrl = `${backendBase}/api/ads/cars/${id}/status`;
+    // Forward the request to the backend with normalized URL
+    const rawBackend = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const normalizedBackend = rawBackend.replace(/\/+$/, '').replace(/\/api$/i, '');
+    const backendUrl = `${normalizedBackend}/api/ads/cars/${id}/status`;
+    
+    console.log('[Owner Status Update] Updating car status:', { id, status, backendUrl });
+    
     const response = await ServerAuthManager.authenticatedFetch(request, backendUrl, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -36,11 +40,13 @@ export async function PATCH(
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error updating car status:', error);
+  } catch (error: any) {
+    console.error('[Owner Status Update] Error:', error?.message || error);
+    // Return 401 if authentication failed, 500 for other errors
+    const status = error?.message?.includes('authentication') || error?.message?.includes('tokens') ? 401 : 500;
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: error?.message || 'Internal server error' },
+      { status }
     );
   }
 }

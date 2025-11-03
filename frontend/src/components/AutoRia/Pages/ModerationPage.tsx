@@ -32,6 +32,7 @@ import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
 import { useUserProfileData } from '@/hooks/useUserProfileData';
 import { useToast } from '@/hooks/use-toast';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import CarAdsService from '@/services/autoria/carAds.service';
 import AdCard from '@/components/AutoRia/Moderation/AdCard';
 import AdTableRow from '@/components/AutoRia/Moderation/AdTableRow';
 import AdDetailsModal from '@/components/AutoRia/Moderation/AdDetailsModal';
@@ -54,23 +55,18 @@ const ModerationPage = () => {
 
   // Проверяем статус суперюзера из разных источников
   const isSuperUser = React.useMemo(() => {
-    // ВРЕМЕННО: Всегда возвращаем true для тестирования
-    // TODO: Вернуть проверку прав после исправления логики авторизации
-    console.log('[ModerationPage] FORCING isSuperUser = true');
-    return true;
+    const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
 
-    // const isSuper = user?.is_superuser || userProfileData?.user?.is_superuser || false;
+    console.log('[ModerationPage] Superuser check:', {
+      userFromAuth: user,
+      user_is_superuser: user?.is_superuser,
+      userProfileData_user: userProfileData?.user,
+      userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
+      finalResult: isSuper,
+      timestamp: new Date().toISOString()
+    });
 
-    // console.log('[ModerationPage] Superuser check:', {
-    //   userFromAuth: user,
-    //   user_is_superuser: user?.is_superuser,
-    //   userProfileData_user: userProfileData?.user,
-    //   userProfileData_user_is_superuser: userProfileData?.user?.is_superuser,
-    //   finalResult: isSuper,
-    //   timestamp: new Date().toISOString()
-    // });
-
-    // return isSuper;
+    return isSuper;
   }, [user, userProfileData]);
   const [ads, setAds] = useState<CarAd[]>([]);
   const [loading, setLoading] = useState(false);
@@ -85,22 +81,42 @@ const ModerationPage = () => {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
 
-  // Проверка прав доступа - временно отключена
-  // useEffect(() => {
-  //   if (!user || !user.is_superuser) {
-  //     // Redirect to home if not authorized - только суперюзеры могут модерировать
-  //     window.location.href = '/';
-  //     return;
-  //   }
-  // }, [user]);
-
-  // Проверяем аутентификацию при загрузке компонента
+  // Проверка прав доступа и авторизации (только один раз)
+  const accessCheckedRef = React.useRef(false);
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      console.log('[ModerationPage] User not authenticated, checking auth...');
-      checkAuth();
-    }
-  }, [authLoading, isAuthenticated, checkAuth]);
+    const checkAccess = async () => {
+      if (authLoading) return;
+      if (accessCheckedRef.current) return; // Уже проверили, не повторяем
+
+      accessCheckedRef.current = true;
+
+      if (!isAuthenticated) {
+        console.log('[ModerationPage] User not authenticated, redirecting to login...');
+        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        redirectToAuth(window.location.pathname, 'auth_required');
+        return;
+      }
+
+      if (!isSuperUser) {
+        console.log('[ModerationPage] User not authorized (not superuser), redirecting to home...');
+        toast({
+          variant: 'destructive',
+          title: t('common.error'),
+          description: t('autoria.moderation.accessDenied'),
+          duration: 3000
+        });
+        setTimeout(() => {
+          window.location.href = '/autoria';
+        }, 1000);
+        return;
+      }
+
+      console.log('[ModerationPage] ✅ Access granted for superuser');
+    };
+
+    checkAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated]);
 
   // Флаг для отслеживания первой загрузки
   const [initialLoadDone, setInitialLoadDone] = useState(false);
@@ -136,20 +152,10 @@ const ModerationPage = () => {
 
       const response = await fetchWithAuth(`/api/ads/moderation/queue?${params}`);
       
-      // Handle 401 authentication error (only if fetchWithAuth didn't handle it)
-      if (response.status === 401) {
-        const error = await response.json();
-        toast({
-          title: t('moderation.toast.authRequired'),
-          description: error.message || t('moderation.toast.authRequiredDescription'),
-          variant: "destructive",
-        });
-
-        // Redirect to login with callback URL
-        const currentPath = window.location.pathname;
-        setTimeout(() => {
-          window.location.href = `/login?callbackUrl=${encodeURIComponent(currentPath)}`;
-        }, 1000);
+      // fetchWithAuth handles 401 automatically, just check if response is ok
+      if (!response.ok) {
+        console.error('[Moderation] Queue request failed:', response.status);
+        setAds([]);
         return;
       }
       
@@ -177,20 +183,9 @@ const ModerationPage = () => {
     try {
       const response = await fetchWithAuth('/api/ads/moderation/statistics');
       
-      // Handle 401 authentication error (only if fetchWithAuth didn't handle it)
-      if (response.status === 401) {
-        const error = await response.json();
-        toast({
-          title: t('moderation.toast.authRequired'),
-          description: error.message || t('moderation.toast.authRequiredDescription'),
-          variant: "destructive",
-        });
-
-        // Redirect to login with callback URL
-        const currentPath = window.location.pathname;
-        setTimeout(() => {
-          window.location.href = `/login?callbackUrl=${encodeURIComponent(currentPath)}`;
-        }, 1000);
+      // fetchWithAuth handles 401 automatically, just check if response is ok
+      if (!response.ok) {
+        console.error('[Moderation] Stats request failed:', response.status);
         return;
       }
       
@@ -371,7 +366,7 @@ const ModerationPage = () => {
   useEffect(() => {
     const loadRates = async () => {
       try {
-        const resp = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/currency/rates/`, { cache: 'no-store' });
+        const resp = await fetch('/api/currency/rates/', { cache: 'no-store' });
         if (resp.ok) {
           const data = await resp.json();
           const next = { USD: 41.6, EUR: 45.5, UAH: 1 } as { USD: number; EUR: number; UAH: number };
