@@ -354,6 +354,67 @@ export class CarAdsService {
     }
   }
 
+  // Обновление статуса объявления модератором (admin endpoint для модераторов)
+  static async updateAdStatusAsModerator(
+    adId: number,
+    status: string,
+    moderationReason?: string,
+    notifyUser: boolean = true
+  ): Promise<void> {
+    console.log('[CarAdsService] Updating ad status as moderator:', { adId, status });
+
+    const response = await fetchWithAuth(`/api/ads/admin/${adId}/status/update`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        status,
+        moderation_reason: moderationReason ?? '',
+        notify_user: notifyUser,
+      }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to update status';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData?.error || errorData?.message || errorMessage;
+      } catch (error) {
+        console.warn('[CarAdsService] Unable to parse moderator status error response');
+      }
+      console.error('[CarAdsService] Moderator status update error:', response.status, errorMessage);
+      throw new Error(errorMessage);
+    }
+  }
+
+  // Сохранение заметок модератора
+  static async saveModerationNotes(adId: number, notes: string): Promise<void> {
+    if (!notes?.trim()) {
+      throw new Error('Notes cannot be empty');
+    }
+
+    const response = await fetchWithAuth(`/api/ads/moderation/${adId}/notes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ notes }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to save moderation notes';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData?.error || errorData?.message || errorMessage;
+      } catch (error) {
+        console.warn('[CarAdsService] Unable to parse moderation notes error response');
+      }
+      console.error('[CarAdsService] Moderation notes error:', response.status, errorMessage);
+      throw new Error(errorMessage);
+    }
+  }
+
   // Создание нового объявления
   static async createCarAd(data: CarAdFormData): Promise<CarAd> {
     console.log('[CarAdsService] 🔄 Creating new car ad');
@@ -468,34 +529,6 @@ export class CarAdsService {
     return response.json();
   }
 
-  // Добавление в избранное
-  static async addToFavorites(id: number): Promise<void> {
-    const response = await fetch(`${API_BASE}/favorites/${id}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to add to favorites: ${response.statusText}`);
-    }
-  }
-
-  // Удаление из избранного
-  static async removeFromFavorites(id: number): Promise<void> {
-    const response = await fetch(`${API_BASE}/favorites/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to remove from favorites: ${response.statusText}`);
-    }
-  }
-
   // Получение избранных объявлений
   static async getFavoriteAds(
     params?: { page?: number; limit?: number }
@@ -531,93 +564,6 @@ export class CarAdsService {
     }
 
     return response.json();
-  }
-
-  // Проверка лимитов аккаунта
-  static async checkAccountLimits(token: string): Promise<AccountLimits> {
-    return api.get<AccountLimits>(`/api/accounts/limits/`, token);
-  }
-
-  // Активация/деактивация объявления
-  static async toggleAdStatus(id: number, active: boolean, token: string): Promise<CarAd> {
-    return api.patch<CarAd>(`${this.BASE_PATH}/${id}/`, { is_active: active }, token);
-  }
-
-  // Продление объявления (обновление даты)
-  static async renewAd(id: number, token: string): Promise<CarAd> {
-    return api.post<CarAd>(`${this.BASE_PATH}/${id}/renew/`, {}, token);
-  }
-
-  // Получение похожих объявлений
-  static async getSimilarAds(id: number, limit: number = 5): Promise<CarAd[]> {
-    return api.get<CarAd[]>(`${this.BASE_PATH}/${id}/similar/?limit=${limit}`);
-  }
-
-  // Получение статистики просмотров
-  static async getViewStats(id: number, token: string): Promise<{
-    total_views: number;
-    today_views: number;
-    week_views: number;
-    month_views: number;
-  }> {
-    return api.get(`${this.BASE_PATH}/${id}/views/`, token);
-  }
-
-  // Отправка сообщения продавцу
-  static async sendMessage(adId: number, message: string, token: string): Promise<void> {
-    return api.post<void>(`${this.BASE_PATH}/${adId}/message/`, { message }, token);
-  }
-
-  // Жалоба на объявление
-  static async reportAd(id: number, reason: string, description?: string, token?: string): Promise<void> {
-    return api.post<void>(`${this.BASE_PATH}/${id}/report/`, {
-      reason,
-      description
-    }, token);
-  }
-
-  // Получение истории изменений объявления
-  static async getAdHistory(id: number, token: string): Promise<Array<{
-    id: number;
-    field: string;
-    old_value: any;
-    new_value: any;
-    changed_at: string;
-    changed_by: string;
-  }>> {
-    return api.get(`${this.BASE_PATH}/${id}/history/`, token);
-  }
-
-  // Клонирование объявления
-  static async cloneAd(id: number, token: string): Promise<CarAd> {
-    return api.post<CarAd>(`${this.BASE_PATH}/${id}/clone/`, {}, token);
-  }
-
-  // Экспорт объявления в различные форматы
-  static async exportAd(id: number, format: 'pdf' | 'json' | 'xml', token: string): Promise<Blob> {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${this.BASE_PATH}/${id}/export/?format=${format}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Export failed');
-    }
-
-    return response.blob();
-  }
-
-  // Получение QR кода для объявления
-  static async getAdQRCode(id: number): Promise<string> {
-    const response = await api.get<{ qr_code: string }>(`${this.BASE_PATH}/${id}/qr-code/`);
-    return response.qr_code;
-  }
-
-  // Получение ссылки для социальных сетей
-  static async getShareUrl(id: number, platform: 'facebook' | 'telegram' | 'viber' | 'whatsapp'): Promise<string> {
-    const response = await api.get<{ share_url: string }>(`${this.BASE_PATH}/${id}/share/?platform=${platform}`);
-    return response.share_url;
   }
 
   // Переключение статуса избранного

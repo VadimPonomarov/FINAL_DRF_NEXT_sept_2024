@@ -17,7 +17,7 @@ export async function POST(
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     const apiUrl = `${backendUrl}/api/ads/cars/moderation/${ad_id}/reject`;
 
-    const authHeaders = await getAuthorizationHeaders();
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
 
     const backendResponse = await fetch(apiUrl, {
       method: 'POST',

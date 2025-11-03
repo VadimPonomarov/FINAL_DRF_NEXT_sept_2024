@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[Moderation Queue API] Requesting:', apiUrl);
 
-    const authHeaders = await getAuthorizationHeaders();
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
 
     const backendResponse = await fetch(apiUrl, {
       method: 'GET',

@@ -422,36 +422,22 @@ const ModerationPage = () => {
     setAds(prev => prev.map(ad => ad.id === adId ? { ...ad, status: newStatus } : ad));
 
     try {
-      const response = await fetch(`/api/autoria/admin/ads/${adId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: newStatus,
-          moderation_reason: `Статус изменен на ${newStatus} модератором ${user?.email || 'unknown'}`,
-          notify_user: true,
-        }),
-      });
+      await CarAdsService.updateAdStatusAsModerator(
+        adId,
+        newStatus,
+        `Статус изменен на ${newStatus} модератором ${user?.email || 'unknown'}`
+      );
 
-      // Обработка ответа
-      const responseData = await response.json();
-      
-      // Проверяем наличие ошибок в ответе
-      if (!response.ok) {
-        throw new Error(responseData?.error || responseData?.message || 'Unknown error');
-      }
-      
-      // Обновляем статистику
       await loadModerationStats();
-      
-      // Показываем уведомление об успехе
+
       toast({
         title: t('common.success'),
-        description: responseData.message || t('autoria.moderation.statusUpdated'),
+        description: t('autoria.moderation.statusUpdated'),
         duration: 2000
       });
-      
-      return responseData;
-      
+
+      return { success: true };
+
     } catch (error) {
       console.error('Error updating status:', error);
       
