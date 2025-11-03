@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { validateAndRefreshToken } from '@/utils/auth/validateAndRefreshToken';
+import { redirectToAuth } from '@/utils/auth/redirectToAuth';
 
 /**
  * РІВЕНЬ 2 (з 2): BackendTokenPresenceGate — перевірка backend-токенів
@@ -51,17 +52,18 @@ export default function BackendTokenPresenceGate({ children }: { children: React
         return;
       }
 
-      // Токени недійсні — пропускаємо доступ, щоб уникнути циклів редиректів
-      // Користувач побачить сторінку й за потреби зможе перелогінитися через UI
-      console.warn('[BackendTokenPresenceGate] ⚠️ Токени недійсні, але надаємо доступ, щоб уникнути циклів редиректів');
-      console.warn('[BackendTokenPresenceGate] Користувач може перелогінитися через інтерфейс за потреби');
-      setIsLoading(false);
+      // Токени недійсні — виконуємо редирект на /login
+      console.error('[BackendTokenPresenceGate] ❌ Токени недійсні або відсутні');
+      console.log('[BackendTokenPresenceGate] Виконується редирект на /login...');
+      
+      // Використовуємо redirectToAuth для коректного редиректу з урахуванням багаторівневої системи
+      await redirectToAuth(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''), 'tokens_not_found');
 
     } catch (error) {
       console.error('[BackendTokenPresenceGate] Помилка під час валідації:', error);
-      // У разі помилки валідації — пропускаємо доступ замість редиректу (краще показати сторінку, ніж створити цикл)
-      console.warn('[BackendTokenPresenceGate] Надаємо доступ попри помилку, щоб уникнути циклу редиректів');
-      setIsLoading(false);
+      // У разі помилки — також виконуємо редирект, оскільки це може вказувати на проблеми з токенами
+      console.log('[BackendTokenPresenceGate] Виконується редирект через помилку валідації...');
+      await redirectToAuth(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''), 'auth_required');
     }
   }, [pathname, searchParams]);
 

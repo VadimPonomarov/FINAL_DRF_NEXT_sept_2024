@@ -8,6 +8,7 @@ export function authGuard(request: NextRequest) {
   
   // Список защищенных маршрутов
   const protectedRoutes = [
+    '/autoria/search',
     '/autoria/my-ads',
     '/autoria/create-ad',
     '/autoria/ads/edit',
@@ -44,6 +45,7 @@ export function authGuard(request: NextRequest) {
  */
 export const config = {
   matcher: [
+    '/autoria/search/:path*',
     '/autoria/my-ads/:path*',
     '/autoria/create-ad/:path*',
     '/autoria/ads/edit/:path*',
