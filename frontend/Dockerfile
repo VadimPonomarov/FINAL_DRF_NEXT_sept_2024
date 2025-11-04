@@ -35,6 +35,25 @@ RUN rm -rf .next || true
 # Set environment variables to prevent static generation issues
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# Build-time arguments to inject required env during Next.js build
+ARG BACKEND_URL
+ARG NEXT_PUBLIC_BACKEND_URL
+ARG NEXTAUTH_URL
+ARG NEXTAUTH_URL_INTERNAL
+ARG IS_DOCKER
+ARG NEXT_PUBLIC_IS_DOCKER
+ARG NEXT_DISABLE_DEVTOOLS
+ARG NEXT_RUNTIME
+
+# Export build-time args as ENV so Next sees them at build
+ENV BACKEND_URL=${BACKEND_URL}
+ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+ENV NEXTAUTH_URL_INTERNAL=${NEXTAUTH_URL_INTERNAL}
+ENV IS_DOCKER=${IS_DOCKER}
+ENV NEXT_PUBLIC_IS_DOCKER=${NEXT_PUBLIC_IS_DOCKER}
+ENV NEXT_DISABLE_DEVTOOLS=${NEXT_DISABLE_DEVTOOLS}
+ENV NEXT_RUNTIME=${NEXT_RUNTIME}
 # Force dynamic rendering for error pages (404, 500, etc.)
 # This prevents Html component import errors during build
 ENV NEXT_PRIVATE_STANDALONE=false
@@ -60,9 +79,6 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/next.config.js ./next.config.js
 COPY --from=builder /app/package.json ./package.json
-
-# Copy env-config directory if it exists (for environment variables)
-COPY --from=builder /app/../env-config ../env-config 2>/dev/null || true
 
 # Change ownership
 RUN chown -R nextjs:nodejs /app

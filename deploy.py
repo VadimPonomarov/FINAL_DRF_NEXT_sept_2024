@@ -55,18 +55,19 @@ def print_error(message):
     """Виводить повідомлення про помилку"""
     print(f"{Colors.FAIL}[ERROR] {message}{Colors.ENDC}")
 
-def wait_for_all_containers_healthy(timeout=600):
+def wait_for_all_containers_healthy(timeout=600, compose_files=None, include_frontend: bool = False):
     """Очікує поки всі контейнери з healthcheck стануть healthy"""
     print("\n🔍 Перевірка та очікування healthy статусу всіх контейнерів...")
     
-    # Контейнери з healthcheck з docker-compose.yml
+    # Контейнери з healthcheck з docker-compose (може бути кілька файлів -f)
     # Спочатку отримуємо реальні імена контейнерів через docker-compose ps
-    compose_file = "docker-compose.yml"
+    compose_files = compose_files or ["docker-compose.yml"]
     service_to_container = {}
     
     try:
+        compose_args = [arg for f in compose_files for arg in ("-f", f)]
         result = subprocess.run(
-            ["docker-compose", "-f", compose_file, "ps", "--format", "json"],
+            ["docker-compose", *compose_args, "ps", "--format", "json"],
             capture_output=True,
             text=True,
             timeout=10
@@ -105,7 +106,8 @@ def wait_for_all_containers_healthy(timeout=600):
         "rabbitmq": "rabbitmq",
         "celery-worker": "celery-worker",
         "mailing": "mailing",
-        "nginx": "nginx"
+        "nginx": "nginx",
+        "frontend": "frontend",
     }
     
     # Сервіси з healthcheck з docker-compose.yml
@@ -118,6 +120,8 @@ def wait_for_all_containers_healthy(timeout=600):
         "mailing",     # Mailing Service
         "nginx"        # Nginx
     ]
+    if include_frontend:
+        services_with_healthcheck.append("frontend")
     
     # Сервіси, для яких running достатньо (навіть якщо healthcheck не проходить)
     services_optional_health = {"mailing", "nginx"}
@@ -393,6 +397,8 @@ def main():
         parser = argparse.ArgumentParser(description='AutoRia Clone Deploy Script')
         parser.add_argument('--skip-docker', action='store_true',
                           help='Пропустити docker-compose up --build (для тестування)')
+        parser.add_argument('--mode', choices=['local', 'with_frontend'], default=None,
+                          help='Режим деплою: local (frontend локально) або with_frontend (повний Docker з фронтендом)')
 
         args = parser.parse_args()
 
@@ -410,13 +416,28 @@ def main():
         print(f"{Colors.ENDC}")
         print()
 
+        # Determine mode (interactive if not provided)
+        mode = args.mode
+        if mode is None:
+            print("\nОберіть режим розгортання:")
+            print("  1) Backend в Docker + Frontend локально (поточний сценарій)")
+            print("  2) Повний Docker (включно з Frontend)")
+            choice = input("Ваш вибір [1/2]: ").strip()
+            mode = 'with_frontend' if choice == '2' else 'local'
+
+        base_compose = "docker-compose.yml"
+        override_compose = "docker-compose.with_frontend.yml"
+        compose_files = [base_compose] if mode == 'local' else [base_compose, override_compose]
+        include_frontend = (mode == 'with_frontend')
+
         print("📋 План розгортання:")
         print("   1️⃣  Перевірка системних вимог")
-        print("   2️⃣  docker-compose.local.yml up --build (з очікуванням завершення)")
+        print(f"   2️⃣  docker-compose up --build з файлами: {' '.join(compose_files)}")
         print("   3️⃣  Очікування healthy статусу всіх контейнерів")
-        print("   4️⃣  cd frontend && npm install (локально)")
-        print("   5️⃣  npm run build (локально)")
-        print("   6️⃣  npm run start (локально, в фоновому режимі)")
+        if mode == 'local':
+            print("   4️⃣  cd frontend && npm install (локально)")
+            print("   5️⃣  npm run build (локально)")
+            print("   6️⃣  npm run start (локально, в фоновому режимі)")
         print("   7️⃣  Виведення інформації з посиланнями")
         print()
 
@@ -428,14 +449,14 @@ def main():
 
         # ЕТАП 2: docker-compose up --build (тільки якщо потрібно)
         if not args.skip_docker:
-            print_step(2, "Перевірка та запуск docker-compose.local.yml up --build")
+            print_step(2, f"Перевірка та запуск {' '.join(compose_files)} up --build")
             
             # Перевіряємо, чи не запущені контейнери вже
-            compose_file = "docker-compose.yml"
+            compose_files_current = compose_files
             print("🔍 Перевірка статусу контейнерів...")
             try:
                 result = subprocess.run(
-                    ["docker-compose", "-f", compose_file, "ps", "-q"],
+                    ["docker-compose", *[arg for f in compose_files_current for arg in ("-f", f)], "ps", "-q"],
                     capture_output=True,
                     text=True,
                     timeout=5
@@ -445,8 +466,8 @@ def main():
                 if has_containers:
                     # Перевіряємо, чи всі контейнери healthy
                     print("🔍 Перевірка healthy статусу існуючих контейнерів...")
-                    if wait_for_all_containers_healthy(timeout=30):
-                        print_success("✅ Всі контейнери вже запущені і healthy! Пропускаємо docker-compose.local.yml up --build")
+                    if wait_for_all_containers_healthy(timeout=30, compose_files=compose_files_current, include_frontend=include_frontend):
+                        print_success("✅ Всі контейнери вже запущені і healthy! Пропускаємо docker-compose up --build")
                         skip_docker_build = True
                     else:
                         print_warning("⚠️  Деякі контейнери не healthy, запускаємо перезбірку...")
@@ -461,9 +482,9 @@ def main():
                 print("⏳ Це може зайняти 5-10 хвилин...")
                 
                 # Запускаємо docker-compose.local.yml up --build
-                compose_file = "docker-compose.yml"
+                compose_files_current = compose_files
                 process = subprocess.Popen(
-                    ["docker-compose", "-f", compose_file, "up", "--build", "-d"],
+                    ["docker-compose", *[arg for f in compose_files_current for arg in ("-f", f)], "up", "--build", "-d"],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
@@ -488,11 +509,12 @@ def main():
 
         # ЕТАП 3: Очікування healthy статусу всіх контейнерів
         print_step(3, "Очікування healthy статусу всіх контейнерів")
-        if not wait_for_all_containers_healthy(timeout=600):  # 10 хвилин максимум
+        if not wait_for_all_containers_healthy(timeout=600, compose_files=compose_files, include_frontend=include_frontend):  # 10 хвилин максимум
             print_warning("⚠️  Деякі контейнери не стали healthy, але продовжуємо...")
 
         # ЕТАП 4: Перехід в каталог frontend та npm install
-        print_step(4, "Встановлення залежностей frontend (npm install)")
+        if mode == 'local':
+            print_step(4, "Встановлення залежностей frontend (npm install)")
         frontend_dir = Path("frontend")
         
         if not frontend_dir.exists():
@@ -502,20 +524,24 @@ def main():
         print(f"📂 Перехід в каталог: {frontend_dir}")
         print("📦 Встановлення залежностей (npm install)...")
         
-        result = run_command(
-            "npm install --legacy-peer-deps",
-            cwd=frontend_dir,
-            capture_output=False
-        )
+        if mode == 'local':
+            result = run_command(
+                "npm install --legacy-peer-deps",
+                cwd=frontend_dir,
+                capture_output=False
+            )
         
-        if not result or (hasattr(result, 'returncode') and result.returncode != 0):
-            print_error("❌ Помилка при виконанні npm install!")
-            sys.exit(1)
+        if mode == 'local':
+            if not result or (hasattr(result, 'returncode') and result.returncode != 0):
+                print_error("❌ Помилка при виконанні npm install!")
+                sys.exit(1)
         
-        print_success("✅ npm install завершено успішно!")
+        if mode == 'local':
+            print_success("✅ npm install завершено успішно!")
 
         # Очистка артефактів попередніх збірок для гарантовано чистого білду
-        print("🧹 Очищення артефактів попередніх збірок (.next/.turbo)...")
+        if mode == 'local':
+            print("🧹 Очищення артефактів попередніх збірок (.next/.turbo)...")
         try:
             for artefact in [frontend_dir / ".next", frontend_dir / ".turbo"]:
                 if artefact.exists():
@@ -529,9 +555,10 @@ def main():
             print_warning(f"⚠️ Не вдалося повністю очистити артефакти: {e}")
 
         # ЕТАП 5: npm run build
-        print_step(5, "Збірка frontend (npm run build)")
-        print("🔨 Запуск збірки frontend...")
-        print("⏳ Це може зайняти 2-3 хвилини...")
+        if mode == 'local':
+            print_step(5, "Збірка frontend (npm run build)")
+            print("🔨 Запуск збірки frontend...")
+            print("⏳ Це може зайняти 2-3 хвилини...")
         
         # Завантажуємо змінні з env-config/ перед збіркою
         root_dir = Path.cwd()
@@ -552,9 +579,10 @@ def main():
         # Копіюємо env для збірки та перевіряємо критичні змінні
         env = os.environ.copy()
         # Примусовий production-режим та вимкнення dev‑інструментів під час збірки
-        env['NODE_ENV'] = 'production'
-        env['NEXT_DISABLE_DEVTOOLS'] = '1'
-        env['NEXT_TELEMETRY_DISABLED'] = '1'
+        if mode == 'local':
+            env['NODE_ENV'] = 'production'
+            env['NEXT_DISABLE_DEVTOOLS'] = '1'
+            env['NEXT_TELEMETRY_DISABLED'] = '1'
         
         # Встановлюємо значення за замовчуванням для критичних змінних якщо вони не встановлені
         if 'NEXT_PUBLIC_BACKEND_URL' not in env or not env['NEXT_PUBLIC_BACKEND_URL']:
@@ -582,33 +610,35 @@ def main():
         print(f"   NEXT_TELEMETRY_DISABLED: {env.get('NEXT_TELEMETRY_DISABLED', 'NOT_SET')}")
         print()
         
-        process = subprocess.Popen(
-            "npm run build",
-            shell=True,
-            cwd=frontend_dir,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
-        )
+        if mode == 'local':
+            process = subprocess.Popen(
+                "npm run build",
+                shell=True,
+                cwd=frontend_dir,
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
         
         # Показуємо вивід в реальному часі
-        for line in iter(process.stdout.readline, ''):
-            if line:
-                print(f"   {line.rstrip()}")
+        if mode == 'local':
+            for line in iter(process.stdout.readline, ''):
+                if line:
+                    print(f"   {line.rstrip()}")
         
-        return_code = process.wait()
-        
-        if return_code != 0:
-            print_error("❌ Помилка при виконанні npm run build!")
-            sys.exit(1)
-        
-        print_success("✅ npm run build завершено успішно!")
+        if mode == 'local':
+            return_code = process.wait()
+            if return_code != 0:
+                print_error("❌ Помилка при виконанні npm run build!")
+                sys.exit(1)
+            print_success("✅ npm run build завершено успішно!")
 
         # ЕТАП 6: npm run start (в фоновому режимі)
-        print_step(6, "Запуск frontend сервера (npm run start)")
-        print("🚀 Запуск frontend в production режимі...")
+        if mode == 'local':
+            print_step(6, "Запуск frontend сервера (npm run start)")
+            print("🚀 Запуск frontend в production режимі...")
         
         # Перевіряємо, чи не зайнятий порт 3000
         print("🔍 Перевірка порту 3000...")
@@ -618,7 +648,7 @@ def main():
         port_in_use = (sock.connect_ex(('localhost', 3000)) == 0)
         sock.close()
         
-        if port_in_use:
+        if mode == 'local' and port_in_use:
             print_warning("⚠️  Порт 3000 вже зайнятий! Намагаємося зупинити процес...")
             try:
                 # На Windows використовуємо netstat та taskkill
@@ -660,11 +690,12 @@ def main():
         
         env = os.environ.copy()
         # Примусовий production-режим та вимкнення dev‑інструментів під час запуску
-        env['NODE_ENV'] = 'production'
-        env['IS_DOCKER'] = 'false'
-        env['NEXT_PUBLIC_IS_DOCKER'] = 'false'
-        env['NEXT_DISABLE_DEVTOOLS'] = '1'
-        env['NEXT_TELEMETRY_DISABLED'] = '1'
+        if mode == 'local':
+            env['NODE_ENV'] = 'production'
+            env['IS_DOCKER'] = 'false'
+            env['NEXT_PUBLIC_IS_DOCKER'] = 'false'
+            env['NEXT_DISABLE_DEVTOOLS'] = '1'
+            env['NEXT_TELEMETRY_DISABLED'] = '1'
         # Гарантований коректний callback‑URL для NextAuth в прод‑режимі
         if 'NEXTAUTH_URL' not in env or not env['NEXTAUTH_URL']:
             env['NEXTAUTH_URL'] = 'http://localhost:3000'
@@ -679,62 +710,47 @@ def main():
             print_warning("⚠️  BACKEND_URL не знайдено, встановлюємо за замовчуванням: http://localhost:8000")
         
         # Виводимо критичні змінні для перевірки
-        print("🔧 Змінні оточення для запуску:")
-        print(f"   NODE_ENV: {env.get('NODE_ENV', 'NOT_SET')}")
-        print(f"   NEXT_PUBLIC_BACKEND_URL: {env.get('NEXT_PUBLIC_BACKEND_URL', 'NOT_SET')}")
-        print(f"   BACKEND_URL: {env.get('BACKEND_URL', 'NOT_SET')}")
-        print(f"   IS_DOCKER: {env.get('IS_DOCKER', 'NOT_SET')}")
-        print(f"   NEXT_PUBLIC_IS_DOCKER: {env.get('NEXT_PUBLIC_IS_DOCKER', 'NOT_SET')}")
-        print()
+        if mode == 'local':
+            print("🔧 Змінні оточення для запуску:")
+            print(f"   NODE_ENV: {env.get('NODE_ENV', 'NOT_SET')}")
+            print(f"   NEXT_PUBLIC_BACKEND_URL: {env.get('NEXT_PUBLIC_BACKEND_URL', 'NOT_SET')}")
+            print(f"   BACKEND_URL: {env.get('BACKEND_URL', 'NOT_SET')}")
+            print(f"   IS_DOCKER: {env.get('IS_DOCKER', 'NOT_SET')}")
+            print(f"   NEXT_PUBLIC_IS_DOCKER: {env.get('NEXT_PUBLIC_IS_DOCKER', 'NOT_SET')}")
+            print()
         
-        print("🔨 Запуск npm run start (optimized)...")
+        if mode == 'local':
+            print("🔨 Запуск npm run start (optimized)...")
         # Запускаємо в фоновому режимі, але з можливістю бачити вивід
         # На Windows використовуємо CREATE_NEW_PROCESS_GROUP
         creationflags = 0
         if sys.platform == 'win32':
             creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
         # Фіксуємо порт щоб уникнути конфліктів і для коректних абсолютних URL
-        env['PORT'] = '3000'
+        if mode == 'local':
+            env['PORT'] = '3000'
 
-        frontend_process = subprocess.Popen(
-            "npm run start",
-            shell=True,
-            cwd=frontend_dir,
-            env=env,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            creationflags=creationflags
-        )
+        if mode == 'local':
+            frontend_process = subprocess.Popen(
+                "npm run start",
+                shell=True,
+                cwd=frontend_dir,
+                env=env,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                creationflags=creationflags
+            )
+            # Моніторимо готовність локального фронтенда
+            waited = 0
+            frontend_ready = False
         
-        print_success(f"✅ Процес frontend запущено (PID: {frontend_process.pid})")
-        
-        # Перевіряємо, що процес дійсно запустився
-        time.sleep(2)
-        if frontend_process.poll() is not None:
-            # Процес вже завершився - це погано
-            print_error(f"❌ Процес frontend завершився відразу! (код: {frontend_process.returncode})")
-            try:
-                output = frontend_process.stdout.read().decode('utf-8', errors='ignore')
-                if output:
-                    print(f"Вивід процесу:\n{output[:500]}")
-            except:
-                pass
-            sys.exit(1)
-        
-        # Чекаємо готовності frontend з більш детальною перевіркою
-        print("⏳ Очікування готовності frontend (до 90 секунд)...")
-        max_wait = 90
-        wait_interval = 3
-        waited = 0
-        frontend_ready = False
-        
-        while waited < max_wait:
+        while mode == 'local' and waited < max_wait:
             time.sleep(wait_interval)
             waited += wait_interval
             
             # Перевіряємо, що процес ще працює
-            if frontend_process.poll() is not None:
+            if mode == 'local' and frontend_process.poll() is not None:
                 print_error(f"❌ Процес frontend завершився! (код: {frontend_process.returncode})")
                 try:
                     output = frontend_process.stdout.read().decode('utf-8', errors='ignore')
@@ -770,7 +786,7 @@ def main():
             except:
                 print(f"   ⏳ Очікування... ({waited}/{max_wait}с)")
         
-        if not frontend_ready:
+        if mode == 'local' and not frontend_ready:
             # Перевіряємо ще раз перед виведенням попередження
             try:
                 import urllib.request
@@ -811,7 +827,10 @@ def main():
         print(f"   🔗 Mailing Service: {Colors.OKBLUE}http://localhost:8001{Colors.ENDC}")
         print()
         print(f"{Colors.OKCYAN}💡 Статус сервісів:{Colors.ENDC}")
-        print(f"   ✅ Frontend: локально в production режимі (порт 3000)")
+        if mode == 'local':
+            print(f"   ✅ Frontend: локально в production режимі (порт 3000)")
+        else:
+            print(f"   ✅ Frontend: Docker контейнер (порт 3000)")
         print(f"   ✅ Backend: Docker контейнери (порт 8000)")
         print(f"   ✅ Nginx: reverse proxy (порт 80)")
         print()
