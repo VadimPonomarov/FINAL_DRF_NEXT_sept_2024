@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerAuthManager } from '@/utils/auth/serverAuth';
+import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
 /**
  * POST /api/ads/analytics/reset?ad_id=123

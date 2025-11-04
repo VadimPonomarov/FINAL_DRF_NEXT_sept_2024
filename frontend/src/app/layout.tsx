@@ -3,12 +3,12 @@ import "./fonts.css";
 import React from "react";
 import type { Metadata } from 'next';
 import {MenuMain} from "@/components/Menus/MenuMain/MenuMain";
-import RootProvider from "@/common/providers/RootProvider";
+import RootProvider from "@/shared/providers/RootProvider";
 import {MagicBackButton} from "@/components/ui/magicBackButton";
 
 import { ChatBotIcon } from "@/components/ChatBot/ChatBotIcon";
 import { ThemeControls } from "@/components/ui/theme-controls.tsx";
-import { ToastProvider } from "@/components/ui/toast-provider";
+import { Toaster } from "@/components/ui/toaster";
 import TopRightControls from "@/components/All/TopRightControls/TopRightControls";
 import GlobalProviderToggle from "@/components/All/GlobalProviderToggle/GlobalProviderToggle";
 
@@ -53,7 +53,6 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <RootProvider>
-          <ToastProvider>
             <header className="header-container h-[50px]">
               <div className="relative">
                 <div className="absolute top-1/2 -translate-y-1/2 translate-y-1 left-[10px] z-[1001] hidden md:block">
@@ -70,7 +69,7 @@ export default function RootLayout({
               {children}
             </main>
             <ChatBotIcon />
-          </ToastProvider>
+            <Toaster />
         </RootProvider>
       </body>
     </html>

@@ -4,10 +4,10 @@ import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Paperclip, X, FileText, Image, File } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fileToBase64 } from "@/utils/chat/fileUpload";
-import { useErrorHandler, ErrorType } from "@/utils/ui/notificationUtils";
+import { fileToBase64 } from "@/modules/chatbot/chat/fileUpload";
+import { useErrorHandler, ErrorType } from "@/shared/utils/ui/notificationUtils";
 import { useNotification } from "@/contexts/NotificationContext";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/modules/autoria/shared/hooks/use-toast";
 import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface FileUploadProps {

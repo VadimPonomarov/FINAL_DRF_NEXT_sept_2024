@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 import { CarAdsService } from '@/services/autoria/carAds.service';
 import CarAdForm from '@/components/AutoRia/Components/CarAdForm';
-import { mapFormDataToApiData } from '@/utils/carAdDataMapper';
-import { useToast } from '@/hooks/use-toast';
+import { mapFormDataToApiData } from '@/modules/autoria/shared/utils/carAdDataMapper';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
 const CreateAdPage: React.FC = () => {
   const { t } = useI18n();
@@ -36,8 +36,8 @@ const CreateAdPage: React.FC = () => {
 
       // Показываем уведомление об успехе
       toast({
-        title: "✅ Успешно создано",
-        description: "Объявление успешно создано",
+        title: t('common.success'),
+        description: t('autoria.createAd.created'),
       });
 
       // Перенаправляем на страницу объявлений
@@ -46,8 +46,8 @@ const CreateAdPage: React.FC = () => {
     } catch (error) {
       console.error('[CreateAdPage] ❌ Error creating ad:', error);
       toast({
-        title: "❌ Ошибка создания",
-        description: error instanceof Error ? error.message : 'Неизвестная ошибка',
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('autoria.createAd.createError'),
         variant: "destructive",
       });
       throw error; // Пробрасываем ошибку в CarAdForm

@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useRef, useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { WebSocketMessage, SendChatHistoryOptions } from "@/utils/chat/chatTypes";
-import { wsLogger } from "@/utils/chat/logger";
-import { fileToBase64 } from "@/utils/chat/fileUpload";
-import { API_URLS, AuthProvider } from "@/common/constants/constants";
+import { useToast } from "@/modules/autoria/shared/hooks/use-toast";
+import { WebSocketMessage, SendChatHistoryOptions } from "@/modules/chatbot/chat/chatTypes";
+import { wsLogger } from "@/modules/chatbot/chat/logger";
+import { fileToBase64 } from "@/modules/chatbot/chat/fileUpload";
+import { API_URLS, AuthProvider } from "@/shared/constants/constants";
 import { getRedisData } from "@/services/redis/redisService";
-import { resolveServiceUrl } from "@/utils/api/serviceUrlResolver";
+import { resolveServiceUrl } from "@/shared/utils/api/serviceUrlResolver";
 
 interface UseChatWebSocketProps {
   channelId?: string;
@@ -73,7 +73,7 @@ export const useChatWebSocket = ({
         sessionStorage.setItem("auth_error", message);
 
         // Используем правильный редирект с учетом многоуровневой системы
-        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
         const currentPath = window.location.pathname + window.location.search;
         
         // Добавляем задержку перед перенаправлением
@@ -173,7 +173,7 @@ export const useChatWebSocket = ({
               if (refreshResponse.status === 404 || tokenRefreshAttemptsRef.current >= MAX_TOKEN_REFRESH_ATTEMPTS) {
                 // Используем правильный редирект с проверкой NextAuth сессии
                 if (typeof window !== 'undefined') {
-                  const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+                  const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
                   const currentPath = window.location.pathname + window.location.search;
                   const reason = refreshResponse.status === 404 ? 'tokens_not_found' : 'session_expired';
                   redirectToAuth(currentPath, reason);

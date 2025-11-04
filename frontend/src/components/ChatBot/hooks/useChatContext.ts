@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useRef, useState } from 'react';
-import { WebSocketMessage } from '@/utils/chat/chatTypes';
-import { MessageContext, ThreadInfo, MessageRelationship } from '@/types/messageContext';
-import { wsLogger } from '@/utils/chat/logger';
+import { WebSocketMessage } from '@/modules/chatbot/chat/chatTypes';
+import { MessageContext, ThreadInfo, MessageRelationship } from '@/modules/autoria/shared/types/messageContext';
+import { wsLogger } from '@/modules/chatbot/chat/logger';
 
 interface UseChatContextReturn {
   addMessage: (message: WebSocketMessage) => void;

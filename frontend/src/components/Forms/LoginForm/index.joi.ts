@@ -1,6 +1,6 @@
 import Joi from "joi";
-import { IDummyAuth } from "@/common/interfaces/dummy.interfaces";
-import { IBackendAuthCredentials } from "@/common/interfaces/auth.interfaces";
+import { IDummyAuth } from "@/shared/types/dummy.interfaces";
+import { IBackendAuthCredentials } from "@/shared/types/auth.interfaces";
 
 export const dummySchema = Joi.object<IDummyAuth>({
     username: Joi.string()

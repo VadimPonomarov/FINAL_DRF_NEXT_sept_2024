@@ -1,6 +1,6 @@
-import { IRegistration } from "@/common/interfaces/auth.interfaces";
-import { IUser } from "@/common/interfaces/users.interfaces";
-import { API_URLS, API_ENDPOINTS, AuthProvider } from "@/common/constants/constants";
+import { IRegistration } from "@/shared/types/auth.interfaces";
+import { IUser } from "@/shared/types/users.interfaces";
+import { API_URLS, API_ENDPOINTS, AuthProvider } from "@/shared/constants/constants";
 
 interface IRegistrationResponse {
     user: IUser;

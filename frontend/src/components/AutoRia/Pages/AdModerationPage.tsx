@@ -21,10 +21,10 @@ import {
   Eye
 } from 'lucide-react';
 
-import { CarAd, AdStatus } from '@/types/autoria';
+import { CarAd, AdStatus } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 import { CarAdsService } from '@/services/autoria/carAds.service';
-import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
+import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
 
 interface AdModerationPageProps {
   adId: number;

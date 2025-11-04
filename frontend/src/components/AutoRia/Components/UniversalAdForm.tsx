@@ -36,9 +36,9 @@ import ImagesForm from '@/components/AutoRia/Forms/ImagesForm';
 import ContactForm from '@/components/AutoRia/Forms/ContactForm';
 import PreviewForm from '@/components/AutoRia/Forms/PreviewForm';
 
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAutoRiaFormPrefill } from '@/hooks/useAutoRiaFormPrefill';
+import { useAutoRiaFormPrefill } from '@/modules/autoria/shared/hooks/useAutoRiaFormPrefill';
 import ValidationNotifications from '@/components/AutoRia/Components/ValidationNotifications';
 import AutoFillButton from '@/components/AutoRia/Components/AutoFillButton';
 import StatisticsTab from '@/components/AutoRia/Statistics/StatisticsTab';

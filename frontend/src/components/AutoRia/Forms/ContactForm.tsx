@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useI18n } from '@/contexts/I18nContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import {
   Plus,
   Trash2,
@@ -24,7 +24,7 @@ import {
   Save,
   CheckCircle
 } from 'lucide-react';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 
 // 🎨 Функция для получения типов контактов с переводами
 const getContactTypes = (t: any) => [

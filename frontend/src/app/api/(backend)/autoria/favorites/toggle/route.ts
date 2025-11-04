@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthorizationHeaders } from '@/common/constants/headers';
+import { getAuthorizationHeaders } from '@/shared/constants/headers';
 
 /**
  * @swagger

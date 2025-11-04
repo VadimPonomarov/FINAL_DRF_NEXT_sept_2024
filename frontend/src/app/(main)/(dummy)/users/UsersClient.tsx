@@ -1,6 +1,6 @@
 "use client";
 import {FC} from "react";
-import {IUser, IUsersResponse} from "@/common/interfaces/users.interfaces.ts";
+import {IUser, IUsersResponse} from "@/shared/types/users.interfaces.ts";
 import {UserCard} from "@/app/(main)/(dummy)/users/(details)/UserCard/UserCard.tsx";
 import InfiniteScroll from "@/components/All/InfiniteScroll/InfiniteScroll.tsx";
 import {PaginationComponent} from "@/components/All/PaginationComponent/PaginationComponent.tsx";

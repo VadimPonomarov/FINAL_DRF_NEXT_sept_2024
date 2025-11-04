@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerAuthManager } from '@/utils/auth/serverAuth';
+import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
 // POST multipart upload to backend: /api/ads/[id]/images
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

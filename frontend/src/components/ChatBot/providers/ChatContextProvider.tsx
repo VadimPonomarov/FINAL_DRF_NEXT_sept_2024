@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext } from 'react';
 import { useChatContext as useOriginalChatContext } from '../hooks/useChatContext';
-import { WebSocketMessage } from '@/utils/chat/chatTypes';
-import { MessageContext, ThreadInfo } from '@/types/messageContext';
+import { WebSocketMessage } from '@/modules/chatbot/chat/chatTypes';
+import { MessageContext, ThreadInfo } from '@/modules/autoria/shared/types/messageContext';
 
 // Create a context with the return type of useChatContext
 interface ChatContextType {

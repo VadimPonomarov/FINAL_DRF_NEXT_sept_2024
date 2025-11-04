@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { AuthProvider } from "@/common/constants/constants";
+import { AuthProvider } from "@/shared/constants/constants";
 
 export interface IMenuItem {
     path: string;

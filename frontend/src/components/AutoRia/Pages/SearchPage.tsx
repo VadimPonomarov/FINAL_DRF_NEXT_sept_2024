@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import { alertHelpers } from '@/components/ui/alert-dialog-helper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { formatCardPrice } from '@/utils/priceFormatter';
+import { formatCardPrice } from '@/modules/autoria/shared/utils/priceFormatter';
 import {
   Search, Heart, Eye, MapPin, Calendar, Gauge, Fuel, Settings, Grid, List,
   Star, Car, User, Edit, Trash2, ExternalLink, Zap, Cog, Hash, AlertTriangle, FileText, Phone
@@ -19,13 +19,13 @@ import { FavoritesService } from '@/services/autoria/favorites.service';
 import AdCounters from '@/components/AutoRia/Components/AdCounters';
 import { VirtualSelect } from '@/components/ui/virtual-select';
 import { useTranslation } from '@/contexts/I18nContext';
-import { cachedFetch } from '@/utils/cachedFetch';
+import { cachedFetch } from '@/modules/autoria/shared/utils/cachedFetch';
 import AnalyticsTabContent from '@/components/AutoRia/Analytics/AnalyticsTabContent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
-import { smartFetch } from '@/utils/smartFetch';
+import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
+import { smartFetch } from '@/modules/autoria/shared/utils/smartFetch';
 import { CurrencySelector } from '@/components/AutoRia/CurrencySelector/CurrencySelector';
-import { usePriceConverter } from '@/hooks/usePriceConverter';
+import { usePriceConverter } from '@/modules/autoria/shared/hooks/usePriceConverter';
 import CarAdCard from '@/components/AutoRia/Components/CarAdCard';
 import CarAdListItem from '@/components/AutoRia/Components/CarAdListItem';
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthProvider } from "@/common/constants/constants";
+import { AuthProvider } from "@/shared/constants/constants";
 import { getRedisData, setRedisData } from "../redis/redisService";
 
 /**

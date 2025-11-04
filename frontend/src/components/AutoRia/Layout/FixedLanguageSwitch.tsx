@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Globe, ChevronUp, ChevronDown } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
-import { AuthProvider } from '@/common/constants/constants';
+import { AuthProvider } from '@/shared/constants/constants';
 
 const FixedLanguageSwitch: React.FC = () => {
   const { locale, setLocale, availableLocales, t } = useI18n();

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
-import { sanitizeUrl, addCacheBusting } from '@/utils/chat/sanitizeUrl';
-import { chatLogger, imageLogger } from '@/utils/chat/logger';
+import { sanitizeUrl, addCacheBusting } from '@/modules/chatbot/chat/sanitizeUrl';
+import { chatLogger, imageLogger } from '@/modules/chatbot/chat/logger';
 import { ChatMessageProps } from './types';
-import { useToast } from '@/hooks/use-toast';
-import { extractFirstImageUrl, hasMarkdownImages, removeImagesFromMarkdown } from '@/utils/chat/markdownParser';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
+import { extractFirstImageUrl, hasMarkdownImages, removeImagesFromMarkdown } from '@/modules/chatbot/chat/markdownParser';
 import { useChatContext } from '../providers/ChatContextProvider';
-import { generateImageId, getImageSize, saveImageSize } from '@/utils/chat/imageStorage';
+import { generateImageId, getImageSize, saveImageSize } from '@/modules/chatbot/chat/imageStorage';
 
 interface ImageState {
   loaded: boolean;

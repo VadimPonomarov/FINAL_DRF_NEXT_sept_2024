@@ -3,10 +3,10 @@ import {useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {signOut} from "next-auth/react";
-import {IRecipe, IRecipesResponse} from "@/common/interfaces/recipe.interfaces";
+import {IRecipe, IRecipesResponse} from "@/shared/types/recipe.interfaces";
 import {filterItems} from "@/services/filters/filterServices";
-import {BaseUrl} from "@/common/constants/constants";
-import { getAuthorizationHeaders } from "@/common/constants/headers";
+import {BaseUrl} from "@/shared/constants/constants";
+import { getAuthorizationHeaders } from "@/shared/constants/headers";
 
 interface IProps {
     initialData: IRecipesResponse | Error;  // Обновили тип

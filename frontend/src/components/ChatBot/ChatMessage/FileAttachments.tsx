@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { FileAttachment } from "@/utils/chat/chatTypes";
+import { FileAttachment } from "@/modules/chatbot/chat/chatTypes";
 import { Download, FileText, Image, File, ExternalLink } from "lucide-react";
 import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 

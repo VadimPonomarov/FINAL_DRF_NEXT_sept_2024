@@ -1,4 +1,4 @@
-import { IRecipe } from "@/common/interfaces/recipe.interfaces";
+import { IRecipe } from "@/shared/types/recipe.interfaces";
 
 export const getRecipeById = async (id: string): Promise<IRecipe> => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";

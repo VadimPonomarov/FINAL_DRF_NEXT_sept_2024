@@ -24,11 +24,11 @@ import {
   Loader2
 } from 'lucide-react';
 
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 import { CarAdsService } from '@/services/autoria/carAds.service';
 import { VirtualSelect } from '@/components/ui/virtual-select';
-import { useVirtualReferenceData } from '@/hooks/useVirtualReferenceData';
+import { useVirtualReferenceData } from '@/modules/autoria/shared/hooks/useVirtualReferenceData';
 
 interface CRUDCarAdFormProps {
   mode: 'create' | 'edit';

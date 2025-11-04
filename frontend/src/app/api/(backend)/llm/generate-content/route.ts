@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 
 interface ContentGenerationRequest {
   formData: Partial<CarAdFormData>;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { Message, UseChatProps, UseChatReturn, WebSocketMessage } from "@/utils/chat/chatTypes";
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
+import { Message, UseChatProps, UseChatReturn, WebSocketMessage } from "@/modules/chatbot/chat/chatTypes";
 import { useChatWebSocket } from "./useChatWebSocket";
 import { useChatMessageProcessor } from "./useChatMessageProcessor";
 import { useChatStorage } from './useChatStorage';

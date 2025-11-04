@@ -5,7 +5,7 @@ import { PaginationComponent } from "@/components/All/PaginationComponent/Pagina
 import {
   IRecipe,
   IRecipesResponse,
-} from "@/common/interfaces/recipe.interfaces.ts";
+} from "@/shared/types/recipe.interfaces.ts";
 import { RecipeCard } from "@/app/(main)/(dummy)/recipes/(details)/RecipeCard/RecipeCard.tsx";
 import DialogModal from "@/components/All/DialogModal/DialogModal.tsx";
 import UniversalFilter from "@/components/All/UniversalFilter/FilterInput.tsx";

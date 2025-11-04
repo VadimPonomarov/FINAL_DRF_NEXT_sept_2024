@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerAuthManager } from '@/utils/auth/serverAuth';
+import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
 // GET /api/ads/my-ads → {backend}/api/ads/my-ads
 export async function GET(request: NextRequest) {

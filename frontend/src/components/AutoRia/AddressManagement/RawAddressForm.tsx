@@ -15,7 +15,7 @@ import {
   Navigation
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { RawAccountAddress } from '@/types/backend-user';
+import { RawAccountAddress } from '@/shared/types/backend-user';
 import VirtualSelect from '@/components/ui/virtual-select';
 import { fetchRegions, fetchCitiesForRegion } from '@/lib/api/reference';
 

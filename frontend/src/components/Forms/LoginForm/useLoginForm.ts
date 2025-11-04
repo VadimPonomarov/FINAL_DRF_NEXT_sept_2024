@@ -6,15 +6,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { fetchAuth } from "@/app/api/helpers";
-import { AuthProvider } from "@/common/constants/constants";
-import { toast } from "@/hooks/use-toast";
-import { IDummyAuth } from "@/common/interfaces/dummy.interfaces";
-import { IBackendAuthCredentials } from "@/common/interfaces/auth.interfaces";
-import { ISession } from "@/common/interfaces/session.interfaces";
-import { User } from "@/common/interfaces/user.interface";
+import { AuthProvider } from "@/shared/constants/constants";
+import { toast } from "@/modules/autoria/shared/hooks/use-toast";
+import { IDummyAuth } from "@/shared/types/dummy.interfaces";
+import { IBackendAuthCredentials } from "@/shared/types/auth.interfaces";
+import { ISession } from "@/shared/types/session.interfaces";
+import { User } from "@/shared/types/user.interface";
 import { useAuthProvider, useAuth } from "@/contexts/AuthProviderContext";
 import { useTranslation } from "@/contexts/I18nContext";
-import { redirectManager } from "@/utils/auth/redirectManager";
+import { redirectManager } from "@/shared/utils/auth/redirectManager";
 
 import { backendSchema, dummySchema } from "./index.joi";
 

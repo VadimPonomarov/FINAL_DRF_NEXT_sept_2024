@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerAuthManager } from '@/utils/auth/serverAuth';
+import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
 // Proxy for backend ads item operations
 // PATCH /api/ads/[id]/ → PATCH {backend}/api/ads/{id}/

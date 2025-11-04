@@ -2,8 +2,8 @@ import styles from "@/app/(main)/(dummy)/users/(details)/UserCard/index.module.c
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,} from "@/components/ui/card.tsx";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
 import clsx from "clsx";
-import { IUser } from "@/common/interfaces/users.interfaces";
-import { IRecipesResponse } from "@/common/interfaces/recipe.interfaces";
+import { IUser } from "@/shared/types/users.interfaces";
+import { IRecipesResponse } from "@/shared/types/recipe.interfaces";
 import { FC } from "react";
 
 interface IProps {

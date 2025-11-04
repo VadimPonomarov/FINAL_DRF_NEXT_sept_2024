@@ -15,12 +15,12 @@ import {
   Star,
   Mail
 } from 'lucide-react';
-import { CarAd } from '@/types/autoria';
+import { CarAd } from '@/modules/autoria/shared/types/autoria';
 import { FavoritesService } from '@/services/autoria/favorites.service';
 import { useI18n } from '@/contexts/I18nContext';
-import { formatCardPrice } from '@/utils/priceFormatter';
+import { formatCardPrice } from '@/modules/autoria/shared/utils/priceFormatter';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
 interface CarAdCardProps {
   ad: CarAd;

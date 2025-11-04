@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { IRegistration } from "@/common/interfaces/auth.interfaces";
+import { IRegistration } from "@/shared/types/auth.interfaces";
 
 export const schema = Joi.object<IRegistration>({
   email: Joi.string()

@@ -3,13 +3,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GenericForm } from '@/components/Forms/GenericForm/GenericForm';
 // import { carAdSchema } from '../schemas/autoria.schemas';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { ExtendedFormFieldConfig } from '@/components/Forms/GenericForm/GenericForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { useReferenceData } from '@/hooks/useReferenceData';
-import { useVirtualReferenceData } from '@/hooks/useVirtualReferenceData';
+import { useReferenceData } from '@/modules/autoria/shared/hooks/useReferenceData';
+import { useVirtualReferenceData } from '@/modules/autoria/shared/hooks/useVirtualReferenceData';
 import DebugTranslations from '@/components/DebugTranslations';
 
 interface CarSpecsFormProps {

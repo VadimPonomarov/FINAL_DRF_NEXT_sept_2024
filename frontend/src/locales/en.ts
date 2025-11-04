@@ -404,6 +404,10 @@ export default {
       dragOrClick: "Drag files here or click the button to select",
       supportedFormats: "Supported: JPG, PNG, WebP • Max 10 files • Up to 10MB each",
       chooseFiles: "Choose files",
+      errorTitle: "❌ Generation error",
+      errorGeneric: "Failed to generate images. Please try again.",
+      saved: "Generated images saved",
+      saveError: "Failed to save generated images",
       fillBasic: "Complete basic info first",
       needBrandModelYear: "Please provide brand, model and year",
       goToBasicTab: "Go to the Basic Info tab",
@@ -440,7 +444,24 @@ export default {
     platformStats: "Platform Statistics",
     auth: {
       loginRequiredTitle: "❌ Login required",
-      loginRequiredDesc: "Please sign in to continue"
+      loginRequiredDesc: "Please sign in to continue",
+      loginSuccessTitle: "Authentication Successful",
+      loginSuccess: "You have successfully signed in",
+      registration: {
+        success: "Registration successful! Please check your email and activate your account.",
+        checkEmail: "Please check your email to activate your account.",
+        failed: "Registration failed"
+      }
+    },
+    createAd: {
+      created: "Ad created successfully",
+      createError: "Failed to create ad"
+    },
+    editAd: {
+      updated: "Ad updated successfully",
+      updateError: "Failed to update ad",
+      deleted: "Ad deleted successfully",
+      deleteError: "Failed to delete ad"
     },
     testAds: {
       howMany: "How many test ads to create? (1-10)",
@@ -2729,7 +2750,7 @@ export default {
     only: "any.only",
     required: "any.required"
   },
-  "@/utils/api/serviceUrlResolver": "@/utils/api/serviceUrlResolver",
+  "@/shared/utils/api/serviceUrlResolver": "@/shared/utils/api/serviceUrlResolver",
   "@/app/api/redis": "@/app/api/redis",
   "WebSocket OPEN": "Open",
   "/login?message=": "Login",

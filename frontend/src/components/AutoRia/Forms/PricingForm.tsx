@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { GenericForm } from '@/components/Forms/GenericForm/GenericForm';
 // import { carAdSchema } from '../schemas/autoria.schemas';
-import { CarAdFormData, Currency } from '@/types/autoria';
+import { CarAdFormData, Currency } from '@/modules/autoria/shared/types/autoria';
 import { ExtendedFormFieldConfig } from '@/components/Forms/GenericForm/GenericForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';

@@ -1,7 +1,7 @@
 /**
  * Account Service - управление аккаунтами пользователей
  */
-import { getAuthorizationHeaders } from '@/common/constants/headers';
+import { getAuthorizationHeaders } from '@/shared/constants/headers';
 
 export interface AccountUpdateData {
   account_type: 'BASIC' | 'PREMIUM';

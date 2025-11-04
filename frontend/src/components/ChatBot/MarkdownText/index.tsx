@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { convertMarkdownLinksToHtml } from '@/utils/chat/linkParser';
+import { convertMarkdownLinksToHtml } from '@/modules/chatbot/chat/linkParser';
 
 interface MarkdownTextProps {
   text: string;

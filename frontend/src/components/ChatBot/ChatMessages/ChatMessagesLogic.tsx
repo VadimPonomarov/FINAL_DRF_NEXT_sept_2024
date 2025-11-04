@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useState, useEffect, useMemo } from 'react';
-import { chatLogger } from '@/utils/chat/logger';
+import { chatLogger } from '@/modules/chatbot/chat/logger';
 import { ChatMessagesProps } from './types';
-import { Message, MessageType } from '@/utils/chat/chatTypes';
+import { Message, MessageType } from '@/modules/chatbot/chat/chatTypes';
 import { useChatContext } from '../providers/ChatContextProvider';
 
 export const useChatMessagesLogic = (props: ChatMessagesProps) => {

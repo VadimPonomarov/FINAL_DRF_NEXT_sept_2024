@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useI18n } from '@/contexts/I18nContext';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { FormFieldsConfig, SelectOption } from '@/common/interfaces/forms.interfaces';
+import { FormFieldsConfig, SelectOption } from '@/shared/types/forms.interfaces';
 import {
   formContainerClasses,
   formClasses,

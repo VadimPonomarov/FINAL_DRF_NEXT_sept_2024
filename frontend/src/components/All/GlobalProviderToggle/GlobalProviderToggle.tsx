@@ -3,7 +3,7 @@
 import React from 'react';
 import { useSession } from 'next-auth/react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
-import { AuthProvider } from '@/common/constants/constants';
+import { AuthProvider } from '@/shared/constants/constants';
 
 /**
  * Глобальный тоглер для переключения между провайдерами аутентификации

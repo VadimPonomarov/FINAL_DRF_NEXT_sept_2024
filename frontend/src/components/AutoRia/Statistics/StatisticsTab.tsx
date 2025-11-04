@@ -17,9 +17,9 @@ import {
   AlertCircle,
   Info
 } from 'lucide-react';
-import { AdStatistics, UserRole, AccountType } from '@/types/autoria';
+import { AdStatistics, UserRole, AccountType } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
-import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 
 // 📊 Интерфейс для статистики объявления
 interface AdStatistics {

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card.tsx";
 
 import Link from "next/link";
-import { IRecipe } from "@/common/interfaces/recipe.interfaces.ts";
+import { IRecipe } from "@/shared/types/recipe.interfaces.ts";
 import { FC } from "react";
 import NewResizableWrapper from "@/components/All/ResizableWrapper/NewResizableWrapper";
 import {

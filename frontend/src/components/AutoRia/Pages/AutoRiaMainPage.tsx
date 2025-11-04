@@ -18,12 +18,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useI18n } from '@/contexts/I18nContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import AccountTypeManager from '@/components/AutoRia/AccountTypeManager';
 import TestAdsGenerationModal from '@/components/AutoRia/Components/TestAdsGenerationModal';
 
 import PlatformStatsWidget from '@/components/AutoRia/Statistics/PlatformStatsWidget';
-import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 
 const AutoRiaMainPage = () => {
   const { t, formatNumber } = useI18n();

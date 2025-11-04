@@ -23,7 +23,7 @@ import {
   Shield,
   Sparkles
 } from 'lucide-react';
-import { useUserProfileData } from '@/hooks/useUserProfileData';
+import { useUserProfileData } from '@/modules/autoria/shared/hooks/useUserProfileData';
 import {
   ProfileUpdateData,
   AccountUpdateData,
@@ -33,14 +33,14 @@ import {
   ModerationLevelEnum,
   RoleEnum,
   ContactTypeEnum
-} from '@/types/backend-user';
+} from '@/shared/types/backend-user';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAuthErrorHandler } from '@/hooks/useAuthErrorHandler';
+import { useAuthErrorHandler } from '@/modules/autoria/shared/hooks/useAuthErrorHandler';
 import AddressCard from '@/components/AutoRia/AddressCard/AddressCard';
-import { useVirtualReferenceData } from '@/hooks/useVirtualReferenceData';
-import { useToast } from '@/hooks/use-toast';
+import { useVirtualReferenceData } from '@/modules/autoria/shared/hooks/useVirtualReferenceData';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import { VirtualSelect } from '@/components/ui/virtual-select';
-import { useCascadingProfile } from '@/hooks/useCascadingProfile';
+import { useCascadingProfile } from '@/modules/autoria/shared/hooks/useCascadingProfile';
 
 const UpdatedProfilePage = () => {
   const { t } = useI18n();
@@ -248,7 +248,7 @@ const UpdatedProfilePage = () => {
     if (validationErrors.length > 0) {
       toast({
         title: t('common.validation.error'),
-        description: t('common.validation.requiredFields') + ': ' + validationErrors.join(', '),
+        description: (t('common.validation.requiredFields') || 'Заполните обязательные поля') + ': ' + validationErrors.join(', '),
         variant: "destructive",
       });
       return;
@@ -478,36 +478,14 @@ const UpdatedProfilePage = () => {
     // ✅ ВАЛИДАЦИЯ: Проверяем обязательные поля
     if (!contactForm.contact_value.trim()) {
       toast({
-        title: "Ошибка",
-        description: "Введите значение контакта",
+        title: t('common.error'),
+        description: t('profile.contact.enterValue', 'Введите значение контакта'),
         variant: "destructive"
       });
       return;
     }
 
     // ✅ ВАЛИДАЦИЯ: Проверяем формат контакта
-    const value = contactForm.contact_value.trim();
-    if (contactForm.contact_type === ContactTypeEnum.EMAIL) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        toast({
-          title: "Ошибка",
-          description: "Введите корректный email адрес",
-          variant: "destructive"
-        });
-        return;
-      }
-    } else if (contactForm.contact_type === ContactTypeEnum.PHONE) {
-      const phoneRegex = /^[\+]?[0-9\s\-\(\)]{7,}$/;
-      if (!phoneRegex.test(value)) {
-        toast({
-          title: "Ошибка",
-          description: "Введите корректный номер телефона",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
 
     // console.debug('[ProfilePage] 📤 Submitting contact:', contactForm);
     // console.debug('[ProfilePage] 🔍 Current user data:', data);
@@ -541,8 +519,8 @@ const UpdatedProfilePage = () => {
       await loadUserData();
 
       toast({
-        title: "Успех",
-        description: editingContact ? "Контакт обновлен" : "Контакт добавлен",
+        title: t('common.success'),
+        description: editingContact ? t('profile.contact.updated', 'Контакт обновлен') : t('profile.contact.added', 'Контакт добавлен'),
         variant: "default"
       });
 
@@ -550,20 +528,20 @@ const UpdatedProfilePage = () => {
     } catch (error) {
       console.error('[ProfilePage] ❌ Failed to save contact:', error);
 
-      let errorMessage = "Не удалось сохранить контакт";
+      let errorMessage = t('profile.contact.saveError', 'Не удалось сохранить контакт');
 
       if (error instanceof Error) {
         if (error.message.includes('account not found')) {
-          errorMessage = "Сначала заполните данные аккаунта";
+          errorMessage = t('profile.contact.needAccount', 'Сначала заполните данные аккаунта');
         } else if (error.message.includes('required')) {
-          errorMessage = "Заполните все обязательные поля";
+          errorMessage = t('common.validation.requiredFields', 'Заполните все обязательные поля');
         } else {
           errorMessage = error.message;
         }
       }
 
       toast({
-        title: "Ошибка",
+        title: t('common.error'),
         description: errorMessage,
         variant: "destructive"
       });

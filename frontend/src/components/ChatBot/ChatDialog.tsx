@@ -24,7 +24,7 @@ import { useChat } from "./hooks";
 import { clientRefreshToken } from '@/app/api/common';
 import { ChatMessage } from "./ChatMessage";
 import { AssistantResponseSkeleton } from "./AssistantResponseSkeleton";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/modules/autoria/shared/hooks/use-toast";
 
 import { CalendarDateSelector } from "./CalendarDateSelector";
 import { ChunkSelector } from "./ChunkSelector";
@@ -343,7 +343,7 @@ export const ChatDialog = ({ onAuthError, useResizableSheet = false }: ChatDialo
         // Если 404 - токены не найдены в Redis, используем правильный редирект
         if (refreshResponse.status === 404) {
           console.error('[ChatDialog] Tokens not found in Redis (404), checking NextAuth session and redirecting');
-          const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+          const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
           const currentPath = window.location.pathname + window.location.search;
           redirectToAuth(currentPath, 'tokens_not_found');
           return; // Прекращаем выполнение, так как будет редирект
@@ -357,7 +357,7 @@ export const ChatDialog = ({ onAuthError, useResizableSheet = false }: ChatDialo
         // Если refresh не успешен и это связано с отсутствием токенов
         if (refreshData.error?.includes('not found') || refreshData.error?.includes('No tokens')) {
           console.error('[ChatDialog] Tokens not found, checking NextAuth session and redirecting');
-          const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+          const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
           const currentPath = window.location.pathname + window.location.search;
           redirectToAuth(currentPath, 'tokens_not_found');
           return;

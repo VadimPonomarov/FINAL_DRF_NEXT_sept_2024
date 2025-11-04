@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from "react";
-import { wsLogger } from "@/utils/chat/logger";
+import { wsLogger } from "@/modules/chatbot/chat/logger";
 
 interface UseWebSocketConnectionProps {
   channelId: string;
@@ -25,7 +25,7 @@ export const useWebSocketConnection = ({
   const getWebSocketUrl = useCallback(async () => {
     try {
       // Используем Service Registry для определения WebSocket URL
-      const { resolveServiceUrl } = await import('@/utils/api/serviceUrlResolver');
+      const { resolveServiceUrl } = await import('@/shared/utils/api/serviceUrlResolver');
       const { getRedisData } = await import('@/app/api/redis');
 
       // Получаем URL бэкенда через Service Registry

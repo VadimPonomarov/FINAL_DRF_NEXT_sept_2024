@@ -17,7 +17,7 @@ import {
   Lightbulb
 } from 'lucide-react';
 
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface ModernBasicInfoFormProps {

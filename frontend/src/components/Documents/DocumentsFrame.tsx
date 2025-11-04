@@ -1,7 +1,7 @@
 "use client";
 
 import { FC, useState, useEffect } from "react";
-import { BaseUrl } from "@/common/constants/constants";
+import { BaseUrl } from "@/shared/constants/constants";
 import SwaggerUI from "./SwaggerUI";
 
 const DocumentsFrame: FC = () => {

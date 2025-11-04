@@ -6,15 +6,17 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useNotification } from "@/contexts/NotificationContext";
-import { IRegistration } from "@/common/interfaces/auth.interfaces";
-import { ISession } from "@/common/interfaces/session.interfaces";
+import { IRegistration } from "@/shared/types/auth.interfaces";
+import { ISession } from "@/shared/types/session.interfaces";
 import { apiAuthService } from "@/services/apiAuth";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/modules/autoria/shared/hooks/use-toast";
+import { useI18n } from "@/contexts/I18nContext";
 
 import { schema } from "./index.joi";
 import { formFields } from "./formFields.config";
 
 export const useRegistrationForm = () => {
+    const { t } = useI18n();
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [formKey, setFormKey] = useState(0);
@@ -105,17 +107,17 @@ export const useRegistrationForm = () => {
             if (response && response.user) {
                 console.log('[Registration] ✅ Registration successful');
 
-                setNotification(`Registration successful! An activation link has been sent to ${data.email}. Please check your email to activate your account.`);
+                setNotification(t('auth.registration.success', 'Registration successful! An activation link has been sent to {{email}}. Please check your email to activate your account.', { email: data.email }));
 
                 toast({
-                    title: "Registration successful!",
-                    description: "Please check your email to activate your account.",
+                    title: t('common.success'),
+                    description: t('auth.registration.checkEmail', 'Please check your email to activate your account.'),
                     duration: 5000,
                 });
 
                 // Небольшая задержка перед перенаправлением для показа уведомления
                 setTimeout(() => {
-                    router.push("/login?message=Registration successful! Please check your email and activate your account before logging in.");
+                    router.push("/login?message=" + t('auth.registration.success', 'Registration successful! Please check your email and activate your account before logging in.'));
                 }, 1000);
             } else {
                 console.warn('[Registration] ⚠️ Registration response missing user data');
@@ -128,7 +130,7 @@ export const useRegistrationForm = () => {
                 setError(error.message);
 
                 toast({
-                    title: "Registration failed",
+                    title: t('common.error'),
                     description: error.message,
                     variant: "destructive",
                     duration: 5000,
@@ -138,8 +140,8 @@ export const useRegistrationForm = () => {
                 setError(errorMessage);
 
                 toast({
-                    title: "Registration failed",
-                    description: errorMessage,
+                    title: t('common.error'),
+                    description: t('auth.registration.failed', errorMessage),
                     variant: "destructive",
                     duration: 5000,
                 });

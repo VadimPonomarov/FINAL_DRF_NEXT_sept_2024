@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 import {
   Tooltip,
   TooltipContent,

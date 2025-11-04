@@ -1,7 +1,7 @@
 "use client";
 
 import { FC } from "react";
-import { BaseUrl } from "@/common/constants/constants";
+import { BaseUrl } from "@/shared/constants/constants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Database, Info } from "lucide-react";

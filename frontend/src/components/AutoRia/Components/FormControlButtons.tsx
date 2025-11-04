@@ -6,7 +6,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Wand2, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import {
   generateMockSpecs,
   generateMockPricing,
@@ -15,7 +15,7 @@ import {
   generateMockMetadata,
   generateFullMockData,
   getRequiredFieldsByTab
-} from '@/utils/mockData';
+} from '@/modules/autoria/shared/utils/mockData';
 
 interface FormControlButtonsProps {
   tabId: string;

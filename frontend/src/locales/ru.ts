@@ -353,7 +353,21 @@ export default {
     language: "navigation.language"
   },
   autoria: {
+    createAd: {
+      created: "Объявление успешно создано",
+      createError: "Ошибка создания объявления"
+    },
+    editAd: {
+      updated: "Объявление успешно обновлено",
+      updateError: "Не удалось обновить объявление",
+      deleted: "Объявление успешно удалено",
+      deleteError: "Не удалось удалить объявление"
+    },
     images: {
+      errorTitle: "❌ Ошибка генерации",
+      errorGeneric: "Не удалось сгенерировать изображения. Попробуйте ещё раз.",
+      saved: "Сгенерированные изображения сохранены",
+      saveError: "Не удалось сохранить сгенерированные изображения",
       tabGenerate: "Генератор изображений",
       tabUpload: "Загрузка фото",
       uploadTitle: "Загрузка фотографий",
@@ -1660,7 +1674,7 @@ export default {
     only: "any.only",
     required: "any.required"
   },
-  "@/utils/api/serviceUrlResolver": "@/utils/api/serviceUrlResolver",
+  "@/shared/utils/api/serviceUrlResolver": "@/shared/utils/api/serviceUrlResolver",
   "@/app/api/redis": "@/app/api/redis",
   "WebSocket OPEN": "Открыть",
   "/login?message=": "Вход",

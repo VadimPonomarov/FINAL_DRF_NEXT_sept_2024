@@ -1,6 +1,6 @@
-import { FormFieldsConfig } from "@/common/interfaces/forms.interfaces";
-import { IDummyAuth } from "@/common/interfaces/dummy.interfaces";
-import { IBackendAuthCredentials } from "@/common/interfaces/auth.interfaces";
+import { FormFieldsConfig } from "@/shared/types/forms.interfaces";
+import { IDummyAuth } from "@/shared/types/dummy.interfaces";
+import { IBackendAuthCredentials } from "@/shared/types/auth.interfaces";
 
 export const dummyFormFields: FormFieldsConfig<IDummyAuth>[] = [
     {

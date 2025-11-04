@@ -6,8 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { X } from "lucide-react";
 import { ChatMessage } from "../ChatMessage";
 import { ThinkingSkeleton } from "../ThinkingSkeleton";
-import { Message, MessageRole } from "@/utils/chat/chatTypes";
-import { MessageContext } from "@/types/messageContext";
+import { Message, MessageRole } from "@/modules/chatbot/chat/chatTypes";
+import { MessageContext } from "@/modules/autoria/shared/types/messageContext";
 import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ChatMessagesViewProps {

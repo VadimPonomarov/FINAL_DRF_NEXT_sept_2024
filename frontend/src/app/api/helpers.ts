@@ -1,13 +1,13 @@
-import { API_URLS, AuthProvider } from "@/common/constants/constants";
-import { getAuthorizationHeaders } from "@/common/constants/headers";
+import { API_URLS, AuthProvider } from "@/shared/constants/constants";
+import { getAuthorizationHeaders } from "@/shared/constants/headers";
 
 import { redirect } from "next/navigation";
-import { IDummyAuth } from "@/common/interfaces/dummy.interfaces";
+import { IDummyAuth } from "@/shared/types/dummy.interfaces";
 import {
     IBackendAuthCredentials,
     AuthResponse
-} from "@/common/interfaces/auth.interfaces";
-import { resolveServiceUrl } from "@/utils/api/serviceUrlResolver";
+} from "@/shared/types/auth.interfaces";
+import { resolveServiceUrl } from "@/shared/utils/api/serviceUrlResolver";
 
 // Use Redis only via API to avoid bundling Node 'net' in client
 const __isServer = typeof window === 'undefined';

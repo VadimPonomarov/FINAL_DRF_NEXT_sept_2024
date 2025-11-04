@@ -4,7 +4,7 @@ import React from 'react';
 import Joi from 'joi';
 import { GenericForm } from '@/components/Forms/GenericForm/GenericForm';
 import { carAdSchema } from '../schemas/autoria.schemas';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { ExtendedFormFieldConfig } from '@/components/Forms/GenericForm/GenericForm';
 import { useI18n } from '@/contexts/I18nContext';
 

@@ -24,11 +24,11 @@ import {
 import NewResizableWrapper from '@/components/All/ResizableWrapper/NewResizableWrapper';
 import { useSession, signOut, getSession } from 'next-auth/react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
-import { AuthProvider } from '@/common/constants/constants';
+import { AuthProvider } from '@/shared/constants/constants';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuth } from '@/contexts/AuthProviderContext';
 import AnimatedPlatformStatsWidget from '@/components/AutoRia/Statistics/AnimatedPlatformStatsWidget';
-import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
+import { useApiErrorHandler } from '@/modules/autoria/shared/hooks/useApiErrorHandler';
 
 // 🎭 LIGHTWEIGHT ANIMATION SYSTEM (dev-optimized) 🎭
 const useSpectacularAnimation = () => {

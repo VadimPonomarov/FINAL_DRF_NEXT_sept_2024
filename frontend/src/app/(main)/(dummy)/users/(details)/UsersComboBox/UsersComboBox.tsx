@@ -1,10 +1,10 @@
 "use client";
 import React, { FC, useEffect, useState } from "react";
 import ComboBox from "@/components/All/ComboBox/ComboBox";
-import { IUser, IUsersResponse } from "@/common/interfaces/users.interfaces";
+import { IUser, IUsersResponse } from "@/shared/types/users.interfaces";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { IItem } from "@/components/All/ComboBox/interfaces";
-import { IDummyAuth } from "@/common/interfaces/dummy.interfaces";
+import { IDummyAuth } from "@/shared/types/dummy.interfaces";
 import { UseFormReset } from "react-hook-form";
 
 interface IProps {

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MapPin, Plus, Edit, CheckCircle, AlertCircle } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { RawAccountAddress } from '@/types/backend-user';
+import { RawAccountAddress } from '@/shared/types/backend-user';
 import RawAddressForm from '../AddressManagement/RawAddressForm';
 import TransformedAddressDisplay from '../AddressCard/TransformedAddressDisplay';
 

@@ -5,14 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 import { CarAdsService } from '@/services/autoria/carAds.service';
 import CarAdForm from '@/components/AutoRia/Components/CarAdForm';
-import { mapApiDataToFormData, mapFormDataToApiData } from '@/utils/carAdDataMapper';
-import { useMemoizedFormData } from '@/hooks/useMemoizedFormData';
+import { mapApiDataToFormData, mapFormDataToApiData } from '@/modules/autoria/shared/utils/carAdDataMapper';
+import { useMemoizedFormData } from '@/modules/autoria/shared/hooks/useMemoizedFormData';
 
 interface EditAdPageProps {
   adId: number;
@@ -165,15 +165,15 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
 
       if (generated.length > 0) {
         toast({
-          title: "✅ Изображения сохранены",
-          description: `Сохранено ${generated.length} сгенерированных изображений`,
+          title: t('common.success'),
+          description: t('autoria.images.saved', `Saved ${generated.length} generated images`),
         });
       }
     } catch (e) {
       console.error('[EditAdPage] Error saving generated images:', e);
       toast({
-        title: "❌ Ошибка сохранения изображений",
-        description: "Не удалось сохранить сгенерированные изображения",
+        title: t('common.error'),
+        description: t('autoria.images.saveError', 'Failed to save generated images'),
         variant: "destructive",
       });
     }
@@ -344,12 +344,12 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
         .map(([key]) => key);
 
       if (missingFields.length > 0) {
-        const errorMessage = `🚨 КРИТИЧЕСКАЯ ОШИБКА: Отсутствуют обязательные поля: ${missingFields.join(', ')}`;
+        const errorMessage = `🚨 ${t('common.validationError', 'Validation error')}: ${missingFields.join(', ')}`;
         console.error('[EditAdPage]', errorMessage);
         console.error('[EditAdPage] Complete form data:', completeFormData);
 
         toast({
-          title: "❌ Ошибка валидации",
+          title: t('common.error'),
           description: errorMessage,
           variant: "destructive",
         });
@@ -373,8 +373,8 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
 
       // Показываем уведомление об успехе
       toast({
-        title: "✅ Успешно сохранено",
-        description: "Объявление успешно обновлено",
+        title: t('common.success'),
+        description: t('autoria.editAd.updated', 'Ad updated successfully'),
       });
 
       // Синхронизируем изменения изображений отдельными endpoint'ами
@@ -392,8 +392,8 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
 
       // Показываем ошибку пользователю
       toast({
-        title: "❌ Ошибка сохранения",
-        description: error instanceof Error ? error.message : 'Неизвестная ошибка',
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('autoria.editAd.updateError', 'Failed to update ad'),
         variant: "destructive",
       });
 
@@ -440,8 +440,8 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
 
       // Показываем уведомление об успехе
       toast({
-        title: "✅ Успешно удалено",
-        description: "Объявление было удалено",
+        title: t('common.success'),
+        description: t('autoria.editAd.deleted', 'Ad deleted successfully'),
       });
 
       // Перенаправляем на страницу поиска
@@ -452,8 +452,8 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
 
       // Показываем ошибку пользователю
       toast({
-        title: "❌ Ошибка удаления",
-        description: error instanceof Error ? error.message : 'Не удалось удалить объявление',
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('autoria.editAd.deleteError', 'Failed to delete ad'),
         variant: "destructive",
       });
 

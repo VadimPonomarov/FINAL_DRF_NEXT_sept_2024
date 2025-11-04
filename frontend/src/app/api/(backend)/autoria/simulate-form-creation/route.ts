@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateFullMockData } from '@/utils/mockData';
+import { generateFullMockData } from '@/modules/autoria/shared/utils/mockData';
 
 // Эмуляция создания объявлений через форму с автозаполнением
 async function simulateFormCreation(count: number, includeImages: boolean, imageTypes: string[]) {

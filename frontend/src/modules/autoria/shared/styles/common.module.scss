@@ -1,0 +1,164 @@
+/**
+ * Common AutoRia styles (DRY)
+ * Reusable styles across all AutoRia modules
+ */
+
+// Page container
+.pageContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+// Section
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--foreground);
+}
+
+// Grid layouts
+.gridLayout {
+  display: grid;
+  gap: 1.5rem;
+
+  &[data-cols="2"] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  &[data-cols="3"] {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  &[data-cols="4"] {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  @media (max-width: 1024px) {
+    &[data-cols="3"],
+    &[data-cols="4"] {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    &[data-cols="2"],
+    &[data-cols="3"],
+    &[data-cols="4"] {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Filters panel
+.filtersPanel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.filtersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+// Actions bar
+.actionsBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.actionsGroup {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    justify-content: space-between;
+  }
+}
+
+// Empty state
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--muted-foreground);
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--foreground);
+  }
+
+  p {
+    margin-bottom: 1.5rem;
+  }
+}
+
+// Loading state
+.loadingState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 2rem;
+  color: var(--muted-foreground);
+}
+
+// Stats cards
+.statsCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+
+  .statsValue {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .statsLabel {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+}
+
+// Hover effects (DRY)
+.hoverEffect {
+  transition: all 0.2s ease;
+
+  &:hover {
+    opacity: var(--hover-opacity);
+    transform: scale(var(--hover-scale));
+  }
+}
+
+.hoverUnderline {
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: var(--hover-underline-offset);
+  }
+}

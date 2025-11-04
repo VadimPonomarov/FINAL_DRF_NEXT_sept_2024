@@ -1,5 +1,5 @@
-import { FormFieldsConfig } from "@/common/interfaces/forms.interfaces";
-import { IRegistration } from "@/common/interfaces/auth.interfaces";
+import { FormFieldsConfig } from "@/shared/types/forms.interfaces";
+import { IRegistration } from "@/shared/types/auth.interfaces";
 
 export const formFields: FormFieldsConfig<IRegistration>[] = [
     {

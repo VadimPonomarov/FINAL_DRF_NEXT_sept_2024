@@ -6,15 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Upload, X, Star, Wand2, Camera, Image as ImageIcon, Copy, RefreshCw, Settings } from 'lucide-react';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import { alertHelpers } from '@/components/ui/alert-dialog-helper';
 // import CarImageGenerator from '@/components/AutoRia/Components/CarImageGenerator';
 import ImageGenerationModal from '@/components/AutoRia/Components/ImageGenerationModal';
 // import ImageLightbox from '@/components/AutoRia/Components/ImageLightbox';
 import GalleryWithThumbnails, { GalleryImage } from '@/components/AutoRia/Components/GalleryWithThumbnails';
-import { useCarImageGenerator } from '@/hooks/useCarImageGenerator';
+import { useCarImageGenerator } from '@/modules/autoria/shared/hooks/useCarImageGenerator';
 import { GeneratedCarImage } from '@/services/carImageGenerator.service';
 // import DraggableImageGrid, { DraggableImage } from '@/components/AutoRia/Components/DraggableImageGrid';
 
@@ -357,8 +357,8 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
     } catch (error) {
       console.error('🎨 [ImagesForm] Image generation failed:', error);
       toast({
-        title: "❌ Ошибка генерации",
-        description: "Не удалось сгенерировать изображения. Попробуйте еще раз.",
+        title: t('autoria.images.errorTitle', '❌ Generation error'),
+        description: t('autoria.images.errorGeneric', 'Failed to generate images. Please try again.'),
         variant: "destructive",
       });
     }

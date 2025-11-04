@@ -2,7 +2,7 @@ import React from "react";
 import { FieldValues } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FormFieldProps } from "@/common/interfaces/forms.interfaces";
+import { FormFieldProps } from "@/shared/types/forms.interfaces";
 import { cn } from "@/lib/utils";
 
 const FormField = <T extends FieldValues>({

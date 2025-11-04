@@ -2,7 +2,7 @@
  * Хелпер для отображения toast-уведомлений с поддержкой переводов
  */
 
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/modules/autoria/shared/hooks/use-toast';
 
 /**
  * Интерфейс для опций toast

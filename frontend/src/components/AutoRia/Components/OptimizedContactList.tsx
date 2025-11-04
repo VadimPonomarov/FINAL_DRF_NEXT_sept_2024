@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2 } from 'lucide-react';
-import { BackendAccountContact } from '@/types/backend-user';
+import { BackendAccountContact } from '@/shared/types/backend-user';
 
 interface OptimizedContactListProps {
   contacts: BackendAccountContact[];

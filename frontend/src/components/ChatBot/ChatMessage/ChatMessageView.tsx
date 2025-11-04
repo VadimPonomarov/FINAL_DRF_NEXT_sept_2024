@@ -9,7 +9,7 @@ import { ImageSkeleton } from "../ImageSkeleton";
 import { FileAttachments } from "./FileAttachments";
 import { TableDisplay } from "./TableDisplay";
 import { MarkdownText } from "../MarkdownText";
-import { FileAttachment } from "@/utils/chat/chatTypes";
+import { FileAttachment } from "@/modules/chatbot/chat/chatTypes";
 import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ChatMessageViewProps {

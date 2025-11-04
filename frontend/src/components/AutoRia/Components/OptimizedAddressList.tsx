@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, MapPin } from 'lucide-react';
-import { BackendAddress } from '@/types/backend-user';
+import { BackendAddress } from '@/shared/types/backend-user';
 
 interface OptimizedAddressListProps {
   addresses: BackendAddress[];

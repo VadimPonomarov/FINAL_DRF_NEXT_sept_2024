@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateFullMockData } from '@/utils/mockData';
-import { ServerAuthManager } from '@/utils/auth/serverAuth';
+import { generateFullMockData } from '@/modules/autoria/shared/utils/mockData';
+import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
-import { mapFormDataToApiData } from '@/utils/carAdDataMapper';
-import type { CarAdFormData } from '@/types/autoria';
+import { mapFormDataToApiData } from '@/modules/autoria/shared/utils/carAdDataMapper';
+import type { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 
 // Серверная функция для создания тестовых объявлений с прогрессом
 async function createTestAdsServer(request: NextRequest, count: number, includeImages: boolean, imageTypes: string[], onProgress?: (progress: number, message: string) => void) {

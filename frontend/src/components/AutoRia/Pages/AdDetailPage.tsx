@@ -39,15 +39,15 @@ import {
   Star
 } from 'lucide-react';
 
-import { CarAd } from '@/types/autoria';
+import { CarAd } from '@/modules/autoria/shared/types/autoria';
 import { useI18n, useTranslation } from '@/contexts/I18nContext';
 import { CarAdsService } from '@/services/autoria/carAds.service';
 import { FavoritesService } from '@/services/autoria/favorites.service';
-import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
-import { useToast } from '@/hooks/use-toast';
+import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import AdCounters from '@/components/AutoRia/Components/AdCounters';
 import { ApiClient } from '@/services/api/apiClient';
-import '@/styles/showroom.css';
+import '@/shared/styles/showroom.css';
 
 interface AdDetailPageProps {
   adId: number;

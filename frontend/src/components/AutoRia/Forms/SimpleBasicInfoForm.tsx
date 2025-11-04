@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FileText } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 
 interface SimpleBasicInfoFormProps {
   data: Partial<CarAdFormData>;

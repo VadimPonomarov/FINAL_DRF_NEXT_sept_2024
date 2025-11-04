@@ -26,12 +26,12 @@ import {
   List,
   Settings
 } from 'lucide-react';
-import { CarAd } from '@/types/autoria';
+import { CarAd } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
-import { useUserProfileData } from '@/hooks/useUserProfileData';
-import { useToast } from '@/hooks/use-toast';
-import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
+import { useUserProfileData } from '@/modules/autoria/shared/hooks/useUserProfileData';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
+import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 import CarAdsService from '@/services/autoria/carAds.service';
 import AdCard from '@/components/AutoRia/Moderation/AdCard';
 import AdTableRow from '@/components/AutoRia/Moderation/AdTableRow';
@@ -92,7 +92,7 @@ const ModerationPage = () => {
 
       if (!isAuthenticated) {
         console.log('[ModerationPage] User not authenticated, redirecting to login...');
-        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
         redirectToAuth(window.location.pathname, 'auth_required');
         return;
       }

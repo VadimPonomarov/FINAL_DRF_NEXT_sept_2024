@@ -10,7 +10,7 @@ import {
   X,
   Settings
 } from 'lucide-react';
-import { CarAd } from '@/types/autoria';
+import { CarAd } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface AdTableRowProps {

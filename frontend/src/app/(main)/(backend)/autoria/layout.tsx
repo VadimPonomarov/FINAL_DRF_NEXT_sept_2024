@@ -1,5 +1,5 @@
-import AutoRiaLayout from "@/components/AutoRia/Layout/AutoRiaLayout";
-import BackendTokenPresenceGate from "@/components/AutoRia/Auth/BackendTokenPresenceGate";
+import AutoRiaLayout from "@/modules/autoria/layout";
+import { BackendTokenPresenceGate } from "@/modules/autoria/auth";
 
 /**
  * УНІВЕРСАЛЬНИЙ Layout для всіх сторінок AutoRia

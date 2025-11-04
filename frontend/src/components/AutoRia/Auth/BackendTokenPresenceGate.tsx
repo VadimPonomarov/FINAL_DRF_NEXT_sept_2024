@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { validateAndRefreshToken } from '@/utils/auth/validateAndRefreshToken';
-import { redirectToAuth } from '@/utils/auth/redirectToAuth';
+import { validateAndRefreshToken } from '@/shared/utils/auth/validateAndRefreshToken';
+import { redirectToAuth } from '@/shared/utils/auth/redirectToAuth';
 
 /**
  * РІВЕНЬ 2 (з 2): BackendTokenPresenceGate — перевірка backend-токенів

@@ -1,7 +1,7 @@
 /**
  * Types for ChunkSelector component
  */
-import { ChatChunk } from '@/utils/chat/chatTypes';
+import { ChatChunk } from '@/modules/chatbot/chat/chatTypes';
 
 export interface ChunkSelectorProps {
   chunks: ChatChunk[];

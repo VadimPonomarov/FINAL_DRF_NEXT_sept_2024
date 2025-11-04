@@ -4,7 +4,7 @@
  */
 
 import Joi from 'joi';
-import { CarAdFormData, CarSearchFormData, UserProfileFormData, ImageUploadFormData } from '@/types/autoria';
+import { CarAdFormData, CarSearchFormData, UserProfileFormData, ImageUploadFormData } from '@/modules/autoria/shared/types/autoria';
 
 // Общие валидаторы
 const currentYear = new Date().getFullYear();

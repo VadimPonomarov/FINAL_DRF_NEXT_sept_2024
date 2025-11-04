@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CarAdFormData } from '@/types/autoria';
-import { buildCanonicalCarData } from '@/utils/imageNormalization';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
+import { buildCanonicalCarData } from '@/modules/autoria/shared/utils/imageNormalization';
 
 export const runtime = 'nodejs';
 

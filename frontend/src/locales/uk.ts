@@ -402,6 +402,22 @@ export default {
       }
     },
     platformStats: "Статистика платформи",
+    createAd: {
+      created: "Оголошення успішно створено",
+      createError: "Не вдалося створити оголошення"
+    },
+    editAd: {
+      updated: "Оголошення успішно оновлено",
+      updateError: "Не вдалося оновити оголошення",
+      deleted: "Оголошення успішно видалено",
+      deleteError: "Не вдалося видалити оголошення"
+    },
+    images: {
+      errorTitle: "❌ Помилка генерації",
+      errorGeneric: "Не вдалося згенерувати зображення. Спробуйте ще раз.",
+      saved: "Згенеровані зображення збережено",
+      saveError: "Не вдалося зберегти згенеровані зображення",
+    },
   auth: {
     loginRequiredTitle: "❌ Потрібен вхід",
     loginRequiredDesc: "Будь ласка, увійдіть, щоб продовжити"
@@ -2113,7 +2129,7 @@ export default {
     only: "any.only",
     required: "any.required"
   },
-  "@/utils/api/serviceUrlResolver": "@/utils/api/serviceUrlResolver",
+  "@/shared/utils/api/serviceUrlResolver": "@/shared/utils/api/serviceUrlResolver",
   "@/app/api/redis": "@/app/api/redis",
   "WebSocket OPEN": "Відкрити",
   "/login?message=": "Вхід",

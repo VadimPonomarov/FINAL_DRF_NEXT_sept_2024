@@ -17,8 +17,8 @@ import {
   ApiResponse,
   ModerationResult,
   AccountLimits
-} from '@/types/autoria';
-import { fetchWithAuth } from '@/utils/fetchWithAuth';
+} from '@/modules/autoria/shared/types/autoria';
+import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 
 export class CarAdsService {
   // Получение списка объявлений с пагинацией и фильтрами

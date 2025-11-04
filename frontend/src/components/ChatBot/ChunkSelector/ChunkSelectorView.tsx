@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Trash2, MessageSquare, Plus, MoreVertical } from 'lucide-react';
-import { ChatChunk } from '@/utils/chat/chatTypes';
+import { ChatChunk } from '@/modules/chatbot/chat/chatTypes';
 import unifiedStyles from '@/components/ChatBot/styles/chatbot-unified.module.css';
 
 interface ChunkSelectorViewProps {

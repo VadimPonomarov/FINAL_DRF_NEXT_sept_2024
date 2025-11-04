@@ -11,7 +11,7 @@ import { useI18n } from '@/contexts/I18nContext';
 
 
 import { VirtualSelect } from '@/components/ui/virtual-select';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 
 interface SimpleCarSpecsFormProps {
   data: Partial<CarAdFormData>;

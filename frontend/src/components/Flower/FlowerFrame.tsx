@@ -1,7 +1,7 @@
 "use client";
 
 import { FC, useState } from "react";
-import { BaseUrl } from "@/common/constants/constants";
+import { BaseUrl } from "@/shared/constants/constants";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";

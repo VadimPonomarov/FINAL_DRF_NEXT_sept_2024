@@ -1,11 +1,11 @@
 import { FC } from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { IUsersResponse } from "@/common/interfaces/users.interfaces";
+import { IUsersResponse } from "@/shared/types/users.interfaces";
 import UsersClient from "@/app/(main)/(dummy)/users/UsersClient";
-import { BaseUrl } from "@/common/constants/constants";
-import { getAuthorizationHeaders } from "@/common/constants/headers";
-import { BackendAuthGuard } from '@/hooks/useBackendAuth';
+import { BaseUrl } from "@/shared/constants/constants";
+import { getAuthorizationHeaders } from "@/shared/constants/headers";
+import { BackendAuthGuard } from '@/modules/autoria/shared/hooks/useBackendAuth';
 
 import styles from "./index.module.css";
 

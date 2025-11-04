@@ -1,6 +1,6 @@
 import React from "react";
 import { FieldValues, UseFormRegister, FieldErrors, Path } from "react-hook-form";
-import { FormFieldsConfig } from "@/common/interfaces/forms.interfaces";
+import { FormFieldsConfig } from "@/shared/types/forms.interfaces";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

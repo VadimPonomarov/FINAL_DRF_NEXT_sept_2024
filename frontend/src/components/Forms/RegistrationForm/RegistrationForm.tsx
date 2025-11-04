@@ -9,8 +9,8 @@ import ButtonGroup from "@/components/All/ButtonGroup/ButtonGroup";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { IRegistration } from "@/common/interfaces/auth.interfaces";
-import { useToast } from "@/hooks/use-toast";
+import { IRegistration } from "@/shared/types/auth.interfaces";
+import { useToast } from "@/modules/autoria/shared/hooks/use-toast";
 
 import { useRegistrationForm } from "./useRegistrationForm";
 import { formFields } from "./formFields.config";

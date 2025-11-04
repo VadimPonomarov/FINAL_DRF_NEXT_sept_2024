@@ -15,8 +15,8 @@ import {
   WifiOff
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { RawAccountAddress } from '@/types/backend-user';
-import { useAddresses } from '@/hooks/useAddresses';
+import { RawAccountAddress } from '@/shared/types/backend-user';
+import { useAddresses } from '@/modules/autoria/shared/hooks/useAddresses';
 import RawAddressForm from './RawAddressForm';
 import TransformedAddressDisplay from '../AddressCard/TransformedAddressDisplay';
 

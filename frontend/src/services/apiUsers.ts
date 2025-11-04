@@ -1,4 +1,4 @@
-import { IUsersResponse } from "@/common/interfaces/users.interfaces";
+import { IUsersResponse } from "@/shared/types/users.interfaces";
 import { fetchUsers } from "@/app/api/helpers";
 
 export const apiUsers = {

@@ -7,12 +7,12 @@ import { useSession } from 'next-auth/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
-import { useUserProfileData } from '@/hooks/useUserProfileData';
+import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
+import { useUserProfileData } from '@/modules/autoria/shared/hooks/useUserProfileData';
 import { useI18n } from '@/contexts/I18nContext';
 import { User, Crown, X } from 'lucide-react';
 import { cleanupBackendTokens } from '@/lib/auth/cleanupAuth';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
 /**
  * Бейдж з інформацією про залогіненого користувача AutoRia

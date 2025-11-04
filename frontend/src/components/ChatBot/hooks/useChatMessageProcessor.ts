@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useRef } from 'react';
-import { Message, WebSocketMessage } from '@/utils/chat/chatTypes';
-import { generateId } from '@/utils/chat/chatStorage';
-import { chatLogger } from '@/utils/chat/logger';
+import { Message, WebSocketMessage } from '@/modules/chatbot/chat/chatTypes';
+import { generateId } from '@/modules/chatbot/chat/chatStorage';
+import { chatLogger } from '@/modules/chatbot/chat/logger';
 
 /**
  * Hook for processing chat messages

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerAuthManager } from '@/utils/auth/serverAuth';
+import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
 // Proxy admin status updates through server to avoid client redirects and attach auth
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {

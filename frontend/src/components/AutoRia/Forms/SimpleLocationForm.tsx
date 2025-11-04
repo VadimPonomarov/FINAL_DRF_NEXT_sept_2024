@@ -8,9 +8,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MapPin } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 
-import { useVirtualReferenceData } from '@/hooks/useVirtualReferenceData';
+import { useVirtualReferenceData } from '@/modules/autoria/shared/hooks/useVirtualReferenceData';
 import { VirtualSelect } from '@/components/ui/virtual-select';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 
 interface SimpleLocationFormProps {
   data: Partial<CarAdFormData>;

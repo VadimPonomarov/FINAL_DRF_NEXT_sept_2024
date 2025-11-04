@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { cleanupAuth } from '@/lib/auth/cleanupAuth';
 import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield } from 'lucide-react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
-import { AuthProvider } from '@/common/constants/constants';
+import { AuthProvider } from '@/shared/constants/constants';
 import { IMenuItem } from '@/components/All/MenuComponent/menu.interfaces';
 import MenuComponent from '@/components/All/MenuComponent/MenuComponent';
 import { ThemeControls } from '@/components/ui/theme-controls';
@@ -416,7 +416,7 @@ export const MenuMain: FC = () => {
                 <a
                   key={item.path || `item-${item.index}`}
                   href={iframeBlockedServices.includes(item.path) ? item.path : '#'}
-                  className="px-6 py-4 text-lg border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  className="px-6 py-4 text-lg border-b border-zinc-100 dark:border-zinc-800 transition-colors cursor-pointer hover:opacity-90 hover:underline hover:underline-offset-4"
                   onClick={handleClick}
                 >
                   {typeof item.label === 'string' ? item.label : <span className="flex items-center gap-2">{item.label}</span>}

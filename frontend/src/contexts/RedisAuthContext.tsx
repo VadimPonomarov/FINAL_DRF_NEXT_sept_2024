@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext } from 'react';
-import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
-import { useUserProfileData } from '@/hooks/useUserProfileData';
+import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
+import { useUserProfileData } from '@/modules/autoria/shared/hooks/useUserProfileData';
 
 interface RedisAuthContextType {
   redisAuth: {

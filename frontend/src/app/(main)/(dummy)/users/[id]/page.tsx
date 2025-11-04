@@ -1,11 +1,11 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { IUserResponse } from "@/common/interfaces/users.interfaces";
-import { IRecipesResponse } from "@/common/interfaces/recipe.interfaces";
+import { IUserResponse } from "@/shared/types/users.interfaces";
+import { IRecipesResponse } from "@/shared/types/recipe.interfaces";
 import { Metadata } from "next";
 import UserDetailsComponent from "@/app/(main)/(dummy)/users/(details)/UserDetails/UserDetailsComponent";
-import { BaseUrl } from "@/common/constants/constants";
-import { getAuthorizationHeaders } from "@/common/constants/headers";
+import { BaseUrl } from "@/shared/constants/constants";
+import { getAuthorizationHeaders } from "@/shared/constants/headers";
 
 import { PageProps } from 'next';
 

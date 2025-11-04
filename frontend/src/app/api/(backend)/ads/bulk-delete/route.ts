@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerAuthManager } from '@/utils/auth/serverAuth';
+import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
 // POST /api/ads/bulk-delete { ids: number[] }
 // Tries backend endpoint /api/ads/bulk-delete; if 404, falls back to per-item delete

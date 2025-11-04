@@ -1,0 +1,23 @@
+/**
+ * StatusBadge styles (DRY)
+ */
+
+.statusBadge {
+  font-weight: 500;
+  text-transform: capitalize;
+
+  &[data-size="sm"] {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+  }
+
+  &[data-size="md"] {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+  }
+
+  &[data-size="lg"] {
+    font-size: 1rem;
+    padding: 0.375rem 1rem;
+  }
+}

@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 
 // Импорт утилит для мокковых данных
-import { generateFullMockData } from '@/utils/mockData';
+import { generateFullMockData } from '@/modules/autoria/shared/utils/mockData';
 
 // Импорт упрощенных компонентов форм
 import SimpleCarSpecsForm from '@/components/AutoRia/Forms/SimpleCarSpecsForm';
@@ -44,12 +44,12 @@ import ImagesForm from '@/components/AutoRia/Forms/ImagesForm';
 import ModernBasicInfoForm from '@/components/AutoRia/Forms/ModernBasicInfoForm';
 import AdditionalInfoForm from '@/components/AutoRia/Forms/AdditionalInfoForm';
 
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
-import { useToast } from '@/hooks/use-toast';
-import { useAutoRiaFormPrefill } from '@/hooks/useAutoRiaFormPrefill';
-import { useCarAdFormSync } from '@/hooks/useCarAdFormSync';
-import { useProfileContacts } from '@/hooks/useProfileContacts';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
+import { useAutoRiaFormPrefill } from '@/modules/autoria/shared/hooks/useAutoRiaFormPrefill';
+import { useCarAdFormSync } from '@/modules/autoria/shared/hooks/useCarAdFormSync';
+import { useProfileContacts } from '@/modules/autoria/shared/hooks/useProfileContacts';
 import ValidationNotifications from '@/components/AutoRia/Components/ValidationNotifications';
 import AutoFillButton from '@/components/AutoRia/Components/AutoFillButton';
 import StatisticsTab from '@/components/AutoRia/Statistics/StatisticsTab';

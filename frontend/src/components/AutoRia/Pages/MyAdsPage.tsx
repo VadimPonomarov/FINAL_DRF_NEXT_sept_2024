@@ -38,14 +38,14 @@ import {
   Mail
 } from 'lucide-react';
 import Link from 'next/link';
-import { CarAd } from '@/types/autoria';
+import { CarAd } from '@/modules/autoria/shared/types/autoria';
 import CarAdsService from '@/services/autoria/carAds.service';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
+import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
 import { CurrencySelector } from '@/components/AutoRia/CurrencySelector/CurrencySelector';
-import { usePriceConverter } from '@/hooks/usePriceConverter';
+import { usePriceConverter } from '@/modules/autoria/shared/hooks/usePriceConverter';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
 const MyAdsPage = () => {
   const { t } = useI18n();

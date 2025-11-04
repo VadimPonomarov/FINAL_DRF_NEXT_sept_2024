@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useUserProfileData } from "@/hooks/useUserProfileData";
+import { useUserProfileData } from "@/modules/autoria/shared/hooks/useUserProfileData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Lock } from "lucide-react";

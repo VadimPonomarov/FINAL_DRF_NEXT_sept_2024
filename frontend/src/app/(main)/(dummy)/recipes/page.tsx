@@ -1,10 +1,10 @@
 import {FC} from "react";
 import {Metadata} from "next";
-import {IRecipesResponse} from "@/common/interfaces/recipe.interfaces";
+import {IRecipesResponse} from "@/shared/types/recipe.interfaces";
 import RecipesClient from "@/app/(main)/(dummy)/recipes/RecipesClient";
-import {BaseUrl} from "@/common/constants/constants";
+import {BaseUrl} from "@/shared/constants/constants";
 import {notFound} from 'next/navigation';
-import { getAuthorizationHeaders } from "@/common/constants/headers";
+import { getAuthorizationHeaders } from "@/shared/constants/headers";
 
 import styles from "./index.module.css";
 

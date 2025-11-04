@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { ISession } from "@/common/interfaces/session.interfaces";
+import { ISession } from "@/shared/types/session.interfaces";
 
 const AuthBadge: React.FC = () => {
   const { data: session, status } = useSession();

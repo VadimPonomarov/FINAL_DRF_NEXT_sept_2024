@@ -21,7 +21,7 @@ import {
   ModerationLevelEnum,
   RoleEnum,
   ContactTypeEnum
-} from '@/types/backend-user';
+} from '@/shared/types/backend-user';
 
 /**
  * Сервис для работы с профилем пользователя

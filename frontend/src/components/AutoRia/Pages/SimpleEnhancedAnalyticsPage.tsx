@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 
 import { useI18n } from '@/contexts/I18nContext';
-import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 
 interface KPIData {
   totalUsers: number;

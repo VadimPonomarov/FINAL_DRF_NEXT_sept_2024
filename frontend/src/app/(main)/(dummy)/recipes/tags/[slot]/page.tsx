@@ -1,9 +1,9 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { IRecipe } from "@/common/interfaces/recipe.interfaces";
+import { IRecipe } from "@/shared/types/recipe.interfaces";
 import { RecipeCard } from "@/app/(main)/(dummy)/recipes/(details)/RecipeCard/RecipeCard";
-import { BaseUrl } from "@/common/constants/constants";
-import { getAuthorizationHeaders } from "@/common/constants/headers";
+import { BaseUrl } from "@/shared/constants/constants";
+import { getAuthorizationHeaders } from "@/shared/constants/headers";
 
 import styles from "./index.module.css";
 

@@ -3,7 +3,7 @@ import React, { FC, useEffect, useState } from "react";
 import { Select, SelectGroup, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectLabel, SelectSeparator } from "@/components/ui/select";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { IItem } from "@/components/All/ComboBox/interfaces";
-import { IBackendAuthCredentials } from "@/common/interfaces/auth.interfaces";
+import { IBackendAuthCredentials } from "@/shared/types/auth.interfaces";
 import { UseFormReset } from "react-hook-form";
 import { useI18n } from "@/contexts/I18nContext";
 

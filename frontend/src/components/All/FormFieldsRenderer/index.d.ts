@@ -1,5 +1,5 @@
 import {FieldErrors, UseFormRegister} from "react-hook-form";
-import {FormFieldsConfig} from "@/common/interfaces/forms.interfaces.ts";
+import {FormFieldsConfig} from "@/shared/types/forms.interfaces.ts";
 
 export interface FormFieldsRendererProps<T> {
     errors: FieldErrors<T>;

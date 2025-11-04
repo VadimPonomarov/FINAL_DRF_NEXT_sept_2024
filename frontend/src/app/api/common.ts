@@ -3,8 +3,8 @@
  * Provides fetchData and fetchWithDomain functions with Bearer token support
  */
 
-import { getAuthorizationHeaders } from '@/common/constants/headers';
-import { resolveServiceUrl } from '@/utils/api/serviceUrlResolver';
+import { getAuthorizationHeaders } from '@/shared/constants/headers';
+import { resolveServiceUrl } from '@/shared/utils/api/serviceUrlResolver';
 import { redirect } from 'next/navigation';
 
 // Server-side check

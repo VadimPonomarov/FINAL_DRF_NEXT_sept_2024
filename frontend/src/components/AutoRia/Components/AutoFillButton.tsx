@@ -18,8 +18,8 @@ import {
   AlertCircle,
   Info
 } from 'lucide-react';
-import { useAutoRiaFormPrefill } from '@/hooks/useAutoRiaFormPrefill';
-import { CarAdFormData } from '@/types/autoria';
+import { useAutoRiaFormPrefill } from '@/modules/autoria/shared/hooks/useAutoRiaFormPrefill';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface AutoFillButtonProps {

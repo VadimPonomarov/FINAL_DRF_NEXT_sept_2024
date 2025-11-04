@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { Message, ChatChunk } from '@/utils/chat/chatTypes';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
+import { Message, ChatChunk } from '@/modules/chatbot/chat/chatTypes';
 import {
   getTodayKey,
   getAvailableDates,
@@ -18,8 +18,8 @@ import {
   saveLastActiveChunk,
   getLastActiveChunk,
   // formatDateForDisplay // Не используется
-} from '@/utils/chat/chatStorage';
-// import { chatLogger } from '@/utils/chat/logger'; // Не используется
+} from '@/modules/chatbot/chat/chatStorage';
+// import { chatLogger } from '@/modules/chatbot/chat/logger'; // Не используется
 
 // Hook для проверки гидратации
 const useIsHydrated = () => {

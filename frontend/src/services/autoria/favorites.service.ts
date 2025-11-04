@@ -3,8 +3,8 @@
  * Использует параметр favorites_only для фильтрации через основной API автомобилей
  */
 
-import { CarAd, CarSearchFormData, PaginatedResponse } from '@/types/autoria';
-import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { CarAd, CarSearchFormData, PaginatedResponse } from '@/modules/autoria/shared/types/autoria';
+import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 
 export class FavoritesService {
 

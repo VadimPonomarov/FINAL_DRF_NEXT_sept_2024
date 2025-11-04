@@ -1,8 +1,8 @@
 /**
  * Types for ChatMessage component
  */
-import { Message } from '@/utils/chat/chatTypes';
-import { MessageContext } from '@/types/messageContext';
+import { Message } from '@/modules/chatbot/chat/chatTypes';
+import { MessageContext } from '@/modules/autoria/shared/types/messageContext';
 
 export interface ChatMessageProps {
   message: Message;

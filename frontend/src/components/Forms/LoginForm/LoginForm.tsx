@@ -18,16 +18,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { AuthProvider } from "@/common/constants/constants";
+import { AuthProvider } from "@/shared/constants/constants";
 
 import { useAuthProvider } from "@/contexts/AuthProviderContext";
 import { cn } from "@/lib/utils";
-import { IDummyAuth } from "@/common/interfaces/dummy.interfaces";
+import { IDummyAuth } from "@/shared/types/dummy.interfaces";
 import {
   authProviderOptions,
   IBackendAuthCredentials,
-} from "@/common/interfaces/auth.interfaces";
-import { useToast } from "@/hooks/use-toast";
+} from "@/shared/types/auth.interfaces";
+import { useToast } from "@/modules/autoria/shared/hooks/use-toast";
 // import { useRouter } from "next/navigation";
 
 import { backendFormFields, dummyFormFields } from "./formFields.config";

@@ -3,11 +3,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { signOut } from "next-auth/react";
-import { IUser, IUsersResponse } from "@/common/interfaces/users.interfaces";
+import { IUser, IUsersResponse } from "@/shared/types/users.interfaces";
 import { filterItems } from "@/services/filters/filterServices";
 import { dummyApiHelpers } from "@/app/api/dummy";
-import { getAuthorizationHeaders } from "@/common/constants/headers";
-import { BaseUrl } from "@/common/constants/constants";
+import { getAuthorizationHeaders } from "@/shared/constants/headers";
+import { BaseUrl } from "@/shared/constants/constants";
 
 interface IProps {
   initialData: IUsersResponse | Error;

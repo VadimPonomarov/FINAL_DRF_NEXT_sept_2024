@@ -9,10 +9,10 @@ import {
   useState,
 } from "react";
 import { useSession } from "next-auth/react";
-import { toast } from "@/hooks/use-toast";
-import { AuthProvider as AuthProviderEnum, TOAST_DURATION } from "@/common/constants/constants";
-import { User } from "@/common/interfaces/user.interface";
-import { IAuthContext, IAuthProviderContext } from "@/common/interfaces/authContext.interface";
+import { toast } from "@/modules/autoria/shared/hooks/use-toast";
+import { AuthProvider as AuthProviderEnum, TOAST_DURATION } from "@/shared/constants/constants";
+import { User } from "@/shared/types/user.interface";
+import { IAuthContext, IAuthProviderContext } from "@/shared/types/authContext.interface";
 import { cleanupAuth } from '@/lib/auth/cleanupAuth';
 
 // ============================================================================

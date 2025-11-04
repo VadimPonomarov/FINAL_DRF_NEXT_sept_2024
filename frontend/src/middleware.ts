@@ -26,7 +26,7 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   try {
     console.log(`[Middleware] Checking NextAuth session with getToken`);
     // КРИТИЧНО: Используем NEXTAUTH_SECRET из AUTH_CONFIG (с дешифрованием)
-    const { AUTH_CONFIG } = await import('@/common/constants/constants');
+    const { AUTH_CONFIG } = await import('@/shared/constants/constants');
     const nextAuthSecret = AUTH_CONFIG.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET;
     
     if (!nextAuthSecret) {
@@ -75,7 +75,7 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
     console.log(`[Middleware L1] Checking NextAuth session for Autoria access`);
     
     // КРИТИЧНО: використовуємо NEXTAUTH_SECRET з AUTH_CONFIG (з розшифруванням)
-    const { AUTH_CONFIG } = await import('@/common/constants/constants');
+    const { AUTH_CONFIG } = await import('@/shared/constants/constants');
     const nextAuthSecret = AUTH_CONFIG.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET;
     
     if (!nextAuthSecret) {

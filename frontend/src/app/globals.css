@@ -5,10 +5,10 @@
 @import '../components/ChatBot/styles/global-chatbot.css';
 
 /* Импорт стилей для исправления ховера кнопок */
-@import '../styles/button-hover-fix.css';
+@import '../shared/styles/button-hover-fix.css';
 
 /* Импорт стилей для исправления контрастности всех UI элементов */
-@import '../styles/ui-contrast-fix.css';
+@import '../shared/styles/ui-contrast-fix.css';
 
 /* Стили для моноширинных шрифтов */
 code, pre, .font-mono {
@@ -71,6 +71,11 @@ body {
     --z-index-toast: 1050;
     --z-index-modal: 1100;
     --z-index-badge: 99999;
+
+    /* Hover effects (DRY) */
+    --hover-opacity: 0.9;
+    --hover-scale: 1.02;
+    --hover-underline-offset: 4px;
   }
 
   .dark {

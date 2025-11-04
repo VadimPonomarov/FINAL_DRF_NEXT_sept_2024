@@ -3,10 +3,10 @@
 import React, { useCallback, useMemo } from 'react';
 import { GenericForm } from '@/components/Forms/GenericForm/GenericForm';
 // import { carAdSchema } from '../schemas/autoria.schemas';
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { ExtendedFormFieldConfig } from '@/components/Forms/GenericForm/GenericForm';
 import { useI18n } from '@/contexts/I18nContext';
-import { useVirtualReferenceData } from '@/hooks/useVirtualReferenceData';
+import { useVirtualReferenceData } from '@/modules/autoria/shared/hooks/useVirtualReferenceData';
 
 interface LocationFormProps {
   data: Partial<CarAdFormData>;

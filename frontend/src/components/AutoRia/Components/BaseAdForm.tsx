@@ -37,7 +37,7 @@ import ImagesForm from '@/components/AutoRia/Forms/ImagesForm';
 import ContactForm from '@/components/AutoRia/Forms/ContactForm';
 import PreviewForm from '@/components/AutoRia/Forms/PreviewForm';
 
-import { CarAdFormData } from '@/types/autoria';
+import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 
 export interface BaseAdFormProps {

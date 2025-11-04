@@ -23,8 +23,8 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { ContactTypeEnum } from '@/types/backend-user';
-import { AdContact } from '@/types/autoria';
+import { ContactTypeEnum } from '@/shared/types/backend-user';
+import { AdContact } from '@/modules/autoria/shared/types/autoria';
 
 // Интерфейс для данных формы контактов объявления
 export interface AdContactsFormData {

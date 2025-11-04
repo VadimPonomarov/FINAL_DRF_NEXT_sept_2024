@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthorizationHeaders } from '@/common/constants/headers';
-import { buildCanonicalCarData } from '@/utils/imageNormalization';
+import { getAuthorizationHeaders } from '@/shared/constants/headers';
+import { buildCanonicalCarData } from '@/modules/autoria/shared/utils/imageNormalization';
 
 
 interface GenerateImagesRequest {

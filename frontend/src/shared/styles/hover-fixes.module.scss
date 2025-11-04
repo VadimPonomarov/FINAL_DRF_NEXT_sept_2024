@@ -1,0 +1,140 @@
+/**
+ * Unified hover fixes for all themes (DRY)
+ * Ensures proper contrast and visibility across all color palettes
+ */
+
+// Hover effect mixins (DRY)
+@mixin hover-subtle {
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    opacity: var(--hover-opacity, 0.9);
+    transform: translateY(-1px);
+  }
+}
+
+@mixin hover-underline {
+  &:hover:not(:disabled) {
+    text-decoration: underline;
+    text-underline-offset: var(--hover-underline-offset, 4px);
+  }
+}
+
+@mixin hover-outline {
+  &:hover:not(:disabled) {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+@mixin hover-scale {
+  transition: transform 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    transform: scale(var(--hover-scale, 1.02));
+  }
+}
+
+// Button hover fixes (ensures contrast)
+.button-primary-hover {
+  @include hover-subtle;
+  
+  &:hover:not(:disabled) {
+    // Slightly darken background, keep text white
+    filter: brightness(0.95);
+  }
+}
+
+.button-secondary-hover {
+  @include hover-subtle;
+  
+  &:hover:not(:disabled) {
+    // Add subtle background
+    background-color: var(--accent);
+  }
+}
+
+.button-ghost-hover {
+  @include hover-subtle;
+  
+  &:hover:not(:disabled) {
+    // Add subtle background without changing text color
+    background-color: var(--accent);
+  }
+}
+
+.button-destructive-hover {
+  @include hover-subtle;
+  
+  &:hover:not(:disabled) {
+    filter: brightness(0.9);
+  }
+}
+
+// Link hover fixes
+.link-hover {
+  @include hover-underline;
+  
+  &:hover:not(:disabled) {
+    color: var(--primary);
+  }
+}
+
+// Card hover fixes
+.card-hover {
+  @include hover-scale;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Menu item hover fixes
+.menu-item-hover {
+  transition: background-color 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background-color: var(--accent);
+    // Ensure text remains visible
+    color: var(--accent-foreground);
+  }
+}
+
+// Tab hover fixes
+.tab-hover {
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled):not([data-state="active"]) {
+    background-color: var(--muted);
+    color: var(--foreground);
+  }
+}
+
+// Badge hover fixes
+.badge-hover {
+  @include hover-subtle;
+}
+
+// Input hover fixes
+.input-hover {
+  transition: border-color 0.2s ease;
+  
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--ring);
+  }
+}
+
+// Disabled state (consistent across all themes)
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+// Focus visible (accessibility)
+.focus-visible {
+  &:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}

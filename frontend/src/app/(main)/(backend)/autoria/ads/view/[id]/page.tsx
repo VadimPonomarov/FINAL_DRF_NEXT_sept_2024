@@ -2,7 +2,7 @@
 
 import { use } from 'react';
 import AdViewPage from '@/components/AutoRia/Pages/AdViewPage';
-import { useAutoRiaAuth } from '@/hooks/autoria/useAutoRiaAuth';
+import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
 
 interface ViewAdProps {
   params: Promise<{ id: string }>;

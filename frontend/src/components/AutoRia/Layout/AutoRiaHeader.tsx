@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from 'react';
 import Link from 'next/link';
@@ -176,7 +176,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
                 <Button
                   variant={currentPage === item.id ? "default" : "ghost"}
                   size="sm"
-                  className="flex items-center gap-2 relative overflow-visible"
+                  className="flex items-center gap-2 relative overflow-visible px-4 py-2 rounded-md transition-all hover:scale-105"
                 >
                   {item.icon}
                   <span className="hidden xl:inline">{item.label}</span>
@@ -229,7 +229,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
                 <Button
                   variant={currentPage === item.id ? "default" : "ghost"}
                   size="sm"
-                  className="flex flex-col items-center gap-1 min-w-[60px] h-auto py-2"
+                  className="flex flex-col items-center gap-1 min-w-[60px] h-auto py-2 px-3 rounded-md transition-all"
                 >
                   {item.icon}
                   <span className="text-xs">{item.label.split(' ')[0]}</span>

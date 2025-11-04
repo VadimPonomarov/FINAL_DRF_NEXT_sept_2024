@@ -3,7 +3,7 @@
 import { FC, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/modules/autoria/shared/hooks/use-toast";
 import LoginForm from "@/components/Forms/LoginForm/LoginForm";
 import { useTranslation } from "@/contexts/I18nContext";
 

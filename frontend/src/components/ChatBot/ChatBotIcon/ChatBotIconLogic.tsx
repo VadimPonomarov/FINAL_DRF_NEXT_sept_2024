@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { ChatBotIconProps } from './types';
-import { getLastActiveChunk, saveLastActiveChunk } from '@/utils/chat/chatStorage';
-import { AuthProvider } from '@/common/constants/constants';
+import { getLastActiveChunk, saveLastActiveChunk } from '@/modules/chatbot/chat/chatStorage';
+import { AuthProvider } from '@/shared/constants/constants';
 import { useChatWebSocket } from '../hooks/useChatWebSocket';
-import { tokenRefreshManager } from '@/utils/auth/tokenRefreshManager';
-import { useToast } from '@/hooks/use-toast';
+import { tokenRefreshManager } from '@/shared/utils/auth/tokenRefreshManager';
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
 // Hook для проверки гидратации
 const useIsHydrated = () => {
@@ -182,7 +182,7 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
       // Если refresh вернул ошибку с 404 - токены не найдены, нужно залогиниться
       if (!refreshResult.success && refreshResult.error?.includes('not found')) {
         console.error('[ChatBotIcon] Tokens not found (404), checking NextAuth session and redirecting');
-        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
         const currentPath = window.location.pathname + window.location.search;
         redirectToAuth(currentPath, 'tokens_not_found');
         return; // Прекращаем открытие чата, если нужен логин
@@ -191,7 +191,7 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
       console.error('[ChatBotIcon] Error during smart token refresh:', error);
       // Если ошибка связана с отсутствием токенов - редиректим с учетом многоуровневой системы
       if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found'))) {
-        const { redirectToAuth } = await import('@/utils/auth/redirectToAuth');
+        const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
         const currentPath = window.location.pathname + window.location.search;
         redirectToAuth(currentPath, 'tokens_not_found');
         return;

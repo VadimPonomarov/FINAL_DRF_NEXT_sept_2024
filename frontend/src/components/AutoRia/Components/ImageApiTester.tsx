@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast'
 
 interface ImageApiTesterProps {
   adId: string | number

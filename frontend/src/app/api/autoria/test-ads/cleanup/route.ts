@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getAuthorizationHeaders } from '@/common/constants/headers';
+import { getAuthorizationHeaders } from '@/shared/constants/headers';
 
 export async function DELETE(request: NextRequest) {
   const startTime = Date.now();
