@@ -170,47 +170,69 @@ class Command(BaseCommand):
         """Generate ad data similar to frontend mock data generator."""
         # Random specs
         year = random.randint(2015, 2024)
+        colors = ['Чорний', 'Білий', 'Сірий', 'Синій', 'Червоний', 'Срібний', 'Зелений']
+        color = random.choice(colors)
         mileage = random.randint(10000, 200000)
         engine_volume = round(random.uniform(1.4, 4.0), 1)
         power = random.randint(100, 400)
 
-        # Random colors
-        colors = ['Чорний', 'Білий', 'Сірий', 'Синій', 'Червоний', 'Срібний', 'Зелений']
-        color = random.choice(colors)
-
-        # Random body types by vehicle type
+        # Random body types by vehicle type (use English descriptors for better prompt relevance)
         body_types = {
-            'car': ['седан', 'хетчбек', 'універсал', 'купе', 'кабріолет'],
-            'truck': ['бортовий', 'тягач', 'самоскид', 'цистерна'],
-            'motorcycle': ['спорт', 'круізер', 'турінг', 'ендуро'],
-            'bus': ['міжміський', 'міський', 'маршрутка'],
-            'van': ['мікроавтобус', 'вантажний', 'пасажирський']
+            'car': ['sedan', 'hatchback', 'station wagon', 'coupe', 'convertible'],
+            'truck': ['flatbed truck', 'semi-truck tractor', 'dump truck', 'tanker truck'],
+            'motorcycle': ['sport motorcycle', 'cruiser motorcycle', 'touring motorcycle', 'enduro motorcycle'],
+            'scooter': ['electric scooter', 'kick scooter', 'moped scooter'],
+            'bus': ['city bus', 'intercity coach', 'minibus'],
+            'van': ['cargo van', 'passenger van', 'panel van'],
+            'trailer': ['flatbed trailer', 'box cargo trailer', 'tanker trailer', 'car hauler trailer'],
+            'special': ['hydraulic excavator', 'mobile crane', 'wheel loader', 'bulldozer'],
+            'boat': ['speedboat', 'fishing boat', 'sailboat', 'yacht']
         }
 
+        vehicle_name_lower = vehicle_type.name.lower()
         vehicle_type_key = 'car'  # default
-        if vehicle_type.name.lower() in ['грузовой', 'грузовий', 'вантажний']:
+
+        if any(key in vehicle_name_lower for key in ['грузов', 'вантаж', 'truck']):
             vehicle_type_key = 'truck'
-        elif 'мотоцикл' in vehicle_type.name.lower():
+        elif any(key in vehicle_name_lower for key in ['мото', 'motorcycle']):
             vehicle_type_key = 'motorcycle'
-        elif 'автобус' in vehicle_type.name.lower():
+        elif any(key in vehicle_name_lower for key in ['скутер', 'самокат', 'scooter']):
+            vehicle_type_key = 'scooter'
+        elif 'автобус' in vehicle_name_lower or 'bus' in vehicle_name_lower:
             vehicle_type_key = 'bus'
-        elif 'фургон' in vehicle_type.name.lower() or 'мінівен' in vehicle_type.name.lower():
+        elif any(key in vehicle_name_lower for key in ['фургон', 'мінівен', 'minivan', 'van']):
             vehicle_type_key = 'van'
+        elif any(key in vehicle_name_lower for key in ['причеп', 'прицеп', 'trailer']):
+            vehicle_type_key = 'trailer'
+        elif any(key in vehicle_name_lower for key in ['спец', 'екскаватор', 'кран', 'бульдозер', 'special']):
+            vehicle_type_key = 'special'
+        elif any(key in vehicle_name_lower for key in ['водн', 'катер', 'яхт', 'boat']):
+            vehicle_type_key = 'boat'
 
         body_type = random.choice(body_types.get(vehicle_type_key, body_types['car']))
 
-        # Fuel types
-        fuel_types = ['бензин', 'дизель', 'гібрид', 'електро', 'газ']
-        fuel_type = random.choice(fuel_types)
-
-        # Transmission
+        # Default attributes (will be overridden per vehicle type)
+        fuel_type = random.choice(['бензин', 'дизель', 'гібрид', 'електро', 'газ'])
         transmission = random.choice(['автомат', 'механіка', 'робот', 'варіатор'])
-
-        # Drive type
         drive_type = random.choice(['передній', 'задній', 'повний'])
+        condition = random.choice(['excellent', 'good'])
 
-        # Price calculation
-        base_price = random.randint(200000, 1500000)  # UAH
+        # Price calculation base (in UAH)
+        if vehicle_type_key == 'trailer':
+            base_price = random.randint(250000, 850000)
+        elif vehicle_type_key == 'boat':
+            base_price = random.randint(600000, 2500000)
+        elif vehicle_type_key == 'special':
+            base_price = random.randint(800000, 3200000)
+        elif vehicle_type_key == 'motorcycle':
+            base_price = random.randint(100000, 600000)
+        elif vehicle_type_key == 'scooter':
+            base_price = random.randint(45000, 150000)
+        elif vehicle_type_key == 'truck':
+            base_price = random.randint(700000, 2200000)
+        else:
+            base_price = random.randint(200000, 1500000)
+
         # Exchange rates (approximate)
         USD_RATE = Decimal('41.65')
         EUR_RATE = Decimal('45.20')
@@ -244,20 +266,85 @@ class Command(BaseCommand):
         # Dynamic fields
         dynamic_fields = {
             'year': year,
-            'mileage': mileage,
-            'engine_volume': engine_volume,
-            'power_hp': power,
             'color': color,
             'body_type': body_type,
-            'fuel_type': fuel_type,
-            'transmission': transmission,
-            'drive_type': drive_type,
-            'condition': 'used',
+            'vehicle_type_name': vehicle_type.name,
             'seller_type': 'private',
             'exchange_status': 'no_exchange',
-            'negotiable': True,
-            'vehicle_type_name': vehicle_type.name
+            'negotiable': True
         }
+
+        if vehicle_type_key == 'trailer':
+            dynamic_fields.update({
+                'mileage': 0,
+                'fuel_type': 'без двигуна',
+                'transmission': 'без трансмісії',
+                'drive_type': 'без приводу',
+                'condition': condition,
+                'axles': random.choice([1, 2, 3]),
+                'load_capacity_kg': random.randint(1500, 25000),
+                'length_m': round(random.uniform(4.5, 13.5), 1),
+                'brakes': random.choice(['інерційні', 'пневматичні', 'гідравлічні'])
+            })
+        elif vehicle_type_key == 'boat':
+            fuel_type = random.choice(['бензин', 'дизель', 'електро'])
+            transmission = 'морський редуктор'
+            dynamic_fields.update({
+                'fuel_type': fuel_type,
+                'transmission': transmission,
+                'drive_type': random.choice(['підвісний мотор', 'водомет', 'внутрішньобортовий']),
+                'condition': condition,
+                'engine_power_hp': random.randint(60, 450),
+                'hull_material': random.choice(['алюміній', 'склопластик', 'сталь']),
+                'length_m': round(random.uniform(4.8, 11.5), 1),
+                'seats': random.randint(4, 10)
+            })
+        elif vehicle_type_key == 'special':
+            dynamic_fields.update({
+                'mileage': random.randint(2000, 80000),
+                'fuel_type': 'дизель',
+                'transmission': random.choice(['гідростатична', 'автоматична']),
+                'drive_type': random.choice(['повний', 'задній']),
+                'condition': condition,
+                'engine_volume': round(random.uniform(3.0, 12.0), 1),
+                'power_hp': random.randint(120, 450),
+                'hours_worked': random.randint(500, 8000),
+                'attachments': random.choice(['ковш', 'щітка', 'вилочний захват', 'бур']
+            )})
+        elif vehicle_type_key == 'truck':
+            dynamic_fields.update({
+                'mileage': mileage,
+                'fuel_type': fuel_type,
+                'transmission': transmission,
+                'drive_type': random.choice(['задній', 'повний']),
+                'condition': condition,
+                'engine_volume': round(random.uniform(4.0, 12.0), 1),
+                'power_hp': random.randint(180, 620),
+                'body_type': body_type,
+                'load_capacity_kg': random.randint(2000, 30000)
+            })
+        elif vehicle_type_key in ['motorcycle', 'scooter']:
+            dynamic_fields.update({
+                'mileage': random.randint(1000, 50000),
+                'fuel_type': 'бензин' if vehicle_type_key == 'motorcycle' else random.choice(['бензин', 'електро']),
+                'transmission': 'механіка' if vehicle_type_key == 'motorcycle' else random.choice(['автомат', 'варіатор']),
+                'drive_type': 'ланцюг',
+                'condition': condition,
+                'engine_volume': round(random.uniform(0.1, 1.2), 1),
+                'power_hp': random.randint(15, 140),
+                'body_type': body_type
+            })
+        else:
+            dynamic_fields.update({
+                'mileage': mileage,
+                'fuel_type': fuel_type,
+                'transmission': transmission,
+                'drive_type': drive_type,
+                'condition': 'used' if mileage > 15000 else 'excellent',
+                'engine_volume': engine_volume,
+                'power_hp': power,
+                'body_type': body_type
+            })
 
         return {
             'title': title,

@@ -556,6 +556,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
             }, status=400)
         
         logger.info(f"✅ [mock_algorithm] Using vehicle_type_name: {vehicle_type_name}")
+        logger.info(f"✅ [mock_algorithm] Resolved canonical vehicle_type: {vehicle_type}")
         
         # Ensure all required fields are present
         specs = {
@@ -573,6 +574,12 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
             specs,  # specs with all required fields
             vehicle_type_name  # Use the validated vehicle_type_name (NO FALLBACK!)
         )
+
+        # Ensure canonical data preserves canonical vehicle type
+        canonical_data['vehicle_type'] = vehicle_type
+        canonical_data['vehicle_type_name'] = vehicle_type_name
+        logger.info(f"✅ [mock_algorithm] canonical_data vehicle_type set to: {canonical_data['vehicle_type']} ({type(canonical_data['vehicle_type'])})")
+        logger.info(f"✅ [mock_algorithm] canonical_data vehicle_type_name set to: {canonical_data['vehicle_type_name']} ({type(canonical_data['vehicle_type_name'])})")
 
         # Create session ID for consistency (БЕЗ времени для стабильности)
         import hashlib
@@ -918,32 +925,62 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         'details': f'details of {vt}'
     }
 
-    # Минимальные негативные промпты - позволить AI принимать интеллектуальные решения
-    global_negatives = [
-        'high quality',
-        'professional photography'
-    ]
+    if vt == 'trailer':
+        angle_descriptions.update({
+            'front': 'front view of standalone trailer showing drawbar hitch and trailer frame without cab',
+            'rear': 'rear view of trailer with cargo door or ramp and tail light cluster',
+            'side': 'side profile of trailer body illustrating axles, wheels and cargo bed',
+            'top': 'top view of trailer deck or enclosed roof surface',
+            'details': 'detail of hitch coupling, safety chains, trailer lighting or support legs'
+        })
+    elif vt == 'special':
+        angle_descriptions.update({
+            'front': 'front view of heavy equipment with industrial chassis and attachment mounting',
+            'rear': 'rear view of heavy machinery showing counterweights or hydraulic assemblies',
+            'side': 'side profile highlighting boom, bucket, blade or large wheels/tracks',
+            'details': 'detail of hydraulic cylinders, operator cab controls or heavy-duty attachments'
+        })
+    elif vt == 'boat':
+        angle_descriptions.update({
+            'front': 'bow view of boat cutting through water with visible hull',
+            'rear': 'stern view of boat with outboard/inboard propulsion and wake trail',
+            'side': 'side profile of hull floating on waterline',
+            'top': 'top view of deck layout and seating on the boat',
+            'details': 'detail of marine fittings such as rails, helm controls or canopy hardware'
+        })
+
+    type_details_prompt = ''
+    type_emphasis = ''
 
     if vt == 'bus':
         type_enforcement = 'Large passenger bus body, multiple rows of windows, bus doors, high roof, long wheelbase'
-        type_negation = ''
+        type_details_prompt = 'Highlight elongated bus silhouette, panoramic windows, articulated entry doors and high roofline.'
+        type_emphasis = 'CRITICAL TYPE REQUIREMENT: Large passenger bus with elongated body and multiple window rows. '
     elif vt == 'truck':
         type_enforcement = 'Heavy-duty truck cabin, large cargo area or trailer coupling, commercial vehicle proportions, high ground clearance, 6 or more wheels preferred'
-        type_negation = ''
+        type_details_prompt = 'Emphasize commercial-grade chassis height, reinforced frame and multi-axle cargo capabilities.'
+        type_emphasis = 'CRITICAL TYPE REQUIREMENT: Heavy-duty commercial truck with elevated chassis and cargo capacity. '
     elif vt == 'motorcycle':
         type_enforcement = 'Two wheels, exposed frame, handlebars, motorcycle seat, motorcycle proportions'
-        type_negation = ''
+        type_details_prompt = 'Show the motorcycle lean angle, detailed frame geometry and handlebar controls.'
+        type_emphasis = 'CRITICAL TYPE REQUIREMENT: Two-wheeled motorcycle with exposed frame and handlebars. '
     elif vt == 'scooter':
         type_enforcement = 'Kick/electric scooter proportions, narrow deck, handlebar stem, two small wheels'
-        type_negation = ''
+        type_details_prompt = 'Capture slim deck, upright steering column and compact wheelbase of a city scooter.'
+        type_emphasis = 'CRITICAL TYPE REQUIREMENT: Compact scooter with narrow deck and upright steering column. '
     elif vt == 'van':
         type_enforcement = 'Boxy van/MPV proportions with sliding door (if applicable), light commercial vehicle style'
-        type_negation = ''
+        type_details_prompt = 'Display tall roofline, sliding side door rails and practical utility proportions.'
+        type_emphasis = 'CRITICAL TYPE REQUIREMENT: Boxy multipurpose van with utility-focused proportions. '
     elif vt == 'trailer':
-        type_enforcement = 'Standalone trailer body, hitch coupling, no engine, no driver cabin'
-        type_negation = ''
+        type_enforcement = (
+            'Standalone transport trailer body with hitch coupling, NO engine, NO driver cabin, '
+            'open or enclosed cargo bed depending on body type, correct trailer axles and wheels only'
+        )
+        type_details_prompt = 'Focus on drawbar hitch, cargo platform surface, axle arrangement and utility lighting suited for a standalone trailer.'
+        type_emphasis = 'CRITICAL TYPE REQUIREMENT: Standalone unpowered trailer with hitch coupling and cargo platform only. '
     elif vt == 'special':
-        # КРИТИЧНО: Определяем тип спецтехники по бренду и модели
+        # КРИТИЧНО: Определяем тип спецтехники по бренду и моделі
         brand_lower = brand.lower()
         model_lower = (model or '').lower()
 
@@ -968,29 +1005,38 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         # Определяем тип по модели (если содержит ключевые слова)
         if any(word in model_lower for word in ['excavator', 'екскаватор', 'экскаватор', '220', '330', '320', '336']):
             type_enforcement = 'HYDRAULIC EXCAVATOR: tracked undercarriage with metal tracks, rotating upper structure (cab), articulated boom arm with bucket attachment, construction equipment proportions, industrial yellow/orange color scheme typical for construction machinery. NOT a passenger car, NOT a truck, NOT a bus - this is HEAVY CONSTRUCTION EQUIPMENT with tracks and excavator arm.'
-            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV, NOT a truck cabin'
+            type_details_prompt = 'Include tracked undercarriage, rotating operator cab and articulated boom with bucket working over construction terrain.'
+            type_emphasis = 'CRITICAL TYPE REQUIREMENT: Hydraulic excavator with tracked base and articulated boom. '
         elif any(word in model_lower for word in ['bulldozer', 'бульдозер', 'б-10', 'd-10', 'd-11']) or brand_lower in bulldozer_brands or 'чтз' in brand_lower:
             type_enforcement = 'BULLDOZER: tracked undercarriage with metal tracks, large front blade, heavy-duty construction equipment, industrial proportions. NOT a passenger car, NOT a truck, NOT an SUV - this is HEAVY CONSTRUCTION EQUIPMENT with tracks and blade.'
-            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV, NOT any road vehicle'
+            type_details_prompt = 'Bring attention to continuous tracks, dominant front blade and rugged construction-site surroundings.'
+            type_emphasis = 'CRITICAL TYPE REQUIREMENT: Bulldozer with heavy front blade and continuous tracks. '
         elif any(word in model_lower for word in ['telehandler', 'телетранспортер', 'mlt', 'lsu']):
             type_enforcement = 'TELEHANDLER: four-wheeled construction/agricultural equipment with telescopic boom, large wheels, robust chassis, industrial proportions. NOT a passenger car, NOT a truck - this is HEAVY-DUTY EQUIPMENT with boom and large wheels.'
-            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
+            type_details_prompt = 'Show telescopic boom extended from a robust chassis with oversized tires suitable for construction sites.'
+            type_emphasis = 'CRITICAL TYPE REQUIREMENT: Telehandler with telescopic boom and oversized industrial wheels. '
         elif brand_lower in excavator_brands or any(word in brand_lower for word in ['jcb', 'cat', 'caterpillar', 'komatsu']):
             type_enforcement = 'HYDRAULIC EXCAVATOR: tracked undercarriage with metal tracks, rotating upper structure (cab), articulated boom arm with bucket attachment, construction equipment proportions, industrial yellow/orange color scheme typical for construction machinery. NOT a passenger car, NOT a truck, NOT a bus - this is HEAVY CONSTRUCTION EQUIPMENT with tracks and excavator arm.'
-            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV, NOT a truck cabin'
+            type_details_prompt = 'Depict industrial color palette, hydraulic cylinders and bucket action over earthmoving environment.'
+            if not type_emphasis:
+                type_emphasis = 'CRITICAL TYPE REQUIREMENT: Heavy construction excavator with tracks and hydraulic boom. '
         elif brand_lower in loader_brands:
             if 'backhoe' in model_lower:
                 type_enforcement = 'BACKHOE LOADER: four-wheeled construction vehicle with front bucket loader and rear excavator arm, construction equipment design, industrial proportions. NOT a passenger car.'
-                type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
+                type_details_prompt = 'Show dual attachments: front loader bucket and rear excavator arm positioned on sturdy construction chassis.'
+                type_emphasis = 'CRITICAL TYPE REQUIREMENT: Backhoe loader with front bucket and rear excavator arm. '
             else:
                 type_enforcement = 'WHEEL LOADER: large front bucket, articulated steering frame, four large construction wheels, heavy-duty construction equipment proportions. NOT a passenger car.'
-                type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
+                type_details_prompt = 'Emphasize articulated middle hinge, oversized wheels and raised front bucket ready for loading.'
+                type_emphasis = 'CRITICAL TYPE REQUIREMENT: Wheel loader with articulated frame and raised bucket. '
         elif brand_lower in crane_brands:
             type_enforcement = 'MOBILE CRANE: telescopic boom, counterweights, outriggers, crane proportions, construction/industrial design. NOT a passenger car.'
-            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
+            type_details_prompt = 'Illustrate extended telescopic boom with counterweights, stabilizing outriggers and industrial worksite.'
+            type_emphasis = 'CRITICAL TYPE REQUIREMENT: Mobile crane with telescopic boom and stabilizing outriggers. '
         elif brand_lower in telehandler_brands or 'manitou' in brand_lower:
             type_enforcement = 'TELEHANDLER: four-wheeled construction/agricultural equipment with telescopic boom, large wheels, robust chassis, industrial proportions. NOT a passenger car, NOT a truck - this is HEAVY-DUTY EQUIPMENT with boom and large wheels.'
-            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
+            type_details_prompt = 'Capture high ground clearance, agricultural tires and boom carriage lifting materials.'
+            type_emphasis = 'CRITICAL TYPE REQUIREMENT: Telescopic handler with boom carriage and high ground clearance. '
         else:
             # Generic construction/agricultural equipment - КРИТИЧНО: явно указываем, что это НЕ легковой автомобиль
             type_enforcement = (
@@ -1000,10 +1046,19 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
                 f'CRITICAL: This is {brand} {model} - HEAVY MACHINERY, NOT a passenger car, NOT a sedan, NOT an SUV, NOT a truck cabin. '
                 f'This must have industrial/construction equipment appearance with tracks, large wheels, or heavy attachments.'
             )
-            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV, NOT a truck cabin, NOT a bus, NOT any road vehicle - this is HEAVY MACHINERY'
+            type_details_prompt = 'Show industrial-grade hydraulics, protective cages and rugged attachments operating in a construction or agricultural setting.'
+            type_emphasis = 'CRITICAL TYPE REQUIREMENT: Heavy industrial machinery with rugged attachments and large wheels/tracks. '
+    elif vt == 'boat':
+        type_enforcement = (
+            'Watercraft boat on water with visible hull and deck, maritime environment, reflections on water, '
+            'no wheels, appropriate marine equipment (rails, cabin or open deck)'
+        )
+        type_details_prompt = 'Depict the vessel floating on water with wake trails, reflective surface and nautical fittings such as rails or canopy.'
+        type_emphasis = 'CRITICAL TYPE REQUIREMENT: Watercraft operating on water with hull and marine fittings, absolutely no wheels.'
     else:
         type_enforcement = 'Passenger car proportions'
-        type_negation = ''
+        type_details_prompt = 'Present balanced passenger car stance with clear body lines and studio-grade lighting.'
+        type_emphasis = 'CRITICAL TYPE REQUIREMENT: Passenger car with balanced automotive proportions.'
 
     # 🚨 STRICT BRANDING CONTROL: Prevent incorrect badge assignments
     # Check if brand matches vehicle type to avoid wrong badges (e.g., Mercedes on Atlas)
@@ -1201,31 +1256,35 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     brand_lower_clean = brand_lower.strip()
     is_known_brand = brand_lower_clean in known_brands or any(brand_lower_clean.startswith(b) for b in known_brands)
     
-    # Явные инструкции о правильном бренде
-    if is_known_brand:
-        # Для известных брендов - явно указываем правильный логотип
-        brand_enforcement = (
-            f"CRITICAL BRANDING REQUIREMENT: This vehicle MUST display ONLY {brand} brand logos, badges, and emblems. "
-            f"The front grille MUST show authentic {brand} brand emblem. "
-            f"All visible badges, logos, and text MUST belong to {brand} brand ONLY. "
-        )
-        if model:
-            brand_enforcement += f"Model name '{model}' should be visible on rear or side if typical for {brand} vehicles. "
-        brand_enforcement += (
-            f"DO NOT use any other brand logos (Toyota, BMW, Mercedes, VW, etc.) - ONLY {brand} branding is correct. "
-            f"Use authentic {brand} design language: characteristic grille shape, headlight design, and styling cues typical for {brand} vehicles."
-        )
+    non_car_types = {'trailer', 'special', 'boat'}
+
+    if vt in non_car_types:
+        if is_known_brand:
+            brand_enforcement = (
+                f"CRITICAL BRANDING REQUIREMENT: Apply authentic {brand} industrial livery, identification plates and color scheme appropriate for {vt}. "
+                f"Place {brand} markings on chassis/hull surfaces without introducing passenger-car grilles or badges. "
+            )
+        else:
+            brand_enforcement = (
+                f"CRITICAL: This is {brand} {model} {vt}. Use neutral finish with optional {brand} lettering or decals suited for {vt}. "
+                f"Maintain clean {color} surfaces and avoid unrelated automotive branding. "
+            )
     else:
-        # Для неизвестных брендов - используем пустые зоны, но явно указываем бренд
-        brand_enforcement = (
-            f"CRITICAL: This is {brand} {model} vehicle. "
-            f"DO NOT use logos from other brands (Toyota, BMW, Mercedes, VW, Honda, etc.). "
-            f"If uncertain about {brand} logo design, use generic styling with {brand} brand characteristics: "
-            f"1. FRONT GRILLE: design appropriate for {brand} brand style, no other brand logos. "
-            f"2. HOOD CENTER: clean surface matching body color ({color}), no incorrect brand emblems. "
-            f"3. REAR: smooth surface, no wrong brand lettering. "
-            f"Focus on {brand} brand design language and proportions, not logos from other manufacturers."
-        )
+        if is_known_brand:
+            brand_enforcement = (
+                f"CRITICAL BRANDING REQUIREMENT: This vehicle MUST display ONLY {brand} brand logos, badges, and emblems. "
+                f"All visible branding MUST belong exclusively to {brand}. "
+            )
+            if model:
+                brand_enforcement += f"Model name '{model}' should be placed where authentic for {brand}. "
+            brand_enforcement += (
+                f"Use authentic {brand} design language: characteristic lighting, surfacing and styling cues typical for {brand}."
+            )
+        else:
+            brand_enforcement = (
+                f"CRITICAL: This is {brand} {model}. Keep branding neutral if uncertain, but avoid any other manufacturer logos. "
+                f"Use {color} exterior and body styling consistent with {brand}. "
+            )
     
     print(f"[ImageGen] ✅ BRAND ENFORCEMENT: {brand} {model} - {'Known brand' if is_known_brand else 'Unknown brand, using generic styling'}")
     
@@ -1285,8 +1344,6 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         f"headlights, taillights, wheels, overall silhouette. "
         f"Professional automotive photography style."
     )
-
-    negatives = ", ".join(global_negatives + ([type_negation] if type_negation else []))
 
     # Собираем информацию о состоянии и особенностях автомобиля
     condition_details = []
@@ -1456,8 +1513,11 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     )
     
     # Для спецтехники добавляем явный запрет легковых автомобилей
-    if vt == 'special' and type_negation:
-        final_prompt += f" {type_negation}."
+    if type_emphasis:
+        final_prompt = type_emphasis + final_prompt
+
+    if type_details_prompt:
+        final_prompt += f" {type_details_prompt}"
 
     # Log branding decision for debugging
     print(f"[ImageGen] 🏷️ BRAND ENFORCEMENT for {brand} {model} ({vt}): {'Known brand - explicit logo' if is_known_brand else 'Unknown brand - design focus'}")

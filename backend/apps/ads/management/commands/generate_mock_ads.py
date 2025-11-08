@@ -856,15 +856,29 @@ class Command(BaseCommand):
         """Build canonical car data same as frontend."""
         # Map Ukrainian vehicle types to English (same as frontend mapping)
         vehicle_type_mapping = {
-            'Легкові': 'car',
-            'Мото': 'motorcycle',
-            'Вантажівки': 'truck',
-            'Автобуси': 'bus',
-            'Спецтехніка': 'special',
-            'Причепи': 'trailer',
-            'Сільгосптехніка': 'special',
-            'Водний транспорт': 'boat'
+            'легкові': 'car',
+            'легковые': 'car',
+            'мото': 'motorcycle',
+            'мотоцикли': 'motorcycle',
+            'вантажівки': 'truck',
+            'грузовые': 'truck',
+            'автобуси': 'bus',
+            'автобусы': 'bus',
+            'спецтехніка': 'special',
+            'спецтехника': 'special',
+            'причепи': 'trailer',
+            'прицепы': 'trailer',
+            'сільгосптехніка': 'special',
+            'сельхозтехника': 'special',
+            'водний транспорт': 'boat',
+            'водный транспорт': 'boat'
         }
+
+        vt_key = (vehicle_type or '').strip().lower()
+        normalized_vt = vehicle_type_mapping.get(vt_key)
+        if not normalized_vt:
+            self.stdout.write(f"⚠️ Unknown vehicle type '{vehicle_type}' in canonical builder - leaving vehicle_type unchanged")
+            normalized_vt = vt_key or ''
 
         return {
             'brand': mark_name,
@@ -872,7 +886,7 @@ class Command(BaseCommand):
             'year': specs['year'],
             'color': specs['color'],
             'body_type': specs.get('body_type', 'sedan'),
-            'vehicle_type': vehicle_type_mapping.get(vehicle_type, 'car'),
+            'vehicle_type': normalized_vt,
             'vehicle_type_name': vehicle_type,  # Keep original for context
             'condition': specs['condition'],
             'description': f"{mark_name} {model_name} {specs['year']} {specs['color']} in excellent condition"
@@ -967,62 +981,127 @@ class Command(BaseCommand):
         current_year = datetime.now().year
         year = random.randint(2010, current_year)
 
-        # Base specifications that vary by vehicle type
-        if vehicle_type == 'Мото':
-            # Motorcycle specifications
+        colors = ['Чорний', 'Білий', 'Сірий', 'Синій', 'Червоний', 'Зелений', 'Срібний']
+        vehicle_type_lower = vehicle_type.lower()
+
+        def adjust_price(base):
+            age_factor = max(0.45, 1 - (current_year - year) * 0.1)
+            return int(base * age_factor)
+
+        if vehicle_type_lower in ['мото', 'мотоцикли']:
             mileage = random.randint(1000, 50000)
-            specs = {
+            price = adjust_price(random.randint(80000, 450000))
+            return {
                 'year': year,
                 'mileage': mileage,
-                'engine_volume': round(random.uniform(0.1, 1.8), 1),
-                'engine_power': random.randint(15, 200),
-                'fuel_type': random.choice(['petrol']),
+                'engine_volume': round(random.uniform(0.1, 1.2), 1),
+                'engine_power': random.randint(20, 150),
+                'fuel_type': 'petrol',
                 'transmission': random.choice(['manual', 'automatic']),
-                'body_type': random.choice(['sport', 'cruiser', 'touring', 'naked', 'enduro']),
-                'color': random.choice(['black', 'white', 'red', 'blue', 'yellow', 'green']),
-                'condition': 'new' if mileage < 5000 else 'used',  # Автоматическое определение состояния
+                'drive_type': 'chain',
+                'body_type': random.choice(['sport', 'cruiser', 'touring', 'enduro', 'naked']),
+                'color': random.choice(colors),
+                'condition': 'new' if mileage < 4000 else 'used',
                 'owners_count': random.randint(1, 3),
-                'price': random.randint(2000, 25000)
+                'price': price
             }
-        elif vehicle_type == 'Вантажівки':
-            # Truck specifications
-            mileage = random.randint(50000, 500000)
-            specs = {
+
+        if vehicle_type_lower in ['вантажівки', 'грузовые']:
+            mileage = random.randint(40000, 400000)
+            price = adjust_price(random.randint(600000, 2800000))
+            return {
                 'year': year,
                 'mileage': mileage,
-                'engine_volume': round(random.uniform(2.0, 15.0), 1),
-                'engine_power': random.randint(150, 600),
-                'fuel_type': random.choice(['diesel', 'petrol']),
+                'engine_volume': round(random.uniform(4.5, 12.5), 1),
+                'engine_power': random.randint(220, 620),
+                'fuel_type': 'diesel',
                 'transmission': random.choice(['manual', 'automatic']),
-                'body_type': random.choice(['box', 'flatbed', 'tanker', 'refrigerated', 'dump']),
+                'drive_type': random.choice(['rear', 'all']),
+                'body_type': random.choice(['box truck', 'flatbed truck', 'tanker', 'dump truck', 'refrigerated truck']),
                 'color': random.choice(['white', 'blue', 'red', 'yellow', 'gray']),
-                'condition': 'new' if mileage < 5000 else 'used',  # Автоматическое определение состояния
-                'owners_count': random.randint(1, 5),
-                'price': random.randint(15000, 150000)
-            }
-        else:
-            # Default car specifications (Легкові)
-            mileage = random.randint(5000, 200000)
-            specs = {
-                'year': year,
-                'mileage': mileage,
-                'engine_volume': round(random.uniform(1.0, 4.0), 1),
-                'engine_power': random.randint(100, 500),
-                'fuel_type': random.choice(['petrol', 'diesel', 'hybrid', 'electric']),
-                'transmission': random.choice(['manual', 'automatic', 'cvt']),
-                'drive_type': random.choice(['front', 'rear', 'all']),
-                'body_type': random.choice(['sedan', 'hatchback', 'suv', 'coupe', 'wagon']),
-                'color': random.choice(['black', 'white', 'silver', 'red', 'blue', 'gray']),
-                'condition': 'new' if mileage < 5000 else 'used',  # Автоматическое определение состояния
+                'condition': 'new' if mileage < 10000 else 'used',
                 'owners_count': random.randint(1, 4),
-                'price': random.randint(8000, 80000)
+                'load_capacity_kg': random.randint(3000, 32000),
+                'price': price
             }
 
-        # Adjust price by year for all vehicle types
-        age_factor = max(0.5, 1 - (current_year - year) * 0.1)
-        specs['price'] = int(specs['price'] * age_factor)
+        if vehicle_type_lower in ['причепи', 'прицепы']:
+            price = adjust_price(random.randint(230000, 900000))
+            return {
+                'year': year,
+                'mileage': 0,
+                'engine_volume': 0,
+                'engine_power': 0,
+                'fuel_type': 'без двигуна',
+                'transmission': 'без трансмісії',
+                'drive_type': 'без приводу',
+                'body_type': random.choice(['flatbed trailer', 'box cargo trailer', 'tanker trailer', 'car hauler trailer']),
+                'color': random.choice(colors),
+                'condition': random.choice(['excellent', 'good']),
+                'owners_count': random.randint(1, 2),
+                'axles': random.choice([1, 2, 3]),
+                'load_capacity_kg': random.randint(1500, 26000),
+                'length_m': round(random.uniform(4.5, 13.8), 1),
+                'brakes': random.choice(['інерційні', 'пневматичні', 'гідравлічні']),
+                'price': price
+            }
 
-        return specs
+        if vehicle_type_lower in ['водний транспорт']:
+            price = adjust_price(random.randint(550000, 2600000))
+            return {
+                'year': year,
+                'mileage': 0,
+                'engine_volume': round(random.uniform(1.5, 6.0), 1),
+                'engine_power': random.randint(80, 450),
+                'fuel_type': random.choice(['бензин', 'дизель', 'електро']),
+                'transmission': 'морський редуктор',
+                'drive_type': random.choice(['підвісний мотор', 'водомет', 'внутрішньобортовий']),
+                'body_type': random.choice(['speedboat', 'fishing boat', 'sailboat', 'yacht']),
+                'color': random.choice(colors),
+                'condition': random.choice(['excellent', 'good']),
+                'owners_count': random.randint(1, 2),
+                'hull_material': random.choice(['алюміній', 'склопластик', 'сталь']),
+                'length_m': round(random.uniform(4.8, 12.5), 1),
+                'seats': random.randint(4, 10),
+                'price': price
+            }
+
+        if vehicle_type_lower in ['спецтехніка', 'сільгосптехніка']:
+            price = adjust_price(random.randint(750000, 3200000))
+            return {
+                'year': year,
+                'mileage': random.randint(2000, 80000),
+                'engine_volume': round(random.uniform(3.0, 12.0), 1),
+                'engine_power': random.randint(120, 450),
+                'fuel_type': 'дизель',
+                'transmission': random.choice(['гідростатична', 'автоматична']),
+                'drive_type': random.choice(['повний', 'задній']),
+                'body_type': random.choice(['hydraulic excavator', 'wheel loader', 'mobile crane', 'bulldozer', 'telehandler']),
+                'color': random.choice(colors),
+                'condition': random.choice(['excellent', 'good']),
+                'owners_count': random.randint(1, 3),
+                'hours_worked': random.randint(500, 9000),
+                'attachments': random.choice(['ковш', 'щітка', 'бур', 'вилковий захват', 'грейфер']),
+                'price': price
+            }
+
+        # Default passenger vehicle
+        mileage = random.randint(5000, 200000)
+        price = adjust_price(random.randint(180000, 1500000))
+        return {
+            'year': year,
+            'mileage': mileage,
+            'engine_volume': round(random.uniform(1.0, 4.0), 1),
+            'engine_power': random.randint(100, 420),
+            'fuel_type': random.choice(['petrol', 'diesel', 'hybrid', 'electric']),
+            'transmission': random.choice(['manual', 'automatic', 'cvt']),
+            'drive_type': random.choice(['front', 'rear', 'all']),
+            'body_type': random.choice(['sedan', 'hatchback', 'suv', 'coupe', 'wagon']),
+            'color': random.choice(colors),
+            'condition': 'new' if mileage < 8000 else 'used',
+            'owners_count': random.randint(1, 3),
+            'price': price
+        }
 
     def generate_llm_content(self, mark, model, specs, vehicle_type):
         """Generate title and description using LLM."""
@@ -1032,27 +1111,42 @@ class Command(BaseCommand):
                 'Легкові': 'car',
                 'Мото': 'motorcycle',
                 'Вантажівки': 'truck',
+                'Автобуси': 'bus',
+                'Причепи': 'trailer',
+                'Спецтехніка': 'heavy equipment',
+                'Сільгосптехніка': 'agricultural machinery',
                 'Водний транспорт': 'boat'
             }.get(vehicle_type, 'vehicle')
 
+            critical_block = (
+                "CRITICAL PROMPT: All specifications provided must remain internally consistent. "
+                "If the vehicle type implies no engine or transmission (e.g., trailers), explicitly state that and avoid describing non-existent components. "
+                "Ensure drivetrain, fuel type, and attachments match the vehicle type. "
+                "Maintain Ukrainian language output. "
+            )
+
             prompt = f"""
+            {critical_block}
+
             Generate a realistic {vehicle_type_text} advertisement for a {mark} {model} {specs['year']} with the following specifications:
-            - Mileage: {specs['mileage']} km
-            - Engine: {specs['engine_volume']}L, {specs['engine_power']} HP
-            - Fuel: {specs['fuel_type']}
-            - Transmission: {specs['transmission']}
-            - Color: {specs['color']}
-            - Condition: {specs['condition']}
+            - Mileage: {specs.get('mileage', 0)} km
+            - Engine volume: {specs.get('engine_volume', 0)} L
+            - Engine power: {specs.get('engine_power', 0)} HP
+            - Fuel: {specs.get('fuel_type', 'none')}
+            - Transmission: {specs.get('transmission', 'none')}
+            - Drive type: {specs.get('drive_type', 'N/A')}
+            - Body/configuration: {specs.get('body_type', 'N/A')}
+            - Color: {specs.get('color', 'N/A')}
+            - Condition: {specs.get('condition', 'N/A')}
             - Price: ${specs['price']}
 
             Please provide:
-            1. A compelling title (max 80 characters)
-            2. A detailed description (100-300 words) in Ukrainian language
+            1. A compelling title (≤ 80 characters).
+            2. A detailed description (120-280 words) in Ukrainian that emphasises the correct vehicle type, its real-world use, and condition.
 
-            Format as JSON: {{"title": "...", "description": "..."}}
+            Format strictly as JSON: {{"title": "...", "description": "..."}}
             """
 
-            # Use LLM service to generate content
             response = LLMService.generate_content(prompt)
 
             if response and 'title' in response and 'description' in response:
