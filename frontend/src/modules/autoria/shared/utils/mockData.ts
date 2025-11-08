@@ -222,7 +222,7 @@ const MOCK_DATA = {
 /**
  * Нормализует тип транспорта к ключу из VEHICLE_TYPE_SPECS
  */
-function normalizeVehicleType(vehicleTypeName: string): string {
+export function normalizeVehicleType(vehicleTypeName: string): string | null {
   const normalized = vehicleTypeName.toLowerCase().trim();
 
   // Маппинг различных названий к стандартным ключам

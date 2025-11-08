@@ -98,21 +98,13 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
     fetchStats(true); // Принудительное обновление с очисткой кеша
   }, [fetchStats]);
 
-  // Автоматическое обновление каждую минуту
+  // Загружаем данные только при монтировании компонента (без периодических обновлений)
   useEffect(() => {
     // Загружаем данные при монтировании компонента
     fetchStats();
 
-    // Устанавливаем интервал для автоматического обновления каждую минуту
-    const interval = setInterval(() => {
-      console.log('[PlatformStatsWidget] ⏰ Auto-refreshing statistics...');
-      fetchStats();
-    }, 60000); // 60 секунд
-
-    // Очищаем интервал при размонтировании
-    return () => {
-      clearInterval(interval);
-    };
+    // ❌ УБРАНО: Автоматическое обновление каждую минуту - лишняя нагрузка на систему
+    // Обновление происходит только при полной перезагрузке страницы или ручном обновлении
   }, [fetchStats]);
 
   const getDataSourceInfo = () => {

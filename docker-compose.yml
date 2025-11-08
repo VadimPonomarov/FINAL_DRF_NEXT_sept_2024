@@ -43,6 +43,16 @@ services:
         python manage.py init_project_data --force &&
         echo '📁 Collecting static files...' &&
         python manage.py collectstatic --noinput --clear &&
+        echo '📦 Checking test ads...' &&
+        python -c '
+          from apps.ads.models import CarAd;
+          count = CarAd.objects.filter(status="active").count();
+          import sys;
+          sys.exit(0 if count >= 10 else 1);
+        ' && echo '✅ Test ads already exist (count >= 10)' ||
+        (echo '🚀 Generating test ads (count < 10)...' &&
+         python manage.py generate_test_ads_with_images --count=10 --with-images --image-types=front,side,rear &&
+         echo '✅ Test ads generated') &&
         echo '🎉 Application setup complete!' &&
         daphne -b 0.0.0.0 -p 8000 config.asgi:application
       "
@@ -57,7 +67,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./pg/data:/var/lib/postgresql/data  # Local data directory
+      # IMPORTANT: Use named volume instead of local directory
+      # This ensures data persistence even if ./pg/data is deleted
+      - postgres-data:/var/lib/postgresql/data
+      # Alternative: uncomment below to use local directory
+      # - ./pg/data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-autoria_db} || exit 1"]
@@ -306,6 +320,14 @@ services:
       retries: 3
       start_period: 40s
 
+  # =============================================================================
+  # MAILING SERVICE (FastAPI + RabbitMQ Consumer)
+  # =============================================================================
+  # NOTE: This service runs BOTH:
+  # 1. FastAPI server on port 8001 (for health checks and API)
+  # 2. RabbitMQ consumer (for processing email queue)
+  # Both are started by src/app.py using asyncio lifespan events
+  #
   mailing:
     build:
       context: ./mailing
@@ -364,7 +386,8 @@ services:
 
 
 volumes:
-  # postgres-data: removed - using local directory ./pg/data
+  # PostgreSQL data - named volume for persistence
+  postgres-data:
   redis-data:
   rabbitmq-data:
   redis-insight:

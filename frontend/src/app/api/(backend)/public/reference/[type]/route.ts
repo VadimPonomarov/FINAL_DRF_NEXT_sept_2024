@@ -96,30 +96,104 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
-    const doRequest = async (authorization?: string) => {
+    // Add timeout to prevent hanging requests
+    const FETCH_TIMEOUT_MS = 30000; // 30 seconds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    const doRequest = async (authorization?: string, signal?: AbortSignal) => {
       return fetch(djangoUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           ...(authorization ? { 'Authorization': authorization } : {}),
         },
-        cache: 'no-store'
+        cache: 'no-store',
+        signal: signal || controller.signal,
       });
     };
 
-    let response = await doRequest(authHeader || undefined);
+    let response: Response;
+    try {
+      response = await doRequest(authHeader || undefined);
+      clearTimeout(timeoutId);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      // If request was aborted due to timeout, return 504
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`❌ PUBLIC REFERENCE API: Request timeout: ${djangoUrl}`);
+        return NextResponse.json(
+          { 
+            error: 'Gateway Timeout', 
+            message: 'Backend request timed out',
+            success: false 
+          },
+          { status: 504 }
+        );
+      }
+      
+      // Re-throw other errors to be handled by outer catch
+      throw error;
+    }
 
     // При 401 пробуем авто-рефреш токена и повторяем 1 раз
     if (response.status === 401) {
       console.warn('🔁 PUBLIC REFERENCE API: 401 from Django, trying to refresh token...');
       try {
-        const refreshRes = await fetch(`${request.nextUrl.origin}/api/auth/refresh`, { method: 'POST', cache: 'no-store' });
-        if (refreshRes.ok) {
-          const tokenRes = await fetch(`${request.nextUrl.origin}/api/auth/token`, { cache: 'no-store' });
-          if (tokenRes.ok) {
-            const tokenData = await tokenRes.json();
-            const newAuth = tokenData?.access ? `Bearer ${tokenData.access}` : undefined;
-            response = await doRequest(newAuth);
+        const refreshController = new AbortController();
+        const refreshTimeoutId = setTimeout(() => refreshController.abort(), 5000); // 5 seconds for refresh
+        
+        try {
+          const refreshRes = await fetch(`${request.nextUrl.origin}/api/auth/refresh`, { 
+            method: 'POST', 
+            cache: 'no-store',
+            signal: refreshController.signal,
+          });
+          clearTimeout(refreshTimeoutId);
+          
+          if (refreshRes.ok) {
+            const tokenController = new AbortController();
+            const tokenTimeoutId = setTimeout(() => tokenController.abort(), 5000);
+            
+            try {
+              const tokenRes = await fetch(`${request.nextUrl.origin}/api/auth/token`, { 
+                cache: 'no-store',
+                signal: tokenController.signal,
+              });
+              clearTimeout(tokenTimeoutId);
+              
+              if (tokenRes.ok) {
+                const tokenData = await tokenRes.json();
+                const newAuth = tokenData?.access ? `Bearer ${tokenData.access}` : undefined;
+                
+                // Retry with new token (use new controller for retry)
+                const retryController = new AbortController();
+                const retryTimeoutId = setTimeout(() => retryController.abort(), FETCH_TIMEOUT_MS);
+                
+                try {
+                  response = await doRequest(newAuth, retryController.signal);
+                  clearTimeout(retryTimeoutId);
+                } catch (retryError) {
+                  clearTimeout(retryTimeoutId);
+                  // If retry also times out, continue with original 401 response
+                  if (retryError instanceof Error && retryError.name === 'AbortError') {
+                    console.error(`❌ PUBLIC REFERENCE API: Retry request timeout: ${djangoUrl}`);
+                  }
+                }
+              }
+            } catch (tokenError) {
+              clearTimeout(tokenTimeoutId);
+              if (tokenError instanceof Error && tokenError.name === 'AbortError') {
+                console.error(`❌ PUBLIC REFERENCE API: Token fetch timeout`);
+              }
+            }
+          }
+        } catch (refreshError) {
+          clearTimeout(refreshTimeoutId);
+          // If refresh times out, continue with original 401 response
+          if (refreshError instanceof Error && refreshError.name === 'AbortError') {
+            console.error(`❌ PUBLIC REFERENCE API: Token refresh timeout`);
           }
         }
       } catch (e) {
@@ -238,3 +312,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     );
   }
 }
+
+// Increase max duration for this route to handle slow backend responses
+export const maxDuration = 60; // 60 seconds

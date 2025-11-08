@@ -33,31 +33,74 @@ export async function GET(request: NextRequest, { params }: { params: { rest: st
     console.log('[Reference Shim] Routing via internal proxy:', target);
   }
 
-  const resp = await fetch(target, {
-    headers: { 'Content-Type': 'application/json' },
-    cache: 'no-store',
-  });
+  // Add timeout to prevent hanging requests
+  const FETCH_TIMEOUT_MS = 30000; // 30 seconds
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-  const text = await resp.text();
-  const contentType = resp.headers.get('Content-Type') || 'application/json';
-
-  // Cache only successful responses
-  if (resp.ok) {
-    referenceCache.set(target, {
-      body: text,
-      contentType,
-      status: resp.status,
-      expiresAt: now + CACHE_TTL_MS,
+  try {
+    const resp = await fetch(target, {
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      signal: controller.signal,
     });
-  }
 
-  return new NextResponse(text, {
-    status: resp.status,
-    headers: {
-      'Content-Type': contentType,
-      'Cache-Control': resp.ok
-        ? 'public, max-age=300, s-maxage=300, stale-while-revalidate=60'
-        : 'no-store',
-    },
-  });
+    clearTimeout(timeoutId);
+
+    const text = await resp.text();
+    const contentType = resp.headers.get('Content-Type') || 'application/json';
+
+    // Cache only successful responses
+    if (resp.ok) {
+      referenceCache.set(target, {
+        body: text,
+        contentType,
+        status: resp.status,
+        expiresAt: now + CACHE_TTL_MS,
+      });
+    }
+
+    return new NextResponse(text, {
+      status: resp.status,
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': resp.ok
+          ? 'public, max-age=300, s-maxage=300, stale-while-revalidate=60'
+          : 'no-store',
+      },
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    
+    // If request was aborted due to timeout, return 504
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('[Reference Shim] Request timeout:', target);
+      return new NextResponse(
+        JSON.stringify({ error: 'Gateway Timeout', message: 'Request timed out' }),
+        {
+          status: 504,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+          },
+        }
+      );
+    }
+    
+    // Other errors
+    console.error('[Reference Shim] Request error:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal Server Error', message: error instanceof Error ? error.message : 'Unknown error' }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      }
+    );
+  }
 }
+
+// Increase max duration for this route to handle slow backend responses
+export const maxDuration = 60; // 60 seconds

@@ -627,7 +627,7 @@ class Command(BaseCommand):
 
         # Initialize ChatAI for image generation
         try:
-            chat_ai = ChatAI("flux-schnell")
+            chat_ai = ChatAI("flux")
         except Exception:
             # Fallback to placeholder images if AI generation fails
             self._create_placeholder_images(car_ads)

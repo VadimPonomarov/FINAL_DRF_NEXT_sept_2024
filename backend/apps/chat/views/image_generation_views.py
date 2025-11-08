@@ -141,7 +141,7 @@ def create_reference_instruction(brand: str, model: str, year: int, reference_ur
 @swagger_auto_schema(
     method='post',
     operation_summary="🎨 Generate AI Image",
-    operation_description="Generate image using AI models (g4f flux). Supports various image generation prompts with enhanced quality.",
+    operation_description="Generate image using AI models (g4f FLUX). Supports various image generation prompts with enhanced quality.",
     tags=['🤖 AI Services'],
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
@@ -155,8 +155,8 @@ def create_reference_instruction(brand: str, model: str, year: int, reference_ur
             'model': openapi.Schema(
                 type=openapi.TYPE_STRING,
                 description='AI model to use',
-                default='flux-schnell',
-                example='flux-schnell'
+                default='flux',
+                example='flux'
             ),
             'quality': openapi.Schema(
                 type=openapi.TYPE_STRING,
@@ -186,12 +186,12 @@ def create_reference_instruction(brand: str, model: str, year: int, reference_ur
 @permission_classes([AllowAny])
 def generate_image(request):
     """
-    Generate image using g4f flux-schnell model
+    Generate image using g4f FLUX model
     """
     try:
         data = request.data
         prompt = data.get('prompt')
-        model = data.get('model', 'flux')
+        model = data.get('model', 'flux')  # Use original FLUX, not flux-schnell
         quality = data.get('quality', 'standard')
 
         if not prompt:
@@ -543,21 +543,35 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
         mock_cmd = MockCommand()
 
         # Build canonical car data using the same logic as mock command
+        # КРИТИЧНО: НЕ ИСПОЛЬЗУЕМ fallback на 'car' - требуем реальный vehicle_type_name
+        vehicle_type_name = car_data.get('vehicle_type_name')
+        if not vehicle_type_name:
+            logger.error(f"❌ [mock_algorithm] vehicle_type_name is REQUIRED but not provided!")
+            logger.error(f"❌ [mock_algorithm] car_data keys: {list(car_data.keys())}")
+            logger.error(f"❌ [mock_algorithm] car_data: {car_data}")
+            return JsonResponse({
+                'success': False,
+                'error': 'vehicle_type_name is required for image generation. Cannot generate images without knowing vehicle type.',
+                'details': 'Please provide vehicle_type_name in car_data (e.g., "Легкові", "Вантажівки", etc.)'
+            }, status=400)
+        
+        logger.info(f"✅ [mock_algorithm] Using vehicle_type_name: {vehicle_type_name}")
+        
         # Ensure all required fields are present
         specs = {
             'year': car_data.get('year', 2020),
             'color': car_data.get('color', 'silver'),
             'body_type': car_data.get('body_type', 'sedan'),
-            'condition': car_data.get('condition', 'good'),  # Add missing condition field
-            'vehicle_type': car_data.get('vehicle_type', 'car'),
-            'vehicle_type_name': car_data.get('vehicle_type_name', 'car')
+            'condition': car_data.get('condition', 'good'),
+            'vehicle_type': car_data.get('vehicle_type', vehicle_type_name.lower()),  # English version as fallback
+            'vehicle_type_name': vehicle_type_name  # Original name (REQUIRED!)
         }
 
         canonical_data = mock_cmd._build_canonical_car_data(
             car_data.get('brand', ''),
             car_data.get('model', ''),
             specs,  # specs with all required fields
-            car_data.get('vehicle_type', 'car')
+            vehicle_type_name  # Use the validated vehicle_type_name (NO FALLBACK!)
         )
 
         # Create session ID for consistency (БЕЗ времени для стабильности)
@@ -569,12 +583,17 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
         logger.info(f"🔗 [mock_algorithm] Session ID: CAR-{car_session_id}")
         logger.info(f"📊 [mock_algorithm] Canonical data: {canonical_data}")
 
-        # Generate images using the mock algorithm
-        generated_images = []
+        # Generate images using the mock algorithm - ASYNC PARALLEL GENERATION
+        import concurrent.futures
+        import os
+        from openai import OpenAI
+        import urllib.parse
 
-        for index, angle in enumerate(angles):
+        def generate_single_image(angle_index_tuple):
+            """Generate a single image for given angle - designed for parallel execution"""
+            index, angle = angle_index_tuple
             try:
-                logger.info(f"🔄 [mock_algorithm] Generating image {index + 1}/{len(angles)} for angle: {angle}")
+                logger.info(f"🔄 [mock_algorithm] Starting parallel generation for angle: {angle} ({index + 1}/{len(angles)})")
 
                 # Create prompt using our improved algorithm (NOT mock algorithm)
                 prompt = create_car_image_prompt(canonical_data, angle, style, car_session_id)
@@ -583,9 +602,6 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 english_prompt = prompt
 
                 # Generate image using OpenAI DALL-E 3
-                import os
-                from openai import OpenAI
-
                 try:
                     # Initialize OpenAI client
                     api_key = os.getenv('OPENAI_API_KEY')
@@ -617,15 +633,16 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                     logger.error(f"❌ [DALL-E] Error generating image for {angle}: {e}")
                     # Fallback to pollinations.ai if DALL-E fails
                     logger.info(f"🔄 [DALL-E] Falling back to pollinations.ai")
-                    import urllib.parse
                     enhanced_prompt = f"{english_prompt}. NEGATIVE: cartoon, anime, drawing, sketch, low quality, blurry, distorted, multiple vehicles, people, text, watermarks"
                     encoded_prompt = urllib.parse.quote(enhanced_prompt)
                     session_id = canonical_data.get('session_id', 'DEFAULT')
-                    seed = abs(hash(session_id)) % 1000000
+                    seed = abs(hash(f"{session_id}_{angle}")) % 1000000
                     image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&model=flux&enhance=true&seed={seed}&nologo=true"
                     logger.info(f"🔗 [Pollinations] Fallback URL for {angle}: {image_url[:100]}...")
 
                 # Create image object
+                session_id = canonical_data.get('session_id', 'DEFAULT')
+                seed = abs(hash(f"{session_id}_{angle}")) % 1000000
                 image_obj = {
                     'url': image_url,
                     'angle': angle,
@@ -636,15 +653,42 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                     'session_id': session_id
                 }
 
-                generated_images.append(image_obj)
-
-                logger.info(f"✅ [mock_algorithm] Generated {angle} image with seed {seed} (total: {len(generated_images)})")
+                logger.info(f"✅ [mock_algorithm] Generated {angle} image with seed {seed}")
+                return image_obj
 
             except Exception as e:
                 logger.error(f"❌ [mock_algorithm] Error generating {angle} image: {e}")
                 import traceback
                 logger.error(f"❌ [mock_algorithm] Traceback: {traceback.format_exc()}")
-                continue
+                return None
+
+        # Execute all image generations in parallel
+        logger.info(f"🚀 [mock_algorithm] Starting parallel generation for {len(angles)} angles")
+        generated_images = []
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(angles), 5)) as executor:
+            # Submit all tasks
+            future_to_angle = {
+                executor.submit(generate_single_image, (i, angle)): angle 
+                for i, angle in enumerate(angles)
+            }
+            
+            # Collect results as they complete
+            for future in concurrent.futures.as_completed(future_to_angle):
+                angle = future_to_angle[future]
+                try:
+                    result = future.result()
+                    if result:
+                        generated_images.append(result)
+                        logger.info(f"✅ [mock_algorithm] Completed {angle} (total: {len(generated_images)}/{len(angles)})")
+                    else:
+                        logger.warning(f"⚠️ [mock_algorithm] No result for {angle}")
+                except Exception as e:
+                    logger.error(f"❌ [mock_algorithm] Exception in thread for {angle}: {e}")
+
+        # Sort images by original angle order to maintain consistency
+        angle_order = {angle: i for i, angle in enumerate(angles)}
+        generated_images.sort(key=lambda img: angle_order.get(img['angle'], 999))
 
         logger.info(f"🎉 [mock_algorithm] Successfully generated {len(generated_images)}/{len(angles)} images")
 
@@ -692,36 +736,99 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     condition = (car_data.get('condition') or '').strip()
     scene_desc = (car_data.get('description') or '').strip()
     vehicle_type_name = (car_data.get('vehicle_type_name') or '').strip().lower()
+    
+    # КРИТИЧНО: Логируем входящие данные для диагностики
+    print(f"[ImageGen] 🔍 INPUT DATA: vehicle_type_name='{vehicle_type_name}', brand='{brand}', model='{model}'")
+    print(f"[ImageGen] 🔍 FULL car_data keys: {list(car_data.keys())}")
 
     # ❌ FALLBACK DISABLED: Use ONLY real vehicle_type_name from API data
     # NO OVERRIDES, NO HEURISTICS, NO LLM FALLBACKS
     vehicle_type = None
 
     # Map Ukrainian vehicle type names to English for image generation
+    # КРИТИЧНО: Расширенный маппинг для всех возможных вариантов названий
     vehicle_type_mapping = {
+        # Легковые автомобили (все варианты)
         'легкові': 'car',
         'легковые': 'car',
+        'легкові автомобілі': 'car',
+        'легковые автомобили': 'car',
+        'автомобиль': 'car',
+        'авто': 'car',
+        'car': 'car',
+        # Грузовые автомобили
         'вантажівки': 'truck',
         'грузовые': 'truck',
+        'грузовые автомобили': 'truck',
+        'вантажні автомобілі': 'truck',
+        'truck': 'truck',
+        # Мотоциклы
         'мото': 'motorcycle',
         'мотоциклы': 'motorcycle',
+        'мотоцикли': 'motorcycle',
+        'мотоцикл': 'motorcycle',
+        'motorcycle': 'motorcycle',
+        'moto': 'motorcycle',
+        # Прицепы
         'причепи': 'trailer',
         'прицепы': 'trailer',
+        'trailer': 'trailer',
+        # Автобусы
         'автобуси': 'bus',
         'автобусы': 'bus',
+        'автобус': 'bus',
+        'bus': 'bus',
+        # Спецтехника
         'спецтехніка': 'special',
         'спецтехника': 'special',
+        'спеціальна техніка': 'special',
+        'специальная техника': 'special',
+        'special': 'special',
+        # Сельхозтехника
+        'сільгосптехніка': 'special',  # Сельхозтехника тоже special, но с особым описанием
+        'сельхозтехника': 'special',
+        'сільськогосподарська техніка': 'special',
+        'сельскохозяйственная техника': 'special',
+        'agricultural': 'special',
+        # Водный транспорт
         'водний транспорт': 'boat',
-        'водный транспорт': 'boat'
+        'водный транспорт': 'boat',
+        'boat': 'boat',
+        # Фургоны
+        'фургони': 'van',
+        'фургоны': 'van',
+        'фургон': 'van',
+        'van': 'van',
     }
 
     # Use ONLY the real vehicle_type_name from API, no fallbacks
     if vehicle_type_name:
-        vehicle_type = vehicle_type_mapping.get(vehicle_type_name.lower(), 'car')
+        # Нормализуем vehicle_type_name: убираем пробелы, приводим к нижнему регистру
+        normalized_vt_name = vehicle_type_name.strip().lower()
+        vehicle_type = vehicle_type_mapping.get(normalized_vt_name)
+        
+        if not vehicle_type:
+            # Если точного совпадения нет, пробуем найти частичное совпадение
+            for key, value in vehicle_type_mapping.items():
+                if key in normalized_vt_name or normalized_vt_name in key:
+                    vehicle_type = value
+                    print(f"[ImageGen] ⚠️ Partial match found: '{vehicle_type_name}' → '{vehicle_type}' (matched '{key}')")
+                    break
+        
+        if not vehicle_type:
+            # КРИТИЧНО: Если тип не найден, логируем ошибку и НЕ используем fallback на 'car'
+            print(f"[ImageGen] ❌ CRITICAL: Unknown vehicle_type_name: '{vehicle_type_name}' (normalized: '{normalized_vt_name}')")
+            print(f"[ImageGen] ❌ Available mappings: {list(vehicle_type_mapping.keys())}")
+            # Используем fallback только если это действительно критично
+            # Но лучше выбросить ошибку, чтобы не генерировать неправильные изображения
+            raise ValueError(f"Unknown vehicle_type_name: '{vehicle_type_name}'. Cannot generate image without correct vehicle type.")
+        
         print(f"[ImageGen] ✅ Using real vehicle_type_name: '{vehicle_type_name}' → '{vehicle_type}'")
     else:
-        print(f"[ImageGen] ❌ No vehicle_type_name provided, using 'car' as last resort")
-        vehicle_type = 'car'
+        print(f"[ImageGen] ❌ CRITICAL: No vehicle_type_name provided in car_data!")
+        print(f"[ImageGen] ❌ car_data keys: {list(car_data.keys())}")
+        print(f"[ImageGen] ❌ car_data vehicle_type: {car_data.get('vehicle_type')}")
+        raise ValueError("vehicle_type_name is required for image generation. Cannot generate image without vehicle type.")
 
     # Stable series ID for consistency across angles (БЕЗ времени для стабильности)
     if not car_session_id:
@@ -826,37 +933,64 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         type_enforcement = 'Standalone trailer body, hitch coupling, no engine, no driver cabin'
         type_negation = ''
     elif vt == 'special':
-        # Determine specific construction equipment type based on brand
+        # КРИТИЧНО: Определяем тип спецтехники по бренду и модели
         brand_lower = brand.lower()
+        model_lower = (model or '').lower()
 
         # Excavator brands
         excavator_brands = ['atlas', 'caterpillar', 'cat', 'komatsu', 'hitachi', 'kobelco', 'doosan',
                           'volvo construction', 'hyundai construction', 'liebherr', 'sany', 'xcmg',
-                          'zoomlion', 'liugong', 'lonking', 'sdlg']
+                          'zoomlion', 'liugong', 'lonking', 'sdlg', 'jcb']
 
         # Loader brands
-        loader_brands = ['jcb', 'case', 'new holland', 'bobcat', 'kubota', 'takeuchi', 'terex']
+        loader_brands = ['case', 'new holland', 'bobcat', 'kubota', 'takeuchi', 'terex']
 
         # Crane brands
         crane_brands = ['liebherr', 'tadano', 'grove', 'manitowoc', 'terex', 'demag', 'xcmg', 'sany',
                       'zoomlion', 'palfinger', 'hiab', 'fassi']
 
-        if brand_lower in excavator_brands:
-            type_enforcement = 'HYDRAULIC EXCAVATOR: tracked undercarriage with metal tracks, rotating upper structure (cab), articulated boom arm with bucket attachment, construction equipment proportions, industrial yellow/orange color scheme typical for construction machinery'
-            type_negation = ''
+        # Bulldozer brands
+        bulldozer_brands = ['caterpillar', 'cat', 'komatsu', 'liebherr', 'john deere', 'case', 'new holland', 'чтз', 'chtz', 'челябинский тракторный']
+        
+        # Telehandler brands
+        telehandler_brands = ['manitou', 'jcb', 'gehl', 'genie', 'skyjack', 'aerial lift platform']
+
+        # Определяем тип по модели (если содержит ключевые слова)
+        if any(word in model_lower for word in ['excavator', 'екскаватор', 'экскаватор', '220', '330', '320', '336']):
+            type_enforcement = 'HYDRAULIC EXCAVATOR: tracked undercarriage with metal tracks, rotating upper structure (cab), articulated boom arm with bucket attachment, construction equipment proportions, industrial yellow/orange color scheme typical for construction machinery. NOT a passenger car, NOT a truck, NOT a bus - this is HEAVY CONSTRUCTION EQUIPMENT with tracks and excavator arm.'
+            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV, NOT a truck cabin'
+        elif any(word in model_lower for word in ['bulldozer', 'бульдозер', 'б-10', 'd-10', 'd-11']) or brand_lower in bulldozer_brands or 'чтз' in brand_lower:
+            type_enforcement = 'BULLDOZER: tracked undercarriage with metal tracks, large front blade, heavy-duty construction equipment, industrial proportions. NOT a passenger car, NOT a truck, NOT an SUV - this is HEAVY CONSTRUCTION EQUIPMENT with tracks and blade.'
+            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV, NOT any road vehicle'
+        elif any(word in model_lower for word in ['telehandler', 'телетранспортер', 'mlt', 'lsu']):
+            type_enforcement = 'TELEHANDLER: four-wheeled construction/agricultural equipment with telescopic boom, large wheels, robust chassis, industrial proportions. NOT a passenger car, NOT a truck - this is HEAVY-DUTY EQUIPMENT with boom and large wheels.'
+            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
+        elif brand_lower in excavator_brands or any(word in brand_lower for word in ['jcb', 'cat', 'caterpillar', 'komatsu']):
+            type_enforcement = 'HYDRAULIC EXCAVATOR: tracked undercarriage with metal tracks, rotating upper structure (cab), articulated boom arm with bucket attachment, construction equipment proportions, industrial yellow/orange color scheme typical for construction machinery. NOT a passenger car, NOT a truck, NOT a bus - this is HEAVY CONSTRUCTION EQUIPMENT with tracks and excavator arm.'
+            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV, NOT a truck cabin'
         elif brand_lower in loader_brands:
-            if 'backhoe' in model.lower():
-                type_enforcement = 'BACKHOE LOADER: four-wheeled construction vehicle with front bucket loader and rear excavator arm, construction equipment design, industrial proportions'
+            if 'backhoe' in model_lower:
+                type_enforcement = 'BACKHOE LOADER: four-wheeled construction vehicle with front bucket loader and rear excavator arm, construction equipment design, industrial proportions. NOT a passenger car.'
+                type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
             else:
-                type_enforcement = 'WHEEL LOADER: large front bucket, articulated steering frame, four large construction wheels, heavy-duty construction equipment proportions'
-            type_negation = ''
+                type_enforcement = 'WHEEL LOADER: large front bucket, articulated steering frame, four large construction wheels, heavy-duty construction equipment proportions. NOT a passenger car.'
+                type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
         elif brand_lower in crane_brands:
-            type_enforcement = 'MOBILE CRANE: telescopic boom, counterweights, outriggers, crane proportions, construction/industrial design'
-            type_negation = ''
+            type_enforcement = 'MOBILE CRANE: telescopic boom, counterweights, outriggers, crane proportions, construction/industrial design. NOT a passenger car.'
+            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
+        elif brand_lower in telehandler_brands or 'manitou' in brand_lower:
+            type_enforcement = 'TELEHANDLER: four-wheeled construction/agricultural equipment with telescopic boom, large wheels, robust chassis, industrial proportions. NOT a passenger car, NOT a truck - this is HEAVY-DUTY EQUIPMENT with boom and large wheels.'
+            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV'
         else:
-            # Generic construction equipment
-            type_enforcement = 'HEAVY CONSTRUCTION EQUIPMENT: industrial construction machinery with heavy-duty components, construction equipment proportions, industrial design elements, heavy attachments (boom, bucket, blade, or similar), tracks or large construction wheels'
-            type_negation = ''
+            # Generic construction/agricultural equipment - КРИТИЧНО: явно указываем, что это НЕ легковой автомобиль
+            type_enforcement = (
+                f'HEAVY CONSTRUCTION/AGRICULTURAL EQUIPMENT: industrial machinery with heavy-duty components, '
+                f'construction/agricultural equipment proportions, industrial design elements, '
+                f'heavy attachments (boom, bucket, blade, tracks, or similar), tracks or large construction wheels. '
+                f'CRITICAL: This is {brand} {model} - HEAVY MACHINERY, NOT a passenger car, NOT a sedan, NOT an SUV, NOT a truck cabin. '
+                f'This must have industrial/construction equipment appearance with tracks, large wheels, or heavy attachments.'
+            )
+            type_negation = 'NOT a passenger car, NOT a sedan, NOT an SUV, NOT a truck cabin, NOT a bus, NOT any road vehicle - this is HEAVY MACHINERY'
     else:
         type_enforcement = 'Passenger car proportions'
         type_negation = ''
@@ -1040,27 +1174,53 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         'tatra',
     ]
 
-    # 🚫 CRITICAL DECISION: DISABLE ALL BRANDING FOR ALL VEHICLES
-    # Problem: AI IGNORES all negative prompts and still generates logo emblems (Toyota fallback)
-    # Solution: FORCE disable branding for 100% of vehicles - NO EXCEPTIONS
-    should_show_branding = False
-    brand_mismatch_reason = "AI ignores negative prompts and generates wrong logos - FORCE DISABLE for all vehicles"
-
-    print(f"[ImageGen] 🚫 BRANDING FORCE DISABLED FOR ALL VEHICLES: {brand_mismatch_reason}")
-
-    # ✅ "ОТ ОБРАТНОГО" ПОДХОД: Явно описываем ЗОНЫ, которые должны быть ПУСТЫМИ
-    # Фокусируем внимание модели на конкретных областях автомобиля
+    # ✅ КРИТИЧНО: Явные инструкции о правильном бренде и модели
+    # Вместо запрета всех логотипов, явно указываем правильный бренд и его характерные элементы
     
-    # Layer 1: Детальное описание ПУСТЫХ зон (области, где обычно логотипы)
-    strict_branding = (
-        f"CRITICAL ZONES SPECIFICATION for {brand} {model}: "
-        f"1. FRONT GRILLE CENTER: completely SMOOTH metal/plastic surface, FLAT and UNMARKED, no protrusions, no circular elements, no oval shapes. "
-        f"2. HOOD CENTER (above grille): CLEAN painted surface matching body color ({color}), FLAT, no raised elements. "
-        f"3. REAR TRUNK/TAILGATE CENTER: SMOOTH painted surface, BLANK area, no lettering, no emblems. "
-        f"4. WHEEL CENTERS (hubcaps): simple PLAIN design, solid color or basic pattern, no text, no symbols. "
-        f"5. STEERING WHEEL CENTER (if interior): FLAT surface, single color, no circular badges. "
-        f"IMPORTANT: These areas must look like BLANK TEMPLATES ready for badge installation - smooth, unmarked, clean."
-    )
+    # Определяем, известен ли бренд AI (популярные бренды)
+    known_brands = [
+        'bmw', 'mercedes-benz', 'mercedes', 'audi', 'volkswagen', 'vw', 'porsche',
+        'toyota', 'honda', 'nissan', 'mazda', 'subaru', 'mitsubishi', 'lexus', 'infiniti', 'acura', 'suzuki',
+        'ford', 'chevrolet', 'gmc', 'cadillac', 'buick', 'lincoln', 'chrysler', 'dodge', 'jeep', 'ram', 'tesla',
+        'hyundai', 'kia', 'genesis',
+        'volvo', 'peugeot', 'renault', 'citroen', 'fiat', 'skoda', 'seat',
+        'jaguar', 'land rover', 'mini', 'ferrari', 'lamborghini', 'maserati', 'bentley', 'rolls-royce',
+        'aston martin', 'mclaren', 'bugatti'
+    ]
+    
+    brand_lower_clean = brand_lower.strip()
+    is_known_brand = brand_lower_clean in known_brands or any(brand_lower_clean.startswith(b) for b in known_brands)
+    
+    # Явные инструкции о правильном бренде
+    if is_known_brand:
+        # Для известных брендов - явно указываем правильный логотип
+        brand_enforcement = (
+            f"CRITICAL BRANDING REQUIREMENT: This vehicle MUST display ONLY {brand} brand logos, badges, and emblems. "
+            f"The front grille MUST show authentic {brand} brand emblem. "
+            f"All visible badges, logos, and text MUST belong to {brand} brand ONLY. "
+        )
+        if model:
+            brand_enforcement += f"Model name '{model}' should be visible on rear or side if typical for {brand} vehicles. "
+        brand_enforcement += (
+            f"DO NOT use any other brand logos (Toyota, BMW, Mercedes, VW, etc.) - ONLY {brand} branding is correct. "
+            f"Use authentic {brand} design language: characteristic grille shape, headlight design, and styling cues typical for {brand} vehicles."
+        )
+    else:
+        # Для неизвестных брендов - используем пустые зоны, но явно указываем бренд
+        brand_enforcement = (
+            f"CRITICAL: This is {brand} {model} vehicle. "
+            f"DO NOT use logos from other brands (Toyota, BMW, Mercedes, VW, Honda, etc.). "
+            f"If uncertain about {brand} logo design, use generic styling with {brand} brand characteristics: "
+            f"1. FRONT GRILLE: design appropriate for {brand} brand style, no other brand logos. "
+            f"2. HOOD CENTER: clean surface matching body color ({color}), no incorrect brand emblems. "
+            f"3. REAR: smooth surface, no wrong brand lettering. "
+            f"Focus on {brand} brand design language and proportions, not logos from other manufacturers."
+        )
+    
+    print(f"[ImageGen] ✅ BRAND ENFORCEMENT: {brand} {model} - {'Known brand' if is_known_brand else 'Unknown brand, using generic styling'}")
+    
+    # Дополнительная защита: явный запрет популярных логотипов для неподходящих брендов
+    strict_branding = brand_enforcement
 
     # ✅ СТРОГАЯ ЗАЩИТА: Запрет на использование популярных логотипов для неподходящих брендов
     # Список популярных брендов с узнаваемыми логотипами
@@ -1256,19 +1416,44 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         condition_instruction = ""
     
     # Простой финальный промпт с четким указанием брендинга и реализма
+    # ✅ КРИТИЧНО: Добавляем явные инструкции о правильном бренде в начало промпта
+    # ✅ КРИТИЧНО: Для спецтехники - явно указываем тип техники ПЕРВЫМ
+    if vt == 'special':
+        # Для спецтехники - КРИТИЧНО указываем тип техники ПЕРВЫМ в промпте
+        type_emphasis = f"CRITICAL TYPE REQUIREMENT: {type_enforcement} "
+        if is_known_brand:
+            branding_part = f"with authentic {brand} brand emblem and badges visible, "
+        else:
+            branding_part = f"with {brand} brand design characteristics, "
+    else:
+        type_emphasis = ""
+        if is_known_brand:
+            # Для известных брендов - явно указываем логотип
+            branding_part = f"with authentic {brand} brand emblem and badges visible on front grille, "
+        else:
+            # Для неизвестных брендов - фокус на дизайне, без логотипов
+            branding_part = f"with {brand} brand design characteristics (grille shape, styling cues), "
+    
     final_prompt = (
-        f"Professional automotive photography of {brand} {model} {year} {color} {body_type}, "
+        f"{type_emphasis}"
+        f"{brand_enforcement} "
+        f"Professional photography of {brand} {model} {year} {color} {body_type}, "
         f"{angle_prompt}, "
-        f"with {brand} brand emblem and badges, "
+        f"{type_enforcement}, "  # Добавляем type_enforcement в промпт для усиления
+        f"{branding_part}"
         f"photorealistic, high quality, realistic lighting, "
         f"series ID CAR-{car_session_id}"
     )
+    
+    # Для спецтехники добавляем явный запрет легковых автомобилей
+    if vt == 'special' and type_negation:
+        final_prompt += f" {type_negation}."
 
     # Log branding decision for debugging
-    print(f"[ImageGen] 🏷️ BRANDING DECISION for {brand} {model} ({vt}): {'ENABLED' if should_show_branding else 'DISABLED'}")
-    if not should_show_branding:
-        print(f"[ImageGen] 🚫 REASON: {brand_mismatch_reason}")
-    print(f"[ImageGen] 📝 FINAL PROMPT: {final_prompt[:200]}...")
+    print(f"[ImageGen] 🏷️ BRAND ENFORCEMENT for {brand} {model} ({vt}): {'Known brand - explicit logo' if is_known_brand else 'Unknown brand - design focus'}")
+    if vt == 'special':
+        print(f"[ImageGen] 🚧 SPECIAL EQUIPMENT TYPE: {type_enforcement[:100]}...")
+    print(f"[ImageGen] 📝 FINAL PROMPT: {final_prompt[:400]}...")
 
     return final_prompt
 

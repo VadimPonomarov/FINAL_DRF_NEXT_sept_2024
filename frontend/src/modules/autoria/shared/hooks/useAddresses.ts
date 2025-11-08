@@ -23,8 +23,8 @@ interface UseAddressesReturn {
 
 export const useAddresses = (options: UseAddressesOptions = {}): UseAddressesReturn => {
   const {
-    autoRefresh = true,
-    refreshInterval = 30000, // 30 seconds
+    autoRefresh = false, // ❌ ИЗМЕНЕНО: По умолчанию отключено - обновление только при монтировании
+    refreshInterval = 30000, // 30 seconds (не используется если autoRefresh = false)
     accountId
   } = options;
 
@@ -82,22 +82,24 @@ export const useAddresses = (options: UseAddressesOptions = {}): UseAddressesRet
     }
   }, [accountId]);
 
-  // Initial load and auto-refresh setup
+  // Initial load only (без периодических обновлений)
   useEffect(() => {
     fetchAddresses();
 
-    if (autoRefresh) {
-      intervalRef.current = setInterval(() => {
-        fetchAddresses(false); // Don't show loading for auto-refresh
-      }, refreshInterval);
-    }
+    // ❌ УБРАНО: Автоматическое обновление каждые 30 секунд - лишняя нагрузка на систему
+    // Обновление происходит только при монтировании компонента или ручном вызове refreshAddresses
+    // if (autoRefresh) {
+    //   intervalRef.current = setInterval(() => {
+    //     fetchAddresses(false); // Don't show loading for auto-refresh
+    //   }, refreshInterval);
+    // }
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [fetchAddresses, autoRefresh, refreshInterval]);
+  }, [fetchAddresses]); // Убраны autoRefresh и refreshInterval из зависимостей
 
   // Manual refresh
   const refreshAddresses = useCallback(async () => {

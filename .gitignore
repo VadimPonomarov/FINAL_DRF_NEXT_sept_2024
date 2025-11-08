@@ -306,3 +306,25 @@ log/
 docs/
 frontend/docs/
 /rabbitmq/
+
+# =============================================================================
+# TRANSLATION BACKUPS AND TEMP FILES
+# =============================================================================
+frontend/src/locales/.backups/
+frontend/src/locales/.migration-backup/
+frontend/src/locales/*.backup*
+frontend/src/locales/translation-analysis-report.json
+frontend/src/locales/translation-coverage-report.json
+
+# =============================================================================
+# MEDIA FILES (Test uploads)
+# =============================================================================
+media/2025-*/
+media/ads/
+media/avatars/generated/
+
+# =============================================================================
+# TURBO BUILD CACHE
+# =============================================================================
+.turbo/
+frontend/.turbo/

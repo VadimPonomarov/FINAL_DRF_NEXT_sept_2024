@@ -28,7 +28,7 @@ interface AddressManagementProps {
 
 const AddressManagement: React.FC<AddressManagementProps> = ({
   accountId,
-  autoRefresh = true,
+  autoRefresh = false, // ❌ ИЗМЕНЕНО: Отключено по умолчанию - обновление только при монтировании
   refreshInterval = 30000
 }) => {
   const { t } = useI18n();

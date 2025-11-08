@@ -190,7 +190,7 @@ class ChatAIService:
     def __init__(self):
         self.client = Client()
         self.text_model = "gpt-4"
-        self.image_model = "flux-schnell"
+        self.image_model = "flux"
     
     def generate_text(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> str:
         """Generate text response using ChatAI."""
@@ -206,7 +206,7 @@ class ChatAIService:
             raise
     
     def generate_image(self, prompt: str, model: Optional[str] = None) -> str:
-        """Generate image using ChatAI flux-schnell."""
+        """Generate image using ChatAI FLUX."""
         try:
             # Use the client for image generation
             response = self.client.images.generate(
@@ -302,7 +302,7 @@ def chatai_text_node(state: AgentState) -> AgentState:
 
 def chatai_image_node(state: AgentState) -> AgentState:
     """
-    Generate image using ChatAI flux-schnell.
+    Generate image using ChatAI FLUX.
 
     Args:
         state: Current agent state

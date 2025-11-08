@@ -125,7 +125,14 @@ class Command(BaseCommand):
                 # 7. Generate images if requested
                 if with_images:
                     images_created = self._generate_images_for_ad(ad, ad_data, image_types)
-                    self.stdout.write(f'   📸 Generated {images_created} images for ad #{ad.id}')
+                    
+                    if images_created == 0:
+                        # КРИТИЧНО: Блокируем объявления с пустыми фото
+                        ad.status = 'pending'  # Requires image regeneration
+                        ad.save()
+                        self.stdout.write(f'   ⚠️ No images generated for ad #{ad.id} - marked as PENDING for regeneration')
+                    else:
+                        self.stdout.write(f'   📸 Generated {images_created} images for ad #{ad.id}')
 
                 # Small delay to avoid overwhelming the system
                 time.sleep(0.5)
@@ -270,17 +277,25 @@ class Command(BaseCommand):
             from apps.ads.models import AddImageModel
 
             # Prepare car data for image generation
+            # КРИТИЧНО: Правильная передача vehicle_type_name для релевантных изображений
+            vehicle_type_name = ad.vehicle_type.name if ad.vehicle_type else None
+            if not vehicle_type_name:
+                self.stdout.write(f'      ⚠️ No vehicle type for ad #{ad.id}, skipping image generation')
+                return 0
+            
             car_data = {
                 'brand': ad.mark.name,
                 'model': ad.model,
                 'year': ad_data['dynamic_fields'].get('year', 2020),
                 'color': ad_data['dynamic_fields'].get('color', 'silver').lower(),
                 'body_type': ad_data['dynamic_fields'].get('body_type', 'sedan'),
-                'vehicle_type': ad.vehicle_type.name if ad.vehicle_type else 'car',
-                'vehicle_type_name': ad_data['dynamic_fields'].get('vehicle_type_name', 'car'),
-                'condition': 'used',
+                'vehicle_type': vehicle_type_name.lower(),  # English version (e.g., 'car', 'truck')
+                'vehicle_type_name': vehicle_type_name,  # Original Ukrainian name (e.g., 'Легкові', 'Вантажівки')
+                'condition': ad_data['dynamic_fields'].get('condition', 'used'),
                 'description': ad.description
             }
+            
+            self.stdout.write(f'      🚗 Vehicle type: {vehicle_type_name}')
 
             self.stdout.write(f'   🎨 Generating images for {car_data["brand"]} {car_data["model"]}...')
 

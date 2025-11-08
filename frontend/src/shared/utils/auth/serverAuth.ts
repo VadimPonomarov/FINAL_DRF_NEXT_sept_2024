@@ -195,10 +195,13 @@ export class ServerAuthManager {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(url, {
+    // Ensure signal is preserved from options
+    const fetchOptions: RequestInit = {
       ...options,
       headers,
-    });
+    };
+
+    const response = await fetch(url, fetchOptions);
 
     // If we get 401, try to refresh token and retry once
     if (response.status === 401) {
@@ -209,7 +212,7 @@ export class ServerAuthManager {
         throw new Error('Authentication failed - unable to refresh token');
       }
 
-      // Retry the request with new token
+      // Retry the request with new token (preserve signal from original options)
       const retryHeaders = {
         ...headers,
         'Authorization': `Bearer ${newAccessToken}`,
@@ -218,6 +221,8 @@ export class ServerAuthManager {
       return await fetch(url, {
         ...options,
         headers: retryHeaders,
+        // Preserve signal for retry as well
+        signal: options.signal,
       });
     }
 

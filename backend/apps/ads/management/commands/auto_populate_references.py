@@ -811,15 +811,15 @@ class Command(BaseCommand):
             self.stdout.write(f'   - {side.value}: {description}')
 
     def _generate_sample_car_images(self):
-        """Generate sample car images using ChatAI flux-schnell model with detailed car characteristics."""
+        """Generate sample car images using ChatAI FLUX model with detailed car characteristics."""
         self.stdout.write('🖼️ Generating sample car images with detailed characteristics...')
 
         try:
             from core.services.chat_ai import ChatAI
             from langchain.prompts import PromptTemplate
 
-            # Initialize ChatAI with flux-schnell model for faster image generation
-            flux_ai = ChatAI("flux-schnell")
+            # Initialize ChatAI with FLUX model for image generation
+            flux_ai = ChatAI("flux")
 
             # Create LangChain prompt template for car image generation
             car_image_template = PromptTemplate(

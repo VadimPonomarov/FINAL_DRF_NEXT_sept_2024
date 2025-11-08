@@ -28,7 +28,7 @@ class Intent(str, Enum):
 
     # Content generation
     TEXT_GENERATION = "text_generation"     # Text generation with ChatAI
-    IMAGE_GENERATION = "image_generation"   # Image generation with ChatAI flux-schnell
+    IMAGE_GENERATION = "image_generation"   # Image generation with ChatAI FLUX
 
     # Code and analysis
     CODE_EXECUTION = "code_execution"       # Python code execution

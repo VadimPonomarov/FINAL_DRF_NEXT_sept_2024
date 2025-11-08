@@ -48,17 +48,38 @@ export async function PATCH(request: NextRequest) {
       console.log('[User Save Avatar API] 🌐 Backend URL:', backendUrl);
       console.log('[User Save Avatar API] 🖼️ Avatar URL to download:', requestData.avatar_url);
 
-      // First, download and save the image locally on the backend
-      const downloadResponse = await ServerAuthManager.authenticatedFetch(
-        request,
-        `${backendUrl}/api/users/profile/download-avatar/`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            image_url: requestData.avatar_url
-          })
+      // Add timeout for download request (60 seconds for image download)
+      const DOWNLOAD_TIMEOUT_MS = 60000;
+      const downloadController = new AbortController();
+      const downloadTimeoutId = setTimeout(() => downloadController.abort(), DOWNLOAD_TIMEOUT_MS);
+
+      let downloadResponse: Response;
+      try {
+        // First, download and save the image locally on the backend
+        downloadResponse = await ServerAuthManager.authenticatedFetch(
+          request,
+          `${backendUrl}/api/users/profile/download-avatar/`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              image_url: requestData.avatar_url
+            }),
+            signal: downloadController.signal,
+          }
+        );
+        clearTimeout(downloadTimeoutId);
+      } catch (downloadError) {
+        clearTimeout(downloadTimeoutId);
+        
+        if (downloadError instanceof Error && downloadError.name === 'AbortError') {
+          console.error('[Save Avatar API] ❌ Download request timeout');
+          return NextResponse.json(
+            { error: 'Download request timed out. The image may be too large or the server is slow.' },
+            { status: 504 }
+          );
         }
-      );
+        throw downloadError;
+      }
 
       console.log('[Save Avatar API] 📥 Download response status:', downloadResponse.status);
 
@@ -77,19 +98,40 @@ export async function PATCH(request: NextRequest) {
 
       console.log('[Save Avatar API] ✅ Avatar downloaded and saved locally:', localAvatarUrl);
 
-      // Now update the profile with the local URL
-      const response = await ServerAuthManager.authenticatedFetch(
-        request,
-        `${backendUrl}/api/users/profile/`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify({
-            profile: {
-              avatar_url: localAvatarUrl
-            }
-          })
+      // Add timeout for profile update request (30 seconds)
+      const UPDATE_TIMEOUT_MS = 30000;
+      const updateController = new AbortController();
+      const updateTimeoutId = setTimeout(() => updateController.abort(), UPDATE_TIMEOUT_MS);
+
+      let response: Response;
+      try {
+        // Now update the profile with the local URL
+        response = await ServerAuthManager.authenticatedFetch(
+          request,
+          `${backendUrl}/api/users/profile/`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({
+              profile: {
+                avatar_url: localAvatarUrl
+              }
+            }),
+            signal: updateController.signal,
+          }
+        );
+        clearTimeout(updateTimeoutId);
+      } catch (updateError) {
+        clearTimeout(updateTimeoutId);
+        
+        if (updateError instanceof Error && updateError.name === 'AbortError') {
+          console.error('[User Save Avatar API] ❌ Update request timeout');
+          return NextResponse.json(
+            { error: 'Profile update request timed out. Please try again.' },
+            { status: 504 }
+          );
         }
-      );
+        throw updateError;
+      }
 
       console.log('[User Save Avatar API] 📥 Backend response status:', response.status);
 
@@ -128,3 +170,6 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+// Increase max duration for this route to handle image downloads
+export const maxDuration = 90; // 90 seconds to handle image download + profile update

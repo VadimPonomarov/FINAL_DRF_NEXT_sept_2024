@@ -14,11 +14,23 @@ const intlMiddleware = createIntlMiddleware({
   localePrefix: 'as-needed'
 });
 
-// Захищені шляхи, які потребують сесії NextAuth
+// Захищені шляхи, які потребують повної двухетапної авторизації
+// Уровень 1: NextAuth session
+// Уровень 2: Backend tokens (access + refresh в Redis)
 const PROTECTED_PATHS = [
-  '/autoria',   // Усі сторінки AutoRia (рівень 1: NextAuth, рівень 2: backend-токени в Layout)
-  '/login',     // Сторінка входу
-  '/profile',   // Сторінка профілю
+  '/',          // Home page - требует авторизации
+  '/autoria',   // Все страницы AutoRia
+  '/profile',   // Страница профиля
+  '/settings',  // Настройки
+];
+
+// Публичные страницы (доступны без авторизации)
+const PUBLIC_PATHS = [
+  '/login',
+  '/register',
+  '/api/auth/signin',
+  '/api/auth/callback',
+  '/api/auth/error',
 ];
 
 // Функція для перевірки внутрішньої сесії NextAuth за допомогою getToken
@@ -60,16 +72,17 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// РІВЕНЬ 1 (з 2): Middleware — універсальний гард сесії
+// РІВЕНЬ 1 (з 2): Middleware — перевірка NextAuth сесії
 // ════════════════════════════════════════════════════════════════════════
 // Дворівнева система валідації для AutoRia:
-// 1. [ЦЕЙ РІВЕНЬ] Middleware: сесія NextAuth → /api/auth/signin, якщо немає
-// 2. BackendTokenPresenceGate (HOC у Layout): backend-токени → використовує redirectToAuth
+// 1. [ЦЕЙ РІВЕНЬ] Middleware: NextAuth session → /api/auth/signin, якщо немає
+// 2. [Рівень 2] BackendTokenPresenceGate (HOC у Layout): backend-токени → /login, якщо немає
 // ════════════════════════════════════════════════════════════════════════
 //
-// ВАЖЛИВО: Middleware перевіряє ЛИШЕ сесію NextAuth на КОЖНОМУ запиті!
-// Це універсальний гард сесії для всіх сторінок AutoRia.
-// Backend-токени НЕ перевіряються тут — це робить HOC у Layout (рівень 2)
+// ВАЖЛИВО: 
+// - signOut = удаляет сессию + токены → middleware блокирует
+// - logout = удаляет только токены → middleware пропускает → BackendTokenPresenceGate блокирует
+//
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
     console.log(`[Middleware L1] Checking NextAuth session for Autoria access`);
@@ -100,8 +113,8 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
 
     // Сесія NextAuth існує — надаємо доступ
     // BackendTokenPresenceGate у Layout (рівень 2) перевірить наявність backend-токенів
-    // та використає redirectToAuth для коректного редиректу за потреби
-    console.log(`[Middleware L1] ✅ NextAuth session valid (email: ${token.email}) - passing to L2 (Layout HOC)`);
+    // та зробить редирект на /login за потреби
+    console.log(`[Middleware L1] ✅ NextAuth session valid (email: ${token.email}) - passing to L2 (BackendTokenPresenceGate)`);
 
     return NextResponse.next();
   } catch (error) {
@@ -127,8 +140,16 @@ export default async function middleware(req: NextRequest) {
   if (isStatic) return NextResponse.next();
 
   // ВАЖЛИВО: Пропускаємо ВСІ API-маршрути без перевірок (включно з /api/autoria/*)
+  // API routes защищаются на уровне API handlers
   if (pathname.startsWith('/api/')) {
     console.log('[Middleware] API route, allowing without auth checks');
+    return NextResponse.next();
+  }
+
+  // Проверяем публичные страницы - пропускаем без проверок
+  const isPublicPath = PUBLIC_PATHS.some(path => pathname.startsWith(path));
+  if (isPublicPath) {
+    console.log('[Middleware] Public path, allowing access');
     return NextResponse.next();
   }
 
@@ -145,17 +166,24 @@ export default async function middleware(req: NextRequest) {
     }
   }
 
-  // Захищаємо сторінки AutoRia (рівень 1: перевірка сесії NextAuth)
+  // Проверяем, требует ли страница защиты
   const accept = req.headers.get('accept') || '';
   const isHtmlPage = accept.includes('text/html');
   
+  // Защищаем HOME страницу - требует полной авторизации
+  if (pathname === '/' && isHtmlPage) {
+    console.log('[Middleware] Home page access, checking auth...');
+    return await checkBackendAuth(req);
+  }
+
+  // Защищаем все страницы AutoRia (рівень 1: перевірка сесії NextAuth)
   if (pathname.startsWith('/autoria') && isHtmlPage) {
     return await checkBackendAuth(req);
   }
 
-  // Захищаємо інші сторінки, що потребують NextAuth (НЕ захищаємо /login, щоб уникнути циклів)
+  // Защищаем другие защищенные страницы
   const requiresAuth = ['/profile', '/settings'].some(path => pathname.startsWith(path));
-  if (requiresAuth) {
+  if (requiresAuth && isHtmlPage) {
     return await checkInternalAuth(req);
   }
 

@@ -1,13 +1,15 @@
 /**
- * Валідація та автоматичне оновлення токена під час входу в AutoRia
+ * Валідація та автоматичне оновлення токена
+ *
+ * ВАЖНО: Токены выдаются внешним API и непрозрачны (opaque).
+ * Мы НЕ МОЖЕМ валидировать их напрямую.
+ * Единственный способ узнать о невалидности - получить 401 от backend.
  *
  * Алгоритм:
- * 1. Перевіряємо наявність токенів у Redis
- * 2. Якщо токенів немає → повертаємо false (редирект на /login)
- * 3. Якщо токени є → валідуємо access token через /api/auth/me
- * 4. Якщо access недійсний → пробуємо оновити
- * 5. Якщо оновлення успішне → повертаємо true
- * 6. Якщо оновлення не допомогло → повертаємо false (редирект на /login)
+ * 1. Проверяем наличие токенов в Redis (быстрая проверка)
+ * 2. Если токенов нет → возвращаем false
+ * 3. Если токены есть → пробуем refresh (если нужно)
+ * 4. Основная валидация происходит в API interceptor при 401
  */
 
 export interface TokenValidationResult {
@@ -17,9 +19,11 @@ export interface TokenValidationResult {
   message?: string;
 }
 
-// У Docker-оточенні доступ до Redis здійснюється через внутрішній API.
-// Якщо перевірка Redis недоступна (500/немає мережі), вважаємо що токени «умовно є»,
-// щоб уникнути хибних редиректів і циклів. Явна відсутність лише при 200 і exists=false.
+/**
+ * ЖЕСТКАЯ проверка наличия токенов в Redis
+ * НЕ валидирует токены - только проверяет их наличие
+ * ВАЖНО: При любых ошибках возвращаем false (нет токенов)
+ */
 async function checkTokensExist(): Promise<boolean> {
   try {
     const response = await fetch('/api/redis?key=backend_auth', {
@@ -29,32 +33,33 @@ async function checkTokensExist(): Promise<boolean> {
 
     if (response.ok) {
       const data = await response.json();
-      return data?.exists === true && data?.value;
+      const hasTokens = data?.exists === true && data?.value;
+      console.log('[checkTokensExist] Redis check result:', hasTokens);
+      return hasTokens;
     }
 
-    // На помилки інфраструктури реагуємо м’яко: не ініціюємо редирект
-    if (response.status >= 500) {
-      console.warn('[checkTokensExist] Redis endpoint error, assuming tokens exist to avoid loop');
-      return true;
-    }
-
+    // При любых ошибках Redis считаем что токенов НЕТ
+    // Это безопаснее чем пропускать без проверки
+    console.error('[checkTokensExist] ❌ Redis returned error:', response.status);
     return false;
   } catch (error) {
-    console.warn('[checkTokensExist] Network error, assuming tokens exist to avoid loop');
-    return true;
+    // При сетевых ошибках также считаем что токенов НЕТ
+    console.error('[checkTokensExist] ❌ Network error:', error);
+    return false;
   }
 }
 
 /**
- * Валідація access-токена через /api/auth/me
- * Тепер /api/auth/me перевіряє токен через backend API
+ * ЖЕСТКАЯ проверка auth session через /api/auth/me
+ * ВАЖНО: При любых ошибках возвращаем false (сессия невалидна)
+ * Это обеспечивает жесткую безопасность - лучше лишний раз переавторизоваться
  */
-async function validateAccessToken(): Promise<boolean> {
+async function checkAuthSession(): Promise<boolean> {
   try {
-    console.log('[validateAccessToken] Checking token validity via /api/auth/me...');
+    console.log('[checkAuthSession] Checking session via /api/auth/me...');
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // Тайм-аут 3 секунди
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 сек timeout
     
     try {
       const response = await fetch('/api/auth/me', {
@@ -70,40 +75,35 @@ async function validateAccessToken(): Promise<boolean> {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        // Недійсним вважаємо лише явний 401 від /auth/me
-        if (response.status === 401) {
-          console.log('[validateAccessToken] ❌ /api/auth/me returned 401');
-          return false;
-        }
-        // Інші статуси (404/5xx) трактуємо як тимчасові проблеми → вважаємо токен дійсним
-        console.log('[validateAccessToken] ⚠️ /api/auth/me returned non-401 status:', response.status, 'treating as valid');
-        return true;
+        console.error('[checkAuthSession] ❌ Auth check failed:', response.status);
+        return false;
       }
 
       const data = await response.json();
       const isValid = data.authenticated === true;
-      console.log('[validateAccessToken] Token validity:', isValid);
+      console.log('[checkAuthSession] Session status:', isValid);
       return isValid;
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
-        console.error('[validateAccessToken] ⚠️ Request timeout, treating as valid');
+        console.error('[checkAuthSession] ❌ Request timeout');
       } else {
-        console.error('[validateAccessToken] ⚠️ Network error, treating as valid:', fetchError?.message);
+        console.error('[checkAuthSession] ❌ Network error:', fetchError?.message);
       }
-      // За тайм-ауту/мережевої помилки не запускаємо редирект
-      return true;
+      // При сетевых ошибках считаем сессию невалидной - безопаснее
+      return false;
     }
   } catch (error) {
-    console.error('[validateAccessToken] ⚠️ Unexpected error, treating as valid:', error);
-    return true;
+    console.error('[checkAuthSession] ❌ Unexpected error:', error);
+    return false; // Жесткая безопасность
   }
 }
 
 /**
  * Спроба оновити токен
+ * Экспортируем для использования в других модулях (например, apiInterceptor)
  */
-async function refreshToken(): Promise<boolean> {
+export async function refreshToken(): Promise<boolean> {
   try {
     console.log('[refreshToken] Attempting token refresh...');
     
@@ -129,33 +129,48 @@ async function refreshToken(): Promise<boolean> {
 }
 
 /**
- * Полная валидация с автоматическим рефрешем
+ * Проверка auth session с возможностью refresh
+ * 
+ * ВАЖНО: Это НЕ валидация токенов!
+ * Мы только проверяем наличие сессии и токенов.
+ * Реальная валидация токенов происходит в API interceptor при получении 401.
  */
 export async function validateAndRefreshToken(): Promise<TokenValidationResult> {
-  console.log('[validateAndRefreshToken] Starting validation...');
+  console.log('[validateAndRefreshToken] Starting session check...');
 
-  // Крок 1: Швидка перевірка наявності (толерантна до помилок), далі валідація через /api/auth/me
+  // Шаг 1: Проверяем наличие токенов в Redis
   const tokensExist = await checkTokensExist();
+  console.log(`[validateAndRefreshToken] Tokens exist in Redis: ${tokensExist}`);
+  
   if (!tokensExist) {
-    console.log('[validateAndRefreshToken] No backend tokens (will still try /api/auth/me)');
+    console.log('[validateAndRefreshToken] ❌ No tokens found, redirect needed');
+    return {
+      isValid: false,
+      needsRedirect: true,
+      redirectTo: '/login',
+      message: 'No tokens found'
+    };
   }
 
-  const isAccessValid = await validateAccessToken();
-  if (isAccessValid) {
-    console.log('[validateAndRefreshToken] Access token is valid');
+  // Шаг 2: Проверяем auth сессию (не валидацию токена!)
+  const sessionValid = await checkAuthSession();
+  console.log(`[validateAndRefreshToken] Auth session valid: ${sessionValid}`);
+  
+  if (sessionValid) {
+    console.log('[validateAndRefreshToken] ✅ Session valid');
     return {
       isValid: true,
       needsRedirect: false,
     };
   }
 
-  console.log('[validateAndRefreshToken] Access token invalid, attempting refresh (if available)...');
-
-  // Крок 3: Пробуємо оновити токен
-  // У деяких збірках /api/auth/refresh може бути відсутній — пробуємо й тихо продовжуємо.
+  // Шаг 3: Сессия невалидна, пробуем refresh
+  console.log('[validateAndRefreshToken] Session invalid, attempting refresh...');
   const refreshSuccess = await refreshToken().catch(() => false);
+  console.log(`[validateAndRefreshToken] Refresh result: ${refreshSuccess}`);
+  
   if (refreshSuccess) {
-    console.log('[validateAndRefreshToken] Token refreshed successfully');
+    console.log('[validateAndRefreshToken] ✅ Token refreshed successfully');
     return {
       isValid: true,
       needsRedirect: false,
@@ -163,23 +178,20 @@ export async function validateAndRefreshToken(): Promise<TokenValidationResult> 
     };
   }
 
-  console.log('[validateAndRefreshToken] Refresh failed, redirect needed');
-
-  // Крок 4: Оновлення не допомогло → редирект
+  // Шаг 4: Refresh не удался
+  console.log('[validateAndRefreshToken] ❌ Refresh failed, redirect needed');
   return {
     isValid: false,
     needsRedirect: true,
     redirectTo: '/login',
-    message: 'Token refresh failed or unavailable'
+    message: 'Session and refresh failed'
   };
 }
 
 /**
- * Спрощена версія для швидкої перевірки (без оновлення)
+ * Быстрая проверка наличия токенов (без валидации)
+ * Используется для быстрого определения наличия auth данных
  */
 export async function quickTokenCheck(): Promise<boolean> {
-  const tokensExist = await checkTokensExist();
-  if (!tokensExist) return false;
-
-  return await validateAccessToken();
+  return await checkTokensExist();
 }

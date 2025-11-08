@@ -104,24 +104,88 @@ async function handleRequest(
       }
     }
 
+    // Add timeout to prevent hanging requests
+    const FETCH_TIMEOUT_MS = 30000; // 30 seconds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
     // Make request to backend
-    let response = await fetch(url, requestOptions);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...requestOptions,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      // If request was aborted due to timeout, return 504
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`[Proxy API] Request timeout: ${url}`);
+        return NextResponse.json(
+          { 
+            error: 'Gateway Timeout', 
+            message: 'Backend request timed out',
+            path: `/${path}`
+          },
+          { status: 504 }
+        );
+      }
+      
+      // Re-throw other errors to be handled by outer catch
+      throw error;
+    }
 
     console.log(`[Proxy API] Backend response: ${response.status}`);
 
     // If unauthorized, try to refresh tokens once and retry
     if (response.status === 401 && !url.includes('/api/auth/')) {
       try {
-        const refreshResp = await fetch(`${request.nextUrl.origin}/api/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store' });
-        if (refreshResp.ok) {
-          const data = await refreshResp.json();
-          const access = data?.access;
-          if (access) {
-            const retryHeaders = {
-              ...requestOptions.headers,
-              Authorization: `Bearer ${access}`,
-            } as Record<string, string>;
-            response = await fetch(url, { ...requestOptions, headers: retryHeaders });
+        const refreshController = new AbortController();
+        const refreshTimeoutId = setTimeout(() => refreshController.abort(), 5000); // 5 seconds for refresh
+        
+        try {
+          const refreshResp = await fetch(`${request.nextUrl.origin}/api/auth/refresh`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            cache: 'no-store',
+            signal: refreshController.signal,
+          });
+          clearTimeout(refreshTimeoutId);
+          
+          if (refreshResp.ok) {
+            const data = await refreshResp.json();
+            const access = data?.access;
+            if (access) {
+              const retryController = new AbortController();
+              const retryTimeoutId = setTimeout(() => retryController.abort(), FETCH_TIMEOUT_MS);
+              
+              try {
+                const retryHeaders = {
+                  ...requestOptions.headers,
+                  Authorization: `Bearer ${access}`,
+                } as Record<string, string>;
+                response = await fetch(url, { 
+                  ...requestOptions, 
+                  headers: retryHeaders,
+                  signal: retryController.signal,
+                });
+                clearTimeout(retryTimeoutId);
+              } catch (retryError) {
+                clearTimeout(retryTimeoutId);
+                // If retry also times out, continue with original 401 response
+                if (retryError instanceof Error && retryError.name === 'AbortError') {
+                  console.error(`[Proxy API] Retry request timeout: ${url}`);
+                }
+              }
+            }
+          }
+        } catch (refreshError) {
+          clearTimeout(refreshTimeoutId);
+          // If refresh times out, continue with original 401 response
+          if (refreshError instanceof Error && refreshError.name === 'AbortError') {
+            console.error(`[Proxy API] Token refresh timeout`);
           }
         }
       } catch {}
@@ -160,4 +224,5 @@ async function handleRequest(
 // Runtime configuration
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // 60 seconds to handle slow backend responses
 

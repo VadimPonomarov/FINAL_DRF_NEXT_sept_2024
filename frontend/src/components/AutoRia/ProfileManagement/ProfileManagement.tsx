@@ -25,7 +25,7 @@ interface ProfileManagementProps {
 }
 
 const ProfileManagement: React.FC<ProfileManagementProps> = ({ 
-  autoRefresh = true,
+  autoRefresh = false, // ❌ ИЗМЕНЕНО: Отключено по умолчанию - обновление только при монтировании
   refreshInterval = 30000
 }) => {
   const { t } = useI18n();

@@ -744,6 +744,8 @@ def main():
             # Моніторимо готовність локального фронтенда
             waited = 0
             frontend_ready = False
+            max_wait = 120  # Максимальное время ожидания: 2 минуты
+            wait_interval = 2  # Интервал проверки: 2 секунды
         
         while mode == 'local' and waited < max_wait:
             time.sleep(wait_interval)

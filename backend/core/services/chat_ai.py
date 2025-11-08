@@ -99,7 +99,7 @@ class ChatAI:
 
     def generate_image(self, prompt: str, **kwargs) -> str:
         """
-        Generate image using flux-schnell model.
+        Generate image using FLUX model.
 
         Args:
             prompt: The prompt for image generation
@@ -114,15 +114,15 @@ class ChatAI:
             return self._generate_mock_image(prompt, **kwargs)
 
     def _generate_flux_image(self, prompt: str, **kwargs) -> str:
-        """Generate image using flux-schnell model."""
+        """Generate image using FLUX model."""
         try:
-            # Try to use g4f client for flux-schnell image generation
+            # Try to use g4f client for FLUX image generation
             from g4f.client import Client
 
             client = Client()
 
-            # Use flux-schnell for faster generation
-            model_name = "flux-schnell" if self.model == "flux-schnell" else "flux"
+            # Use original FLUX model (not flux-schnell)
+            model_name = "flux"
 
             response = client.images.generate(
                 model=model_name,
