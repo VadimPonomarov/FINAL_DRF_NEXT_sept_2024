@@ -1,4 +1,42 @@
 export default {
+  auth: {
+    email: "Email",
+    emailPlaceholder: "Enter your email",
+    password: "Password",
+    passwordPlaceholder: "Enter your password",
+    username: "Username",
+    usernamePlaceholder: "Enter your username",
+    confirmPassword: "Confirm Password",
+    confirmPasswordPlaceholder: "Confirm your password",
+    login: "Login",
+    register: "Register",
+    reset: "Reset",
+    selectAuthType: "Select auth type",
+    sessionDuration: "Session Duration",
+    validationError: "Validation Error",
+    validationErrorDescription: "Please fill in all required fields correctly",
+    passwordsDoNotMatch: "Passwords do not match",
+    authenticationTitle: "Authentication",
+    checkingAuth: "Checking authorization...",
+    backendAuthRequired: "Please log in with backend authentication to access AutoRia features",
+    backendAuthRequiredTitle: "Backend Authentication Required",
+    noticeTitle: "Authentication",
+    dockerEnvironmentDetected: "Docker Environment Detected",
+    dockerEnvironmentDescription: "Running in Docker environment. If you experience Redis connection issues, visit /test-redis",
+    minutes: "minutes",
+    tokensCleared: "Tokens cleared, redirecting...",
+    tokensClearedPleaseLogin: "Tokens cleared. Please log in again.",
+    failedToClearTokens: "Failed to clear tokens",
+    loginRequiredTitle: "❌ Login required",
+    loginRequiredDesc: "Please sign in to continue",
+    loginSuccessTitle: "Authentication Successful",
+    loginSuccess: "You have successfully signed in",
+    registration: {
+      success: "Registration successful! Please check your email and activate your account.",
+      checkEmail: "Please check your email to activate your account.",
+      failed: "Registration failed"
+    }
+  },
   "0": "0",
   "1990": "1990",
   "3000": "3000",
@@ -442,18 +480,7 @@ export default {
       backgroundGeneration: "Back"
     },
     platformStats: "Platform Statistics",
-    auth: {
-      loginRequiredTitle: "❌ Login required",
-      loginRequiredDesc: "Please sign in to continue",
-      loginSuccessTitle: "Authentication Successful",
-      loginSuccess: "You have successfully signed in",
-      registration: {
-        success: "Registration successful! Please check your email and activate your account.",
-        checkEmail: "Please check your email to activate your account.",
-        failed: "Registration failed"
-      }
-    },
-    createAd: {
+    createAdToasts: {
       created: "Ad created successfully",
       createError: "Failed to create ad"
     },
@@ -3741,12 +3768,6 @@ export default {
     // Generic
     tryAgain: "Please try again",
     unknownError: "Unknown error"
-  },
-  
-  auth: {
-    tokensCleared: "Tokens cleared, redirecting...",
-    tokensClearedPleaseLogin: "Tokens cleared. Please log in again.",
-    failedToClearTokens: "Failed to clear tokens"
   }
 };
 

@@ -90,8 +90,8 @@ const LoginPage: FC = () => {
         // Show Docker environment notification
         if (isDocker) {
             toast({
-                title: "Docker Environment Detected",
-                description: "Running in Docker environment. If you experience Redis connection issues, visit /test-redis",
+                title: t('auth.dockerEnvironmentDetected', 'Docker Environment Detected'),
+                description: t('auth.dockerEnvironmentDescription', 'Running in Docker environment. If you experience Redis connection issues, visit /test-redis'),
                 variant: "default",
                 duration: 10000, // 10 seconds
             });
@@ -104,7 +104,7 @@ const LoginPage: FC = () => {
             <div className="flex justify-center items-center h-[calc(100vh-60px)] w-full">
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                    <p className="mt-4 text-gray-600 dark:text-gray-400">Перевірка авторизації...</p>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">{t('auth.checkingAuth', 'Checking authorization...')}</p>
                 </div>
             </div>
         );

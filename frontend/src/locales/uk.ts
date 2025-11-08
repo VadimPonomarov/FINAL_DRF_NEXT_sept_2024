@@ -1,4 +1,35 @@
 export default {
+  auth: {
+    email: "Електронна пошта",
+    emailPlaceholder: "Введіть вашу пошту",
+    password: "Пароль",
+    passwordPlaceholder: "Введіть ваш пароль",
+    username: "Ім'я користувача",
+    usernamePlaceholder: "Введіть ім'я користувача",
+    confirmPassword: "Підтвердьте пароль",
+    confirmPasswordPlaceholder: "Підтвердьте ваш пароль",
+    login: "Вхід",
+    register: "Реєстрація",
+    reset: "Скинути",
+    selectAuthType: "Оберіть тип авторизації",
+    sessionDuration: "Тривалість сесії",
+    validationError: "Помилка валідації",
+    validationErrorDescription: "Будь ласка, правильно заповніть всі обов'язкові поля",
+    passwordsDoNotMatch: "Паролі не співпадають",
+    authenticationTitle: "Авторизація",
+    checkingAuth: "Перевірка авторизації...",
+    backendAuthRequired: "Будь ласка, увійдіть з backend авторизацією для доступу до функцій AutoRia",
+    backendAuthRequiredTitle: "Потрібна Backend авторизація",
+    noticeTitle: "Авторизація",
+    dockerEnvironmentDetected: "Виявлено Docker середовище",
+    dockerEnvironmentDescription: "Запущено в Docker середовищі. При проблемах з Redis підключенням, відвідайте /test-redis",
+    minutes: "хвилин",
+    tokensCleared: "Токени очищено, перенаправлення...",
+    tokensClearedPleaseLogin: "Токени очищено. Будь ласка, увійдіть знову.",
+    failedToClearTokens: "Не вдалося очистити токени",
+    loginRequiredTitle: "❌ Потрібен вхід",
+    loginRequiredDesc: "Будь ласка, увійдіть, щоб продовжити"
+  },
   "0": "0",
   "1990": "1990",
   "3000": "3000",
@@ -402,7 +433,7 @@ export default {
       }
     },
     platformStats: "Статистика платформи",
-    createAd: {
+    createAdToasts: {
       created: "Оголошення успішно створено",
       createError: "Не вдалося створити оголошення"
     },
@@ -418,10 +449,6 @@ export default {
       saved: "Згенеровані зображення збережено",
       saveError: "Не вдалося зберегти згенеровані зображення",
     },
-  auth: {
-    loginRequiredTitle: "❌ Потрібен вхід",
-    loginRequiredDesc: "Будь ласка, увійдіть, щоб продовжити"
-  },
     testAds: {
       howMany: "Скільки тестових оголошень створити? (1-10)",
       invalidNumber: "❌ Будь ласка, введіть число від 1 до 10",
@@ -3682,11 +3709,5 @@ export default {
     // Generic
     tryAgain: "Спробуйте ще раз",
     unknownError: "Невідома помилка"
-  },
-  
-  auth: {
-    tokensCleared: "Токени очищено, перенаправлення...",
-    tokensClearedPleaseLogin: "Токени очищено. Будь ласка, увійдіть знову.",
-    failedToClearTokens: "Не вдалося очистити токени"
   }
 };

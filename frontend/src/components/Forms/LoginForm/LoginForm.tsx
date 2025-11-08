@@ -28,6 +28,7 @@ import {
   IBackendAuthCredentials,
 } from "@/shared/types/auth.interfaces";
 import { useToast } from "@/modules/autoria/shared/hooks/use-toast";
+import { useI18n } from "@/contexts/I18nContext";
 // import { useRouter } from "next/navigation";
 
 import { backendFormFields, dummyFormFields } from "./formFields.config";
@@ -35,6 +36,7 @@ import { useLoginForm } from "./useLoginForm";
 
 const LoginForm: FC = () => {
     const { toast } = useToast();
+    const { t } = useI18n();
     const {
         dummyForm,
         backendForm,
@@ -56,12 +58,12 @@ const LoginForm: FC = () => {
     useEffect(() => {
         if (message) {
             toast({
-                title: "Authentication",
+                title: t('auth.authenticationTitle', 'Authentication'),
                 description: message,
                 duration: 3000,
             });
         }
-    }, [message, toast]);
+    }, [message, toast, t]);
 
     return (
         <div className="flex items-center justify-center w-full h-full p-4">
@@ -76,13 +78,13 @@ const LoginForm: FC = () => {
                 <div className="w-full h-full flex flex-col overflow-auto">
                     <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-100">
                         <div className="flex justify-between items-center">
-                            <h1 className="text-2xl font-bold text-gray-800">Login</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">{t('auth.login', 'Login')}</h1>
                             {provider === AuthProvider.MyBackendDocs && (
                                 <Link
                                     href="/register"
                                     className="text-blue-500 hover:text-blue-700 text-sm transition-colors duration-300"
                                 >
-                                    Register
+                                    {t('auth.register', 'Register')}
                                 </Link>
                             )}
                         </div>
@@ -96,7 +98,7 @@ const LoginForm: FC = () => {
                                 value={provider}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select auth type" />
+                                    <SelectValue placeholder={t('auth.selectAuthType', 'Select auth type')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {authProviderOptions.map((option) => (
@@ -119,8 +121,8 @@ const LoginForm: FC = () => {
                                     (errors) => {
                                         console.error('[LoginForm] Dummy form validation errors:', errors);
                                         toast({
-                                            title: "Validation Error",
-                                            description: "Please fill in all required fields correctly",
+                                            title: t('auth.validationError', 'Validation Error'),
+                                            description: t('auth.validationErrorDescription', 'Please fill in all required fields correctly'),
                                             variant: "destructive",
                                             duration: 3000,
                                         });
@@ -178,8 +180,8 @@ const LoginForm: FC = () => {
                                     (errors) => {
                                         console.error('[LoginForm] Backend form validation errors:', errors);
                                         toast({
-                                            title: "Validation Error",
-                                            description: "Please fill in all required fields correctly",
+                                            title: t('auth.validationError', 'Validation Error'),
+                                            description: t('auth.validationErrorDescription', 'Please fill in all required fields correctly'),
                                             variant: "destructive",
                                             duration: 3000,
                                         });

@@ -14,6 +14,7 @@ import { useToast } from "@/modules/autoria/shared/hooks/use-toast";
 
 import { useRegistrationForm } from "./useRegistrationForm";
 import { formFields } from "./formFields.config";
+import { useI18n } from "@/contexts/I18nContext";
 import {
     formContainerClasses,
     resizableWrapperStyle,
@@ -34,6 +35,7 @@ import {
 
 const RegistrationForm: FC = () => {
     const { toast } = useToast();
+    const { t } = useI18n();
     const {
         register,
         handleSubmit,
@@ -64,31 +66,40 @@ const RegistrationForm: FC = () => {
                 <div className="w-full h-full flex flex-col overflow-auto">
                     <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-100">
                         <div className="flex justify-between items-center">
-                            <h1 className="text-2xl font-bold text-gray-800">Register</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">{t('auth.register', 'Register')}</h1>
                             <Link
                                 href="/login"
                                 className="text-blue-500 hover:text-blue-700 text-sm transition-colors duration-300"
                             >
-                                Login
+                                {t('auth.login', 'Login')}
                             </Link>
                         </div>
                     </div>
 
                     <div className="p-6 space-y-6">
                         <form key={`registration-form-${formKey}`} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                            {formFields.map((field) => (
+                            {formFields.map((field) => {
+                                const label = field.label && field.label.includes('.') 
+                                    ? t(field.label, field.label) 
+                                    : field.label;
+                                const placeholder = field.placeholder && field.placeholder.includes('.')
+                                    ? t(field.placeholder, field.placeholder)
+                                    : field.placeholder;
+                                
+                                return (
                                 <div key={String(field.name)} className="space-y-2">
                                     <Label
                                         htmlFor={String(field.name)}
                                         className="text-sm font-medium text-gray-700"
                                     >
-                                        {field.label}
+                                        {label}
                                     </Label>
                                     <Input
                                         id={String(field.name)}
                                         type={field.type}
                                         className={`text-gray-800 ${errors[field.name as keyof IRegistration] ? 'border-red-500 focus:ring-red-500' : ''}`}
                                         {...register(field.name as keyof IRegistration)}
+                                        placeholder={placeholder}
                                     />
                                     {errors[field.name as keyof IRegistration] && (
                                         <p className="text-sm text-red-600">
@@ -96,7 +107,8 @@ const RegistrationForm: FC = () => {
                                         </p>
                                     )}
                                 </div>
-                            ))}
+                            );
+                            })}
 
                             {error && (
                                 <Alert variant="destructive" className={alertClasses}>
@@ -106,7 +118,7 @@ const RegistrationForm: FC = () => {
 
                             {password && confirmPassword && !passwordsMatch && (
                                 <Alert variant="destructive" className={alertClasses}>
-                                    <AlertDescription>Passwords do not match</AlertDescription>
+                                    <AlertDescription>{t('auth.passwordsDoNotMatch', 'Passwords do not match')}</AlertDescription>
                                 </Alert>
                             )}
 
@@ -122,7 +134,7 @@ const RegistrationForm: FC = () => {
                                         ) : (
                                             <PaperAirplaneIcon className="h-5 w-5" />
                                         )}
-                                        Register
+                                        {t('auth.register', 'Register')}
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -131,7 +143,7 @@ const RegistrationForm: FC = () => {
                                         disabled={isLoading}
                                     >
                                         <ArrowPathIcon className="h-5 w-5" />
-                                        Reset
+                                        {t('auth.reset', 'Reset')}
                                     </Button>
                                 </ButtonGroup>
                             </div>

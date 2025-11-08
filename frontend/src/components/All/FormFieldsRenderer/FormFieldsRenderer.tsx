@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface FormFieldsRendererProps<T extends FieldValues> {
   fields: FormFieldsConfig<T>[];
@@ -21,6 +22,8 @@ const FormFieldsRenderer = <T extends FieldValues>({
   inputClassName,
   defaultValues
 }: FormFieldsRendererProps<T>) => {
+  const { t } = useI18n();
+  
   return (
     <>
       {fields.map((field) => {
@@ -34,10 +37,18 @@ const FormFieldsRenderer = <T extends FieldValues>({
           ? error.message as string
           : undefined;
 
+        // Translate label and placeholder if they are translation keys
+        const label = field.label && field.label.includes('.') 
+          ? t(field.label, field.label) 
+          : field.label;
+        const placeholder = field.placeholder && field.placeholder.includes('.')
+          ? t(field.placeholder, field.placeholder)
+          : field.placeholder;
+
         return (
           <div key={String(field.name)} className="space-y-2">
             <Label htmlFor={String(field.name)} className="text-sm font-medium text-gray-700">
-              {field.label}
+              {label}
             </Label>
 
             {field.type === "select" ? (
@@ -52,14 +63,26 @@ const FormFieldsRenderer = <T extends FieldValues>({
                 }}
               >
                 <SelectTrigger className={cn("w-full", error && "border-red-500")}>
-                  <SelectValue placeholder={`Select ${field.label}`} />
+                  <SelectValue placeholder={placeholder || `Select ${label}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  {field.options?.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  {field.options?.map((option) => {
+                    // Translate option labels if they are translation keys
+                    let optionLabel = option.label;
+                    if (option.label && typeof option.label === 'string') {
+                      if (option.label.includes('.')) {
+                        optionLabel = t(option.label, option.label);
+                      } else if (field.name === 'expiresInMins') {
+                        // Special handling for session duration: combine number with "minutes" translation
+                        optionLabel = `${option.label} ${t('auth.minutes', 'minutes')}`;
+                      }
+                    }
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        {optionLabel}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             ) : (
@@ -72,6 +95,7 @@ const FormFieldsRenderer = <T extends FieldValues>({
                 )}
                 {...register(fieldName)}
                 defaultValue={defaultValue as string}
+                placeholder={placeholder}
               />
             )}
 
