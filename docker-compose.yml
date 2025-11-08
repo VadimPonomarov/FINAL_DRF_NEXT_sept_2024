@@ -43,16 +43,6 @@ services:
         python manage.py init_project_data --force &&
         echo '📁 Collecting static files...' &&
         python manage.py collectstatic --noinput --clear &&
-        echo '📦 Checking test ads...' &&
-        python -c '
-          from apps.ads.models import CarAd;
-          count = CarAd.objects.filter(status="active").count();
-          import sys;
-          sys.exit(0 if count >= 10 else 1);
-        ' && echo '✅ Test ads already exist (count >= 10)' ||
-        (echo '🚀 Generating test ads (count < 10)...' &&
-         python manage.py generate_test_ads_with_images --count=10 --with-images --image-types=front,side,rear &&
-         echo '✅ Test ads generated') &&
         echo '🎉 Application setup complete!' &&
         daphne -b 0.0.0.0 -p 8000 config.asgi:application
       "
