@@ -105,13 +105,10 @@ class Command(BaseCommand):
                     model=model.name,
                     generation=ad_data['generation'],
                     modification=ad_data['modification'],
-                    vehicle_type=vehicle_type,
                     title=ad_data['title'],
                     description=ad_data['description'],
                     price=ad_data['price'],
                     currency=ad_data['currency'],
-                    price_usd=ad_data['price_usd'],
-                    price_eur=ad_data['price_eur'],
                     region=region,
                     city=city,
                     status=AdStatusEnum.ACTIVE,
@@ -364,9 +361,8 @@ class Command(BaseCommand):
             from apps.ads.models import AddImageModel
 
             # Prepare car data for image generation
-            # КРИТИЧНО: Правильная передача vehicle_type_name для релевантных изображений
-            vehicle_type_name = ad.vehicle_type.name if ad.vehicle_type else None
-            if not vehicle_type_name:
+            vehicle_type_name = ad_data['dynamic_fields'].get('vehicle_type_name', 'Unknown')
+            if not vehicle_type_name or vehicle_type_name == 'Unknown':
                 self.stdout.write(f'      ⚠️ No vehicle type for ad #{ad.id}, skipping image generation')
                 return 0
             
@@ -376,14 +372,12 @@ class Command(BaseCommand):
                 'year': ad_data['dynamic_fields'].get('year', 2020),
                 'color': ad_data['dynamic_fields'].get('color', 'silver').lower(),
                 'body_type': ad_data['dynamic_fields'].get('body_type', 'sedan'),
-                'vehicle_type': vehicle_type_name.lower(),  # English version (e.g., 'car', 'truck')
-                'vehicle_type_name': vehicle_type_name,  # Original Ukrainian name (e.g., 'Легкові', 'Вантажівки')
+                'vehicle_type_name': vehicle_type_name,
                 'condition': ad_data['dynamic_fields'].get('condition', 'used'),
                 'description': ad.description
             }
             
             self.stdout.write(f'      🚗 Vehicle type: {vehicle_type_name}')
-
             self.stdout.write(f'   🎨 Generating images for {car_data["brand"]} {car_data["model"]}...')
 
             # Call backend image generation endpoint
@@ -412,18 +406,16 @@ class Command(BaseCommand):
                             continue
 
                         # Save image to ad
-                        try:
-                            AddImageModel.objects.create(
-                                ad=ad,
-                                image_url=url,
-                                caption=img.get('title', f'{ad_data["dynamic_fields"]["body_type"]} view'),
-                                is_primary=(idx == 0),
-                                order=idx + 1
-                            )
-                            images_created += 1
-                        except Exception as e:
-                            self.stdout.write(f'      ⚠️ Failed to save image {idx + 1}: {e}')
+                        AddImageModel.objects.create(
+                            ad=ad,
+                            image_url=url,
+                            caption=img.get('title', f"{img.get('angle', 'front')} view"),
+                            order=idx + 1,
+                            is_primary=(idx == 0)
+                        )
+                        images_created += 1
 
+                    self.stdout.write(f'      ✅ Created {images_created} images')
                     return images_created
                 else:
                     self.stdout.write(f'      ⚠️ No images in response')
@@ -434,7 +426,6 @@ class Command(BaseCommand):
             self.stdout.write(f'      ❌ Image generation error: {e}')
 
         return 0
-
     def _print_summary(self, created_ads, with_images):
         """Print summary of generated ads."""
         if not created_ads:
@@ -447,7 +438,7 @@ class Command(BaseCommand):
         # Group by vehicle type
         by_type = {}
         for ad in created_ads:
-            vtype = ad.vehicle_type.name if ad.vehicle_type else 'Unknown'
+            vtype = ad.dynamic_fields.get('vehicle_type_name', 'Unknown')
             if vtype not in by_type:
                 by_type[vtype] = []
             by_type[vtype].append(ad)
