@@ -601,44 +601,54 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 # Use our own simplified prompt directly (no translation needed)
                 english_prompt = prompt
 
-                # Generate image using OpenAI DALL-E 3
+                # Generate image using Pollinations.ai with FLUX model (PRIMARY METHOD)
                 try:
-                    # Initialize OpenAI client
-                    api_key = os.getenv('OPENAI_API_KEY')
-                    if not api_key:
-                        logger.error("❌ [DALL-E] OPENAI_API_KEY not found in environment")
-                        raise ValueError("OPENAI_API_KEY not configured")
-
-                    client = OpenAI(api_key=api_key)
-
-                    # DALL-E 3 has a 4000 character limit for prompts
-                    # Simplify prompt if needed
-                    dalle_prompt = english_prompt[:4000] if len(english_prompt) > 4000 else english_prompt
-
-                    logger.info(f"🎨 [DALL-E] Generating image for {angle} with prompt length: {len(dalle_prompt)}")
-
-                    # Generate image with DALL-E 3
-                    response = client.images.generate(
-                        model="dall-e-3",
-                        prompt=dalle_prompt,
-                        size="1024x1024",  # DALL-E 3 supports: 1024x1024, 1792x1024, 1024x1792
-                        quality="standard",  # "standard" or "hd"
-                        n=1,
-                    )
-
-                    image_url = response.data[0].url
-                    logger.info(f"✅ [DALL-E] Successfully generated image for {angle}: {image_url[:100]}...")
-
-                except Exception as e:
-                    logger.error(f"❌ [DALL-E] Error generating image for {angle}: {e}")
-                    # Fallback to pollinations.ai if DALL-E fails
-                    logger.info(f"🔄 [DALL-E] Falling back to pollinations.ai")
+                    logger.info(f"🎨 [FLUX] Generating image for {angle} using Pollinations.ai with flux model")
+                    
+                    # Enhance prompt with negative keywords
                     enhanced_prompt = f"{english_prompt}. NEGATIVE: cartoon, anime, drawing, sketch, low quality, blurry, distorted, multiple vehicles, people, text, watermarks"
                     encoded_prompt = urllib.parse.quote(enhanced_prompt)
                     session_id = canonical_data.get('session_id', 'DEFAULT')
                     seed = abs(hash(f"{session_id}_{angle}")) % 1000000
+                    
+                    # PRIMARY: Pollinations.ai with FLUX model
                     image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&model=flux&enhance=true&seed={seed}&nologo=true"
-                    logger.info(f"🔗 [Pollinations] Fallback URL for {angle}: {image_url[:100]}...")
+                    logger.info(f"✅ [FLUX] Generated URL for {angle}: {image_url[:100]}...")
+
+                except Exception as e:
+                    logger.error(f"❌ [FLUX] Error generating image for {angle}: {e}")
+                    # Fallback to DALL-E 3 if Pollinations.ai fails
+                    try:
+                        logger.info(f"🔄 [FLUX] Falling back to DALL-E 3")
+                        
+                        # Initialize OpenAI client
+                        api_key = os.getenv('OPENAI_API_KEY')
+                        if not api_key:
+                            logger.error("❌ [DALL-E] OPENAI_API_KEY not found in environment")
+                            raise ValueError("OPENAI_API_KEY not configured")
+
+                        client = OpenAI(api_key=api_key)
+
+                        # DALL-E 3 has a 4000 character limit for prompts
+                        dalle_prompt = english_prompt[:4000] if len(english_prompt) > 4000 else english_prompt
+
+                        # Generate image with DALL-E 3
+                        response = client.images.generate(
+                            model="dall-e-3",
+                            prompt=dalle_prompt,
+                            size="1024x1024",
+                            quality="standard",
+                            n=1,
+                        )
+
+                        image_url = response.data[0].url
+                        logger.info(f"✅ [DALL-E] Fallback successful for {angle}: {image_url[:100]}...")
+                    
+                    except Exception as dalle_error:
+                        logger.error(f"❌ [DALL-E] Fallback also failed: {dalle_error}")
+                        # Last resort: simple pollinations URL without enhancement
+                        image_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(english_prompt)}?model=flux"
+                        logger.info(f"🔗 [FLUX] Using simple URL as last resort")
 
                 # Create image object
                 session_id = canonical_data.get('session_id', 'DEFAULT')
