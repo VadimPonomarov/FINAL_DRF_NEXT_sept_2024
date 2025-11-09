@@ -26,21 +26,49 @@ export interface TokenValidationResult {
  */
 async function checkTokensExist(): Promise<boolean> {
   try {
+    console.log('[checkTokensExist] 🔍 Checking for tokens in Redis...');
     const response = await fetch('/api/redis?key=backend_auth', {
       method: 'GET',
       cache: 'no-store',
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      const hasTokens = data?.exists === true && data?.value;
-      console.log('[checkTokensExist] Redis check result:', hasTokens);
-      return hasTokens;
+    if (!response.ok) {
+      // При любых ошибках Redis считаем что токенов НЕТ
+      // Это безопаснее чем пропускать без проверки
+      console.error('[checkTokensExist] ❌ Redis returned error:', response.status);
+      return false;
     }
 
-    // При любых ошибках Redis считаем что токенов НЕТ
-    // Это безопаснее чем пропускать без проверки
-    console.error('[checkTokensExist] ❌ Redis returned error:', response.status);
+    const data = await response.json();
+    console.log('[checkTokensExist] Redis response:', { exists: data?.exists, hasValue: !!data?.value, valueLength: data?.value?.length });
+    
+    // КРИТИЧНО: Строгая проверка - токены должны существовать И иметь валидное значение
+    const hasTokens = data?.exists === true && 
+                     data?.value && 
+                     typeof data.value === 'string' && 
+                     data.value.trim().length > 0;
+    
+    // Дополнительная проверка: пытаемся распарсить JSON, чтобы убедиться что это валидные токены
+    if (hasTokens) {
+      try {
+        const parsed = JSON.parse(data.value);
+        const hasAccessToken = parsed?.access && typeof parsed.access === 'string' && parsed.access.trim().length > 0;
+        const hasRefreshToken = parsed?.refresh && typeof parsed.refresh === 'string' && parsed.refresh.trim().length > 0;
+        
+        if (!hasAccessToken || !hasRefreshToken) {
+          console.error('[checkTokensExist] ❌ Tokens exist but invalid structure:', { hasAccess: hasAccessToken, hasRefresh: hasRefreshToken });
+          return false;
+        }
+        
+        console.log('[checkTokensExist] ✅ Valid tokens found in Redis');
+        return true;
+      } catch (parseError) {
+        console.error('[checkTokensExist] ❌ Failed to parse token data:', parseError);
+        return false;
+      }
+    }
+    
+    console.log('[checkTokensExist] ❌ No valid tokens found in Redis');
     return false;
   } catch (error) {
     // При сетевых ошибках также считаем что токенов НЕТ

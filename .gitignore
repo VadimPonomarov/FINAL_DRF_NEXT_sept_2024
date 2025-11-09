@@ -328,3 +328,9 @@ media/avatars/generated/
 # =============================================================================
 .turbo/
 frontend/.turbo/
+.cursor
+.cursorignore
+.github
+.husky
+.npm
+.npmrc
