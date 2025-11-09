@@ -176,9 +176,19 @@ export default async function middleware(req: NextRequest) {
     return await checkBackendAuth(req);
   }
 
-  // Защищаем все страницы AutoRia (рівень 1: перевірка сесії NextAuth)
+  // КРИТИЧНО: Защищаем все страницы AutoRia (рівень 1: перевірка сесії NextAuth)
+  // БЕЗ сессии NextAuth доступ к AutoRia ЗАПРЕЩЕН
   if (pathname.startsWith('/autoria') && isHtmlPage) {
-    return await checkBackendAuth(req);
+    console.log(`[Middleware] 🔒 AutoRia page access attempt: ${pathname}`);
+    const authResponse = await checkBackendAuth(req);
+    // Если редирект - возвращаем его немедленно
+    if (authResponse.status === 307 || authResponse.status === 308) {
+      console.log(`[Middleware] 🚫 Blocking AutoRia access - redirecting to signin`);
+      return authResponse;
+    }
+    // Если доступ разрешен - пропускаем дальше
+    console.log(`[Middleware] ✅ AutoRia access allowed (NextAuth session valid)`);
+    return authResponse;
   }
 
   // Защищаем другие защищенные страницы

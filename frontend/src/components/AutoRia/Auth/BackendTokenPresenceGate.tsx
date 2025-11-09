@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { validateAndRefreshToken } from '@/shared/utils/auth/validateAndRefreshToken';
-import { redirectToAuth } from '@/shared/utils/auth/redirectToAuth';
 
 /**
  * РІВЕНЬ 2 (з 2): BackendTokenPresenceGate — перевірка backend-токенів
@@ -17,13 +16,17 @@ import { redirectToAuth } from '@/shared/utils/auth/redirectToAuth';
  * ВАЖЛИВО:
  * - Middleware уже перевірив сесію NextAuth (рівень 1)
  * - Цей компонент перевіряє ЛИШЕ backend-токени (рівень 2)
- * - Використовує універсальну утиліту redirectToAuth для коректного редиректу
- * - Застосовується в Layout для всіх сторінок AutoRia
+ * - КРИТИЧНО: Блокирует доступ к контенту, если токенов нет
+ * - Редирект на /login происходит немедленно при отсутствии токенов
+ * - Проверка срабатывает при монтировании И при изменении страницы
  */
 export default function BackendTokenPresenceGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const redirectingRef = useRef(false);
 
   /**
    * Перевірка backend-токенів з автооновленням (рівень 2)
@@ -31,16 +34,23 @@ export default function BackendTokenPresenceGate({ children }: { children: React
    *
    * Логіка:
    * 1. Перевіряємо наявність токенів у Redis
-   * 2. Якщо немає → редирект на /login
+   * 2. Якщо немає → НЕМЕДЛЕННО редирект на /login (БЕЗ показа контента)
    * 3. Якщо є → валідуємо access token через backend API
    * 4. Якщо недійсний → автоматичне оновлення
    * 5. Якщо оновлення не допомогло → редирект на /login
    *
-   * Таймаут: 10 секунд на всю перевірку (включно з оновленням)
+   * КРИТИЧНО: Контент НЕ показывается, пока токены не валидны
    */
   const checkBackendTokens = useCallback(async () => {
+    // Предотвращаем множественные редиректы
+    if (redirectingRef.current) {
+      console.log('[BackendTokenPresenceGate] Redirect already in progress, skipping check');
+      return;
+    }
+
     try {
-      console.log('[BackendTokenPresenceGate] Рівень 2: валідація токенів з автооновленням...');
+      console.log('[BackendTokenPresenceGate] 🔒 Рівень 2: валідація токенів з автооновленням...');
+      console.log('[BackendTokenPresenceGate] Current path:', pathname);
 
       // Используем новую систему валидации с автоматическим рефрешем
       const result = await validateAndRefreshToken();
@@ -48,29 +58,63 @@ export default function BackendTokenPresenceGate({ children }: { children: React
       if (result.isValid) {
         // Токени дійсні (можливо після автооновлення)
         console.log('[BackendTokenPresenceGate] ✅ Токени дійсні:', result.message || 'OK');
+        setIsAuthorized(true);
         setIsLoading(false);
         return;
       }
 
-      // Токени недійсні — виконуємо редирект на /login
+      // Токени недійсні — НЕМЕДЛЕННО редирект на /login БЕЗ показа контента
       console.error('[BackendTokenPresenceGate] ❌ Токени недійсні або відсутні');
-      console.log('[BackendTokenPresenceGate] Виконується редирект на /login...');
+      console.error('[BackendTokenPresenceGate] 🚫 БЛОКИРОВКА ДОСТУПА - редирект на /login');
       
-      // Використовуємо redirectToAuth для коректного редиректу з урахуванням багаторівневої системи
-      await redirectToAuth(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''), 'tokens_not_found');
+      redirectingRef.current = true;
+      setIsLoading(false);
+      setIsAuthorized(false);
+
+      // Немедленный редирект на /login с сохранением текущего пути для возврата
+      const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+      const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
+      
+      console.log('[BackendTokenPresenceGate] Redirecting to:', loginUrl);
+      // Используем window.location.replace для немедленного редиректа (не добавляет в историю)
+      if (typeof window !== 'undefined') {
+        window.location.replace(loginUrl);
+      } else {
+        router.push(loginUrl);
+      }
 
     } catch (error) {
-      console.error('[BackendTokenPresenceGate] Помилка під час валідації:', error);
+      console.error('[BackendTokenPresenceGate] ❌ Помилка під час валідації:', error);
       // У разі помилки — також виконуємо редирект, оскільки це може вказувати на проблеми з токенами
-      console.log('[BackendTokenPresenceGate] Виконується редирект через помилку валідації...');
-      await redirectToAuth(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''), 'auth_required');
-    }
-  }, [pathname, searchParams]);
+      console.error('[BackendTokenPresenceGate] 🚫 БЛОКИРОВКА ДОСТУПА через помилку валідації');
+      
+      redirectingRef.current = true;
+      setIsLoading(false);
+      setIsAuthorized(false);
 
+      const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+      const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
+      
+      console.log('[BackendTokenPresenceGate] Redirecting to (error):', loginUrl);
+      // Используем window.location.replace для немедленного редиректа (не добавляет в историю)
+      if (typeof window !== 'undefined') {
+        window.location.replace(loginUrl);
+      } else {
+        router.push(loginUrl);
+      }
+    }
+  }, [pathname, searchParams, router]);
+
+  // КРИТИЧНО: Проверка при монтировании И при изменении страницы
   useEffect(() => {
-    // Запускаємо перевірку під час монтування компонента
+    // Сбрасываем флаг редиректа при изменении страницы
+    redirectingRef.current = false;
+    setIsLoading(true);
+    setIsAuthorized(false);
+    
+    // Запускаємо перевірку під час монтування компонента И при изменении страницы
     checkBackendTokens();
-  }, [checkBackendTokens]);
+  }, [checkBackendTokens, pathname]);
 
   // Показуємо лоадер, доки триває перевірка токенів
   if (isLoading) {
@@ -79,6 +123,18 @@ export default function BackendTokenPresenceGate({ children }: { children: React
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           <p className="text-sm text-gray-600">Перевірка авторизації...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // КРИТИЧНО: Показываем контент ТОЛЬКО если авторизованы
+  if (!isAuthorized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <p className="text-sm text-gray-600">Перенаправлення на сторінку входу...</p>
         </div>
       </div>
     );
