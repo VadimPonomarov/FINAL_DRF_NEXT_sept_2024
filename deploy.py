@@ -391,20 +391,41 @@ def check_requirements():
     return True
 
 def cleanup_conflicting_containers():
-    """Видаляє конфліктуючі контейнери перед деплоєм"""
-    print("\n🧹 Очищення конфліктуючих контейнерів...")
+    """Видаляє конфліктуючі контейнери та звільняє порти перед деплоєм"""
+    print("\n🧹 Очищення конфліктуючих контейнерів та портів...")
     
-    # Список контейнерів, які можуть конфліктувати
-    container_names = [
+    # Список портів, які використовує проект
+    ports_to_check = [80, 3000, 5432, 5555, 5540, 6379, 8000, 8001, 15672]
+    
+    # Спочатку знаходимо всі контейнери, які використовують ці порти
+    containers_to_remove = set()
+    
+    for port in ports_to_check:
+        try:
+            # Знаходимо контейнери, які використовують цей порт
+            result = subprocess.run(
+                ["docker", "ps", "-a", "--filter", f"publish={port}", "--format", "{{.Names}}"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            
+            if result.returncode == 0 and result.stdout.strip():
+                for container_name in result.stdout.strip().split('\n'):
+                    if container_name:
+                        containers_to_remove.add(container_name)
+        except Exception as e:
+            print_warning(f"⚠️  Не вдалося перевірити порт {port}: {e}")
+    
+    # Також додаємо контейнери зі стандартними іменами
+    standard_names = [
         "pg", "redis", "redis-insight", "rabbitmq",
         "celery-worker", "celery-beat", "celery-flower",
         "mailing", "nginx"
     ]
     
-    removed_count = 0
-    for container_name in container_names:
+    for container_name in standard_names:
         try:
-            # Перевіряємо чи існує контейнер
             result = subprocess.run(
                 ["docker", "ps", "-a", "--filter", f"name=^{container_name}$", "--format", "{{.Names}}"],
                 capture_output=True,
@@ -413,7 +434,16 @@ def cleanup_conflicting_containers():
             )
             
             if result.returncode == 0 and result.stdout.strip():
-                # Контейнер існує, видаляємо його
+                containers_to_remove.add(result.stdout.strip())
+        except Exception as e:
+            print_warning(f"⚠️  Не вдалося перевірити контейнер {container_name}: {e}")
+    
+    # Видаляємо всі знайдені контейнери
+    removed_count = 0
+    if containers_to_remove:
+        print(f"   Знайдено {len(containers_to_remove)} контейнерів для видалення:")
+        for container_name in containers_to_remove:
+            try:
                 print(f"   🗑️  Видалення контейнера: {container_name}")
                 subprocess.run(
                     ["docker", "rm", "-f", container_name],
@@ -421,11 +451,14 @@ def cleanup_conflicting_containers():
                     timeout=10
                 )
                 removed_count += 1
-        except Exception as e:
-            print_warning(f"⚠️  Не вдалося перевірити/видалити {container_name}: {e}")
+            except Exception as e:
+                print_warning(f"⚠️  Не вдалося видалити {container_name}: {e}")
     
     if removed_count > 0:
         print_success(f"✅ Видалено {removed_count} конфліктуючих контейнерів")
+        # Даємо час Docker звільнити порти
+        print("   ⏳ Очікування звільнення портів...")
+        time.sleep(3)
     else:
         print_success("✅ Конфліктуючих контейнерів не знайдено")
     

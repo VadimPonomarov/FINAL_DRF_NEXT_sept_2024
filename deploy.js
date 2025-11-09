@@ -151,14 +151,53 @@ async function main() {
         
         console.log('');
 
-        // Step 2: Stop existing containers
-        printStep(2, 'Stopping existing containers...');
-        try {
-            execSync('docker-compose down', { stdio: 'ignore' });
-        } catch (error) {
-            // Ignore errors if containers weren't running
+        // Step 2: Cleanup conflicting containers and ports
+        printStep(2, 'Cleaning up conflicting containers and ports...');
+        
+        const ports = [80, 3000, 5432, 5555, 5540, 6379, 8000, 8001, 15672];
+        const standardNames = ['pg', 'redis', 'redis-insight', 'rabbitmq', 'celery-worker', 'celery-beat', 'celery-flower', 'mailing', 'nginx'];
+        const containersToRemove = new Set();
+        
+        // Find containers using project ports
+        for (const port of ports) {
+            try {
+                const output = execSync(`docker ps -a --filter "publish=${port}" --format "{{.Names}}"`, { encoding: 'utf8' });
+                const containers = output.trim().split('\n').filter(name => name);
+                containers.forEach(name => containersToRemove.add(name));
+            } catch (error) {
+                // Ignore errors
+            }
         }
-        printSuccess('Containers stopped');
+        
+        // Check for standard container names
+        for (const name of standardNames) {
+            try {
+                const output = execSync(`docker ps -a --filter "name=^${name}$" --format "{{.Names}}"`, { encoding: 'utf8' });
+                if (output.trim() === name) {
+                    containersToRemove.add(name);
+                }
+            } catch (error) {
+                // Ignore errors
+            }
+        }
+        
+        // Remove conflicting containers
+        if (containersToRemove.size > 0) {
+            console.log(`   Found ${containersToRemove.size} containers to remove`);
+            for (const container of containersToRemove) {
+                try {
+                    console.log(`   🗑️  Removing container: ${container}`);
+                    execSync(`docker rm -f ${container}`, { stdio: 'ignore' });
+                } catch (error) {
+                    printWarning(`Failed to remove ${container}`);
+                }
+            }
+            printSuccess('Removed conflicting containers');
+            console.log('   ⏳ Waiting for ports to be released...');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+        } else {
+            printSuccess('No conflicting containers found');
+        }
         console.log('');
 
         // Step 3: Start Docker containers

@@ -101,10 +101,44 @@ main() {
     
     echo ""
 
-    # Step 2: Stop existing containers
-    print_step 2 "Stopping existing containers..."
-    docker-compose down 2>/dev/null || true
-    print_success "Containers stopped"
+    # Step 2: Cleanup conflicting containers and ports
+    print_step 2 "Cleaning up conflicting containers and ports..."
+    
+    # List of ports used by the project
+    PORTS=(80 3000 5432 5555 5540 6379 8000 8001 15672)
+    
+    # Find and remove containers using these ports
+    CONTAINERS_TO_REMOVE=""
+    for PORT in "${PORTS[@]}"; do
+        CONTAINERS=$(docker ps -a --filter "publish=$PORT" --format "{{.Names}}" 2>/dev/null || true)
+        if [ ! -z "$CONTAINERS" ]; then
+            CONTAINERS_TO_REMOVE="$CONTAINERS_TO_REMOVE $CONTAINERS"
+        fi
+    done
+    
+    # Also check for standard container names
+    STANDARD_NAMES=("pg" "redis" "redis-insight" "rabbitmq" "celery-worker" "celery-beat" "celery-flower" "mailing" "nginx")
+    for NAME in "${STANDARD_NAMES[@]}"; do
+        if docker ps -a --filter "name=^${NAME}$" --format "{{.Names}}" | grep -q "^${NAME}$"; then
+            CONTAINERS_TO_REMOVE="$CONTAINERS_TO_REMOVE $NAME"
+        fi
+    done
+    
+    # Remove duplicates and clean up
+    CONTAINERS_TO_REMOVE=$(echo "$CONTAINERS_TO_REMOVE" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+    
+    if [ ! -z "$CONTAINERS_TO_REMOVE" ]; then
+        echo "   Found containers to remove: $CONTAINERS_TO_REMOVE"
+        for CONTAINER in $CONTAINERS_TO_REMOVE; do
+            echo "   🗑️  Removing container: $CONTAINER"
+            docker rm -f "$CONTAINER" 2>/dev/null || true
+        done
+        print_success "Removed conflicting containers"
+        echo "   ⏳ Waiting for ports to be released..."
+        sleep 3
+    else
+        print_success "No conflicting containers found"
+    fi
     echo ""
 
     # Step 3: Start Docker containers
