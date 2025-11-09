@@ -5,24 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "npm run kill 3000 && cross-env NEXT_DISABLE_DEVTOOLS=1 next dev --turbo",
-    "dev:classic": "npm run kill 3000 && cross-env NEXT_DISABLE_DEVTOOLS=1 next dev",
-    "dev:turbo": "npm run kill 3000 && cross-env NEXT_DISABLE_DEVTOOLS=1 next dev --turbo",
-    "dev:smart": "node scripts/dev-with-restart.js",
     "build": "next build",
-    "build:webpack": "next build",
     "start": "next start",
-    "kill": "npx kill-port",
-    "check-translations": "node src/utils/dev-tools/check-translations.cjs",
-    "fix-translations": "node src/utils/dev-tools/fix-translations.js",
-    "translation-doctor": "tsx src/utils/dev-tools/translation-doctor.ts",
-    "translation-scan": "tsx src/utils/dev-tools/translation-doctor.ts scan",
-    "translation-analyze": "tsx src/utils/dev-tools/translation-doctor.ts analyze",
-    "translation-fix": "tsx src/utils/dev-tools/translation-doctor.ts fix",
-    "translation-health": "tsx src/utils/dev-tools/translation-doctor.ts doctor",
-    "translation-check": "node src/utils/dev-tools/translation-doctor-simple.cjs",
-    "translation-autofix": "node src/utils/dev-tools/auto-translation-fixer.cjs",
-    "test:image-generation": "tsx src/utils/dev-tools/test-image-generation.ts",
-    "preview:image-generation": "tsx src/utils/dev-tools/preview-image-generation.ts"
+    "kill": "npx kill-port"
   },
   "dependencies": {
     "@google-cloud/translate": "^9.2.0",
