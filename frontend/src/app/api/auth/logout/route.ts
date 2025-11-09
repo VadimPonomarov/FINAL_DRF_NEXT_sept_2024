@@ -7,7 +7,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '@/configs/auth';
-import { redis } from '@/lib/redis';
+
+async function deleteRedisKeys(nextUrl: NextRequest['nextUrl'], keys: string[]) {
+  await Promise.all(
+    keys.map(async (key) => {
+      try {
+        const url = new URL(`${nextUrl.origin}/api/redis`);
+        url.searchParams.set('key', key);
+
+        const response = await fetch(url.toString(), {
+          method: 'DELETE',
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          console.warn('[API /auth/logout] ⚠️ Failed to delete Redis key:', key, response.status);
+        }
+      } catch (error) {
+        console.error('[API /auth/logout] ❌ Error deleting Redis key:', key, error);
+      }
+    })
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,39 +50,25 @@ export async function POST(request: NextRequest) {
       const backendAuthKey = `backend_auth`;
       const dummyAuthKey = `dummy_auth`;
 
-      try {
-        // Удаляем все токены из Redis
-        await Promise.all([
-          redis.del(providerKey),
-          redis.del(tokensKey),
-          redis.del(autoRiaTokensKey),
-          redis.del(backendAuthKey),
-          redis.del(dummyAuthKey),
-        ]);
-
-        console.log('[API /auth/logout] ✅ Backend tokens cleared from Redis:', {
-          providerKey,
-          tokensKey,
-          autoRiaTokensKey,
-          backendAuthKey,
-          dummyAuthKey,
-        });
-      } catch (redisError) {
-        console.error('[API /auth/logout] ❌ Redis cleanup error:', redisError);
-        // Продолжаем, даже если Redis не доступен
-      }
+      await deleteRedisKeys(request.nextUrl, [
+        providerKey,
+        tokensKey,
+        autoRiaTokensKey,
+        backendAuthKey,
+        dummyAuthKey,
+      ]);
+      console.log('[API /auth/logout] ✅ Backend tokens cleared from Redis:', {
+        providerKey,
+        tokensKey,
+        autoRiaTokensKey,
+        backendAuthKey,
+        dummyAuthKey,
+      });
     } else {
       console.log('[API /auth/logout] No session found, clearing general tokens');
       
       // Очищаем общие токены даже без сессии
-      try {
-        await Promise.all([
-          redis.del('backend_auth'),
-          redis.del('dummy_auth'),
-        ]);
-      } catch (redisError) {
-        console.error('[API /auth/logout] ❌ Redis cleanup error:', redisError);
-      }
+      await deleteRedisKeys(request.nextUrl, ['backend_auth', 'dummy_auth']);
     }
 
     // Возвращаем успех БЕЗ удаления cookies NextAuth (сессия сохраняется)
