@@ -9,10 +9,10 @@ const path = require('path');
 
 // Параметры по умолчанию
 const defaultConfig = {
-  count: 3,
-  images: true,
+  count: 10,  // Минимум 10 объявлений для деплоя
+  images: false,  // Без изображений для быстрого деплоя
   imageTypes: ['front', 'side'],
-  headless: false
+  headless: true  // Headless режим для автоматического деплоя
 };
 
 // Парсим аргументы командной строки
