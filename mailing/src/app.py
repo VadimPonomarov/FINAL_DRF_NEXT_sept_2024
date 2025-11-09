@@ -53,9 +53,10 @@ async def start_consumer():
                 actual_host = consumer.parameters.host
                 logger.info(f"✅ Consumer connected to RabbitMQ at: {actual_host}")
 
+                # This will block forever (until connection is lost)
                 consumer.consume()
 
-            # Run in thread to avoid blocking
+            # Run in thread to avoid blocking event loop
             await asyncio.to_thread(consume)
 
             # If we get here, consumer started successfully
@@ -63,11 +64,14 @@ async def start_consumer():
             return
 
         except Exception as e:
-            logger.error(f"❌ Consumer start attempt {attempt}/{max_retries} failed: {e}")
+            logger.error(f"❌ Consumer start attempt {attempt}/{max_retries} failed")
+            logger.debug(f"Error details: {e}")
 
             if attempt == max_retries:
-                logger.error("💥 All consumer start attempts failed")
-                raise
+                logger.error("💥 All consumer start attempts failed - continuing without consumer")
+                logger.warning("⚠️  Mailing service will run in API-only mode")
+                # Don't raise - let FastAPI continue running
+                return
             else:
                 logger.info(f"⏳ Retrying consumer start in {retry_delay} seconds...")
                 await asyncio.sleep(retry_delay)
@@ -81,18 +85,23 @@ async def lifespan(app: FastAPI):
     consumer_task = None
 
     try:
-        # Start consumer in Docker mode
+        # Start consumer in Docker mode (non-blocking)
         if settings.is_docker:
-            logger.info("Starting consumer in Docker mode")
+            logger.info("Starting consumer in Docker mode (background)")
+            # Don't await - let it run in background without blocking FastAPI startup
             consumer_task = asyncio.create_task(start_consumer())
         else:
             logger.info("Running in local mode - consumer not started")
 
+        # FastAPI is now ready to serve requests
+        logger.info("✅ FastAPI server is ready")
+        
         yield
 
     finally:
         # Cleanup
-        if consumer_task:
+        if consumer_task and not consumer_task.done():
+            logger.info("Cancelling consumer task...")
             consumer_task.cancel()
             try:
                 await consumer_task
