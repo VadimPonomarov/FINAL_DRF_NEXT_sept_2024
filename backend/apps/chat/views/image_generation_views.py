@@ -544,6 +544,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
 
         # Build canonical car data using the same logic as mock command
         # КРИТИЧНО: НЕ ИСПОЛЬЗУЕМ fallback на 'car' - требуем реальный vehicle_type_name
+        vehicle_type = None
         vehicle_type_name = car_data.get('vehicle_type_name')
         if not vehicle_type_name:
             logger.error(f"❌ [mock_algorithm] vehicle_type_name is REQUIRED but not provided!")
@@ -556,15 +557,17 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
             }, status=400)
         
         logger.info(f"✅ [mock_algorithm] Using vehicle_type_name: {vehicle_type_name}")
-        logger.info(f"✅ [mock_algorithm] Resolved canonical vehicle_type: {vehicle_type}")
-        
+
+        # Pre-resolve vehicle type candidate (may be refined by canonical builder)
+        vehicle_type_candidate = car_data.get('vehicle_type') or vehicle_type_name.lower()
+
         # Ensure all required fields are present
         specs = {
             'year': car_data.get('year', 2020),
             'color': car_data.get('color', 'silver'),
             'body_type': car_data.get('body_type', 'sedan'),
             'condition': car_data.get('condition', 'good'),
-            'vehicle_type': car_data.get('vehicle_type', vehicle_type_name.lower()),  # English version as fallback
+            'vehicle_type': vehicle_type_candidate,  # English version as fallback
             'vehicle_type_name': vehicle_type_name  # Original name (REQUIRED!)
         }
 
@@ -576,6 +579,9 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
         )
 
         # Ensure canonical data preserves canonical vehicle type
+        vehicle_type = canonical_data.get('vehicle_type') or vehicle_type_candidate
+        logger.info(f"✅ [mock_algorithm] Resolved canonical vehicle_type: {vehicle_type}")
+
         canonical_data['vehicle_type'] = vehicle_type
         canonical_data['vehicle_type_name'] = vehicle_type_name
         logger.info(f"✅ [mock_algorithm] canonical_data vehicle_type set to: {canonical_data['vehicle_type']} ({type(canonical_data['vehicle_type'])})")
@@ -612,13 +618,39 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 try:
                     logger.info(f"🎨 [FLUX] Generating image for {angle} using Pollinations.ai with flux model")
                     
-                    # Enhance prompt with negative keywords
-                    enhanced_prompt = f"{english_prompt}. NEGATIVE: cartoon, anime, drawing, sketch, low quality, blurry, distorted, multiple vehicles, people, text, watermarks"
-                    encoded_prompt = urllib.parse.quote(enhanced_prompt)
+                    # Enhance prompt with comprehensive negative keywords for realism and consistency
+                    # КРИТИЧНО: Используем ОДИН базовый seed для всех ракурсов для консистентности
                     session_id = canonical_data.get('session_id', 'DEFAULT')
-                    seed = abs(hash(f"{session_id}_{angle}")) % 1000000
+                    base_seed = abs(hash(f"{session_id}")) % 1000000
+                    # Добавляем небольшое смещение для каждого ракурса (0-99), чтобы избежать полной идентичности
+                    angle_offset = hash(angle) % 100
+                    seed = base_seed + angle_offset
+                    
+                    # Строгие негативные промпты для физической корректности
+                    vehicle_type = canonical_data.get('vehicle_type', 'car')
+                    negative_prompts = [
+                        "cartoon, anime, drawing, sketch, low quality, blurry, distorted",
+                        "multiple vehicles, people, text, watermarks",
+                        "impossible configurations, absurd features",
+                        "floating parts, impossible proportions"
+                    ]
+                    
+                    # Добавляем специфичные негативные промпты в зависимости от типа ТС
+                    if vehicle_type == 'motorcycle':
+                        negative_prompts.append("4 wheels, car body, enclosed cabin, steering wheel, multiple handlebars")
+                    elif vehicle_type == 'car':
+                        negative_prompts.append("motorcycle handlebars, 5 wheels, 3 wheels, excavator arm, construction equipment")
+                    elif vehicle_type == 'truck':
+                        negative_prompts.append("passenger car body, sedan styling, motorcycle design")
+                    elif vehicle_type == 'trailer':
+                        negative_prompts.append("engine, driver cabin, steering wheel, powered vehicle")
+                    
+                    negative_prompt_text = ", ".join(negative_prompts)
+                    enhanced_prompt = f"{english_prompt}. NEGATIVE: {negative_prompt_text}"
+                    encoded_prompt = urllib.parse.quote(enhanced_prompt)
                     
                     # PRIMARY: Pollinations.ai with FLUX model
+                    # Используем один seed для консистентности между ракурсами
                     image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&model=flux&enhance=true&seed={seed}&nologo=true"
                     logger.info(f"✅ [FLUX] Generated URL for {angle}: {image_url[:100]}...")
 
@@ -658,15 +690,14 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                         logger.info(f"🔗 [FLUX] Using simple URL as last resort")
 
                 # Create image object
-                session_id = canonical_data.get('session_id', 'DEFAULT')
-                seed = abs(hash(f"{session_id}_{angle}")) % 1000000
+                # Используем тот же seed, что был использован для генерации (определен выше)
                 image_obj = {
                     'url': image_url,
                     'angle': angle,
                     'title': get_angle_title(angle, canonical_data),
                     'isMain': index == 0,
                     'prompt': english_prompt,
-                    'seed': seed,
+                    'seed': seed,  # Используем seed из генерации (определен выше)
                     'session_id': session_id
                 }
 
@@ -695,11 +726,16 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 angle = future_to_angle[future]
                 try:
                     result = future.result()
-                    if result:
-                        generated_images.append(result)
-                        logger.info(f"✅ [mock_algorithm] Completed {angle} (total: {len(generated_images)}/{len(angles)})")
+                    if result and result.get('url'):
+                        # Проверяем, что URL не пустой и валидный
+                        url = result.get('url', '').strip()
+                        if url and (url.startswith('http://') or url.startswith('https://')):
+                            generated_images.append(result)
+                            logger.info(f"✅ [mock_algorithm] Completed {angle} (total: {len(generated_images)}/{len(angles)})")
+                        else:
+                            logger.warning(f"⚠️ [mock_algorithm] Empty or invalid URL for {angle}: {url}")
                     else:
-                        logger.warning(f"⚠️ [mock_algorithm] No result for {angle}")
+                        logger.warning(f"⚠️ [mock_algorithm] No result or empty URL for {angle}")
                 except Exception as e:
                     logger.error(f"❌ [mock_algorithm] Exception in thread for {angle}: {e}")
 
@@ -857,11 +893,16 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     angle_key = str(angle or '').lower().replace('-', '_')
     vt = vehicle_type or 'car'  # Fallback to 'car' if vehicle_type is None
 
-    # Простые элементы консистентности
+    # СТРОГИЕ элементы консистентности для обеспечения одного и того же объекта
     consistency_elements = [
-        f"Same vehicle (ID: CAR-{car_session_id})",
-        f"Different angle: {angle}",
-        "Professional photography"
+        f"CRITICAL: This is THE EXACT SAME vehicle (ID: CAR-{car_session_id}) shown from different angle: {angle}",
+        "IDENTICAL vehicle specifications: same body type, same proportions, same wheel design, same color shade, same trim level",
+        "SAME physical dimensions and design elements across ALL images",
+        "SAME wheel count, wheel size, and wheel design in ALL images",
+        "SAME body shape, cabin design, and styling details in ALL images",
+        "SAME brand-specific design language and characteristic features",
+        "ONLY the camera angle changes - the vehicle itself remains IDENTICAL",
+        "Professional photography with consistent lighting and color temperature"
     ]
 
     # Добавляем уникальные элементы для каждого ракурса
@@ -892,10 +933,44 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         f"Show {angle} specific features"
     ])
 
-    # Простые элементы реализма
+    # СТРОГИЕ элементы реализма и физической корректности
+    # Определяем правильное количество колес и рулей для каждого типа ТС
+    wheel_count_map = {
+        'car': 'exactly 4 wheels',
+        'truck': '6 or more wheels (multi-axle configuration)',
+        'motorcycle': 'exactly 2 wheels, NO more, NO less',
+        'bus': 'exactly 4 or 6 wheels',
+        'van': 'exactly 4 wheels',
+        'trailer': '2 or more wheels (no engine, no steering wheel)',
+        'boat': 'no wheels (watercraft)',
+        'special': 'varies by equipment type (4-8 wheels typical)'
+    }
+    
+    steering_count_map = {
+        'car': 'exactly 1 steering wheel',
+        'truck': 'exactly 1 steering wheel',
+        'motorcycle': 'exactly 1 handlebar, NO steering wheel, NO multiple handlebars',
+        'bus': 'exactly 1 steering wheel',
+        'van': 'exactly 1 steering wheel',
+        'trailer': 'NO steering wheel (unpowered trailer)',
+        'boat': '1 helm/wheel (marine steering)',
+        'special': '1 steering wheel or joystick controls'
+    }
+    
+    correct_wheels = wheel_count_map.get(vt, 'appropriate wheel count for vehicle type')
+    correct_steering = steering_count_map.get(vt, 'appropriate steering mechanism')
+    
     realism_elements = [
-        "Realistic vehicle design",
-        "Professional quality"
+        f"PHYSICALLY CORRECT {vt.upper()} configuration",
+        f"REALISTIC vehicle design based on real-world {brand} {model} {year}",
+        f"EXACTLY {correct_wheels} - NO extra wheels, NO missing wheels",
+        f"EXACTLY {correct_steering} - NO multiple steering mechanisms",
+        "Real-world engineering principles and functional design",
+        "Professional quality, photorealistic rendering",
+        "NO absurd or impossible features",
+        "NO floating parts, NO impossible proportions",
+        "NO cartoon elements, NO fantasy designs",
+        "Realistic materials, textures, and finishes"
     ]
 
     # Простые стили
@@ -1501,6 +1576,10 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
             # Для неизвестных брендов - фокус на дизайне, без логотипов
             branding_part = f"with {brand} brand design characteristics (grille shape, styling cues), "
     
+    # Собираем финальный промпт с ВСЕМИ элементами консистентности и реализма
+    consistency_prompt = ", ".join(consistency_elements)
+    realism_prompt = ", ".join(realism_elements)
+    
     final_prompt = (
         f"{type_emphasis}"
         f"{brand_enforcement} "
@@ -1508,8 +1587,11 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         f"{angle_prompt}, "
         f"{type_enforcement}, "  # Добавляем type_enforcement в промпт для усиления
         f"{branding_part}"
+        f"{consistency_prompt}, "  # КРИТИЧНО: Добавляем элементы консистентности
+        f"{realism_prompt}, "  # КРИТИЧНО: Добавляем элементы реализма
         f"photorealistic, high quality, realistic lighting, "
-        f"series ID CAR-{car_session_id}"
+        f"series ID CAR-{car_session_id}, "
+        f"single consistent vehicle across all angles"
     )
     
     # Для спецтехники добавляем явный запрет легковых автомобилей

@@ -704,22 +704,67 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
         return;
       }
 
-      // Запускаем генерацию через backend mock-алгоритм — идентично демо-объявлениям
+      // Запускаем генерацию через backend mock-алгоритм — ИДЕНТИЧНО тестовым объявлениям
       console.log('[ImagesForm] 🎨 Calling backend /api/chat/generate-car-images-mock (same as test ads)');
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      
+      // КРИТИЧНО: Используем ТОТ ЖЕ алгоритм, что и в тестовых объявлениях
+      // НЕ используем buildCanonicalCarData - используем прямую обработку как в test-ads
+      const originalVehicleTypeName = (data as any).vehicle_type_name || '';
+      
+      // Для нормализации используем только для определения body_type и других параметров
+      const { normalizeVehicleType } = await import('@/modules/autoria/shared/utils/mockData');
+      const normalizedVT = normalizeVehicleType(originalVehicleTypeName);
+      const vt = normalizedVT || 'car'; // Fallback к 'car' только если нормализация вернула null
+      
+      console.log(`[ImagesForm] 🚗 Vehicle type info:`, {
+        original: originalVehicleTypeName,
+        normalized: normalizedVT,
+        using_for_prompt: originalVehicleTypeName || normalizedVT || 'car'
+      });
+      
+      // Извлекаем данные ТАК ЖЕ, как в тестовых объявлениях
+      const brandStr = (typeof (data as any).brand === 'string' && isNaN(Number((data as any).brand)) 
+        ? (data as any).brand 
+        : ((typeof (data as any).brand_name === 'string' && (data as any).brand_name.trim())
+            ? (data as any).brand_name
+            : ''));
+      const modelStr = (typeof (data as any).model_name === 'string' && (data as any).model_name.trim())
+        ? (data as any).model_name
+        : String(data.model || '');
+      const colorStr = (typeof (data as any).color === 'string' && (data as any).color.trim())
+        ? (data as any).color.toLowerCase()
+        : String((data as any).color_name || 'silver').toLowerCase();
+      const bodyTypeStr = String(data.body_type || (vt === 'truck' ? 'semi-truck' : vt === 'motorcycle' ? 'sport' : vt === 'bus' ? 'coach' : vt === 'van' ? 'van' : vt === 'trailer' ? 'curtainsider' : 'sedan')).toLowerCase();
+      const conditionStr = String(data.condition || 'good').toLowerCase();
+      
+      console.log(`🚗 [ImagesForm] Car data for image generation:`, {
+        brand: brandStr,
+        model: modelStr,
+        year: data.year,
+        color: colorStr,
+        body_type: bodyTypeStr,
+        vehicle_type: vt,
+        vehicle_type_name: originalVehicleTypeName || normalizedVT || 'car'
+      });
+      
+      // Call backend directly to use pollinations-based mock algorithm - ИДЕНТИЧНО test-ads
+      console.log(`🌐 [ImagesForm] Calling image generation endpoint: ${backendUrl}/api/chat/generate-car-images-mock/`);
+      console.log(`📋 [ImagesForm] Sending vehicle_type_name: '${originalVehicleTypeName}' (original, not normalized)`);
+      
       fetch(`${backendUrl}/api/chat/generate-car-images-mock/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           car_data: {
-            brand: typeof data.brand === 'string' ? data.brand : (data as any).brand_name || (data as any).brand || '',
-            model: typeof data.model === 'string' ? data.model : (data.model as any)?.name || '',
+            brand: brandStr,
+            model: modelStr,
             year: data.year,
-            color: (typeof data.color === 'string' ? data.color : (data as any).color_name) || 'silver',
-            body_type: data.body_type || 'sedan',
-            vehicle_type: (data as any).vehicle_type,
-            vehicle_type_name: (data as any).vehicle_type_name || (data.body_type as any) || 'car',
-            condition: data.condition || 'good',
+            color: colorStr,
+            body_type: bodyTypeStr,
+            vehicle_type: vt, // Нормализованное значение для совместимости
+            vehicle_type_name: originalVehicleTypeName || normalizedVT || 'car', // ОРИГИНАЛЬНОЕ значение для промпта
+            condition: conditionStr,
             description: data.description || ''
           },
           angles: toGenerate,
@@ -728,11 +773,30 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
         })
       })
       .then(async (response): Promise<any> => {
+        console.log(`📡 [ImagesForm] Image generation response status: ${response.status}`);
+        
         if (!response.ok) {
-          // Не показываем финальный алерт здесь; отрабатываем в catch
-          throw new Error(`Ошибка генерации: ${response.status}`);
+          // Пытаемся получить детали ошибки из ответа
+          let errorDetails = '';
+          try {
+            const errorData = await response.json();
+            errorDetails = errorData.error || errorData.details || JSON.stringify(errorData);
+            console.error(`❌ [ImagesForm] Backend error details:`, errorData);
+          } catch (e) {
+            errorDetails = await response.text();
+            console.error(`❌ [ImagesForm] Backend error (text):`, errorDetails);
+          }
+          throw new Error(`Ошибка генерации (${response.status}): ${errorDetails || 'Unknown error'}`);
         }
-        return response.json();
+        
+        const result = await response.json();
+        console.log(`✅ [ImagesForm] Image generation response:`, {
+          success: result.success,
+          status: result.status,
+          imagesCount: result.images?.length || 0,
+          hasImages: Array.isArray(result.images)
+        });
+        return result;
       })
       .then((result: any) => {
         console.log('🎨 [ImagesForm] ASYNC Generation completed:', result);

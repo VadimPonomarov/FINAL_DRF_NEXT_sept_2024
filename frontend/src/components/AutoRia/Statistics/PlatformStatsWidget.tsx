@@ -74,33 +74,6 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
         console.log('[PlatformStatsWidget] ✅ Statistics updated:', result.data);
         console.log('[PlatformStatsWidget] 📦 Data source:', result.source);
 
-        // 🚀 AUTO-SEEDING: Если активных объявлений меньше 10 - автоматически генерируем
-        if (newStats.active_ads < 10 && !forceRefresh) {
-          console.log(`[PlatformStatsWidget] 🌱 Auto-seeding: Found only ${newStats.active_ads} active ads, generating test ads...`);
-          try {
-            const generateResponse = await fetchWithAuth('/api/autoria/test-ads/generate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                count: 10,
-                with_images: true,
-                image_types: ['front', 'side', 'rear']
-              })
-            });
-
-            const generateResult = await generateResponse.json();
-            console.log('[PlatformStatsWidget] 🎉 Auto-seeding result:', generateResult);
-
-            if (generateResult.success) {
-              // Обновляем статистику после генерации
-              console.log('[PlatformStatsWidget] 🔄 Refreshing stats after auto-seeding...');
-              await fetchStats(true);
-            }
-          } catch (genError: any) {
-            console.error('[PlatformStatsWidget] ❌ Auto-seeding failed:', genError);
-            // Не показываем ошибку пользователю - это фоновая операция
-          }
-        }
       } else {
         throw new Error(result.error || 'Failed to fetch statistics');
       }

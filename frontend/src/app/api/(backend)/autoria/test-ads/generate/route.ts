@@ -4,28 +4,67 @@ import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
 import { mapFormDataToApiData } from '@/modules/autoria/shared/utils/carAdDataMapper';
 import type { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
+import type { AutoRiaUser } from '@/services/autoria/users.service';
+
+type HeadersRecord = Record<string, string>;
+type AuthenticatedRequestInit = RequestInit & { headers?: HeadersRecord };
+type AuthFetchFn = (url: string, options?: AuthenticatedRequestInit) => Promise<Response>;
+
+const headersInitToRecord = (headersInit?: HeadersInit): HeadersRecord => {
+  if (!headersInit) {
+    return {};
+  }
+
+  const headers = new Headers(headersInit);
+  const record: HeadersRecord = {};
+  headers.forEach((value, key) => {
+    record[key] = value;
+  });
+  return record;
+};
+
+const mergeHeaders = (...headerSets: Array<HeadersInit | undefined>): HeadersRecord => {
+  return headerSets.reduce<HeadersRecord>((acc, headerInit) => {
+    Object.assign(acc, headersInitToRecord(headerInit));
+    return acc;
+  }, {});
+};
+
+interface UserCredentials {
+  email: string;
+  password: string;
+}
+
+type GenerationResult = {
+  success: boolean;
+  title: string;
+  imagesCount: number;
+  id?: number;
+  user?: string;
+  error?: string;
+  index?: number;
+  relevancyIssues?: string[];
+  debug?: Record<string, unknown>;
+};
 
 // Серверная функция для создания тестовых объявлений с прогрессом
-async function createTestAdsServer(request: NextRequest, count: number, includeImages: boolean, imageTypes: string[], onProgress?: (progress: number, message: string) => void) {
+export async function createTestAdsServer(request: NextRequest, count: number, includeImages: boolean, imageTypes: string[], onProgress?: (progress: number, message: string) => void) {
   console.log(`🚀 Creating ${count} test ads on server...`);
 
   // Authenticated fetch: forward client Authorization header (fetchWithAuth does refresh on the client)
-  const authFetch = (url: string, init?: RequestInit) => {
+  const authFetch: AuthFetchFn = (url, init = {}) => {
     const incomingAuth = request.headers.get('authorization') || request.headers.get('Authorization') || '';
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-      ...(incomingAuth ? { Authorization: incomingAuth } : {}),
-    } as Record<string, string>;
-    return fetch(url, { ...(init || {}), headers });
+    const baseHeaders: HeadersRecord = incomingAuth ? { Authorization: incomingAuth } : {};
+    const headers = mergeHeaders({ 'Content-Type': 'application/json' }, baseHeaders, init.headers);
+    return fetch(url, { ...init, headers });
   };
+
+  const defaultAuthFetch: AuthFetchFn = (url, options) => ServerAuthManager.authenticatedFetch(request, url, options);
 
   // Уведомляем о начале
   onProgress?.(0, `Начинаем создание ${count} объявлений...`);
 
-
-
-  const results = [];
+  const results: GenerationResult[] = [];
   let totalImages = 0;
 
   // 🚀 КЕШИРОВАНИЕ: Загружаем модели один раз для всех объявлений
@@ -44,7 +83,7 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
   console.log('👥 Fetching users for ad distribution...');
   const usersResponse = await authFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/autoria/users/`);
 
-  let availableUsers: any[] = [];
+  let availableUsers: AutoRiaUser[] = [];
   if (usersResponse.ok) {
     const usersData = await usersResponse.json();
     availableUsers = usersData.results || [];
@@ -75,12 +114,12 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
       console.log(`📝 Generating ad ${i + 1}/${count}...`);
 
       // Выбираем пользователя для этого объявления
-      let selectedUser = null;
-      let userCredentials = null;
+      let selectedUser: AutoRiaUser | null = null;
+      let userCredentials: UserCredentials | null = null;
 
       if (availableUsers.length > 0) {
         // Создаем пул доступных пользователей с учетом ограничений
-        const availablePool = [];
+        const availablePool: AutoRiaUser[] = [];
 
         // Добавляем всех премиум пользователей (без ограничений)
         premiumUsers.forEach(user => availablePool.push(user));
@@ -121,7 +160,7 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
 
       // Используем ServerAuthManager для правильной аутентификации
       // Это гарантирует использование токенов из Redis и правильную обработку ошибок
-      let currentAuthFetch = ServerAuthManager.authenticatedFetch;
+      let currentAuthFetch: AuthFetchFn = defaultAuthFetch;
 
       // Если выбран другой пользователь, логинимся как он
       if (selectedUser && userCredentials) {
@@ -143,12 +182,10 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
 
             if (accessToken) {
               // Создаем новую функцию authFetch для этого пользователя
-              currentAuthFetch = (url: string, init?: RequestInit) => {
-                const headers = {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json',
-                  ...(init?.headers || {})
-                };
+              currentAuthFetch = (url, init = {}) => {
+                const headers = mergeHeaders({
+                  Authorization: `Bearer ${accessToken}`,
+                }, { 'Content-Type': 'application/json' }, init.headers);
                 return fetch(url, { ...init, headers });
               };
 
@@ -176,26 +213,20 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
       // Resolve valid region/city IDs from backend reference endpoints
       let resolvedRegionId: number | null = null;
       let resolvedCityId: number | null = null;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-        
-        // Add timeout for region fetch (10 seconds)
         const REGION_FETCH_TIMEOUT_MS = 10000;
         const regionController = new AbortController();
         const regionTimeoutId = setTimeout(() => regionController.abort(), REGION_FETCH_TIMEOUT_MS);
-        
-        let regionsResp: Response;
+
+        let regionsResp: Response | undefined;
         try {
-          const regionOptions: RequestInit = {
+          const regionOptions: AuthenticatedRequestInit = {
             signal: regionController.signal,
           };
-          
-          if (currentAuthFetch === ServerAuthManager.authenticatedFetch) {
-            regionsResp = await ServerAuthManager.authenticatedFetch(request, `${backendUrl}/api/ads/reference/regions/`, regionOptions);
-          } else {
-            regionsResp = await currentAuthFetch(`${backendUrl}/api/ads/reference/regions/`, regionOptions);
-          }
-          
+
+          regionsResp = await currentAuthFetch(`${backendUrl}/api/ads/reference/regions/`, regionOptions);
+
           clearTimeout(regionTimeoutId);
         } catch (regionError: any) {
           clearTimeout(regionTimeoutId);
@@ -205,31 +236,28 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
             throw regionError;
           }
         }
-        
-        if (regionsResp && regionsResp.ok) {
+
+        if (regionsResp?.ok) {
           const regionsData = await regionsResp.json();
-          const regionsArr: any[] = Array.isArray(regionsData) ? regionsData : (regionsData.results || []);
-          const firstRegion = regionsArr[0];
+          const regionsArr: Array<{ id?: number }> = Array.isArray(regionsData)
+            ? regionsData
+            : regionsData.results || [];
+          const firstRegion = regionsArr.find(region => region?.id != null);
           if (firstRegion?.id != null) {
             resolvedRegionId = Number(firstRegion.id);
-            
-            // Add timeout for cities fetch (10 seconds)
+
             const CITIES_FETCH_TIMEOUT_MS = 10000;
             const citiesController = new AbortController();
             const citiesTimeoutId = setTimeout(() => citiesController.abort(), CITIES_FETCH_TIMEOUT_MS);
-            
-            let citiesResp: Response;
+
+            let citiesResp: Response | undefined;
             try {
-              const citiesOptions: RequestInit = {
+              const citiesOptions: AuthenticatedRequestInit = {
                 signal: citiesController.signal,
               };
-              
-              if (currentAuthFetch === ServerAuthManager.authenticatedFetch) {
-                citiesResp = await ServerAuthManager.authenticatedFetch(request, `${backendUrl}/api/ads/reference/cities/?region_id=${resolvedRegionId}`, citiesOptions);
-              } else {
-                citiesResp = await currentAuthFetch(`${backendUrl}/api/ads/reference/cities/?region_id=${resolvedRegionId}`, citiesOptions);
-              }
-              
+
+              citiesResp = await currentAuthFetch(`${backendUrl}/api/ads/reference/cities/?region_id=${resolvedRegionId}`, citiesOptions);
+
               clearTimeout(citiesTimeoutId);
             } catch (citiesError: any) {
               clearTimeout(citiesTimeoutId);
@@ -239,127 +267,90 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
                 throw citiesError;
               }
             }
-            
-            if (citiesResp && citiesResp.ok) {
+
+            if (citiesResp?.ok) {
               const citiesData = await citiesResp.json();
-              const citiesArr: any[] = Array.isArray(citiesData) ? citiesData : (citiesData.results || citiesData?.cities || []);
-              const firstCity = citiesArr[0];
+              const citiesArr: Array<{ id?: number }> = Array.isArray(citiesData)
+                ? citiesData
+                : citiesData.results || citiesData.cities || [];
+              const firstCity = citiesArr.find(city => city?.id != null);
               if (firstCity?.id != null) {
                 resolvedCityId = Number(firstCity.id);
               }
             }
           }
         }
-      } catch (e) {
-        console.warn('⚠️ Unable to resolve region/city, proceeding without explicit IDs', e);
+      } catch (resolveError) {
+        console.warn('⚠️ Unable to resolve region/city, proceeding without explicit IDs', resolveError);
       }
 
       const formData: Partial<CarAdFormData> = {
         ...mock,
         title: uniqueTitle,
-        description: (mock as any).description || `Автотест оголошення ${i + 1}`,
+        description: (mock as any).description || `Test ad ${i + 1}. Auto-generated for seeding.`,
         use_profile_contacts: true,
         status: 'active',
-        // Valid region/city resolved dynamically above (if available)
-        ...(resolvedRegionId ? { region: resolvedRegionId as any } : {}),
-        ...(resolvedCityId ? { city: resolvedCityId as any } : {}),
+        ...(resolvedRegionId != null ? { region: resolvedRegionId as any } : {}),
+        ...(resolvedCityId != null ? { city: resolvedCityId as any } : {}),
       };
+
       if ((formData as any).exchange_status === 'no') {
         (formData as any).exchange_status = 'no_exchange';
       }
 
-      // Simple moderation-safe censoring for known false-positives (e.g., 'A-Class')
-      const censor = (s?: string) => (s ? s.replace(/ass/gi, 'a**') : s);
+      const censor = (value?: string) => (value ? value.replace(/ass/gi, 'a**') : value);
       formData.title = censor(formData.title);
       formData.description = censor(formData.description as string);
 
-
-      // УБИРАЕМ ВСЕ ПЕРЕОПРЕДЕЛЕНИЯ - используем только данные из обратного каскада
-      console.log('[TestAds] 🚫 NO OVERRIDES - Using reverse-cascade data as-is');
-      console.log('[TestAds] 📊 Generated data:', {
+      console.log('[TestAds] 🔁 Generated form data:', {
         vehicle_type: (formData as any).vehicle_type,
         vehicle_type_name: (formData as any).vehicle_type_name,
         brand: (formData as any).brand,
         brand_name: (formData as any).brand_name,
-        model: (formData as any).model
-      });
-
-      // Преобразуем в payload для backend
-      console.log(`[TestAds] 🔍 BEFORE MAPPING - formData:`, {
-        vehicle_type: (formData as any).vehicle_type,
-        vehicle_type_name: (formData as any).vehicle_type_name,
-        brand: (formData as any).brand,
-        brand_name: (formData as any).brand_name,
-        model: (formData as any).model
+        model: (formData as any).model,
       });
 
       const apiPayload = mapFormDataToApiData(formData);
 
-      console.log(`[TestAds] 🔍 AFTER MAPPING - apiPayload:`, {
+      console.log(`[TestAds] 📦 API payload preview:`, {
         vehicle_type: (apiPayload as any).vehicle_type,
         vehicle_type_name: (apiPayload as any).vehicle_type_name,
         mark: (apiPayload as any).mark,
-        model: (apiPayload as any).model
+        model: (apiPayload as any).model,
       });
 
-      // Страховка: если по какой-то причине vehicle_type вырезался маппером — восстанавливаем из formData
       if ((apiPayload as any)?.vehicle_type === undefined && (formData as any)?.vehicle_type != null) {
         (apiPayload as any).vehicle_type = Number((formData as any).vehicle_type);
-        console.log(`[TestAds] 🔧 RESTORED vehicle_type from formData: ${(apiPayload as any).vehicle_type}`);
-      }
-      // УБИРАЕМ ПЕРЕОПРЕДЕЛЕНИЯ ТИПА ТРАНСПОРТА - доверяем обратному каскаду
-      {
-        const vtIdRaw = (apiPayload as any)?.vehicle_type;
-        const vtId = typeof vtIdRaw === 'number' ? vtIdRaw : parseInt(String(vtIdRaw));
-        console.log(`[TestAds] 🚫 NO OVERRIDES - Vehicle type from reverse-cascade: ${vtId} (${(apiPayload as any)?.vehicle_type_name})`);
-
-        // Только проверяем что данные есть, но НЕ переопределяем
-        if (isNaN(vtId)) {
-          throw new Error(`Invalid vehicle_type from reverse-cascade: ${vtIdRaw}`);
-        }
+        console.log(`[TestAds] ♻️ Restored vehicle_type from formData: ${(apiPayload as any).vehicle_type}`);
       }
 
-      // Убеждаемся что vehicle_type_name также есть в dynamic_fields
       if ((apiPayload as any).dynamic_fields && (apiPayload as any).vehicle_type_name) {
         (apiPayload as any).dynamic_fields.vehicle_type_name = (apiPayload as any).vehicle_type_name;
       }
 
-      // Диагностика
-      console.log('[TestAds] ▶ Final payload vehicle_type:', (apiPayload as any).vehicle_type, 'name:', (apiPayload as any).vehicle_type_name);
-      console.log('[TestAds] ▶ Dynamic fields vehicle_type_name:', (apiPayload as any).dynamic_fields?.vehicle_type_name);
-
+      console.log('[TestAds] ✅ Final payload vehicle_type:', (apiPayload as any).vehicle_type, 'name:', (apiPayload as any).vehicle_type_name);
+      console.log('[TestAds] ✅ Dynamic fields vehicle_type_name:', (apiPayload as any).dynamic_fields?.vehicle_type_name);
 
       // Создаем объявление через ServerAuthManager для правильной аутентификации
       console.log(`🌐 Creating ad ${i + 1} through backend API...`);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-      
       // Add timeout for ad creation (60 seconds per ad)
       const CREATE_AD_TIMEOUT_MS = 60000;
       const createController = new AbortController();
       const createTimeoutId = setTimeout(() => createController.abort(), CREATE_AD_TIMEOUT_MS);
-      
+
       let response: Response;
       try {
         // Check if currentAuthFetch is ServerAuthManager.authenticatedFetch
         // If so, we need to pass signal through options
-        const fetchOptions: RequestInit = {
+        const fetchOptions: AuthenticatedRequestInit = {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(apiPayload),
           signal: createController.signal,
         };
-        
-        // Use ServerAuthManager if it's the default, otherwise use the custom fetch
-        // ServerAuthManager.authenticatedFetch signature: (request: NextRequest, url: string, options?: RequestInit)
-        if (currentAuthFetch === ServerAuthManager.authenticatedFetch) {
-          response = await ServerAuthManager.authenticatedFetch(request, `${backendUrl}/api/ads/cars/create`, fetchOptions);
-        } else {
-          // Custom fetch function - pass signal directly
-          response = await currentAuthFetch(`${backendUrl}/api/ads/cars/create`, fetchOptions);
-        }
-        
+
+        response = await currentAuthFetch(`${backendUrl}/api/ads/cars/create`, fetchOptions);
+
         clearTimeout(createTimeoutId);
 
         if (!response.ok) {
@@ -379,7 +370,7 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
         }
       } catch (fetchError: any) {
         clearTimeout(createTimeoutId);
-        
+
         // If request was aborted due to timeout, log and continue to next ad
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
           console.error(`⏱️ [TestAds] Request timeout creating ad ${i + 1} (${CREATE_AD_TIMEOUT_MS}ms)`);
@@ -391,7 +382,7 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
           });
           continue; // Skip to next ad
         }
-        
+
         console.error(`❌ [TestAds] Fetch error creating ad ${i + 1}:`, {
           error: fetchError.message,
           stack: fetchError.stack,
@@ -404,22 +395,13 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
         throw fetchError;
       }
 
-      const createdAd = await response.json();
-      console.log(`✅ Created ad ${i + 1}: ${formData.title} (ID: ${createdAd.id})`);
-
-      console.log(`[TestAds] 🔍 BACKEND RESPONSE - createdAd:`, {
-        vehicle_type: createdAd.vehicle_type,
-        vehicle_type_name: createdAd.vehicle_type_name,
-        mark: createdAd.mark,
-        model: createdAd.model,
-        title: createdAd.title
-      });
-
       // Optionally generate and save images using the new algorithm
       let savedCount = 0;
       let relevancyIssues: string[] = [];
 
       let debugInfo: any = undefined;
+
+      const createdAd: Record<string, any> = await response.json();
 
       if (includeImages) {
         try {
@@ -428,21 +410,21 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
 
           // КРИТИЧНО: Используем ОРИГИНАЛЬНЫЙ vehicle_type_name из formData или createdAd
           // НЕ нормализуем его здесь, так как бэкенд сам сделает правильный маппинг
-          const originalVehicleTypeName = (createdAd as any).vehicle_type_name 
-            || (formData as any).vehicle_type_name 
+          const originalVehicleTypeName = (createdAd as any).vehicle_type_name
+            || (formData as any).vehicle_type_name
             || '';
-          
+
           // Для нормализации используем только для определения body_type и других параметров
           const { normalizeVehicleType } = await import('@/modules/autoria/shared/utils/mockData');
           const normalizedVT = normalizeVehicleType(originalVehicleTypeName);
           const vt = normalizedVT || 'car'; // Fallback к 'car' только если нормализация вернула null
-          
+
           console.log(`[TestAds] 🚗 Vehicle type info:`, {
             original: originalVehicleTypeName,
             normalized: normalizedVT,
             using_for_prompt: originalVehicleTypeName || normalizedVT || 'car'
           });
-          
+
           const preferredBrand = (formData as any)._preferred_brand_for_images;
           const brandStr = (typeof preferredBrand === 'string' && preferredBrand.trim())
             ? preferredBrand
@@ -476,7 +458,7 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
           // КРИТИЧНО: Передаем ОРИГИНАЛЬНЫЙ vehicle_type_name, чтобы бэкенд мог правильно его обработать
           console.log(`🌐 [TestAds] Calling image generation endpoint: ${backendUrl}/api/chat/generate-car-images-mock/`);
           console.log(`📋 [TestAds] Sending vehicle_type_name: '${originalVehicleTypeName}' (original, not normalized)`);
-          
+
           const genResp = await fetch(`${backendUrl}/api/chat/generate-car-images-mock/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -543,28 +525,30 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
               console.log(`📸 [TestAds] Processing ${genData.images.length} generated images in parallel...`);
 
               // Filter valid images first
-              const validImages = genData.images
-                .map((img: any, idx: number) => ({ img, idx, url: String(img?.url || '').trim() }))
+              const validImages = (genData.images as Array<{ url?: string; title?: string }> )
+                .map((img, idx) => ({
+                  img,
+                  idx,
+                  url: String(img?.url || '').trim(),
+                }))
                 .filter(({ url }) => url && /^https?:\/\//i.test(url) && !url.includes('via.placeholder.com'));
 
               console.log(`✅ [TestAds] Found ${validImages.length} valid images out of ${genData.images.length}`);
 
               // ASYNC PARALLEL SAVING: Save all images concurrently
-              const saveImagePromises = validImages.map(async ({ img, idx, url }) => {
+              const saveImagePromises = validImages.map(async ({ img, idx, url }): Promise<{ success: boolean; idx: number; error?: string }> => {
                 try {
                   console.log(`💾 [TestAds] Starting parallel save for image ${idx + 1} to ad ${createdAd.id}...`);
-                  
+
                   // Add timeout for image save (30 seconds per image)
                   const SAVE_IMAGE_TIMEOUT_MS = 30000;
                   const saveController = new AbortController();
                   const saveTimeoutId = setTimeout(() => saveController.abort(), SAVE_IMAGE_TIMEOUT_MS);
-                  
+
                   try {
-                    const saveOptions: RequestInit = {
+                    const saveOptions: AuthenticatedRequestInit = {
                       method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
+                      headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         image_url: url,
                         caption: img.title || '',
@@ -573,14 +557,9 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
                       }),
                       signal: saveController.signal,
                     };
-                    
-                    let saveResp: Response;
-                    if (currentAuthFetch === ServerAuthManager.authenticatedFetch) {
-                      saveResp = await ServerAuthManager.authenticatedFetch(request, `${backendUrl}/api/ads/${createdAd.id}/images`, saveOptions);
-                    } else {
-                      saveResp = await currentAuthFetch(`${backendUrl}/api/ads/${createdAd.id}/images`, saveOptions);
-                    }
-                    
+
+                    const saveResp = await currentAuthFetch(`${backendUrl}/api/ads/${createdAd.id}/images`, saveOptions);
+
                     clearTimeout(saveTimeoutId);
 
                     if (saveResp.ok) {
@@ -596,7 +575,7 @@ async function createTestAdsServer(request: NextRequest, count: number, includeI
                     }
                   } catch (saveError: any) {
                     clearTimeout(saveTimeoutId);
-                    
+
                     if (saveError instanceof Error && saveError.name === 'AbortError') {
                       console.warn(`⏱️ [TestAds] Image save timeout for ad ${createdAd.id}, image ${idx + 1}`);
                       return { success: false, idx, error: 'timeout' };

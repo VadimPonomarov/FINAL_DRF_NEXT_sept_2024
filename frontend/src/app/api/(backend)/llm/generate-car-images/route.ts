@@ -647,13 +647,43 @@ function createStructuredCarPrompt(carData: any, angle: string, style: string, c
     'DO NOT generate different vehicles or variants - must be THE EXACT SAME vehicle from different angles'
   ];
 
-  // Realism enforcement (physical correctness)
+  // Realism enforcement (physical correctness) - СТРОГИЕ ограничения
+  const wheelCountMap: Record<string, string> = {
+    'car': 'exactly 4 wheels',
+    'truck': '6 or more wheels (multi-axle configuration)',
+    'motorcycle': 'exactly 2 wheels, NO more, NO less',
+    'bus': 'exactly 4 or 6 wheels',
+    'van': 'exactly 4 wheels',
+    'trailer': '2 or more wheels (no engine, no steering wheel)',
+    'boat': 'no wheels (watercraft)',
+    'special': 'varies by equipment type (4-8 wheels typical)'
+  };
+  
+  const steeringCountMap: Record<string, string> = {
+    'car': 'exactly 1 steering wheel',
+    'truck': 'exactly 1 steering wheel',
+    'motorcycle': 'exactly 1 handlebar, NO steering wheel, NO multiple handlebars',
+    'bus': 'exactly 1 steering wheel',
+    'van': 'exactly 1 steering wheel',
+    'trailer': 'NO steering wheel (unpowered trailer)',
+    'boat': '1 helm/wheel (marine steering)',
+    'special': '1 steering wheel or joystick controls'
+  };
+  
+  const correctWheels = wheelCountMap[vt] || 'appropriate wheel count for vehicle type';
+  const correctSteering = steeringCountMap[vt] || 'appropriate steering mechanism';
+  
   const realismElements = [
-    `PHYSICALLY CORRECT ${vt} configuration`,
-    'realistic and functional vehicle design',
-    'correct number of wheels and steering mechanisms for this vehicle type',
+    `PHYSICALLY CORRECT ${vt.toUpperCase()} configuration`,
+    `REALISTIC vehicle design based on real-world ${carData.brand} ${carData.model} ${carData.year}`,
+    `EXACTLY ${correctWheels} - NO extra wheels, NO missing wheels`,
+    `EXACTLY ${correctSteering} - NO multiple steering mechanisms`,
+    'Real-world engineering principles and functional design',
+    'Professional quality, photorealistic rendering',
     'NO absurd or impossible features',
-    'professional quality, real-world engineering principles'
+    'NO floating parts, NO impossible proportions',
+    'NO cartoon elements, NO fantasy designs',
+    'Realistic materials, textures, and finishes'
   ];
 
   // Негативные промпты в зависимости от типа ТС + физические невозможности
@@ -665,8 +695,23 @@ function createStructuredCarPrompt(carData: any, angle: string, style: string, c
     'NO multiple handlebars',
     'NO floating parts',
     'NO impossible angles or proportions',
-    'NO absurd configurations'
+    'NO absurd configurations',
+    'NO 5 wheels on car',
+    'NO 3 wheels on motorcycle',
+    'NO 2 steering wheels',
+    'NO impossible vehicle configurations'
   ];
+  
+  // Добавляем специфичные негативные промпты в зависимости от типа ТС
+  if (vt === 'motorcycle') {
+    physicalImpossibilities.push('4 wheels', 'car body', 'enclosed cabin', 'steering wheel', 'multiple handlebars');
+  } else if (vt === 'car') {
+    physicalImpossibilities.push('motorcycle handlebars', '5 wheels', '3 wheels', 'excavator arm', 'construction equipment');
+  } else if (vt === 'truck') {
+    physicalImpossibilities.push('passenger car body', 'sedan styling', 'motorcycle design');
+  } else if (vt === 'trailer') {
+    physicalImpossibilities.push('engine', 'driver cabin', 'steering wheel', 'powered vehicle');
+  }
 
   let negativePrompt = 'cartoon, anime, drawing, sketch, low quality, blurry, distorted proportions, multiple vehicles, people, text, watermarks, ' + physicalImpossibilities.join(', ');
 

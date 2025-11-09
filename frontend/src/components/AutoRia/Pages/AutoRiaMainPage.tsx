@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ import TestAdsGenerationModal from '@/components/AutoRia/Components/TestAdsGener
 
 import PlatformStatsWidget from '@/components/AutoRia/Statistics/PlatformStatsWidget';
 import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
+import { ensureInitialTestAdsSeed } from '@/shared/init/ensureInitialSeed';
 
 const AutoRiaMainPage = () => {
   const { t, formatNumber } = useI18n();
@@ -33,6 +34,21 @@ const AutoRiaMainPage = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showTestAdsModal, setShowTestAdsModal] = useState(false);
   const [testAdsCount, setTestAdsCount] = useState(3);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    ensureInitialTestAdsSeed({ signal: controller.signal })
+      .catch((error) => {
+        if (error?.name === 'AbortError') {
+          return;
+        }
+        console.error('[AutoRiaMainPage] ❌ Initial seed failed:', error);
+      });
+
+    return () => controller.abort();
+  }, []);
+
 
 
   // УДАЛЕНО: Дублирующий запрос к /api/user/profile
