@@ -1408,10 +1408,22 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
             f"{', '.join(forbidden_logos)}. "
             f"These logos belong to OTHER brands, NOT to {brand}. "
             f"CRITICAL: This is {brand} {model}, NOT Toyota, NOT Mercedes, NOT BMW, NOT any other brand. "
-            f"If you are uncertain about {brand} logo - use BLANK unmarked grille instead."
+            f"If you are uncertain about {brand} logo - use BLANK unmarked grille instead. "
+            f"NEVER use Toyota oval, Mercedes star, BMW roundel, VW logo, or any other popular brand logo. "
         )
     else:
         forbidden_instruction = ""
+    
+    # КРИТИЧНО: Для неизвестных брендов - ВСЕГДА добавляем запрет популярных логотипов
+    if not is_known_brand:
+        forbidden_instruction = (
+            f"CRITICAL BRANDING RULE: This is {brand} {model} - a LESS COMMON brand. "
+            f"ABSOLUTELY FORBIDDEN: DO NOT use Toyota oval logo, Mercedes star, BMW roundel, VW logo, "
+            f"Honda H, Ford oval, Chevrolet bowtie, Hyundai H, Nissan circle, Audi rings, or ANY other popular brand logos. "
+            f"These logos DO NOT belong to {brand}. "
+            f"If uncertain about {brand} logo - use BLANK unmarked grille or generic {brand} lettering. "
+            f"Focus on vehicle shape, proportions, and design WITHOUT recognizable brand logos. "
+        )
     
     # Минимальная защита бренда - позволить AI принимать интеллектуальные решения
     brand_protection = (
@@ -1583,6 +1595,7 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
     final_prompt = (
         f"{type_emphasis}"
         f"{brand_enforcement} "
+        f"{forbidden_instruction} "  # КРИТИЧНО: Добавляем запрет неправильных логотипов
         f"Professional photography of {brand} {model} {year} {color} {body_type}, "
         f"{angle_prompt}, "
         f"{type_enforcement}, "  # Добавляем type_enforcement в промпт для усиления
