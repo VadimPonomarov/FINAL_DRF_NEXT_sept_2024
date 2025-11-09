@@ -42,8 +42,8 @@ class Settings(BaseSettings):
     environment: str = "local"
 
     # Server
-    host: str = "0.0.0.0"
-    port: int = 8001
+    host: str = Field(default="0.0.0.0", alias="MAILING_HOST")
+    port: int = Field(default=8001, alias="MAILING_PORT")
 
     # RabbitMQ (auto-configured based on environment)
     rabbitmq_host: str = Field(default="localhost")
