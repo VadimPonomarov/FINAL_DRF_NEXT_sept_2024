@@ -73,23 +73,40 @@ class AddImageListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         """
         Save the new image with the specified ad.
+        Supports both uploaded files and generated URLs.
         """
         ad_id = self.kwargs.get('ad_pk')
+        
+        logger.info(f"📸 [ImageCreate] Attempting to save image for ad #{ad_id}")
+        logger.info(f"👤 [ImageCreate] User: {self.request.user.email} (superuser={self.request.user.is_superuser})")
+        
+        # Для суперпользователя - без проверки владельца
         if self.request.user.is_superuser:
             ad = get_object_or_404(CarAd, pk=ad_id)
+            logger.info(f"✅ [ImageCreate] Superuser access granted for ad #{ad_id}")
         else:
+            # Для обычных пользователей - проверяем владельца
             ad = get_object_or_404(
                 CarAd,
                 pk=ad_id,
                 account__user=self.request.user
             )
+            logger.info(f"✅ [ImageCreate] Owner access verified for ad #{ad_id}")
         
-        # Set the order to be the next available number
-        max_order = ad.images.aggregate(
-            max_order=models.Max('order')
-        )['max_order'] or 0
+        # Автоматически устанавливаем order, если не указан
+        if 'order' not in serializer.validated_data:
+            max_order = ad.images.aggregate(
+                max_order=models.Max('order')
+            )['max_order'] or 0
+            order = max_order + 1
+        else:
+            order = serializer.validated_data['order']
         
-        serializer.save(ad=ad, order=max_order + 1)
+        # Сохраняем изображение
+        image = serializer.save(ad=ad, order=order)
+        
+        logger.info(f"✅ [ImageCreate] Successfully saved image #{image.id} for ad #{ad_id} (order={order})")
+        logger.info(f"📊 [ImageCreate] Image data: url={bool(image.image_url)}, file={bool(image.image)}, primary={image.is_primary}")
 
 
 class AddImageRetrieveDestroyView(generics.RetrieveDestroyAPIView):
