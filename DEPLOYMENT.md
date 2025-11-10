@@ -153,31 +153,55 @@ docker-compose logs -f app
 
 ### Варіант B. Бекенд у Docker, фронтенд локально
 
-#### Крок 1. Запустити бекенд-сервіси
+#### Крок 1. Створити `.env.local` для frontend
 
+**⚠️ КРИТИЧНО ВАЖЛИВО!** Next.js потребує файл `.env.local` з `NEXTAUTH_SECRET`.
+
+**Автоматично (рекомендовано):**
 ```bash
-docker-compose up -d pg redis rabbitmq redis-insight mailing celery-worker celery-beat celery-flower app
+python scripts/setup-frontend-env.py
 ```
 
-#### Крок 2. Перевірити здоровʼя бекенду
+**Вручну:**
+```bash
+# Створити файл frontend/.env.local
+cat > frontend/.env.local << 'EOF'
+# Критичні змінні для Next.js
+NEXTAUTH_SECRET=bXL+w0/zn9FX477unDrwiDMw8Tn4uC2Jv5fK3pL9mN6qR8sT1vW4xY7zA0bC
+NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+BACKEND_URL=http://localhost:8000
+NODE_ENV=production
+NEXT_PUBLIC_IS_DOCKER=false
+IS_DOCKER=false
+REDIS_HOST=localhost
+REDIS_URL=redis://localhost:6379/0
+EOF
+```
+
+> 💡 **Примітка**: Без `NEXTAUTH_SECRET` frontend покаже помилку "Something went wrong"!
+
+#### Крок 2. Запустити бекенд-сервіси
 
 ```bash
+docker-compose up -d --build
+```
+
+#### Крок 3. Перевірити здоровʼя бекенду
+
+```bash
+# Дочекатися поки контейнери стануть healthy
+docker-compose ps
+
+# Перевірити health endpoint
 curl http://localhost:8000/health
 ```
 
-#### Крок 3. Встановити залежності фронтенду
+#### Крок 4. Встановити залежності фронтенду
 
 ```bash
 cd frontend
-npm install
-```
-
-#### Крок 4. Створити файл `.env.local`
-
-```bash
-# frontend/.env.local
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
-NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
+npm install --legacy-peer-deps
 ```
 
 #### Крок 5. Зібрати та запустити фронтенд
@@ -193,6 +217,7 @@ npm run start
 #### Крок 6. Перевірити в браузері
 
 - Frontend: http://localhost:3000
+- Backend API: http://localhost:8000/api/
 
 ---
 
@@ -256,10 +281,28 @@ docker-compose restart app
 docker-compose ps pg
 ```
 
+### Помилка "Something went wrong" на frontend
+
+**Причина:** Відсутній `NEXTAUTH_SECRET` у `frontend/.env.local`
+
+**Рішення:**
+```bash
+# Автоматично створити .env.local
+python scripts/setup-frontend-env.py
+
+# Або додати вручну в frontend/.env.local:
+echo "NEXTAUTH_SECRET=bXL+w0/zn9FX477unDrwiDMw8Tn4uC2Jv5fK3pL9mN6qR8sT1vW4xY7zA0bC" >> frontend/.env.local
+
+# Перезапустити frontend
+cd frontend
+npm run start
+```
+
 ### Фронтенд не бачить бекенд
 
-1. Перевірте `frontend/.env.local`:
+1. Перевірте що `frontend/.env.local` існує та містить:
    ```
+   NEXTAUTH_SECRET=bXL+w0/zn9FX477unDrwiDMw8Tn4uC2Jv5fK3pL9mN6qR8sT1vW4xY7zA0bC
    NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
    ```
 2. Переконайтеся, що бекенд живий:

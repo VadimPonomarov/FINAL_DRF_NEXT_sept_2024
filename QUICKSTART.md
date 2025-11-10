@@ -77,6 +77,23 @@ taskkill /PID <PID> /F
 lsof -ti:3000 | xargs kill -9
 ```
 
+### Проблема: «Something went wrong» на frontend
+
+**Що робити:**
+```bash
+# Створити .env.local автоматично
+python scripts/setup-frontend-env.py
+
+# Або вручну створити frontend/.env.local з мінімальним вмістом:
+# NEXTAUTH_SECRET=bXL+w0/zn9FX477unDrwiDMw8Tn4uC2Jv5fK3pL9mN6qR8sT1vW4xY7zA0bC
+# NEXTAUTH_URL=http://localhost:3000
+# NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+
+# Перезапустити frontend
+cd frontend
+npm run start
+```
+
 ### Проблема: «Немає тестових оголошень»
 
 **Що робити:**

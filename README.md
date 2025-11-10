@@ -126,7 +126,17 @@ py deploy.py --mode local
 - Запустіть Docker Desktop з робочого столу
 - Дочекайтеся зеленого індикатора
 
-**Проблема 3: "Порт зайнятий"**
+**Проблема 3: "Something went wrong" на frontend**
+```bash
+# Створіть .env.local
+python scripts/setup-frontend-env.py
+# Або вручну додайте в frontend/.env.local:
+# NEXTAUTH_SECRET=bXL+w0/zn9FX477unDrwiDMw8Tn4uC2Jv5fK3pL9mN6qR8sT1vW4xY7zA0bC
+# Перезапустіть frontend
+cd frontend && npm run start
+```
+
+**Проблема 4: "Порт зайнятий"**
 ```bash
 # Звільніть порт 3000
 npx kill-port 3000
@@ -147,15 +157,20 @@ docker-compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d -
 
 ### Варіант B: Backend у Docker, Frontend локально
 ```bash
-# 1. Запустити backend
+# 1. Створити .env.local для frontend (КРИТИЧНО!)
+python scripts/setup-frontend-env.py
+
+# 2. Запустити backend
 docker-compose up -d --build
 
-# 2. Запустити frontend окремо
+# 3. Запустити frontend окремо
 cd frontend
 npm install --legacy-peer-deps
 npm run build
 npm run start
 ```
+
+> ⚠️ **ВАЖЛИВО**: Без файлу `frontend/.env.local` з `NEXTAUTH_SECRET` frontend покаже помилку "Something went wrong"!
 
 ### Перезапуск після змін в коді
 ```bash
