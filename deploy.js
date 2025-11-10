@@ -254,7 +254,8 @@ async function main() {
                         line = line.trim();
                         if (line && !line.startsWith('#') && line.includes('=')) {
                             const [key, ...valueParts] = line.split('=');
-                            envVars[key.trim()] = valueParts.join('=').trim();
+                            // Remove all newlines and extra whitespace
+                            envVars[key.trim()] = valueParts.join('=').trim().replace(/[\r\n]/g, '');
                         }
                     });
                 }

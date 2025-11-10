@@ -633,7 +633,8 @@ def main():
                         line = line.strip()
                         if line and not line.startswith('#') and '=' in line:
                             key, value = line.split('=', 1)
-                            env_vars[key.strip()] = value.strip()
+                            # Видаляємо всі переноси рядків та зайві пробіли
+                            env_vars[key.strip()] = value.strip().replace('\n', '').replace('\r', '')
         
         # Записуємо критичні змінні в .env.local
         with open(env_local_path, 'w', encoding='utf-8') as f:
