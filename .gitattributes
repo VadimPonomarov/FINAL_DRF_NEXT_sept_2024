@@ -37,6 +37,11 @@
 *.pyc binary
 *.pdf binary
 
+# Environment files should use LF line endings to prevent value splitting
+*.env text eol=lf
+.env* text eol=lf
+env-config/* text eol=lf
+
 # RabbitMQ and Redis config files should use LF line endings
 rabbitmq/*.conf text eol=lf
 redis/*.conf text eol=lf
