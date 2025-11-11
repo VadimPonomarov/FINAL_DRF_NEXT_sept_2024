@@ -675,6 +675,31 @@ def main():
         
         print_success(f"✅ Створено {env_local_path}")
         
+        # Валідація критичних змінних
+        print("🔍 Валідація критичних змінних...")
+        if 'NEXTAUTH_SECRET' not in env_vars or not env_vars['NEXTAUTH_SECRET']:
+            print_error("❌ NEXTAUTH_SECRET не знайдено або порожній!")
+            print_error("   Перевірте env-config/.env.secrets")
+            sys.exit(1)
+        print_success("✅ Всі критичні змінні присутні")
+        
+        # Очистка .next та кешу ПЕРЕД npm install для гарантовано чистої збірки
+        print("🧹 Очищення попередніх артефактів збірки...")
+        next_dir = frontend_dir / ".next"
+        cache_dir = frontend_dir / "node_modules" / ".cache"
+        
+        if next_dir.exists():
+            print(f"   Видалення {next_dir}")
+            import shutil
+            shutil.rmtree(next_dir, ignore_errors=True)
+        
+        if cache_dir.exists():
+            print(f"   Видалення {cache_dir}")
+            import shutil
+            shutil.rmtree(cache_dir, ignore_errors=True)
+        
+        print_success("✅ Артефакти очищено")
+        
         print(f"📂 Перехід в каталог: {frontend_dir}")
         print("📦 Встановлення залежностей (npm install)...")
         
@@ -692,21 +717,6 @@ def main():
         
         if mode == 'local':
             print_success("✅ npm install завершено успішно!")
-
-        # Очистка артефактів попередніх збірок для гарантовано чистого білду
-        if mode == 'local':
-            print("🧹 Очищення артефактів попередніх збірок (.next/.turbo)...")
-        try:
-            for artefact in [frontend_dir / ".next", frontend_dir / ".turbo"]:
-                if artefact.exists():
-                    if artefact.is_dir():
-                        import shutil
-                        shutil.rmtree(artefact, ignore_errors=True)
-                        print(f"   🗑️ Видалено: {artefact}")
-                    else:
-                        artefact.unlink(missing_ok=True)
-        except Exception as e:
-            print_warning(f"⚠️ Не вдалося повністю очистити артефакти: {e}")
 
         # ЕТАП 6: npm run build
         if mode == 'local':

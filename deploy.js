@@ -299,6 +299,32 @@ async function main() {
             fs.writeFileSync(envLocalPath, envContent);
             printSuccess(`Created ${envLocalPath}`);
             
+            // Validate critical variables
+            console.log('🔍 Validating critical variables...');
+            if (!envVars['NEXTAUTH_SECRET'] || envVars['NEXTAUTH_SECRET'].trim() === '') {
+                printError('❌ NEXTAUTH_SECRET not found or empty!');
+                printError('   Check env-config/.env.secrets');
+                process.exit(1);
+            }
+            printSuccess('✅ All critical variables present');
+            
+            // Clean .next and cache BEFORE npm install for guaranteed clean build
+            console.log('🧹 Cleaning previous build artifacts...');
+            const nextDir = path.join(config.frontendDir, '.next');
+            const cacheDir = path.join(config.frontendDir, 'node_modules', '.cache');
+            
+            if (fs.existsSync(nextDir)) {
+                console.log(`   Removing ${nextDir}`);
+                fs.rmSync(nextDir, { recursive: true, force: true });
+            }
+            
+            if (fs.existsSync(cacheDir)) {
+                console.log(`   Removing ${cacheDir}`);
+                fs.rmSync(cacheDir, { recursive: true, force: true });
+            }
+            
+            printSuccess('✅ Artifacts cleaned');
+            
             process.chdir(config.frontendDir);
             
             // Install dependencies

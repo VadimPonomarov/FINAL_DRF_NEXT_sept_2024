@@ -232,6 +232,32 @@ EOF
         
         print_success "Created $ENV_LOCAL_PATH"
         
+        # Validate critical variables
+        echo "🔍 Validating critical variables..."
+        if ! grep -q "^NEXTAUTH_SECRET=" "$ENV_LOCAL_PATH" || [ -z "$(grep '^NEXTAUTH_SECRET=' "$ENV_LOCAL_PATH" | cut -d'=' -f2)" ]; then
+            print_error "❌ NEXTAUTH_SECRET not found or empty!"
+            print_error "   Check env-config/.env.secrets"
+            exit 1
+        fi
+        print_success "✅ All critical variables present"
+        
+        # Clean .next and cache BEFORE npm install for guaranteed clean build
+        echo "🧹 Cleaning previous build artifacts..."
+        NEXT_DIR="$FRONTEND_DIR/.next"
+        CACHE_DIR="$FRONTEND_DIR/node_modules/.cache"
+        
+        if [ -d "$NEXT_DIR" ]; then
+            echo "   Removing $NEXT_DIR"
+            rm -rf "$NEXT_DIR"
+        fi
+        
+        if [ -d "$CACHE_DIR" ]; then
+            echo "   Removing $CACHE_DIR"
+            rm -rf "$CACHE_DIR"
+        fi
+        
+        print_success "✅ Artifacts cleaned"
+        
         cd "$FRONTEND_DIR"
         
         # Install dependencies
