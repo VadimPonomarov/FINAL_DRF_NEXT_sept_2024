@@ -197,14 +197,31 @@ docker-compose ps
 curl http://localhost:8000/health
 ```
 
-#### Крок 4. Встановити залежності фронтенду
+#### Крок 4. Очистити попередні артефакти збірки
+
+**⚠️ КРИТИЧНО ВАЖЛИВО!** Завжди очищайте `.next` перед новою збіркою.
 
 ```bash
 cd frontend
+
+# Видалити попередню збірку
+Remove-Item -Path .next -Recurse -Force -ErrorAction SilentlyContinue  # Windows PowerShell
+# або
+rm -rf .next  # Linux/Mac
+
+# Видалити кеш
+Remove-Item -Path node_modules\.cache -Recurse -Force -ErrorAction SilentlyContinue  # Windows
+# або
+rm -rf node_modules/.cache  # Linux/Mac
+```
+
+#### Крок 5. Встановити залежності фронтенду
+
+```bash
 npm install --legacy-peer-deps
 ```
 
-#### Крок 5. Зібрати та запустити фронтенд
+#### Крок 6. Зібрати та запустити фронтенд
 
 ```bash
 # Збірка

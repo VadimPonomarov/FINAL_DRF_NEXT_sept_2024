@@ -126,14 +126,17 @@ py deploy.py --mode local
 - Запустіть Docker Desktop з робочого столу
 - Дочекайтеся зеленого індикатора
 
-**Проблема 3: "Something went wrong" на frontend**
+**Проблема 3: "Something went wrong" або "invariant expected app router"**
 ```bash
 # Створіть .env.local
 python scripts/setup-frontend-env.py
-# Або вручну додайте в frontend/.env.local:
-# NEXTAUTH_SECRET=bXL+w0/zn9FX477unDrwiDMw8Tn4uC2Jv5fK3pL9mN6qR8sT1vW4xY7zA0bC
-# Перезапустіть frontend
-cd frontend && npm run start
+
+# ЗАВЖДИ очищайте .next перед новою збіркою!
+cd frontend
+rm -rf .next node_modules/.cache
+
+# Пересоберіть
+npm run build && npm run start
 ```
 
 **Проблема 4: "Порт зайнятий"**

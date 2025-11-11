@@ -77,20 +77,25 @@ taskkill /PID <PID> /F
 lsof -ti:3000 | xargs kill -9
 ```
 
-### Проблема: «Something went wrong» на frontend
+### Проблема: «Something went wrong» або «invariant expected app router to be mounted»
+
+**Причина:** Відсутній `.env.local` або старий `.next` зібраний без правильних змінних.
 
 **Що робити:**
 ```bash
-# Створити .env.local автоматично
+# 1. Створити .env.local
 python scripts/setup-frontend-env.py
 
-# Або вручну створити frontend/.env.local з мінімальним вмістом:
-# NEXTAUTH_SECRET=bXL+w0/zn9FX477unDrwiDMw8Tn4uC2Jv5fK3pL9mN6qR8sT1vW4xY7zA0bC
-# NEXTAUTH_URL=http://localhost:3000
-# NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
-
-# Перезапустити frontend
+# 2. ОБОВ'ЯЗКОВО очистити стару збірку
 cd frontend
+rm -rf .next node_modules/.cache  # Linux/Mac
+# або
+Remove-Item -Path .next, node_modules\.cache -Recurse -Force  # Windows
+
+# 3. Пересобрати
+npm run build
+
+# 4. Запустити
 npm run start
 ```
 
