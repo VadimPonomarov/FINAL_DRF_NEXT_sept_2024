@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Reusable ad actions hook (DRY)
  * Used across: MyAdsPage, ModerationPage, SearchPage

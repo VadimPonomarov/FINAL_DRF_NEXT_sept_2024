@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Shared hooks barrel (DRY)
  * All reusable AutoRia hooks in one place

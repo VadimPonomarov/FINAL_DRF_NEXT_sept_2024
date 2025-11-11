@@ -27,9 +27,9 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy all source files
 COPY . .
 
-# Clean any existing build cache to avoid stale artifacts
+# Clean any existing build/cache artifacts to avoid stale assets
 # This prevents issues with static generation of error pages
-RUN rm -rf .next || true
+RUN rm -rf .next node_modules/.cache || true
 
 # Build the application
 # Set environment variables to prevent static generation issues

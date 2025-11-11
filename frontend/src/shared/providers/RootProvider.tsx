@@ -1,5 +1,5 @@
 "use client";
-import React, { FC, useEffect } from "react";
+import React, { FC, useEffect, useState } from "react";
 import { SessionProvider, signOut } from "next-auth/react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, AuthProviderProvider } from "@/contexts/AuthProviderContext";
@@ -79,6 +79,13 @@ const CacheCleanupHandler: FC = () => {
 };
 
 const RootProvider: FC<IProps> = ({ children }) => {
+  const [mounted, setMounted] = useState(false);
+
+  // Wait for client-side mount before rendering components with useRouter
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Preload critical data on app startup
   useEffect(() => {
     const initializeApp = async () => {
@@ -110,7 +117,7 @@ const RootProvider: FC<IProps> = ({ children }) => {
                 <AuthProviderProvider>
                   <ChatProvider>
                   <ChatContextProvider>
-                    <GlobalApiErrorHandler />
+                    {mounted && <GlobalApiErrorHandler />}
                     <CacheCleanupHandler />
                     {children}
                   </ChatContextProvider>

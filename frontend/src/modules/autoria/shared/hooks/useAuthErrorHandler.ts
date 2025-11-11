@@ -1,3 +1,5 @@
+"use client";
+
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useCallback } from 'react';

@@ -13,124 +13,134 @@ import { resolveServiceUrl } from "@/shared/utils/api/serviceUrlResolver";
 const __isServer = typeof window === 'undefined';
 const __frontendBaseUrl = __isServer ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' ? 'http://frontend:3000' : 'http://localhost:3000') : '';
 
+const performRedirect = (target: string): never | Promise<never> => {
+    if (__isServer) {
+        redirect(target);
+    }
+
+    if (typeof window !== 'undefined') {
+        window.location.href = target;
+        return new Promise<never>(() => {});
+    }
+
+    throw new Error(`Cannot redirect to ${target}`);
+};
+
 // Normalize backend base URL to ensure no trailing "/" and no trailing "/api"
 function normalizeBackendBase(url: string): string {
-  try {
-    if (!url) return 'http://localhost:8000';
-    // Remove trailing slashes
-    let u = url.trim().replace(/\/+$/, '');
-    // If ends with /api (optionally with trailing slash), strip it
-    u = u.replace(/\/(api)\/?$/i, '');
-    return u;
-  } catch {
-    return 'http://localhost:8000';
-  }
+    try {
+        if (!url) return 'http://localhost:8000';
+        // Remove trailing slashes
+        let u = url.trim().replace(/\/+$/, '');
+        // If ends with /api (optionally with trailing slash), strip it
+        u = u.replace(/\/(api)\/?$/i, '');
+        return u;
+    } catch {
+        return 'http://localhost:8000';
+    }
 }
 
 async function apiGetRedis(key: string): Promise<string | null> {
-  try {
-    const res = await fetch(`${__frontendBaseUrl}/api/redis?key=${encodeURIComponent(key)}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.exists ? (data.value as string) : null;
-  } catch {
-    return null;
-  }
+    try {
+        const res = await fetch(`${__frontendBaseUrl}/api/redis?key=${encodeURIComponent(key)}`, { cache: 'no-store' });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.exists ? (data.value as string) : null;
+    } catch {
+        return null;
+    }
 }
 
 async function apiSetRedis(key: string, value: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${__frontendBaseUrl}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, value })
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+    try {
+        const res = await fetch(`${__frontendBaseUrl}/api/redis`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, value })
+        });
+        return res.ok;
+    } catch {
+        return false;
+    }
 }
 
 // Centralized error handler with improved retry logic
 const handleFetchErrors = async (response: Response, key: string = "backend_auth") => {
-  if (!response.ok) {
-    const errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
-    console.error(errorMessage);
+    if (!response.ok) {
+        const errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
+        console.error(errorMessage);
 
-    switch (response.status) {
-      case 401: {
-        console.log("[handleFetchErrors] Error 401: Token not valid. Attempting to refresh...");
-        const refreshResult = await fetchRefresh(key);
-        if (!refreshResult) {
-          console.log("[handleFetchErrors] Refresh failed after all attempts, redirecting to login...");
-          redirect("/login");
+        switch (response.status) {
+            case 401: {
+                console.log("[handleFetchErrors] Error 401: Token not valid. Attempting to refresh...");
+                const refreshResult = await fetchRefresh(key);
+                if (!refreshResult) {
+                    console.log("[handleFetchErrors] Refresh failed after all attempts, redirecting to login...");
+                    return performRedirect("/login");
+                }
+                console.log("[handleFetchErrors] Refresh successful, returning null to trigger retry");
+                // Return null to trigger a retry with new token (caller must handle retry limit)
+                return null;
+            }
+
+            case 403:
+                console.log("Error 403: Access denied. Redirecting...");
+                return performRedirect("/login");
+
+            case 404:
+                console.log("Error 404: Resource not found. Redirecting...");
+                return performRedirect("/error");
+
+            default:
+                console.log(`Error ${response.status} occurred. Redirecting...`);
+                return performRedirect("/error");
         }
-        console.log("[handleFetchErrors] Refresh successful, returning null to trigger retry");
-        // Return null to trigger a retry with new token (caller must handle retry limit)
-        return null;
-      }
-
-      case 403:
-        console.log("Error 403: Access denied. Redirecting...");
-        redirect("/login");
-        break;
-
-      case 404:
-        console.log("Error 404: Resource not found. Redirecting...");
-        redirect("/error");
-        break;
-
-      default:
-        console.log(`Error ${response.status} occurred. Redirecting...`);
-        redirect("/error");
-        break;
     }
-  }
 
-  return response.json();
+    return response.json();
 };
 
 // General function for executing requests
 export const fetchData = async (
-  endpoint: string,
-  callbackUrl?: string,
-  params?: Record<string, string>,
-  retryCount = 0
+    endpoint: string,
+    callbackUrl?: string,
+    params?: Record<string, string>,
+    retryCount = 0
 ): Promise<any> => {
-  try {
-    const urlSearchParams = new URLSearchParams(params).toString();
-    const headers = await getAuthorizationHeaders();
-    const url = `${endpoint}${urlSearchParams ? `?${urlSearchParams}` : ''}`;
+    try {
+        const urlSearchParams = new URLSearchParams(params).toString();
+        const headers = await getAuthorizationHeaders();
+        const url = `${endpoint}${urlSearchParams ? `?${urlSearchParams}` : ''}`;
 
-    // Определяем ключ для токенов
-    const authProvider = (await apiGetRedis("auth_provider")) || AuthProvider.MyBackendDocs;
-    const tokenKey = authProvider === AuthProvider.Dummy ? "dummy_auth" : "backend_auth";
+        // Определяем ключ для токенов
+        const authProvider = (await apiGetRedis("auth_provider")) || AuthProvider.MyBackendDocs;
+        const tokenKey = authProvider === AuthProvider.Dummy ? "dummy_auth" : "backend_auth";
 
-    const response = await fetch(url, {
-      headers,
-      method: "GET",
-      cache: 'no-store' // Важно для серверных компонентов
-    });
+        const response = await fetch(url, {
+            headers,
+            method: "GET",
+            cache: 'no-store' // Важно для серверных компонентов
+        });
 
-    const result = await handleFetchErrors(response, tokenKey);
+        const result = await handleFetchErrors(response, tokenKey);
 
-    // If token refresh was needed and successful, retry the request once
-    if (!result && response.status === 401 && retryCount === 0) {
-      console.log('[fetchData] Token refreshed, retrying request (attempt 1/1)...');
-      return fetchData(endpoint, callbackUrl, params, retryCount + 1);
+        // If token refresh was needed and successful, retry the request once
+        if (!result && response.status === 401 && retryCount === 0) {
+            console.log('[fetchData] Token refreshed, retrying request (attempt 1/1)...');
+            return fetchData(endpoint, callbackUrl, params, retryCount + 1);
+        }
+
+        // If we still get 401 after refresh, don't retry again
+        if (!result && response.status === 401 && retryCount > 0) {
+            console.error('[fetchData] Still got 401 after token refresh, stopping retry to prevent infinite loop');
+            return performRedirect("/login");
+        }
+
+        return result;
+    } catch (error) {
+        console.error("Error executing request:", error);
+        return null;
     }
-
-    // If we still get 401 after refresh, don't retry again
-    if (!result && response.status === 401 && retryCount > 0) {
-      console.error('[fetchData] Still got 401 after token refresh, stopping retry to prevent infinite loop');
-      redirect("/login");
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Error executing request:", error);
-    return null;
-  }
 };
 
 // Function for refreshing tokens with retry logic
