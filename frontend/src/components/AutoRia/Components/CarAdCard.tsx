@@ -348,7 +348,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
             </Badge>
           )}
           {ad.model && (
-            <Badge variant="secondary">
+            <Badge variant="outline" className="font-semibold">
               {ad.model}
             </Badge>
           )}

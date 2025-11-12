@@ -10,6 +10,8 @@ from apps.ads.models import CarAd
 from apps.ads.models.reference import CarModel, RegionModel, CityModel
 from apps.accounts.models import AddsAccount
 from core.enums.ads import AdStatusEnum
+from base64 import b64decode
+from django.core.files.base import ContentFile
 from decimal import Decimal
 import json
 import requests
@@ -66,6 +68,16 @@ class Command(BaseCommand):
         self.stdout.write(f'📊 Found {len(models)} car models and {len(regions)} regions')
 
         created_ads = []
+        status_weights = [
+            (AdStatusEnum.ACTIVE, 55),
+            (AdStatusEnum.PENDING, 15),
+            (AdStatusEnum.DRAFT, 10),
+            (AdStatusEnum.NEEDS_REVIEW, 10),
+            (AdStatusEnum.REJECTED, 5),
+            (AdStatusEnum.ARCHIVED, 5),
+        ]
+        statuses, weights = zip(*status_weights)
+
         for i in range(count):
             try:
                 self.stdout.write(f'🔄 Creating test ad {i + 1}/{count}...')
@@ -99,6 +111,7 @@ class Command(BaseCommand):
                 )
 
                 # 6. Create the ad
+                selected_status = random.choices(statuses, weights=weights)[0]
                 ad = CarAd.objects.create(
                     account=account,
                     mark=brand,
@@ -111,8 +124,8 @@ class Command(BaseCommand):
                     currency=ad_data['currency'],
                     region=region,
                     city=city,
-                    status=AdStatusEnum.ACTIVE,
-                    is_validated=True,
+                    status=selected_status,
+                    is_validated=(selected_status == AdStatusEnum.ACTIVE),
                     dynamic_fields=ad_data['dynamic_fields']
                 )
 
@@ -122,14 +135,12 @@ class Command(BaseCommand):
                 # 7. Generate images if requested
                 if with_images:
                     images_created = self._generate_images_for_ad(ad, ad_data, image_types)
-                    
                     if images_created == 0:
-                        # КРИТИЧНО: Блокируем объявления с пустыми фото
-                        ad.status = 'pending'  # Requires image regeneration
-                        ad.save()
-                        self.stdout.write(f'   ⚠️ No images generated for ad #{ad.id} - marked as PENDING for regeneration')
+                        images_created = self._create_placeholder_images(ad, image_types)
+                    if images_created == 0:
+                        self.stdout.write(f'   ⚠️ No images generated for ad #{ad.id} even after placeholders')
                     else:
-                        self.stdout.write(f'   📸 Generated {images_created} images for ad #{ad.id}')
+                        self.stdout.write(f'   📸 Added {images_created} images for ad #{ad.id}')
 
                 # Small delay to avoid overwhelming the system
                 time.sleep(0.5)
@@ -401,11 +412,9 @@ class Command(BaseCommand):
                     for idx, img in enumerate(data['images']):
                         url = img.get('url', '').strip()
 
-                        # Skip invalid URLs
-                        if not url or 'placeholder' in url.lower():
+                        if not url:
                             continue
 
-                        # Save image to ad
                         AddImageModel.objects.create(
                             ad=ad,
                             image_url=url,
@@ -415,17 +424,43 @@ class Command(BaseCommand):
                         )
                         images_created += 1
 
-                    self.stdout.write(f'      ✅ Created {images_created} images')
-                    return images_created
+                    if images_created > 0:
+                        self.stdout.write(f'      ✅ Created {images_created} images')
+                        return images_created
+                    self.stdout.write('      ⚠️ Image response contained no usable URLs')
                 else:
-                    self.stdout.write(f'      ⚠️ No images in response')
+                    self.stdout.write('      ⚠️ No images in response payload')
             else:
                 self.stdout.write(f'      ⚠️ Image generation failed: {response.status_code}')
 
         except Exception as e:
             self.stdout.write(f'      ❌ Image generation error: {e}')
+            return 0
 
         return 0
+
+    def _create_placeholder_images(self, ad, image_types):
+        """Create simple placeholder images when real generation is unavailable."""
+        from apps.ads.models import AddImageModel
+
+        placeholder_bytes = b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAFUlEQVR4nO3BMQEAAADCoPVPbQ0PoAAAAAAAAO4B0mAAAX0m+NsAAAAASUVORK5CYII="
+        )
+
+        created = 0
+        for idx, angle in enumerate(image_types or ['front']):
+            image_content = ContentFile(placeholder_bytes, name=f'placeholder_{angle}_{ad.id}.png')
+            AddImageModel.objects.create(
+                ad=ad,
+                image=image_content,
+                order=idx + 1,
+                is_primary=(idx == 0),
+                caption=f'Placeholder {angle} view'
+            )
+            created += 1
+
+        return created
+
     def _print_summary(self, created_ads, with_images):
         """Print summary of generated ads."""
         if not created_ads:

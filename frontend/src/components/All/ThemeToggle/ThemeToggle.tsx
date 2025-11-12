@@ -41,9 +41,9 @@ function ThemeToggle() {
         return (
             <Button
                 data-testid="theme-toggle-button"
-                variant="outline"
+                variant="ghost"
                 size="icon"
-                className="bg-transparent border-0"
+                className="theme-toggle text-foreground"
             >
                 <div className="h-4 w-4" />
             </Button>
@@ -53,10 +53,10 @@ function ThemeToggle() {
     return (
         <Button
             data-testid="theme-toggle-button"
-            variant="outline"
+            variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="bg-transparent border-0"
+            className="theme-toggle text-foreground"
             style={{zIndex: 99999, position: 'relative'}}
         >
             {theme === "light" ? (

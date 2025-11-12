@@ -16,32 +16,50 @@ const themes = {
     light: {
       // СВЕТЛАЯ ТЕМА: белый фон → черный текст
       primary: "0 0% 0%", // черный
+      "primary-foreground": "0 0% 100%",
       secondary: "0 0% 95%", // светло-серый фон
-      accent: "0 0% 90%", // серый фон
+      accent: "0 0% 92%", // серый фон для hover
       destructive: "0 84.2% 60.2%",
+      foreground: "0 0% 0%",
       text: "0 0% 0%", // черный текст на белом фоне
       "form-text": "0 0% 0%", // черный текст в формах
+      "surface-text": "0 0% 15%",
+      "secondary-foreground": "0 0% 18%",
+      "accent-foreground": "0 0% 18%",
+      muted: "0 0% 94%",
+      "muted-foreground": "0 0% 30%",
       dropdown: "0 0% 100%", // белый фон выпадающих списков
       "dropdown-text": "0 0% 0%", // черный текст в выпадающих списках
-      "dropdown-hover": "0 0% 85%", // серый фон при hover
-      border: "0 0% 60%", // темно-серые границы
-      placeholder: "0 0% 50%", // серый placeholder
+      "dropdown-hover": "0 0% 88%", // серый фон при hover
+      border: "0 0% 70%", // темно-серые границы
+      placeholder: "0 0% 55%", // серый placeholder
       background: "0 0% 100%", // белый фон страницы
+      card: "0 0% 100%",
+      "card-foreground": "0 0% 12%",
     },
     dark: {
-      // ТЕМНАЯ ТЕМА: черный фон → белый текст
-      primary: "0 0% 100%", // белый
-      secondary: "0 0% 15%", // темно-серый фон
-      accent: "0 0% 20%", // темно-серый фон
+      // ТЕМНАЯ ТЕМА: глубокий фон, светлый общий текст, светлые поверхности с тёмным контентом
+      primary: "0 0% 98%", // белый акцент для темной темы
+      "primary-foreground": "0 0% 8%",
+      secondary: "0 0% 92%", // светлая поверхность для бейджей
+      accent: "0 0% 88%", // светлый серый для hover на светлых поверхностях
       destructive: "0 62.8% 30.6%",
-      text: "0 0% 100%", // белый текст на черном фоне
-      "form-text": "0 0% 100%", // белый текст в формах
-      dropdown: "0 0% 10%", // темно-серый фон выпадающих списков
-      "dropdown-text": "0 0% 100%", // белый текст в выпадающих списках
-      "dropdown-hover": "0 0% 25%", // светло-серый фон при hover
-      border: "0 0% 40%", // серые границы
-      placeholder: "0 0% 60%", // светло-серый placeholder
-      background: "0 0% 0%", // черный фон страницы
+      foreground: "0 0% 96%",
+      text: "0 0% 96%", // светлый текст на темном фоне
+      "surface-text": "0 0% 12%", // тёмный текст на светлых картах/формах
+      "form-text": "0 0% 12%", // текст в светлых формах
+      "secondary-foreground": "0 0% 12%",
+      "accent-foreground": "0 0% 18%",
+      muted: "0 0% 92%",
+      "muted-foreground": "0 0% 25%",
+      placeholder: "0 0% 55%",
+      dropdown: "0 0% 94%",
+      "dropdown-text": "0 0% 12%",
+      "dropdown-hover": "0 0% 88%",
+      border: "0 0% 35%",
+      background: "0 0% 6%", // глубокий почти черный фон страницы
+      card: "0 0% 98%",
+      "card-foreground": "0 0% 12%",
     }
   },
   orange: {
@@ -51,20 +69,12 @@ const themes = {
       secondary: "25 30% 95%", // светло-оранжевый
       accent: "25 100% 50%", // оранжевый
       destructive: "0 84.2% 60.2%",
-      text: "25 100% 50%", // оранжевый
-      dropdown: "0 0% 100%", // белый для светлой темы
-      "dropdown-text": "25 100% 50%", // оранжевый текст для светлой темы
-      "dropdown-hover": "25 30% 95%", // светло-оранжевый для hover
     },
     dark: {
       primary: "25 100% 50%", // оранжевый
       secondary: "25 30% 25%", // темно-оранжевый
       accent: "25 100% 50%", // оранжевый
       destructive: "0 62.8% 30.6%",
-      text: "25 100% 50%", // оранжевый
-      dropdown: "0 0% 100%", // белый для темной темы
-      "dropdown-text": "25 100% 50%", // оранжевый текст для темной темы
-      "dropdown-hover": "25 30% 95%", // светло-оранжевый для hover
     }
   },
   blue: {
@@ -74,20 +84,12 @@ const themes = {
       secondary: "210 40% 96.1%",
       accent: "217 91% 60%",
       destructive: "0 84.2% 60.2%",
-      text: "221 83% 53%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "221 83% 53%", // синий текст для светлой темы
-      "dropdown-hover": "210 40% 96.1%",
     },
     dark: {
       primary: "217 91% 60%",
       secondary: "215 25% 27%",
       accent: "217 91% 60%",
       destructive: "0 62.8% 30.6%",
-      text: "217 91% 60%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "217 91% 60%", // синий текст для темной темы
-      "dropdown-hover": "210 40% 96.1%",
     }
   },
   green: {
@@ -97,20 +99,12 @@ const themes = {
       secondary: "138 69% 97%",
       accent: "142 71% 45%",
       destructive: "0 84.2% 60.2%",
-      text: "142 76% 36%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "142 76% 36%", // зеленый текст для светлой темы
-      "dropdown-hover": "138 69% 97%",
     },
     dark: {
       primary: "142 71% 45%",
       secondary: "143 64% 24%",
       accent: "142 71% 45%",
       destructive: "0 62.8% 30.6%",
-      text: "142 71% 45%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "142 71% 45%", // зеленый текст для темной темы
-      "dropdown-hover": "138 69% 97%",
     }
   },
   purple: {
@@ -120,20 +114,12 @@ const themes = {
       secondary: "260 40% 96%",
       accent: "262 83% 58%",
       destructive: "0 84.2% 60.2%",
-      text: "262 83% 58%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "262 83% 58%", // фиолетовый текст для светлой темы
-      "dropdown-hover": "260 40% 96%",
     },
     dark: {
       primary: "262 83% 58%",
       secondary: "261 25% 27%",
       accent: "262 83% 58%",
       destructive: "0 62.8% 30.6%",
-      text: "262 83% 58%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "262 83% 58%", // фиолетовый текст для темной темы
-      "dropdown-hover": "260 40% 96%",
     }
   },
   red: {
@@ -143,20 +129,12 @@ const themes = {
       secondary: "0 20% 96%",
       accent: "0 72% 51%",
       destructive: "0 84.2% 60.2%",
-      text: "0 72% 51%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "0 72% 51%", // красный текст для светлой темы
-      "dropdown-hover": "0 20% 96%",
     },
     dark: {
       primary: "0 72% 51%",
       secondary: "0 30% 25%",
       accent: "0 72% 51%",
       destructive: "0 62.8% 30.6%",
-      text: "0 72% 51%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "0 72% 51%", // красный текст для темной темы
-      "dropdown-hover": "0 20% 96%",
     }
   },
   pink: {
@@ -166,20 +144,12 @@ const themes = {
       secondary: "330 40% 96%",
       accent: "330 81% 60%",
       destructive: "0 84.2% 60.2%",
-      text: "330 81% 60%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "330 81% 60%", // розовый текст для светлой темы
-      "dropdown-hover": "330 40% 96%",
     },
     dark: {
       primary: "330 81% 60%",
       secondary: "330 30% 25%",
       accent: "330 81% 60%",
       destructive: "0 62.8% 30.6%",
-      text: "330 81% 60%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "330 81% 60%", // розовый текст для темной темы
-      "dropdown-hover": "330 40% 96%",
     }
   },
   teal: {
@@ -189,20 +159,12 @@ const themes = {
       secondary: "180 40% 96%",
       accent: "180 70% 40%",
       destructive: "0 84.2% 60.2%",
-      text: "180 70% 40%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "180 70% 40%", // бирюзовый текст для светлой темы
-      "dropdown-hover": "180 40% 96%",
     },
     dark: {
       primary: "180 70% 40%",
       secondary: "180 30% 25%",
       accent: "180 70% 40%",
       destructive: "0 62.8% 30.6%",
-      text: "180 70% 40%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "180 70% 40%", // бирюзовый текст для темной темы
-      "dropdown-hover": "180 40% 96%",
     }
   },
   amber: {
@@ -212,20 +174,12 @@ const themes = {
       secondary: "45 40% 96%",
       accent: "45 93% 47%",
       destructive: "0 84.2% 60.2%",
-      text: "45 93% 47%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "45 93% 47%", // янтарный текст для светлой темы
-      "dropdown-hover": "45 40% 96%",
     },
     dark: {
       primary: "45 93% 47%",
       secondary: "45 30% 25%",
       accent: "45 93% 47%",
       destructive: "0 62.8% 30.6%",
-      text: "45 93% 47%",
-      dropdown: "0 0% 100%",
-      "dropdown-text": "45 93% 47%", // янтарный текст для темной темы
-      "dropdown-hover": "45 40% 96%",
     }
   }
 }
@@ -339,12 +293,12 @@ export function ThemeSelector() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="bg-transparent border-0"
+          className="theme-toggle"
           style={{zIndex: 99999, position: 'relative'}}
         >
-          <Palette className="h-4 w-4 text-foreground" />
+          <Palette data-theme-icon="inactive" className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
