@@ -90,3 +90,5 @@ export const AutoRiaAuthGuard: React.FC<AutoRiaAuthGuardProps> = ({
   return <>{children}</>;
 };
 
+export default AutoRiaAuthGuard;
+

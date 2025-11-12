@@ -42,7 +42,7 @@ class CarAdListSerializer(serializers.ModelSerializer):
     def get_primary_image(self, obj):
         primary_image = obj.images.filter(is_primary=True).first()
         if primary_image:
-            return self.context['request'].build_absolute_uri(primary_image.image.url)
+            return primary_image.get_image_url()
         return None
 
     def get_is_favorite(self, obj):

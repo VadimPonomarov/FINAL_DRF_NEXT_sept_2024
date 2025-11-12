@@ -24,21 +24,26 @@ class AdListSerializer(AdBaseSerializer):
             images = obj.prefetched_images
             # Find primary image first
             for image in images:
-                if image.is_primary and image.image:
-                    return image.image.url
+                if image.is_primary:
+                    url = image.get_image_url()
+                    if url:
+                        return url
             # If no primary, return first available
             for image in images:
-                if image.image:
-                    return image.image.url
+                url = image.get_image_url()
+                if url:
+                    return url
             return None
 
         # Fallback to database queries if not prefetched
         primary_image = obj.images.filter(is_primary=True).first()
-        if primary_image and primary_image.image:
-            return primary_image.image.url
+        if primary_image:
+            url = primary_image.get_image_url()
+            if url:
+                return url
 
         first_image = obj.images.filter(image__isnull=False).first()
-        return first_image.image.url if first_image else None
+        return first_image.get_image_url() if first_image else None
     
     def get_price_display(self, obj):
         """Format price with currency."""

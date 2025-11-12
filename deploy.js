@@ -155,7 +155,8 @@ async function main() {
         printStep(2, 'Cleaning up conflicting containers and ports...');
         
         const ports = [80, 3000, 5432, 5555, 5540, 6379, 8000, 8001, 15672];
-        const standardNames = ['pg', 'redis', 'redis-insight', 'rabbitmq', 'celery-worker', 'celery-beat', 'celery-flower', 'mailing', 'nginx'];
+        const optionalComposeServices = ['flower'];
+        const standardNames = ['pg', 'redis', 'redis-insight', 'rabbitmq', 'celery-worker', 'celery-beat', 'mailing', 'nginx'];
         const containersToRemove = new Set();
         
         // Find containers using project ports
@@ -182,6 +183,14 @@ async function main() {
         }
         
         // Remove conflicting containers
+        const availableServicesOutput = execSync('docker-compose config --services', { encoding: 'utf8' });
+        const availableServices = new Set(
+            availableServicesOutput
+                .split('\n')
+                .map((service) => service.trim())
+                .filter(Boolean)
+        );
+
         if (containersToRemove.size > 0) {
             console.log(`   Found ${containersToRemove.size} containers to remove`);
             for (const container of containersToRemove) {
@@ -205,8 +214,14 @@ async function main() {
         
         if (config.localFrontend) {
             printWarning('Starting backend services only (frontend will run locally)');
+            const baseServices = ['pg', 'redis', 'rabbitmq', 'redis-insight', 'mailing', 'celery-worker', 'celery-beat', 'app'];
+            const optionalServices = ['flower'];
+            const servicesToStart = [
+                ...baseServices,
+                ...optionalServices.filter((service) => availableServices.has(service)),
+            ];
             await execCommand('docker-compose', {
-                args: ['up', '-d', 'pg', 'redis', 'rabbitmq', 'redis-insight', 'mailing', 'celery-worker', 'celery-beat', 'celery-flower', 'app'],
+                args: ['up', '-d', ...servicesToStart],
             });
         } else {
             await execCommand('docker-compose', {
@@ -221,7 +236,8 @@ async function main() {
         printStep(4, 'Waiting for services to be ready...');
         console.log('This may take 30-60 seconds...');
         
-        const backendReady = await waitForService('http://localhost:8000/health');
+        // Django redirects /health → /health/, so call canonical URL to avoid timeout loops
+        const backendReady = await waitForService('http://localhost:8000/health/');
         
         if (backendReady) {
             printSuccess('Backend is ready');

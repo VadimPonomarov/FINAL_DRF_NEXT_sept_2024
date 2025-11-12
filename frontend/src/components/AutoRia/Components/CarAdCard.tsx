@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { formatCardPrice } from '@/modules/autoria/shared/utils/priceFormatter';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
+import { resolveAdImageUrl, MEDIA_PLACEHOLDER } from '@/shared/utils/media-url';
 
 interface CarAdCardProps {
   ad: CarAd;
@@ -216,51 +217,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     }
   };
 
-  // Helper function to get image URL
-  const getImageUrl = () => {
-    if (!ad.images || (Array.isArray(ad.images) && ad.images.length === 0)) {
-      return '/api/placeholder/400/300';
-    }
-
-    // If images is an array, get the first image
-    if (Array.isArray(ad.images)) {
-      const firstImage = ad.images[0];
-      if (!firstImage) return '/api/placeholder/400/300';
-
-      // ПРИОРИТЕТ: image_url (это правильное поле от бекенда)
-      const url = firstImage.image_url || firstImage.image_display_url || firstImage.url || firstImage.image;
-
-      if (!url) return '/api/placeholder/400/300';
-
-      // If URL is already absolute (starts with http), use it as is
-      if (typeof url === 'string' && url.startsWith('http')) {
-        return url;
-      }
-
-      // If URL starts with /media/, proxy it through /api/media
-      if (typeof url === 'string' && url.startsWith('/media/')) {
-        return `/api/media${url.substring(6)}`; // Remove /media/ and add /api/media/
-      }
-
-      // If URL starts with /api/media/, use it as is
-      if (typeof url === 'string' && url.startsWith('/api/media/')) {
-        return url;
-      }
-
-      // Otherwise, assume it's a relative path and add /api/media/ prefix
-      return `/api/media/${String(url).replace(/^\/+/, '')}`;
-    }
-
-    // If images is a string, use it directly
-    if (typeof ad.images === 'string') {
-      if (ad.images.startsWith('http')) return ad.images;
-      if (ad.images.startsWith('/media/')) return `/api/media${ad.images.substring(6)}`;
-      if (ad.images.startsWith('/api/media/')) return ad.images;
-      return `/api/media/${ad.images.replace(/^\/+/, '')}`;
-    }
-
-    return '/api/placeholder/400/300';
-  };
+  const imageUrl = useMemo(() => resolveAdImageUrl(ad.images), [ad.images]);
 
   // Handle card click to navigate to ad details
   const handleCardClick = (e: React.MouseEvent) => {
@@ -282,17 +239,17 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       {/* 🖼️ Изображение */}
       <div className="relative">
         <img
-          src={getImageUrl()}
+          src={imageUrl}
           alt={ad.title}
           loading="lazy"
           decoding="async"
-          fetchpriority="low"
+          fetchPriority="low"
           className="w-full h-48 object-cover"
           onError={(e) => {
             // Fallback to placeholder if image fails to load
             const target = e.target as HTMLImageElement;
-            if (target.src !== '/api/placeholder/400/300') {
-              target.src = '/api/placeholder/400/300';
+            if (target.src !== MEDIA_PLACEHOLDER) {
+              target.src = MEDIA_PLACEHOLDER;
             }
           }}
         />
