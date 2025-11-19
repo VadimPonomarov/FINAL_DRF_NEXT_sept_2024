@@ -615,7 +615,7 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
                   {adData.images && adData.images.length > 0 ? (
                     (() => {
                       const currentImage = adData.images[currentImageIndex];
-                      const imageUrl = currentImage?.image_display_url || currentImage?.image;
+                      const imageUrl = currentImage?.image_display_url || currentImage?.image_url || currentImage?.url || currentImage?.image;
                       console.log('[AdDetailPage] Rendering image:', { currentImageIndex, currentImage, imageUrl });
                       return (
                         <img

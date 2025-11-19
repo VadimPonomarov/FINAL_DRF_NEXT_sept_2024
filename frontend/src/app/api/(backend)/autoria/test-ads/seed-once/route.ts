@@ -5,6 +5,13 @@ import fs from 'fs/promises';
 import path from 'path';
 import { createTestAdsServer } from '../generate/route';
 
+// Normalize backend base URL similarly to the generic backend proxy and generate route:
+// 1) Prefer BACKEND_URL, fallback to NEXT_PUBLIC_BACKEND_URL
+// 2) Trim trailing slashes
+// 3) Strip a trailing /api if present
+const RAW_BACKEND_BASE = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = RAW_BACKEND_BASE.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
+
 interface SeedMarker {
   firstSeedCompleted: boolean;
   completed_at?: string;
@@ -46,10 +53,12 @@ function resolveMarkerPath(): string {
 export async function POST(request: NextRequest) {
   const markerPath = resolveMarkerPath();
   const marker = await readSeedMarker(markerPath);
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = BACKEND_URL;
 
   try {
     const url = new URL('/api/ads/statistics/quick/', backendUrl);
+    // Always force fresh statistics to avoid stale cached values during seeding
+    url.searchParams.set('force_refresh', 'true');
     console.log('[SeedOnce] Fetching quick stats from', url.toString());
     const statsResponse = await fetch(url.toString(), {
       method: 'GET',
@@ -65,8 +74,18 @@ export async function POST(request: NextRequest) {
     }
 
     const statsJson = await statsResponse.json();
-    const activeAds = Number(statsJson?.data?.active_ads ?? statsJson?.active_ads ?? 0);
-    const totalAds = Number(statsJson?.data?.total_ads ?? statsJson?.total_ads ?? 0);
+    const data = statsJson?.data ?? statsJson;
+    const source = statsJson?.source;
+    let activeAds = Number(data?.active_ads ?? 0);
+    let totalAds = Number(data?.total_ads ?? 0);
+
+    // If QuickStats falls back to mock/error data, treat it as zero to force seeding
+    if (source === 'mock_fallback' || source === 'error_fallback') {
+      console.warn('[SeedOnce] QuickStats returned fallback source, forcing fresh seeding', { source, totalAds, activeAds });
+      activeAds = 0;
+      totalAds = 0;
+    }
+
     const MIN_TOTAL_ADS = 10;
 
     const markerCount = Number(marker?.count ?? 0);
@@ -88,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`[SeedOnce] Active ads = ${activeAds}. Generating ${desiredCount} test ads...`);
 
-    const result = await createTestAdsServer(request, desiredCount, true, ['front', 'side', 'rear']);
+    const result = await createTestAdsServer(request, desiredCount, true, ['front', 'side']);
 
     await writeSeedMarker(markerPath, {
       firstSeedCompleted: true,

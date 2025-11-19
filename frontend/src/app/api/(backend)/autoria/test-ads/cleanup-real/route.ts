@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const BACKEND_URL = (process.env.BACKEND_URL || 'http://localhost:8000').replace(/\/+$/,'');
+
 /**
  * РЕАЛЬНАЯ очистка всех объявлений через прямое удаление
  */
@@ -7,12 +9,13 @@ export async function DELETE(request: NextRequest) {
   try {
     console.log('🧹 Starting REAL cleanup of all ads...');
     
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const backendUrl = BACKEND_URL;
     if (!backendUrl) {
       throw new Error('Backend URL not configured');
     }
 
     // Авторизация
+    console.log(`🔐 [CleanupReal] Logging in via ${backendUrl}/api/auth/login ...`);
     const loginResponse = await fetch(`${backendUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -23,7 +26,9 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (!loginResponse.ok) {
-      throw new Error('Failed to authenticate');
+      const errorBody = await loginResponse.text().catch(() => '');
+      console.error(`❌ [CleanupReal] Failed to authenticate: ${loginResponse.status} ${loginResponse.statusText} - ${errorBody}`);
+      throw new Error(`Failed to authenticate: ${loginResponse.status}`);
     }
 
     const loginData = await loginResponse.json();

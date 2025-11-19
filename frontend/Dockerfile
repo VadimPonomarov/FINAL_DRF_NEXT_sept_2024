@@ -4,11 +4,21 @@
 # =============================================================================
 
 FROM node:18-alpine AS base
+
+# Set UTF-8 locale and encoding
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONIOENCODING=utf-8
+
 WORKDIR /app
 
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
+
+# Set UTF-8 locale for this stage
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # Copy package files
 COPY package.json package-lock.json ./
@@ -35,6 +45,10 @@ RUN rm -rf .next node_modules/.cache || true
 # Set environment variables to prevent static generation issues
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# Force UTF-8 encoding for build process
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONIOENCODING=utf-8
 # Build-time arguments to inject required env during Next.js build
 ARG BACKEND_URL
 ARG NEXT_PUBLIC_BACKEND_URL
@@ -44,6 +58,8 @@ ARG IS_DOCKER
 ARG NEXT_PUBLIC_IS_DOCKER
 ARG NEXT_DISABLE_DEVTOOLS
 ARG NEXT_RUNTIME
+ARG LANG
+ARG LC_ALL
 
 # Export build-time args as ENV so Next sees them at build
 ENV BACKEND_URL=${BACKEND_URL}
@@ -54,6 +70,9 @@ ENV IS_DOCKER=${IS_DOCKER}
 ENV NEXT_PUBLIC_IS_DOCKER=${NEXT_PUBLIC_IS_DOCKER}
 ENV NEXT_DISABLE_DEVTOOLS=${NEXT_DISABLE_DEVTOOLS}
 ENV NEXT_RUNTIME=${NEXT_RUNTIME}
+# Override locale from build args if provided
+ENV LANG=${LANG:-C.UTF-8}
+ENV LC_ALL=${LC_ALL:-C.UTF-8}
 # Force dynamic rendering for error pages (404, 500, etc.)
 # This prevents Html component import errors during build
 ENV NEXT_PRIVATE_STANDALONE=false
@@ -93,6 +112,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
+# Force UTF-8 encoding for runtime
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

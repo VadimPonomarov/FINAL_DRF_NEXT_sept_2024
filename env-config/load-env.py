@@ -38,32 +38,33 @@ class OptimizedEnvironmentLoader:
     
     def get_file_sequence(self, environment_type: str, service_name: str = None) -> list:
         """
-        Возвращает последовательность файлов для загрузки
-        Следует архитектуре: base → secrets → local → service-specific
+        Возвращает последовательность файлов для загрузки.
+        Архитектура: base → secrets → (local | docker) → service-specific
         """
         files = []
-        
+
         # 1. Базовые переменные (всегда)
         base_file = self.env_config_dir / ".env.base"
         if base_file.exists():
             files.append(base_file)
-        
+
         # 2. Секреты (всегда)
         secrets_file = self.env_config_dir / ".env.secrets"
         if secrets_file.exists():
             files.append(secrets_file)
-        
-        # 3. Локальные перевизначения (всегда)
-        local_file = self.env_config_dir / ".env.local"
-        if local_file.exists():
-            files.append(local_file)
-        
+
+        # 3. Файл среды (docker или local)
+        env_specific = ".env.docker" if environment_type == "docker" else ".env.local"
+        env_specific_file = self.env_config_dir / env_specific
+        if env_specific_file.exists():
+            files.append(env_specific_file)
+
         # 4. Сервис-специфичные переменные
         if service_name:
             service_file = self.project_root / service_name / ".env"
             if service_file.exists():
                 files.append(service_file)
-        
+
         return files
     
     def load_environment(self, service_name: str = None) -> dict:

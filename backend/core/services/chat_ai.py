@@ -142,22 +142,111 @@ class ChatAI:
             return self._generate_mock_image(prompt, **kwargs)
 
     def _generate_mock_image(self, prompt: str, **kwargs) -> str:
-        """Generate mock image URL for development."""
-        # Generate a placeholder image URL based on prompt
-        import hashlib
-        prompt_hash = hashlib.md5(prompt.encode()).hexdigest()[:8]
-
-        # Use placeholder service for mock images
-        width = kwargs.get('width', 800)
-        height = kwargs.get('height', 600)
-
-        # Generate different placeholder URLs based on prompt content
-        if any(word in prompt.lower() for word in ['car', 'auto', 'vehicle', 'машина', 'авто']):
-            return f"https://picsum.photos/{width}/{height}?random={prompt_hash}&category=cars"
-        elif any(word in prompt.lower() for word in ['city', 'street', 'building', 'місто', 'вулиця']):
-            return f"https://picsum.photos/{width}/{height}?random={prompt_hash}&category=city"
-        else:
-            return f"https://picsum.photos/{width}/{height}?random={prompt_hash}"
+        """Generate mock image for development - create local placeholder."""
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            import hashlib
+            from datetime import datetime
+            
+            # Generate unique filename based on prompt
+            prompt_hash = hashlib.md5(prompt.encode()).hexdigest()[:8]
+            width = kwargs.get('width', 800)
+            height = kwargs.get('height', 600)
+            
+            # Create a simple colored placeholder image
+            colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8']
+            color_index = int(prompt_hash, 16) % len(colors)
+            bg_color = colors[color_index]
+            
+            # Create image
+            image = Image.new('RGB', (width, height), bg_color)
+            draw = ImageDraw.Draw(image)
+            
+            # Add text overlay
+            try:
+                # Try to use default font, fallback to basic if not available
+                font_size = min(width, height) // 20
+                font = ImageFont.load_default()
+            except:
+                font = None
+            
+            # Extract car info from prompt for text
+            text_lines = []
+            if any(word in prompt.lower() for word in ['car', 'auto', 'vehicle', 'машина', 'авто']):
+                text_lines.append("🚗 Car Image")
+                # Try to extract car details from prompt
+                words = prompt.split()
+                for i, word in enumerate(words):
+                    if word.lower() in ['toyota', 'bmw', 'audi', 'mercedes', 'volkswagen', 'ford']:
+                        if i + 1 < len(words):
+                            text_lines.append(f"{word} {words[i+1]}")
+                        else:
+                            text_lines.append(word)
+                        break
+            else:
+                text_lines.append("Generated Image")
+            
+            text_lines.append(f"#{prompt_hash}")
+            
+            # Draw text
+            y_offset = height // 3
+            for line in text_lines:
+                if font:
+                    bbox = draw.textbbox((0, 0), line, font=font)
+                    text_width = bbox[2] - bbox[0]
+                    text_height = bbox[3] - bbox[1]
+                else:
+                    text_width = len(line) * 8
+                    text_height = 16
+                
+                x = (width - text_width) // 2
+                draw.text((x, y_offset), line, fill='white', font=font)
+                y_offset += text_height + 10
+            
+            # Save to media directory
+            date_prefix = datetime.now().strftime('%Y-%m-%d')
+            filename = f"{date_prefix}/generated-images/mock-{prompt_hash}.jpg"
+            
+            # Create ContentFile from image
+            from io import BytesIO
+            img_buffer = BytesIO()
+            image.save(img_buffer, format='JPEG', quality=85)
+            img_buffer.seek(0)
+            
+            image_content = ContentFile(img_buffer.getvalue(), name=f'mock-{prompt_hash}.jpg')
+            
+            # Save to default storage
+            saved_path = default_storage.save(filename, image_content)
+            
+            # Generate public URL
+            if hasattr(default_storage, 'url'):
+                public_url = default_storage.url(saved_path)
+            else:
+                public_url = f"/media/{saved_path}"
+            
+            logger.info(f"Mock image created: {saved_path} -> {public_url}")
+            return public_url
+            
+        except Exception as e:
+            logger.error(f"Failed to create mock image: {e}")
+            # Ultimate fallback - return a data URL for a simple colored rectangle
+            import hashlib
+            prompt_hash = hashlib.md5(prompt.encode()).hexdigest()[:8]
+            color_index = int(prompt_hash, 16) % 7
+            colors = ['FF6B6B', '4ECDC4', '45B7D1', '96CEB4', 'FFEAA7', 'DDA0DD', '98D8C8']
+            color = colors[color_index]
+            
+            # Return a simple SVG data URL
+            svg_data = f'''<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+                <rect width="800" height="600" fill="#{color}"/>
+                <text x="400" y="300" text-anchor="middle" fill="white" font-size="24" font-family="Arial">
+                    Generated Image #{prompt_hash}
+                </text>
+            </svg>'''
+            
+            import base64
+            svg_b64 = base64.b64encode(svg_data.encode()).decode()
+            return f"data:image/svg+xml;base64,{svg_b64}"
 
     def _save_image_to_local_storage(self, image_url: str, prompt: str, **kwargs) -> str:
         """Save generated image to local media storage."""

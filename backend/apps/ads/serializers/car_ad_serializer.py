@@ -35,7 +35,24 @@ class CarAdImageSerializer(serializers.ModelSerializer):
 
     def get_image_display_url(self, obj):
         """Return image URL - prioritize image_url (generated) over image (uploaded file)"""
-        return obj.get_image_url()
+        url = obj.get_image_url()
+        if not url:
+            return None
+        
+        # If URL is already absolute (starts with http), return as is
+        if url.startswith('http'):
+            return url
+        
+        # If URL starts with /media/, make it absolute using request context
+        if url.startswith('/media/'):
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(url)
+            # Fallback: return relative path (frontend will proxy through /api/media/)
+            return url
+        
+        # For other relative paths, return as is (frontend will handle)
+        return url
 
 
 class CarAdSerializer(BaseModelSerializer):

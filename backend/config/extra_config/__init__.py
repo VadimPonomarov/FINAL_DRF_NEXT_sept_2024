@@ -8,6 +8,7 @@ import os
 # Simple configuration from environment variables (backward compatibility)
 GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:8000')
+MEDIA_URL_BASE = os.environ.get('MEDIA_URL_BASE', 'http://localhost:8000')
 
 def get_api_config():
     """Simple API config function for backward compatibility"""
@@ -97,6 +98,7 @@ __all__ = [
 
     # App-specific settings
     "BASE_URL",
+    "MEDIA_URL_BASE",
     "DEFAULT_FROM_EMAIL",
     "SERVER_EMAIL",
     "AUTH_PASSWORD_VALIDATORS",

@@ -85,9 +85,14 @@ const AutoRiaMainPage = () => {
     // Логируем начало создания с новым алгоритмом
     console.log(`🔄 Начинаем создание ${count} тестовых объявлений с ОБРАТНЫМ КАСКАДОМ (Модель→Марка→Тип)...`);
 
-    try {
-      console.log(`🔄 Создаем ${count} тестовых объявлений с REVERSE-CASCADE алгоритмом, типы изображений:`, imageTypes);
+    console.log(`🔄 Создаем ${count} тестовых объявлений с REVERSE-CASCADE алгоритмом, типы изображений:`, imageTypes);
 
+    // Add timeout for the entire request (5 minutes max)
+    const REQUEST_TIMEOUT_MS = 300000; // 5 minutes
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    try {
       const response = await fetchWithAuth('/api/autoria/test-ads/generate', {
         method: 'POST',
         headers: {
@@ -97,8 +102,11 @@ const AutoRiaMainPage = () => {
           count: count,
           includeImages: true,
           imageTypes: imageTypes // Передаем выбранные типы изображений
-        })
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       // 401/403 после попытки авто-рефреша в fetchWithAuth → показываем локализованный тост и выходим
       if (response.status === 401 || response.status === 403) {
@@ -132,18 +140,28 @@ const AutoRiaMainPage = () => {
           variant: "default",
         });
       } else {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ message: 'Unknown error' }));
         throw new Error(error.message || 'Failed to generate test ads');
       }
-    } catch (error) {
-      console.error('Error generating test ads:', error);
-      toast({
-        title: t('common.error'),
-        description: t('autoria.testAds.errorCreating', {
-          error: error instanceof Error ? error.message : 'Неизвестная ошибка'
-        }),
-        variant: "destructive",
-      });
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        toast({
+          title: t('common.error'),
+          description: 'Генерация заняла слишком много времени. Попробуйте создать меньше объявлений.',
+          variant: "destructive",
+        });
+      } else {
+        console.error('Error generating test ads:', fetchError);
+        toast({
+          title: t('common.error'),
+          description: t('autoria.testAds.errorCreating', {
+            error: fetchError instanceof Error ? fetchError.message : 'Неизвестная ошибка'
+          }),
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsGenerating(false);
     }

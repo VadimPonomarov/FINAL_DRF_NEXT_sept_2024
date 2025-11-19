@@ -9,7 +9,7 @@ export async function GET(
     const { path } = await params;
     const relPath = Array.isArray(path) ? path.join('/') : String(path);
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     const url = `${backendUrl}/media/${relPath}`;
 
     const res = await fetch(url);

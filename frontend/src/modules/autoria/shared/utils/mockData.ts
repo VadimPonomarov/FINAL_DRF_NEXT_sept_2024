@@ -327,7 +327,9 @@ export const generateMockSpecs = async (cachedModels?: any[]): Promise<Partial<C
     // Это избегает передачи 451KB данных для выбора 1 случайной модели
 
     console.log('[MockData] 📡 Fetching random model from optimized endpoint...');
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // В серверном контексте используем BACKEND_URL для внутренних Docker запросов
+    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    console.log('[MockData] 🔗 Using backend URL:', backendUrl);
     const randomModelResponse = await fetch(`${backendUrl}/api/ads/reference/models/random/?count=1`);
 
     if (!randomModelResponse.ok) {
@@ -577,7 +579,9 @@ export const generateMockLocation = async (): Promise<Partial<CarAdFormData>> =>
     console.log('[MockData] 🌍 Fetching random location from optimized endpoint...');
 
     // Используем оптимизированный endpoint для получения случайной локации
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // В серверном контексте используем BACKEND_URL для внутренних Docker запросов
+    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    console.log('[MockData] 🔗 Using backend URL for location:', backendUrl);
     const randomLocationResponse = await fetch(`${backendUrl}/api/ads/reference/locations/random/?count=1`);
 
     if (!randomLocationResponse.ok) {

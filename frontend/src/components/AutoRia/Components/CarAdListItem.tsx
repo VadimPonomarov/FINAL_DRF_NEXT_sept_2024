@@ -118,7 +118,8 @@ const CarAdListItem: React.FC<CarAdListItemProps> = ({
       const firstImage = ad.images[0];
       if (!firstImage) return '/api/placeholder/400/300';
 
-      const url = firstImage.image_url || firstImage.image_display_url || firstImage.url || firstImage.image;
+      // ПРИОРИТЕТ: image_display_url (абсолютный URL от бекенда) > image_url > url > image
+      const url = firstImage.image_display_url || firstImage.image_url || firstImage.url || firstImage.image;
       if (!url) return '/api/placeholder/400/300';
 
       if (typeof url === 'string' && url.startsWith('http')) return url;

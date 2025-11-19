@@ -42,6 +42,19 @@ import argparse
 from pathlib import Path
 from dotenv import load_dotenv
 
+
+# Ensure UTF-8 everywhere (especially on Windows consoles)
+os.environ.setdefault("PYTHONUTF8", "1")
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+
+DEFAULT_SUBPROCESS_ENCODING = "utf-8"
+
 class Colors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -79,11 +92,9 @@ def wait_for_all_containers_healthy(timeout=600, compose_files=None, include_fro
     
     try:
         compose_args = [arg for f in compose_files for arg in ("-f", f)]
-        result = subprocess.run(
+        result = run_command(
             ["docker-compose", *compose_args, "ps", "--format", "json"],
-            capture_output=True,
-            text=True,
-            timeout=10
+            capture_output=True
         )
         if result.returncode == 0:
             import json
@@ -150,23 +161,22 @@ def wait_for_all_containers_healthy(timeout=600, compose_files=None, include_fro
         
         try:
             # Перевіряємо health статус через docker inspect
-            result = subprocess.run(
+            result = run_command(
                 ["docker", "inspect", "--format", "{{.State.Health.Status}}", container_name],
+                check=False,
                 capture_output=True,
-                text=True,
-                timeout=3
             )
             
             if result.returncode == 0:
                 health_status = result.stdout.strip().lower()
                 
-                # Контейнери без healthcheck - перевіряємо що вони running
+                # Контейнери без healthcheck можуть повернути порожній рядок
+                # Перевіряємо що контейнер взагалі існує і running
                 if not health_status:
-                    status_result = subprocess.run(
+                    status_result = run_command(
                         ["docker", "inspect", "--format", "{{.State.Status}}", container_name],
                         capture_output=True,
-                        text=True,
-                        timeout=3
+                        check=False
                     )
                     if status_result.returncode == 0 and "running" in status_result.stdout.lower():
                         initial_status[service] = "✅ Запущено (без healthcheck)"
@@ -181,11 +191,10 @@ def wait_for_all_containers_healthy(timeout=600, compose_files=None, include_fro
                 elif health_status == "unhealthy":
                     # Для опціональних сервісів перевіряємо чи вони running
                     if service in services_optional_health:
-                        status_result = subprocess.run(
+                        status_result = run_command(
                             ["docker", "inspect", "--format", "{{.State.Status}}", container_name],
                             capture_output=True,
-                            text=True,
-                            timeout=3
+                            check=False
                         )
                         if status_result.returncode == 0 and "running" in status_result.stdout.lower():
                             initial_status[service] = "✅ Running (healthcheck не проходить, але сервіс працює)"
@@ -232,11 +241,10 @@ def wait_for_all_containers_healthy(timeout=600, compose_files=None, include_fro
             
             try:
                 # Перевіряємо health статус через docker inspect
-                result = subprocess.run(
+                result = run_command(
                     ["docker", "inspect", "--format", "{{.State.Health.Status}}", container_name],
                     capture_output=True,
-                    text=True,
-                    timeout=5
+                    check=False
                 )
                 
                 if result.returncode == 0:
@@ -246,11 +254,10 @@ def wait_for_all_containers_healthy(timeout=600, compose_files=None, include_fro
                     # Перевіряємо що контейнер взагалі існує і running
                     if not health_status:
                         # Перевіряємо статус контейнера
-                        status_result = subprocess.run(
+                        status_result = run_command(
                             ["docker", "inspect", "--format", "{{.State.Status}}", container_name],
                             capture_output=True,
-                            text=True,
-                            timeout=5
+                            check=False
                         )
                         if status_result.returncode == 0 and "running" in status_result.stdout.lower():
                             current_status[service] = "✅ Запущено (без healthcheck)"
@@ -270,11 +277,10 @@ def wait_for_all_containers_healthy(timeout=600, compose_files=None, include_fro
                     elif health_status == "unhealthy":
                         # Для опціональних сервісів перевіряємо чи вони running
                         if service in services_optional_health:
-                            status_result = subprocess.run(
+                            status_result = run_command(
                                 ["docker", "inspect", "--format", "{{.State.Status}}", container_name],
                                 capture_output=True,
-                                text=True,
-                                timeout=5
+                                check=False
                             )
                             if status_result.returncode == 0 and "running" in status_result.stdout.lower():
                                 if service not in checked_services:
@@ -327,11 +333,10 @@ def wait_for_all_containers_healthy(timeout=600, compose_files=None, include_fro
     for service in services_with_healthcheck:
         container_name = service_to_container.get(service) or default_container_names.get(service) or service
         try:
-            result = subprocess.run(
+            result = run_command(
                 ["docker", "inspect", "--format", "{{.State.Health.Status}}", container_name],
                 capture_output=True,
-                text=True,
-                timeout=5
+                check=False
             )
             if result.returncode == 0:
                 health_status = result.stdout.strip()
@@ -345,23 +350,27 @@ def wait_for_all_containers_healthy(timeout=600, compose_files=None, include_fro
 def run_command(command, cwd=None, check=True, capture_output=False):
     """Виконує команду з обробкою помилок"""
     try:
+        common_kwargs = {
+            "shell": True,
+            "cwd": cwd,
+            "check": check,
+            "text": True,
+            "encoding": DEFAULT_SUBPROCESS_ENCODING,
+            "errors": "replace",
+        }
+
         if capture_output:
             result = subprocess.run(
                 command,
-                shell=True,
-                cwd=cwd,
-                check=check,
                 capture_output=True,
-                text=True
+                **common_kwargs,
             )
         else:
             # Показуємо вивід в реальному часі
             print(f"Виконується: {command}")
             result = subprocess.run(
                 command,
-                shell=True,
-                cwd=cwd,
-                check=check
+                **common_kwargs,
             )
         return result
     except subprocess.CalledProcessError as e:
@@ -416,11 +425,10 @@ def cleanup_conflicting_containers():
     for port in ports_to_check:
         try:
             # Знаходимо контейнери, які використовують цей порт
-            result = subprocess.run(
+            result = run_command(
                 ["docker", "ps", "-a", "--filter", f"publish={port}", "--format", "{{.Names}}"],
                 capture_output=True,
-                text=True,
-                timeout=5
+                check=False
             )
             
             if result.returncode == 0 and result.stdout.strip():
@@ -439,11 +447,10 @@ def cleanup_conflicting_containers():
     
     for container_name in standard_names:
         try:
-            result = subprocess.run(
+            result = run_command(
                 ["docker", "ps", "-a", "--filter", f"name=^{container_name}$", "--format", "{{.Names}}"],
                 capture_output=True,
-                text=True,
-                timeout=5
+                check=False
             )
             
             if result.returncode == 0 and result.stdout.strip():
@@ -458,10 +465,10 @@ def cleanup_conflicting_containers():
         for container_name in containers_to_remove:
             try:
                 print(f"   🗑️  Видалення контейнера: {container_name}")
-                subprocess.run(
+                run_command(
                     ["docker", "rm", "-f", container_name],
                     capture_output=True,
-                    timeout=10
+                    check=False
                 )
                 removed_count += 1
             except Exception as e:
@@ -478,7 +485,7 @@ def cleanup_conflicting_containers():
     return True
 
 def main():
-    """Головна функція - повний процес розгортання після клонивання з Git"""
+    """Головна функція - повний процес розгортання після клонування з Git"""
     try:
         # Парсуємо аргументи командного рядка
         parser = argparse.ArgumentParser(description='AutoRia Clone Deploy Script')
@@ -547,11 +554,10 @@ def main():
             compose_files_current = compose_files
             print("🔍 Перевірка статусу контейнерів...")
             try:
-                result = subprocess.run(
+                result = run_command(
                     ["docker-compose", *[arg for f in compose_files_current for arg in ("-f", f)], "ps", "-q"],
                     capture_output=True,
-                    text=True,
-                    timeout=5
+                    check=False
                 )
                 has_containers = bool(result.stdout.strip())
                 
@@ -581,7 +587,9 @@ def main():
                     stderr=subprocess.STDOUT,
                     text=True,
                     bufsize=1,
-                    universal_newlines=True
+                    universal_newlines=True,
+                    encoding=DEFAULT_SUBPROCESS_ENCODING,
+                    errors="replace",
                 )
                 
                 # Показуємо вивід в реальному часі
@@ -783,7 +791,9 @@ def main():
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                bufsize=1
+                bufsize=1,
+                encoding=DEFAULT_SUBPROCESS_ENCODING,
+                errors="replace",
             )
         
         # Показуємо вивід в реальному часі
@@ -818,23 +828,22 @@ def main():
                 # На Windows використовуємо netstat та taskkill
                 if sys.platform == 'win32':
                     # Знаходимо PID процесу на порту 3000
-                    result = subprocess.run(
+                    result = run_command(
                         'netstat -ano | findstr :3000 | findstr LISTENING',
-                        shell=True,
                         capture_output=True,
-                        text=True
+                        check=False
                     )
                     if result.stdout:
                         # Витягуємо PID
                         parts = result.stdout.strip().split()
                         if parts:
                             pid = parts[-1]
-                            subprocess.run(f'taskkill /F /PID {pid}', shell=True, capture_output=True)
+                            run_command(f'taskkill /F /PID {pid}', capture_output=True, check=False)
                             print(f"   Зупинено процес з PID {pid}")
                             time.sleep(2)
                 else:
                     # На Linux/Mac використовуємо lsof та kill
-                    subprocess.run('lsof -ti:3000 | xargs kill -9', shell=True, capture_output=True)
+                    run_command('lsof -ti:3000 | xargs kill -9', capture_output=True, check=False)
                     time.sleep(2)
             except:
                 pass
@@ -903,7 +912,10 @@ def main():
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                creationflags=creationflags
+                creationflags=creationflags,
+                text=True,
+                encoding=DEFAULT_SUBPROCESS_ENCODING,
+                errors="replace",
             )
             # Моніторимо готовність локального фронтенда
             waited = 0
@@ -919,7 +931,7 @@ def main():
             if mode == 'local' and frontend_process.poll() is not None:
                 print_error(f"❌ Процес frontend завершився! (код: {frontend_process.returncode})")
                 try:
-                    output = frontend_process.stdout.read().decode('utf-8', errors='ignore')
+                    output = frontend_process.stdout.read()
                     if output:
                         print(f"Останній вивід:\n{output[-500:]}")
                 except:

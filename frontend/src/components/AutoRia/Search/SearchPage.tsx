@@ -178,9 +178,17 @@ const SearchPage: React.FC = () => {
       {/* 🖼️ Изображение */}
       <div className="relative">
         <img 
-          src={ad.images[0]} 
+          src={Array.isArray(ad.images) && ad.images[0] 
+            ? (ad.images[0].image_display_url || ad.images[0].image_url || ad.images[0].url || ad.images[0].image || '/api/placeholder/400/300')
+            : '/api/placeholder/400/300'} 
           alt={ad.title}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== '/api/placeholder/400/300') {
+              target.src = '/api/placeholder/400/300';
+            }
+          }}
         />
         
         {/* 🏷️ Бейджи */}

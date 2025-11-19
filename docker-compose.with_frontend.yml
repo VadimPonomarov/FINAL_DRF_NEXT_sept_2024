@@ -5,13 +5,16 @@ services:
       dockerfile: Dockerfile
       args:
         BACKEND_URL: http://app:8000
-        NEXT_PUBLIC_BACKEND_URL: /api
+        NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
         NEXTAUTH_URL: http://localhost:3000
         NEXTAUTH_URL_INTERNAL: http://frontend:3000
         IS_DOCKER: "true"
         NEXT_PUBLIC_IS_DOCKER: "true"
         NEXT_DISABLE_DEVTOOLS: "1"
         NEXT_RUNTIME: nodejs
+        # Force UTF-8 encoding during build
+        LANG: C.UTF-8
+        LC_ALL: C.UTF-8
     env_file:
       - ./env-config/.env.base
       - ./env-config/.env.secrets
@@ -22,11 +25,15 @@ services:
       REDIS_HOST: redis
       REDIS_URL: redis://redis:6379/0
       BACKEND_URL: http://app:8000
-      NEXT_PUBLIC_BACKEND_URL: /api
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
       NEXTAUTH_URL_INTERNAL: http://frontend:3000
       NODE_ENV: production
       NEXT_DISABLE_DEVTOOLS: "1"
       NEXT_TELEMETRY_DISABLED: "1"
+      # Force UTF-8 encoding
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+      PYTHONIOENCODING: utf-8
     ports:
       - "3000:3000"
     depends_on:
