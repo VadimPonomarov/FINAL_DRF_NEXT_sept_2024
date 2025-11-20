@@ -512,6 +512,7 @@ def main():
 
         # Determine mode (interactive if not provided)
         mode = args.mode
+        frontend_process = None  # will be assigned only for local frontend mode
         if mode is None:
             print("\nОберіть режим розгортання:")
             print("  1) Backend в Docker + Frontend локально (поточний сценарій)")
@@ -977,7 +978,10 @@ def main():
             
             if not frontend_ready:
                 print_warning(f"⚠️ Frontend не відповідає після {max_wait} секунд")
-                print(f"   Процес все ще працює (PID: {frontend_process.pid})")
+                if frontend_process:
+                    print(f"   Процес все ще працює (PID: {frontend_process.pid})")
+                else:
+                    print("   Процес frontend не був запущений")
                 print("   Перевірте логи або спробуйте відкрити http://localhost:3000 вручну")
 
         # ЕТАП 8: Виведення інформації з посиланнями
@@ -1015,9 +1019,16 @@ def main():
         print("="*70)
         print()
         print(f"{Colors.WARNING}💡 Примітка:{Colors.ENDC}")
-        print(f"   - Frontend працює в production режимі")
-        print(f"   - Для зупинки frontend натисніть Ctrl+C або знайдіть процес (PID: {frontend_process.pid})")
-        print(f"   - Для перегляду логів Docker: docker-compose -f docker-compose.local.yml logs -f")
+        if mode == 'local':
+            print(f"   - Frontend працює в production режимі")
+            if frontend_process:
+                print(f"   - Для зупинки frontend натисніть Ctrl+C або знайдіть процес (PID: {frontend_process.pid})")
+            else:
+                print(f"   - Сесія frontend завершена")
+            print(f"   - Для перегляду логів Docker: docker-compose -f docker-compose.local.yml logs -f")
+        else:
+            print(f"   - Frontend працює всередині Docker контейнера")
+            print(f"   - Для перегляду логів Docker: docker-compose -f docker-compose.with_frontend.yml logs -f")
         print()
 
     except KeyboardInterrupt:
