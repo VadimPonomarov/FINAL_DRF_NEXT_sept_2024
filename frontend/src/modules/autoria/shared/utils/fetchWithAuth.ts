@@ -32,7 +32,22 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
   const tokensValid = await ensureValidTokens();
   if (!tokensValid) {
     console.warn('[fetchWithAuth] Tokens are not valid and refresh failed, request may fail');
-    // Не блокуємо запит, але він може повернути 401
+
+    // Для сторінок AutoRia без валідних токенів одразу ініціюємо переавторизацію,
+    // щоб відновити backend_auth у Redis і уникнути "тихих" 401 при діях модерації
+    if (typeof window !== 'undefined') {
+      const currentPathname = window.location.pathname;
+      if (currentPathname.startsWith('/autoria/')) {
+        try {
+          const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
+          const currentPath = currentPathname + window.location.search;
+          redirectToAuth(currentPath, 'tokens_not_found');
+        } catch (e) {
+          console.error('[fetchWithAuth] Failed to trigger redirectToAuth on invalid tokens:', e);
+        }
+      }
+    }
+    // Не блокуємо сам запит, але він, ймовірно, поверне 401, після чого користувач вже буде на /login
   }
 
   // Виконуємо запит БЕЗ додавання токенів на клієнті

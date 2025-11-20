@@ -379,7 +379,12 @@ export class CarAdsService {
       let errorMessage = 'Failed to update status';
       try {
         const errorData = await response.json();
-        errorMessage = errorData?.error || errorData?.message || errorMessage;
+        // Вытягиваем максимально информативное сообщение из proxy-роута
+        errorMessage =
+          errorData?.message ||
+          errorData?.detail ||
+          errorData?.error ||
+          errorMessage;
       } catch (error) {
         console.warn('[CarAdsService] Unable to parse moderator status error response');
       }

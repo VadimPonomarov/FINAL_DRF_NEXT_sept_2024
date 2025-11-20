@@ -151,6 +151,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\n✅ Successfully created {len(created_ads)} test ads!'))
 
+        if with_images:
+            self._regenerate_ads_without_real_images(created_ads, image_types)
+
         # Print summary
         self._print_summary(created_ads, with_images)
 
@@ -439,25 +442,86 @@ class Command(BaseCommand):
 
         return 0
 
+    def _regenerate_ads_without_real_images(self, created_ads, image_types):
+        from apps.ads.models import AddImageModel
+
+        if not created_ads:
+            return
+
+        problematic_ads = []
+        for ad in created_ads:
+            images_qs = ad.images.all()
+            if not images_qs.exists():
+                problematic_ads.append(ad)
+                continue
+
+            has_any = False
+            has_real = False
+
+            for img in images_qs:
+                url = ''
+                if img.image_url:
+                    url = str(img.image_url)
+                elif getattr(img.image, 'url', None):
+                    url = str(img.image.url)
+
+                url = (url or '').strip()
+                if not url:
+                    continue
+
+                has_any = True
+                if 'placeholder_' in url:
+                    continue
+                has_real = True
+
+            if not has_any or not has_real:
+                problematic_ads.append(ad)
+
+        if not problematic_ads:
+            return
+
+        self.stdout.write(f'\n♻️ Regenerating images for {len(problematic_ads)} ads without real images')
+
+        for ad in problematic_ads:
+            try:
+                self.stdout.write(f'   ♻️ Regenerating images for ad #{ad.id}')
+                AddImageModel.objects.filter(ad=ad).delete()
+                ad_data = {'dynamic_fields': ad.dynamic_fields or {}}
+                images_created = self._generate_images_for_ad(ad, ad_data, image_types)
+                if images_created == 0:
+                    images_created = self._create_placeholder_images(ad, image_types)
+                if images_created == 0:
+                    self.stdout.write(f'   ⚠️ Still no images for ad #{ad.id} after regeneration')
+                else:
+                    self.stdout.write(f'   ✅ Regenerated {images_created} images for ad #{ad.id}')
+            except Exception as e:
+                self.stdout.write(f'   ❌ Error regenerating images for ad #{ad.id}: {e}')
+
     def _create_placeholder_images(self, ad, image_types):
         """Create simple placeholder images when real generation is unavailable."""
         from apps.ads.models import AddImageModel
+        from core.services.chat_ai import ChatAI
 
-        placeholder_bytes = b64decode(
-            "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAFUlEQVR4nO3BMQEAAADCoPVPbQ0PoAAAAAAAAO4B0mAAAX0m+NsAAAAASUVORK5CYII="
-        )
+        chat_ai = ChatAI()
 
         created = 0
         for idx, angle in enumerate(image_types or ['front']):
-            image_content = ContentFile(placeholder_bytes, name=f'placeholder_{angle}_{ad.id}.png')
-            AddImageModel.objects.create(
-                ad=ad,
-                image=image_content,
-                order=idx + 1,
-                is_primary=(idx == 0),
-                caption=f'Placeholder {angle} view'
-            )
-            created += 1
+            try:
+                prompt = f"{ad.title} [{ad.mark.name} {ad.model}] - {angle} view"
+                url = chat_ai.generate_image(prompt, width=1024, height=768)
+                if not url:
+                    continue
+
+                AddImageModel.objects.create(
+                    ad=ad,
+                    image_url=url,
+                    order=idx + 1,
+                    is_primary=(idx == 0),
+                    caption=f'Placeholder {angle} view'
+                )
+                created += 1
+            except Exception as e:
+                self.stdout.write(f'      ❌ Mock placeholder image error for ad #{ad.id}, angle {angle}: {e}')
 
         return created
 

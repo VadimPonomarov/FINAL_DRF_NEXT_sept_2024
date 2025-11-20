@@ -93,7 +93,7 @@ class AdStatusUpdateSerializer(serializers.Serializer):
     
     def _send_status_notification(self, ad, new_status):
         """Send notification to user about status change."""
-        from apps.ads.tasks import notify_ad_status_changed
+        from apps.ads.tasks.moderation_notifications import notify_ad_status_changed
         
         # Send async notification
         notify_ad_status_changed.delay(
@@ -130,9 +130,31 @@ class AdStatusDetailSerializer(serializers.ModelSerializer):
     
     def get_moderated_by_name(self, obj):
         """Get the name of the moderator."""
-        if obj.moderated_by:
-            return obj.moderated_by.get_full_name() or obj.moderated_by.email
-        return 'Auto-moderation'
+        user = getattr(obj, 'moderated_by', None)
+        if not user:
+            return 'Auto-moderation'
+
+        # Try Django-style get_full_name when available
+        full_name = None
+        get_full_name = getattr(user, 'get_full_name', None)
+        if callable(get_full_name):
+            full_name = (get_full_name() or '').strip()
+
+        # Fallback to profile name/surname if present
+        if not full_name:
+            profile = getattr(user, 'profile', None)
+            if profile is not None:
+                parts = [
+                    getattr(profile, 'name', None),
+                    getattr(profile, 'surname', None),
+                ]
+                full_name = ' '.join(p for p in parts if p).strip()
+
+        # Final fallback to email or stringified user id
+        if not full_name:
+            full_name = getattr(user, 'email', None) or str(getattr(user, 'id', ''))
+
+        return full_name
     
     def get_status_display(self, obj):
         """Get human-readable status."""
@@ -149,7 +171,7 @@ class AdStatusDetailSerializer(serializers.ModelSerializer):
                     'action': log.action,
                     'status': log.status,
                     'reason': log.reason,
-                    'moderator': log.moderated_by.get_full_name() if log.moderated_by else 'Auto-moderation',
+                    'moderator': self._get_user_display_name(log.moderated_by),
                     'timestamp': log.created_at,
                     'details': log.details
                 }
@@ -157,6 +179,30 @@ class AdStatusDetailSerializer(serializers.ModelSerializer):
             ]
         except Exception:
             return []
+
+    def _get_user_display_name(self, user):
+        """Helper to build a human-readable user name for moderators/logs."""
+        if not user:
+            return 'Auto-moderation'
+
+        full_name = None
+        get_full_name = getattr(user, 'get_full_name', None)
+        if callable(get_full_name):
+            full_name = (get_full_name() or '').strip()
+
+        if not full_name:
+            profile = getattr(user, 'profile', None)
+            if profile is not None:
+                parts = [
+                    getattr(profile, 'name', None),
+                    getattr(profile, 'surname', None),
+                ]
+                full_name = ' '.join(p for p in parts if p).strip()
+
+        if not full_name:
+            full_name = getattr(user, 'email', None) or str(getattr(user, 'id', ''))
+
+        return full_name
 
 
 class BulkStatusUpdateSerializer(serializers.Serializer):
@@ -224,7 +270,7 @@ class BulkStatusUpdateSerializer(serializers.Serializer):
         
         # Send notifications if requested
         if notify_users:
-            from apps.ads.tasks import notify_bulk_status_changed
+            from apps.ads.tasks.moderation_notifications import notify_bulk_status_changed
             notify_bulk_status_changed.delay(
                 ad_ids=ad_ids,
                 new_status=new_status,
