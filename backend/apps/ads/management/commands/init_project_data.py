@@ -832,35 +832,44 @@ Style: Photorealistic, automotive magazine quality"""
 
             # Check if car ads already exist
             existing_ads = CarAd.objects.count()
-            if existing_ads > 0:
-                self.stdout.write(f'ℹ️ Car advertisements already exist: {existing_ads}')
-                return
+            ads_with_images = CarAd.objects.filter(images__isnull=False).distinct().count()
+            min_ads_with_images = int(os.getenv('MIN_TEST_ADS_WITH_IMAGES', '10') or '10')
+            self.stdout.write(f'ℹ️ Current car ads: total={existing_ads}, with images={ads_with_images}')
+
+            if ads_with_images >= min_ads_with_images:
+                self.stdout.write(f'✅ Minimum {min_ads_with_images} car ads with images already satisfied')
+                return {'created': 0}
+
+            needed_with_images = max(0, min_ads_with_images - ads_with_images)
+            if needed_with_images == 0:
+                self.stdout.write('ℹ️ No additional ads with images required')
+                return {'created': 0}
 
             # Check environment variable for test ads generation
             generate_with_images = os.getenv('GENERATE_TEST_ADS_WITH_IMAGES', 'true').lower() in ('true', '1', 't', 'yes')
 
             if generate_with_images:
                 # Use the new algorithm-consistent test ads generator
-                self.stdout.write('🎨 Using frontend-consistent image generation algorithm...')
+                self.stdout.write(f'🎨 Using frontend-consistent image generation algorithm (creating {needed_with_images} ads with images)...')
                 call_command(
                     'generate_test_ads_with_images',
-                    count=10,
+                    count=needed_with_images,
                     with_images=True,
                     image_types='front,side',
                     verbosity=1
                 )
-                
-                ads_count = CarAd.objects.count()
-                self.stdout.write(f'✅ Created {ads_count} test ads with images')
+                new_ads_with_images = CarAd.objects.filter(images__isnull=False).distinct().count()
+                self.stdout.write(f'✅ Now {new_ads_with_images} car ads have images')
+                created_delta = max(0, new_ads_with_images - ads_with_images)
+                return {'created': created_delta}
             else:
                 # Fallback to old method without images
                 self.stdout.write('📝 Generating ads without images (legacy mode)...')
-                call_command('seed_car_ads', count=50, verbosity=0)
-                
-                ads_count = CarAd.objects.count()
-                self.stdout.write(f'✅ Created {ads_count} car advertisements')
-
-            return {'created': ads_count}
+                call_command('seed_car_ads', count=max(needed_with_images, 50), verbosity=0)
+                new_total_ads = CarAd.objects.count()
+                self.stdout.write(f'✅ Total car advertisements after legacy seeding: {new_total_ads}')
+                created_delta = max(0, new_total_ads - existing_ads)
+                return {'created': created_delta}
 
         except Exception as e:
             self.stdout.write(f'❌ Error creating car advertisements: {e}')

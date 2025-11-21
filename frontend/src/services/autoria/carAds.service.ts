@@ -375,6 +375,19 @@ export class CarAdsService {
       }),
     });
 
+    // Специальный кейс: ошибки авторизации обрабатываются самим fetchWithAuth
+    // (ensureValidTokens + redirectToAuth / /login). Здесь не кидаем ошибку,
+    // чтобы не показывать пользователю лишний red toast, а просто позволяем
+    // глобальному auth-потоку выполнить редирект.
+    if (response.status === 401 || response.status === 403) {
+      console.warn(
+        '[CarAdsService] Moderator status update auth error (',
+        response.status,
+        ') – relying on global auth flow / redirects and skipping toast error.'
+      );
+      return;
+    }
+
     if (!response.ok) {
       let errorMessage = 'Failed to update status';
       try {

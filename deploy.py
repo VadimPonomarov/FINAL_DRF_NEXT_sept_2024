@@ -481,7 +481,47 @@ def cleanup_conflicting_containers():
         time.sleep(3)
     else:
         print_success("✅ Конфліктуючих контейнерів не знайдено")
-    
+
+    ports_to_kill = [3000]
+    for port in ports_to_kill:
+        try:
+            if sys.platform == 'win32':
+                result = run_command(
+                    f'netstat -ano | findstr :{port} | findstr LISTENING',
+                    capture_output=True,
+                    check=False
+                )
+                if result and result.returncode == 0 and result.stdout.strip():
+                    print(f"   Знайдено локальні процеси на порту {port}:")
+                    for line in result.stdout.strip().splitlines():
+                        parts = line.split()
+                        if not parts:
+                            continue
+                        pid = parts[-1]
+                        print(f"   🛑 Завершення процесу PID {pid} на порту {port}")
+                        run_command(
+                            f'taskkill /F /PID {pid}',
+                            capture_output=True,
+                            check=False
+                        )
+            else:
+                result = run_command(
+                    f'lsof -ti:{port}',
+                    capture_output=True,
+                    check=False
+                )
+                if result and result.returncode == 0 and result.stdout.strip():
+                    pids = [p.strip() for p in result.stdout.strip().splitlines() if p.strip()]
+                    if pids:
+                        print(f"   🛑 Завершення процесів {', '.join(pids)} на порту {port}")
+                        run_command(
+                            'kill -9 ' + ' '.join(pids),
+                            capture_output=True,
+                            check=False
+                        )
+        except Exception as e:
+            print_warning(f"⚠️  Не вдалося очистити локальний порт {port}: {e}")
+
     return True
 
 def main():
