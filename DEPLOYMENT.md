@@ -64,6 +64,19 @@ ls -la
 - `deploy.py` — скрипт розгортання (Python)
 - `deploy.sh` — скрипт розгортання (Bash)
 - `deploy.js` — скрипт розгортання (Node.js)
+- `scripts/check_environment.py` — перевірка середовища (Python)
+
+### Крок 3. Швидка перевірка середовища
+
+Перш ніж запускати `deploy.py` або `docker-compose`, рекомендується
+один раз перевірити середовище:
+
+```bash
+python scripts/check_environment.py
+```
+
+Якщо якась перевірка не пройдена (наприклад, Docker Engine не
+запущений), виправте це перед розгортанням.
 
 ---
 
