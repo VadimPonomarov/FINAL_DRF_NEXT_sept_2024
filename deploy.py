@@ -409,6 +409,23 @@ def check_requirements():
         print_error("Docker не знайдено!")
         return False
     
+    # Додаткова перевірка: чи запущений Docker Engine (daemon)
+    # На деяких системах docker CLI встановлений, але демон не запущений, і
+    # будь-які команди docker-compose або docker ps завершаться помилкою
+    # на кшталт "open //./pipe/dockerDesktopLinuxEngine".
+    engine_info = run_command("docker info", check=False, capture_output=True)
+    if not engine_info or engine_info.returncode != 0:
+        print_error("Docker встановлено, але Docker Engine (демон) недоступний або не запущений.")
+        # Виводимо стислі діагностичні деталі, якщо вони є
+        try:
+            stderr_msg = (engine_info.stderr or "").strip() if engine_info else ""
+        except Exception:
+            stderr_msg = ""
+        if stderr_msg:
+            print_warning(f"Деталі помилки Docker Engine:\n{stderr_msg}")
+        print_warning("Переконайтеся, що Docker Desktop / docker daemon запущений (Engine running) і повторіть спробу.")
+        return False
+    
     print_success("Всі системні вимоги виконані!")
     return True
 
