@@ -216,6 +216,42 @@ async function main() {
         } else {
             printSuccess('No conflicting containers found');
         }
+
+        // Kill local processes that may be listening on port 3000 (stale frontend servers)
+        const portsToKill = [3000];
+        for (const port of portsToKill) {
+            try {
+                if (process.platform === 'win32') {
+                    const output = execSync(`netstat -ano | findstr :${port} | findstr LISTENING`, { encoding: 'utf8' });
+                    const lines = output.split('\n').map((line) => line.trim()).filter(Boolean);
+                    for (const line of lines) {
+                        const parts = line.split(/\s+/).filter(Boolean);
+                        const pid = parts[parts.length - 1];
+                        if (pid && /^\d+$/.test(pid)) {
+                            console.log(`   🛑 Killing local process PID ${pid} on port ${port}`);
+                            try {
+                                execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' });
+                            } catch (error) {
+                                printWarning(`Failed to kill PID ${pid} on port ${port}`);
+                            }
+                        }
+                    }
+                } else {
+                    const output = execSync(`lsof -ti:${port}`, { encoding: 'utf8' });
+                    const pids = output.split('\n').map((line) => line.trim()).filter(Boolean);
+                    if (pids.length > 0) {
+                        console.log(`   🛑 Killing local processes ${pids.join(', ')} on port ${port}`);
+                        try {
+                            execSync(`kill -9 ${pids.join(' ')}`, { stdio: 'ignore' });
+                        } catch (error) {
+                            printWarning(`Failed to kill some PIDs on port ${port}`);
+                        }
+                    }
+                }
+            } catch (error) {
+                // Ignore errors if no processes are found or commands are unavailable
+            }
+        }
         console.log('');
 
         // Step 3: Start Docker containers
@@ -233,8 +269,9 @@ async function main() {
                 args: ['up', '-d', ...servicesToStart],
             });
         } else {
+            // Full Docker deployment: include frontend service via override compose file
             await execCommand('docker-compose', {
-                args: ['up', '-d', '--build'],
+                args: ['-f', 'docker-compose.yml', '-f', 'docker-compose.with_frontend.yml', 'up', '-d', '--build'],
             });
         }
         
@@ -386,12 +423,15 @@ async function main() {
         } else {
             printStep(5, 'Frontend running in Docker...');
             
-            // Wait for frontend
+            // Wait for frontend (allow extra time for image build and startup)
             console.log('Waiting for frontend to be ready...');
-            const frontendReady = await waitForService('http://localhost:3000', 60);
+            const frontendReady = await waitForService('http://localhost:3000', 180);
             
             if (frontendReady) {
                 printSuccess('Frontend is ready');
+            } else {
+                printError('Timeout waiting for frontend to be ready');
+                process.exit(1);
             }
             console.log('');
             
