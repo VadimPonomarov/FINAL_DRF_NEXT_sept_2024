@@ -93,6 +93,13 @@ main() {
     
     check_command "docker" || exit 1
     check_command "docker-compose" || check_command "docker" || exit 1
+
+    # Ensure Docker Engine (daemon) is actually running
+    if ! docker info >/dev/null 2>&1; then
+        print_error "Docker is installed, but Docker Engine (daemon) is not running or not accessible."
+        echo "   Please start Docker Desktop / docker daemon and try again."
+        exit 1
+    fi
     
     if [ "$LOCAL_FRONTEND" = true ]; then
         check_command "node" || exit 1

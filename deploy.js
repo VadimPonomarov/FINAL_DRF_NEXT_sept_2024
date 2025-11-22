@@ -133,9 +133,18 @@ async function main() {
         
         const dockerInstalled = checkCommand('docker');
         const dockerComposeInstalled = checkCommand('docker-compose') || checkCommand('docker');
+
+        let dockerEngineOk = true;
+        try {
+            execSync('docker info', { stdio: 'ignore' });
+        } catch (error) {
+            dockerEngineOk = false;
+            printError('Docker is installed, but Docker Engine (daemon) is not running or not accessible.');
+            printWarning('Please start Docker Desktop / docker daemon and try again.');
+        }
         
-        if (!dockerInstalled || !dockerComposeInstalled) {
-            printError('Docker is required but not installed');
+        if (!dockerInstalled || !dockerComposeInstalled || !dockerEngineOk) {
+            printError('Docker is required but not installed or not running');
             process.exit(1);
         }
         

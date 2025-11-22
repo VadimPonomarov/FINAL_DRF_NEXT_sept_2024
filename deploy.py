@@ -42,6 +42,7 @@ import argparse
 from pathlib import Path
 from dotenv import load_dotenv
 
+from scripts import check_environment as env_check
 
 # Ensure UTF-8 everywhere (especially on Windows consoles)
 os.environ.setdefault("PYTHONUTF8", "1")
@@ -592,6 +593,17 @@ def main():
             print("   6️⃣  npm run build (локально)")
             print("   7️⃣  npm run start (локально, в фоновому режимі)")
         print("   8️⃣  Виведення інформації з посиланнями")
+        print()
+        # PRE-ЕТАП: автоматичний запуск глобальної перевірки середовища
+        print_step(0, "Глобальна перевірка середовища (scripts/check_environment.py)")
+        try:
+            env_exit_code = env_check.main()
+        except Exception as exc:  # noqa: BLE001
+            print_warning(f"⚠️ Не вдалося виконати scripts/check_environment.py: {exc}")
+        else:
+            if env_exit_code != 0:
+                print_error("❌ Перевірка середовища не пройдена. Виправте проблеми вище і повторіть деплой.")
+                sys.exit(env_exit_code)
         print()
 
         # ЕТАП 1: Перевірка системних вимог
