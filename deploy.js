@@ -407,7 +407,7 @@ async function main() {
             console.log('');
             console.log('📍 Frontend: http://localhost:3000');
             console.log('📍 Backend API: http://localhost:8000');
-            console.log('📍 API Docs: http://localhost:8000/api/docs/');
+            console.log('📍 API Docs: http://localhost:8000/api/doc/');
             console.log('📍 Admin: http://localhost:8000/admin/');
             console.log('');
             console.log('🔐 Default credentials:');
