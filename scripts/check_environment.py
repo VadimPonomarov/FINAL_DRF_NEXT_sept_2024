@@ -30,6 +30,9 @@ def run_check(name: str, command: Sequence[str]) -> bool:
             text=True,
         )
     except FileNotFoundError:
+        if name.lower().startswith("npm"):
+            print("  ⚠️ npm не знайдено. Це потрібно лише, якщо ви плануєте запускати frontend локально через npm.")
+            return True
         print("  ❌ Команда не знайдена. Переконайтеся, що інструмент встановлено і додано в PATH.")
         return False
     except Exception as exc:  # noqa: BLE001
