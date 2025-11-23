@@ -16,6 +16,8 @@ from decimal import Decimal
 import json
 import requests
 from django.conf import settings
+from django.http import HttpRequest
+from apps.chat.views.image_generation_views import generate_car_images_with_mock_algorithm
 
 UserModel = get_user_model()
 
@@ -379,7 +381,7 @@ class Command(BaseCommand):
             if not vehicle_type_name or vehicle_type_name == 'Unknown':
                 self.stdout.write(f'      ⚠️ No vehicle type for ad #{ad.id}, skipping image generation')
                 return 0
-            
+
             car_data = {
                 'brand': ad.mark.name,
                 'model': ad.model,
@@ -390,51 +392,52 @@ class Command(BaseCommand):
                 'condition': ad_data['dynamic_fields'].get('condition', 'used'),
                 'description': ad.description
             }
-            
+
             self.stdout.write(f'      🚗 Vehicle type: {vehicle_type_name}')
             self.stdout.write(f'   🎨 Generating images for {car_data["brand"]} {car_data["model"]}...')
 
-            # Call backend image generation endpoint
-            backend_url = settings.BACKEND_URL if hasattr(settings, 'BACKEND_URL') else 'http://localhost:8000'
-            response = requests.post(
-                f'{backend_url}/api/chat/generate-car-images-mock/',
-                json={
-                    'car_data': car_data,
-                    'angles': image_types,
-                    'style': 'realistic',
-                    'use_mock_algorithm': True
-                },
-                timeout=60
+            # Call internal mock algorithm directly to avoid dependency on running HTTP server
+            request = HttpRequest()
+            request.method = 'POST'
+
+            drf_response = generate_car_images_with_mock_algorithm(
+                request,
+                car_data=car_data,
+                angles=image_types,
+                style='realistic'
             )
 
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('success') and data.get('images'):
-                    images_created = 0
-
-                    for idx, img in enumerate(data['images']):
-                        url = img.get('url', '').strip()
-
-                        if not url:
-                            continue
-
-                        AddImageModel.objects.create(
-                            ad=ad,
-                            image_url=url,
-                            caption=img.get('title', f"{img.get('angle', 'front')} view"),
-                            order=idx + 1,
-                            is_primary=(idx == 0)
-                        )
-                        images_created += 1
-
-                    if images_created > 0:
-                        self.stdout.write(f'      ✅ Created {images_created} images')
-                        return images_created
-                    self.stdout.write('      ⚠️ Image response contained no usable URLs')
-                else:
-                    self.stdout.write('      ⚠️ No images in response payload')
+            # DRF Response has .data; JsonResponse would have .content
+            if hasattr(drf_response, 'data'):
+                data = drf_response.data
             else:
-                self.stdout.write(f'      ⚠️ Image generation failed: {response.status_code}')
+                data = json.loads(drf_response.content.decode('utf-8'))
+
+            if drf_response.status_code == 200 and data.get('success') and data.get('images'):
+                images_created = 0
+
+                for idx, img in enumerate(data['images']):
+                    url = (img.get('url') or '').strip()
+                    if not url:
+                        continue
+
+                    AddImageModel.objects.create(
+                        ad=ad,
+                        image_url=url,
+                        caption=img.get('title', f"{img.get('angle', 'front')} view"),
+                        order=idx + 1,
+                        is_primary=(idx == 0)
+                    )
+                    images_created += 1
+
+                if images_created > 0:
+                    self.stdout.write(f'      ✅ Created {images_created} images')
+                    return images_created
+
+                self.stdout.write('      ⚠️ Image response contained no usable URLs')
+            else:
+                status_code = getattr(drf_response, 'status_code', 'unknown')
+                self.stdout.write(f'      ⚠️ Image generation failed or returned no images (status={status_code})')
 
         except Exception as e:
             self.stdout.write(f'      ❌ Image generation error: {e}')
