@@ -8,9 +8,11 @@ import time
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django.db import connection
+from django.db.models import Q
 from apps.accounts.models import RawAccountAddress
 from core.utils.seeding_tracker import seeding_tracker
 from core.utils.environment_detector import EnvironmentDetector
+from core.enums.ads import AdStatusEnum
 
 
 class Command(BaseCommand):
@@ -821,7 +823,7 @@ Style: Photorealistic, automotive magazine quality"""
             return True
         except Exception:
             return False
-
+ 
     def _create_car_advertisements(self):
         """Create car advertisements with images using frontend algorithm (FINAL STEP)."""
         self.stdout.write('🚗 Creating car advertisements with images...')
@@ -830,46 +832,123 @@ Style: Photorealistic, automotive magazine quality"""
             from apps.ads.models import CarAd
             import os
 
-            # Check if car ads already exist
-            existing_ads = CarAd.objects.count()
-            ads_with_images = CarAd.objects.filter(images__isnull=False).distinct().count()
+            # Configuration: minimum number of ACTIVE ads that must have at least one image
             min_ads_with_images = int(os.getenv('MIN_TEST_ADS_WITH_IMAGES', '10') or '10')
-            self.stdout.write(f'ℹ️ Current car ads: total={existing_ads}, with images={ads_with_images}')
 
-            if ads_with_images >= min_ads_with_images:
-                self.stdout.write(f'✅ Minimum {min_ads_with_images} car ads with images already satisfied')
-                return {'created': 0}
+            # Current counts
+            existing_ads = CarAd.objects.count()
+            # Use the same semantics as CarAdFilter.filter_with_photos_only:
+            # at least one non-empty image or image_url
+            base_images_qs = CarAd.objects.filter(
+                Q(images__image__isnull=False) | Q(images__image_url__isnull=False)
+            ).exclude(
+                Q(images__image='') & Q(images__image_url='')
+            ).distinct()
 
-            needed_with_images = max(0, min_ads_with_images - ads_with_images)
-            if needed_with_images == 0:
-                self.stdout.write('ℹ️ No additional ads with images required')
-                return {'created': 0}
+            active_with_images_qs = base_images_qs.filter(status=AdStatusEnum.ACTIVE)
+            active_with_images = active_with_images_qs.count()
+            total_with_images = base_images_qs.count()
 
-            # Check environment variable for test ads generation
-            generate_with_images = os.getenv('GENERATE_TEST_ADS_WITH_IMAGES', 'true').lower() in ('true', '1', 't', 'yes')
+            self.stdout.write(
+                f'ℹ️ Current car ads: total={existing_ads}, '
+                f'with images={total_with_images}, active with images={active_with_images}'
+            )
 
-            if generate_with_images:
-                # Use the new algorithm-consistent test ads generator
-                self.stdout.write(f'🎨 Using frontend-consistent image generation algorithm (creating {needed_with_images} ads with images)...')
-                call_command(
-                    'generate_test_ads_with_images',
-                    count=needed_with_images,
-                    with_images=True,
-                    image_types='front,side',
-                    verbosity=1
+            # If we already have enough ACTIVE ads with images, nothing to do
+            if active_with_images >= min_ads_with_images:
+                self.stdout.write(
+                    f'✅ Minimum {min_ads_with_images} ACTIVE car ads with images already satisfied'
                 )
-                new_ads_with_images = CarAd.objects.filter(images__isnull=False).distinct().count()
-                self.stdout.write(f'✅ Now {new_ads_with_images} car ads have images')
-                created_delta = max(0, new_ads_with_images - ads_with_images)
+                return {'created': 0}
+
+            initial_active_with_images = active_with_images
+
+            # Helper to promote ads with images to ACTIVE to reach the target
+            def _promote_ads_to_active(self_ref, needed, previous_active_count):
+                promoted = 0
+                if needed <= 0:
+                    return 0
+
+                candidates = base_images_qs.exclude(status=AdStatusEnum.ACTIVE).order_by('-id')[:needed]
+
+                for ad in candidates:
+                    old_status = ad.status
+                    ad.status = AdStatusEnum.ACTIVE
+                    ad.is_validated = True
+
+                    reason_prefix = '[seed] Auto-activated for demo dataset'
+                    if getattr(ad, 'moderation_reason', None):
+                        ad.moderation_reason = f"{reason_prefix}\n{ad.moderation_reason}"
+                    else:
+                        ad.moderation_reason = reason_prefix
+
+                    ad.save(update_fields=['status', 'is_validated', 'moderation_reason'])
+                    promoted += 1
+                    self_ref.stdout.write(
+                        f'   🔄 Promoted ad #{ad.id} from {old_status} to ACTIVE (has images)'
+                    )
+
+                new_active_count = base_images_qs.filter(status=AdStatusEnum.ACTIVE).count()
+                self_ref.stdout.write(
+                    f'✅ After promotion: active ads with images = {new_active_count}'
+                )
+                return max(0, new_active_count - previous_active_count)
+
+            # STEP 1: ensure we have at least min_ads_with_images total ads WITH images (any status)
+            if total_with_images < min_ads_with_images:
+                needed_images = min_ads_with_images - total_with_images
+                self.stdout.write(
+                    f'🎨 Need at least {min_ads_with_images} ads with images, missing {needed_images} – generating...'
+                )
+
+                generate_with_images = os.getenv(
+                    'GENERATE_TEST_ADS_WITH_IMAGES', 'true'
+                ).lower() in ('true', '1', 't', 'yes')
+
+                if generate_with_images:
+                    # Use the new algorithm-consistent test ads generator
+                    call_command(
+                        'generate_test_ads_with_images',
+                        count=needed_images,
+                        with_images=True,
+                        image_types='front,side',
+                        verbosity=1
+                    )
+                    total_with_images = base_images_qs.count()
+                    self.stdout.write(
+                        f'✅ Now {total_with_images} car ads have images (any status)'
+                    )
+                else:
+                    # Legacy fallback (without guaranteed images)
+                    self.stdout.write(
+                        '📝 GENERATE_TEST_ADS_WITH_IMAGES=false – using legacy seed_car_ads '
+                        '(cannot guarantee that all seeded ads will have images)'
+                    )
+                    call_command('seed_car_ads', count=max(min_ads_with_images, 50), verbosity=0)
+                    new_total_ads = CarAd.objects.count()
+                    self.stdout.write(
+                        f'✅ Total car advertisements after legacy seeding: {new_total_ads}'
+                    )
+                    created_delta = max(0, new_total_ads - existing_ads)
+                    return {'created': created_delta}
+
+            # STEP 2: promote ads WITH images to ACTIVE if still below threshold
+            active_with_images = base_images_qs.filter(status=AdStatusEnum.ACTIVE).count()
+
+            if active_with_images < min_ads_with_images:
+                needed_active = min_ads_with_images - active_with_images
+                self.stdout.write(
+                    f'🔧 Promoting {needed_active} ads with images to ACTIVE to reach minimum {min_ads_with_images}...'
+                )
+                promoted_delta = _promote_ads_to_active(self, needed_active, active_with_images)
+                new_active_with_images = base_images_qs.filter(status=AdStatusEnum.ACTIVE).count()
+                created_delta = max(0, new_active_with_images - initial_active_with_images)
                 return {'created': created_delta}
-            else:
-                # Fallback to old method without images
-                self.stdout.write('📝 Generating ads without images (legacy mode)...')
-                call_command('seed_car_ads', count=max(needed_with_images, 50), verbosity=0)
-                new_total_ads = CarAd.objects.count()
-                self.stdout.write(f'✅ Total car advertisements after legacy seeding: {new_total_ads}')
-                created_delta = max(0, new_total_ads - existing_ads)
-                return {'created': created_delta}
+
+            # If we reached here, only image-generation step changed counts
+            new_active_with_images = base_images_qs.filter(status=AdStatusEnum.ACTIVE).count()
+            created_delta = max(0, new_active_with_images - initial_active_with_images)
+            return {'created': created_delta}
 
         except Exception as e:
             self.stdout.write(f'❌ Error creating car advertisements: {e}')
