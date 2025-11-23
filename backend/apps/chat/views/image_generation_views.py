@@ -631,8 +631,8 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                     negative_prompts = [
                         "cartoon, anime, drawing, sketch, low quality, blurry, distorted",
                         "multiple vehicles, people, text, watermarks",
-                        "impossible configurations, absurd features",
-                        "floating parts, impossible proportions"
+                        "impossible configurations, absurd features, concept car, prototype, sci-fi, futuristic vehicle, spaceship, unrealistic vehicle design",
+                        "floating parts, impossible proportions, surreal or fantasy style"
                     ]
                     
                     # Добавляем специфичные негативные промпты в зависимости от типа ТС
@@ -967,6 +967,8 @@ def create_car_image_prompt(car_data, angle, style, car_session_id=None):
         f"EXACTLY {correct_steering} - NO multiple steering mechanisms",
         "Real-world engineering principles and functional design",
         "Professional quality, photorealistic rendering",
+        "Mass-produced, road-legal production vehicle used in real life, not a concept car or prototype",
+        "Design must be plausible for real-world manufacturing and everyday usage",
         "NO absurd or impossible features",
         "NO floating parts, NO impossible proportions",
         "NO cartoon elements, NO fantasy designs",

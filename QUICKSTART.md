@@ -107,6 +107,39 @@ npm run start
 3. Оберіть 10 оголошень
 4. Натисніть «Створити»
 
+## 🐳 Запуск через Docker Compose (без скриптів)
+
+Якщо не хочете використовувати `deploy.py`, `deploy.sh` або `deploy.js`, можна запустити все напряму через Docker Compose.
+
+### Варіант A: Full Docker (backend + frontend в контейнерах)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build
+```
+
+або старий синтаксис:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build
+```
+
+Щоб зупинити full‑Docker варіант:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml down
+```
+
+### Варіант B: Backend в Docker, frontend локально
+
+```bash
+docker compose -f docker-compose.yml up -d --build
+
+cd frontend
+npm install
+npm run build
+npm run start
+```
+
 ## 📚 Детальна документація
 
 Шукаєте більше деталей? Перейдіть до [DEPLOYMENT.md](./DEPLOYMENT.md)
