@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '@/configs/auth';
-import { redis } from '@/lib/redis';
+import { deleteRedisKeys } from '../redis-cleanup.helper';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,46 +22,33 @@ export async function POST(request: NextRequest) {
     if (userEmail) {
       console.log('[API /auth/signout-full] Cleaning up for user:', userEmail);
 
-      // Очищаем все данные в Redis для этого пользователя
+      // Очищаем все данные в Redis для этого пользователя через API
       const providerKey = `provider:${userEmail}`;
       const tokensKey = `tokens:${userEmail}`;
       const autoRiaTokensKey = `autoria:tokens:${userEmail}`;
       const backendAuthKey = `backend_auth`;
       const dummyAuthKey = `dummy_auth`;
 
-      try {
-        // Удаляем все ключи из Redis
-        await Promise.all([
-          redis.del(providerKey),
-          redis.del(tokensKey),
-          redis.del(autoRiaTokensKey),
-          redis.del(backendAuthKey),
-          redis.del(dummyAuthKey),
-        ]);
+      await deleteRedisKeys(request.nextUrl, [
+        providerKey,
+        tokensKey,
+        autoRiaTokensKey,
+        backendAuthKey,
+        dummyAuthKey,
+      ]);
 
-        console.log('[API /auth/signout-full] ✅ Redis data cleared for keys:', {
-          providerKey,
-          tokensKey,
-          autoRiaTokensKey,
-          backendAuthKey,
-          dummyAuthKey,
-        });
-      } catch (redisError) {
-        console.error('[API /auth/signout-full] ❌ Redis cleanup error:', redisError);
-        // Продолжаем, даже если Redis не доступен
-      }
+      console.log('[API /auth/signout-full] ✅ Redis data cleared for keys:', {
+        providerKey,
+        tokensKey,
+        autoRiaTokensKey,
+        backendAuthKey,
+        dummyAuthKey,
+      });
     } else {
       console.log('[API /auth/signout-full] No session found, clearing general tokens');
       
-      // Очищаем общие токены даже без сессии
-      try {
-        await Promise.all([
-          redis.del('backend_auth'),
-          redis.del('dummy_auth'),
-        ]);
-      } catch (redisError) {
-        console.error('[API /auth/signout-full] ❌ Redis cleanup error:', redisError);
-      }
+      // Очищаем общие токены даже без сессии через API
+      await deleteRedisKeys(request.nextUrl, ['backend_auth', 'dummy_auth']);
     }
 
     // Удаляем cookies сессии NextAuth

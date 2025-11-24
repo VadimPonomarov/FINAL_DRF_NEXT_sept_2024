@@ -39,9 +39,10 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-2 bg-gray-900 text-white border-gray-700 shadow-2xl",
+        default:
+          "border-2 border-[hsl(var(--border))] bg-[hsl(var(--popover))] text-[hsl(var(--popover-foreground))] shadow-2xl",
         destructive:
-          "destructive group border-2 border-red-600 bg-red-900 text-red-100 shadow-2xl",
+          "destructive group border-2 border-[hsl(var(--destructive))] bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] shadow-2xl",
       },
     },
     defaultVariants: {
@@ -87,7 +88,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute right-1 top-1 rounded-md p-1 text-white/70 opacity-100 transition-opacity hover:text-white hover:bg-white/10 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-white/50 group-[.destructive]:text-red-200 group-[.destructive]:hover:text-red-50 group-[.destructive]:hover:bg-red-800/50 group-[.destructive]:focus:ring-red-400",
+      "absolute right-1 top-1 rounded-md p-1 text-[hsl(var(--popover-foreground))]/70 opacity-100 transition-opacity hover:text-[hsl(var(--popover-foreground))] hover:bg-[hsl(var(--accent))]/20 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-[hsl(var(--ring))] group-[.destructive]:text-[hsl(var(--destructive-foreground))] group-[.destructive]:hover:text-[hsl(var(--destructive-foreground))] group-[.destructive]:hover:bg-[hsl(var(--destructive))]/40 group-[.destructive]:focus:ring-[hsl(var(--destructive))]",
       className
     )}
     toast-close=""
@@ -104,7 +105,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn("text-sm font-semibold text-white [&+div]:text-xs group-[.destructive]:text-red-100", className)}
+    className={cn("text-sm font-semibold text-[hsl(var(--popover-foreground))] [&+div]:text-xs group-[.destructive]:text-[hsl(var(--destructive-foreground))]", className)}
     {...props}
   />
 ))
@@ -116,7 +117,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn("text-sm text-gray-200 opacity-90 group-[.destructive]:text-red-200", className)}
+    className={cn("text-sm text-[hsl(var(--muted-foreground))] opacity-90 group-[.destructive]:text-[hsl(var(--destructive-foreground))]", className)}
     {...props}
   />
 ))

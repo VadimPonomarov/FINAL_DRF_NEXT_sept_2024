@@ -37,8 +37,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={toast.id}
             className={`${
-              toast.type === 'destructive' ? 'bg-red-600' : 'bg-gray-800'
-            } text-white rounded-lg shadow-lg p-4 w-80 relative`}
+              toast.type === 'destructive'
+                ? 'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]'
+                : 'bg-[hsl(var(--popover))] text-[hsl(var(--popover-foreground))]'
+            } rounded-lg shadow-lg p-4 w-80 relative`}
           >
             <div className="flex justify-between items-start">
               <div>

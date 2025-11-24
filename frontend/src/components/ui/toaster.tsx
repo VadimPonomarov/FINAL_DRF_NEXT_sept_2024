@@ -24,9 +24,9 @@ export function Toaster() {
                 <ToastDescription>{description}</ToastDescription>
               )}
               {/* Прогресс-бар для таймаута */}
-              <div className="absolute bottom-0 left-0 h-1 bg-white/20 w-full">
+              <div className="absolute bottom-0 left-0 h-1 bg-[hsl(var(--border))]/40 w-full">
                 <div
-                  className={`h-full ${props.variant === 'destructive' ? 'bg-red-400' : 'bg-white'} animate-progress`}
+                  className={`h-full ${props.variant === 'destructive' ? 'bg-[hsl(var(--destructive))]' : 'bg-[hsl(var(--primary))]'} animate-progress`}
                   style={{
                     animationDuration: `${props.duration || 3000}ms`,
                   }}

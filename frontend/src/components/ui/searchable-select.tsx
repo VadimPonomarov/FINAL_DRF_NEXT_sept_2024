@@ -106,23 +106,23 @@ export function SearchableSelect({
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-white text-gray-900 border-gray-200 z-50" align="start">
-        <div className="bg-white text-gray-900">
-          <div className="flex items-center border-b border-gray-200 px-3 bg-white">
-            <Search className="mr-2 h-4 w-4 shrink-0 text-gray-500" />
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-[hsl(var(--popover))] text-[hsl(var(--popover-foreground))] border border-[hsl(var(--border))] z-50" align="start">
+        <div className="bg-[hsl(var(--popover))] text-[hsl(var(--popover-foreground))]">
+          <div className="flex items-center border-b border-[hsl(var(--border))] px-3 bg-[hsl(var(--card))]">
+            <Search className="mr-2 h-4 w-4 shrink-0 text-[hsl(var(--muted-foreground))]" />
             <input
               type="text"
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              className="flex h-10 w-full rounded-md bg-white text-gray-900 py-3 text-sm outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50 border-0"
+              className="flex h-10 w-full rounded-md bg-[hsl(var(--card))] text-[hsl(var(--form-text))] py-3 text-sm outline-none placeholder:text-[hsl(var(--surface-text))] disabled:cursor-not-allowed disabled:opacity-50 border-0"
             />
           </div>
-          <div className="max-h-[300px] overflow-y-auto bg-white">
+          <div className="max-h-[300px] overflow-y-auto bg-[hsl(var(--card))]">
             {filteredOptions.length === 0 && (
-              <div className="py-6 text-center text-sm text-gray-900">{emptyMessage}</div>
+              <div className="py-6 text-center text-sm text-[hsl(var(--surface-text))]">{emptyMessage}</div>
             )}
-            <div className="bg-white">
+            <div className="bg-[hsl(var(--card))]">
               {filteredOptions.map((option) => (
                 <div
                   key={option.value}
@@ -130,15 +130,15 @@ export function SearchableSelect({
                     console.log('[SearchableSelect] Option clicked:', option.value, option.label);
                     handleSelect(option.value);
                   }}
-                  className="flex items-center px-2 py-2 cursor-pointer text-gray-900 hover:bg-gray-100 select-none"
+                  className="flex items-center px-2 py-2 cursor-pointer text-[hsl(var(--surface-text))] hover:bg-[hsl(var(--accent))]/60 hover:text-[hsl(var(--accent-foreground))] select-none"
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4 text-gray-900",
+                      "mr-2 h-4 w-4 text-[hsl(var(--surface-text))]",
                       value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  <span className="truncate text-gray-900">{option.label}</span>
+                  <span className="truncate text-[hsl(var(--surface-text))]">{option.label}</span>
                 </div>
               ))}
             </div>

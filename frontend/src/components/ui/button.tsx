@@ -9,18 +9,18 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow hover:opacity-90 hover:shadow-lg hover:translate-y-[-1px] transition-all dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:hover:text-white",
+          "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow hover:bg-[hsl(var(--primary))]/90 hover:shadow-lg hover:translate-y-[-1px] transition-all",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:opacity-90 hover:shadow-md hover:translate-y-[-1px] transition-all dark:bg-red-600 dark:text-white dark:hover:bg-red-700 dark:hover:text-white",
+          "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] shadow-sm hover:bg-[hsl(var(--destructive))]/90 hover:shadow-md hover:translate-y-[-1px] transition-all",
         outline:
-          "border-2 border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--surface-text))] shadow-sm hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] hover:border-[hsl(var(--primary))]/50 transition-all dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:border-gray-500 dark:hover:text-white",
+          "border-2 border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--surface-text))] shadow-sm hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] hover:border-[hsl(var(--primary))]/50 transition-all",
         secondary:
-          "bg-[hsl(var(--secondary))] text-[hsl(var(--surface-text))] shadow-sm hover:bg-[hsl(var(--secondary))]/80 hover:shadow-md hover:translate-y-[-1px] transition-all dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 dark:hover:text-white",
+          "bg-[hsl(var(--secondary))] text-[hsl(var(--surface-text))] shadow-sm hover:bg-[hsl(var(--secondary))]/80 hover:shadow-md hover:translate-y-[-1px] transition-all",
         // Ensure high contrast on hover so icons don't disappear on dark/light backgrounds
         ghost:
-          "bg-transparent text-[hsl(var(--text))] hover:bg-[hsl(var(--accent))]/80 hover:text-[hsl(var(--accent-foreground))] hover:shadow-sm transition-all dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-white",
+          "bg-transparent text-[hsl(var(--text))] hover:bg-[hsl(var(--accent))]/80 hover:text-[hsl(var(--accent-foreground))] hover:shadow-sm transition-all",
         link:
-          "text-[hsl(var(--primary))] underline-offset-4 hover:underline hover:opacity-80 transition-all dark:text-blue-400 dark:hover:text-blue-300 dark:hover:underline",
+          "text-[hsl(var(--primary))] underline-offset-4 hover:underline hover:opacity-80 transition-all",
         // Navigation-specific variant for header/menu buttons: stable colors, only light motion on hover
         nav:
           "border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--surface-text))] shadow-sm hover:bg-[hsl(var(--card))] hover:text-[hsl(var(--surface-text))] hover:-translate-y-[1px] hover:shadow-md",
