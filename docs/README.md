@@ -11,7 +11,7 @@
 - [**Архітектура проекту**](./ARCHITECTURE.md) - загальна архітектура та компоненти системи
 - [**Система аутентифікації**](./authentication/README.md) - JWT токени, Redis, middleware
 - [**Система перекладів**](./translations/README.md) - багатомовність, валідація, автоматизація
-- [**Design System**](./design-system/README.md) - SCSS система стилізації, теми, компоненти
+- [**Design System**](./design-system/README.md) - актуальна система стилів на CSS-змінних + Tailwind + React UI-компонентах (старий SCSS-підхід описаний там як архівний)
 
 ### Backend
 
@@ -34,7 +34,7 @@
 
 ### Розробка
 
-- [**Налаштування середовища**](./development/SETUP.md) - встановлення, конфігурація
+- [**Налаштування середовища**](./ENVIRONMENT_SETUP.md) - встановлення, конфігурація
 - [**Гайд по розробці**](./development/GUIDELINES.md) - стандарти коду, best practices
 - [**Тестування**](./development/TESTING.md) - unit, integration, e2e тести
 - [**Деплой**](./development/DEPLOYMENT.md) - CI/CD, продакшн
@@ -75,7 +75,7 @@ python manage.py test          # Тести
 ### Frontend
 - **Framework**: Next.js 15 (App Router)
 - **UI**: React 19, TypeScript
-- **Стилі**: SCSS, Tailwind CSS
+- **Стилі**: CSS-змінні (HSL токени) + Tailwind CSS + локальні `*.module.scss`
 - **State**: Redux Toolkit, React Query
 - **Форми**: React Hook Form, Zod
 - **Інтернаціоналізація**: next-intl

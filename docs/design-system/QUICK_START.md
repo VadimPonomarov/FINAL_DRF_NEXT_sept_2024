@@ -1,6 +1,122 @@
 # Швидкий старт
 
-## Впровадження
+## Актуальний швидкий старт (CSS-змінні + Tailwind + React)
+
+Цей розділ описує **реальну** дизайн-систему, яка використовується у фронтенді:
+
+- глобальні токени (`--primary`, `--background`, `--text` тощо) – у `frontend/src/app/globals.css`;
+- Tailwind мапиться на ці токени у `frontend/tailwind.config.ts`;
+- базові UI-компоненти (наприклад, `Button`) – у `frontend/src/components/ui/*`;
+- локальні стилі для фіч – у `*.module.(s)css`;
+- теми та палітри – через `ThemeToggle` і `ThemeSelector`.
+
+### 1. Використати готову кнопку
+
+```tsx
+import { Button } from "@/components/ui/button";
+
+export function Example() {
+  return (
+    <div className="flex gap-4">
+      <Button variant="default" size="lg">
+        Зберегти
+      </Button>
+      <Button variant="outline" size="sm">
+        Скасувати
+      </Button>
+    </div>
+  );
+}
+```
+
+Компонент `Button` сам використовує дизайн-токени – вам не потрібно прописувати кольори чи тіні вручну.
+
+### 2. Змінити бренд-колір
+
+1. Відкрити `frontend/src/app/globals.css`.
+2. Оновити HSL-значення токенів:
+
+```css
+:root {
+  --primary: 142 70% 45%;
+  --primary-foreground: 0 0% 100%;
+}
+```
+
+Усі `Button` з `variant="default"` та інші елементи, що використовують `primary`, автоматично змінять колір.
+
+### 3. Додати локальний стиль (module layer)
+
+```scss
+/* CarAdCard.module.scss */
+
+.root {
+  /* layout та відступи для картки */
+}
+
+.cta {
+  --primary: 45 93% 47%;
+  --primary-foreground: 0 0% 10%;
+}
+```
+
+```tsx
+import styles from "./CarAdCard.module.scss";
+import { Button } from "@/components/ui/button";
+
+export function CarAdCard() {
+  return (
+    <article className={styles.root}>
+      {/* ...контент... */}
+      <Button variant="default" className={styles.cta}>
+        Купити зараз
+      </Button>
+    </article>
+  );
+}
+```
+
+### 4. Міграція з inline-стилів
+
+Було (погано):
+
+```tsx
+<div style={{ display: "flex", gap: "16px", padding: "24px" }}>
+  <button
+    style={{
+      backgroundColor: "#0070f3",
+      color: "white",
+      padding: "12px 24px",
+      borderRadius: "8px",
+      border: "none",
+    }}
+  >
+    Click
+  </button>
+</div>
+```
+
+Стало (правильно):
+
+```tsx
+import { Button } from "@/components/ui/button";
+
+<div className="flex gap-4 p-6">
+  <Button variant="default" size="lg">
+    Click
+  </Button>
+</div>
+```
+
+Layout робимо через Tailwind, вигляд кнопки – через дизайн-токени всередині `Button`.
+
+Деталі архітектури – у `DOCUMENTATION.md`. Налаштування тем – у `README_THEME_SYSTEM.md` і `THEME_CUSTOMIZATION.md`.
+
+---
+
+## Архівний SCSS Quick Start (історія, не використовувати в новому коді)
+
+### Впровадження
 
 ### Налаштування
 

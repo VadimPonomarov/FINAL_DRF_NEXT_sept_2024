@@ -1,6 +1,35 @@
-# Система багаторівневого переопределення стилів
+# Система тем (Theme System)
 
-## Огляд
+## Огляд (актуальна реалізація)
+
+Поточна система тем побудована на:
+
+- CSS-змінних у `frontend/src/app/globals.css` (`:root` + `.dark`);
+- Tailwind-конфігурації, що читає ці токени (`frontend/tailwind.config.ts`);
+- компонентах `ThemeToggle` (dark/light) та `ThemeSelector` (кольорові палітри);
+- трьох шарах стилів (tokens → base UI → module), описаних у `DOCUMENTATION.md`.
+
+### Основні елементи
+
+- **Dark mode**: клас `.dark` на `<html>` керується `ThemeToggle`.
+- **Кольорові палітри**: `ThemeSelector` зберігає набір тем (`monochrome`, `orange`, `blue`, ...), кожна з яких має `light` та `dark` HSL-значення.
+- **Застосування теми**:
+  - `ThemeSelector` обирає відповідний набір кольорів (`theme.light` або `theme.dark`);
+  - для кожного ключа викликається `document.documentElement.style.setProperty("--${key}", value)`;
+  - атрибут `data-theme` записується на `<body>`;
+  - вибір зберігається у `localStorage` (`color-theme`).
+
+Будь-який компонент, який використовує токени (`--primary`, `--background`, `--text` тощо), автоматично підлаштовується під вибрану тему й палітру.
+
+Детальний гайд по зміні теми – у `THEME_CUSTOMIZATION.md`.
+
+---
+
+## Архівна інформація (старий SCSS-підхід – не використовується)
+
+> Нижче описана попередня SCSS-система з `_global-overrides.scss`, `_local-overrides.scss`, `_module-overrides.scss` та міксінами `local-theme`, `module-theme`, `theme-palette`. Вона **не реалізована** у поточному фронтенді й залишена лише як історична довідка.
+
+## Огляд (історичний SCSS-підхід)
 
 Створено централізовану систему управління темами та стилями з трьома рівнями переопределення, яка повністю вирішує конфлікти з Tailwind.
 

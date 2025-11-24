@@ -14,9 +14,10 @@
 - TypeScript 5.8 - типізація
 
 **Стилізація**:
-- SCSS - модульна система стилів
-- Tailwind CSS 3.4 - utility-first CSS
-- CSS Modules - інкапсуляція стилів
+- CSS-змінні (HSL токени) у `frontend/src/app/globals.css`
+- Tailwind CSS 3.4 - utility-first CSS на основі токенів
+- React UI-компоненти у `frontend/src/components/ui/*` (Button, Card, Input тощо)
+- `*.module.scss`/`*.module.css` - локальні модульні стилі для окремих фіч
 
 **State Management**:
 - Redux Toolkit - глобальний стейт
@@ -203,7 +204,9 @@ store/
 
 ### Стилізація
 
-**SCSS Design System**:
+> **Примітка:** нижче описано стару SCSS дизайн-систему, яка зараз не використовується у фронтенді. Актуальна система стилів базується на CSS-змінних + Tailwind + React UI-компонентах і докладно описана в `docs/design-system/README.md`.
+
+**SCSS Design System (архівна):**
 ```
 design-system/
 ├── tokens/                     # Змінні, функції

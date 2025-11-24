@@ -57,7 +57,9 @@ export async function redirectToAuth(
       return;
     }
     window.sessionStorage.setItem('auth:lastRedirectTs', String(now));
-  } catch {}
+  } catch (error) {
+    console.warn('[redirectToAuth] Failed to access sessionStorage', error);
+  }
 
   const path = currentPath || window.location.pathname + window.location.search;
   const messages: Record<string, string> = {

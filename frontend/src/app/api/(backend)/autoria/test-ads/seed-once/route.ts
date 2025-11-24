@@ -89,30 +89,43 @@ export async function POST(request: NextRequest) {
     const MIN_TOTAL_ADS = 10;
 
     const markerCount = Number(marker?.count ?? 0);
-    const needsInitialSeed = !marker?.firstSeedCompleted;
-    const needsRefreshByMarker = marker?.firstSeedCompleted && markerCount < MIN_TOTAL_ADS;
-    const needsRefreshByStats = totalAds < MIN_TOTAL_ADS || activeAds < Math.max(1, Math.floor(MIN_TOTAL_ADS / 2));
 
-    if (!needsInitialSeed && !needsRefreshByMarker && !needsRefreshByStats) {
+    // Use the maximum of stats and marker as our best-effort estimate of how many ads already exist.
+    // This prevents repeated seeding when QuickStats falls back to mock/error data but the marker
+    // already knows we have at least MIN_TOTAL_ADS records.
+    const effectiveTotal = Math.max(totalAds, markerCount);
+
+    if (effectiveTotal >= MIN_TOTAL_ADS) {
       return NextResponse.json({
         success: true,
         skipped: true,
-        message: `Seed already completed previously (total=${totalAds}, active=${activeAds})`,
+        message: `Seed not required (total≈${effectiveTotal}, active=${activeAds})`,
         marker,
       });
     }
 
-    const seedCount = Math.max(0, MIN_TOTAL_ADS - totalAds);
-    const desiredCount = seedCount > 0 ? seedCount : MIN_TOTAL_ADS;
+    const desiredCount = Math.max(0, MIN_TOTAL_ADS - effectiveTotal);
 
-    console.log(`[SeedOnce] Active ads = ${activeAds}. Generating ${desiredCount} test ads...`);
+    if (desiredCount === 0) {
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        message: `Seed not required after calculation (total≈${effectiveTotal}, active=${activeAds})`,
+        marker,
+      });
+    }
+
+    console.log(`[SeedOnce] Active ads = ${activeAds}, total≈${effectiveTotal}. Generating ${desiredCount} test ads...`);
 
     const result = await createTestAdsServer(request, desiredCount, true, ['front', 'side']);
+
+    const createdCount = Number(result.created ?? desiredCount);
+    const newTotal = Math.max(effectiveTotal, Math.min(MIN_TOTAL_ADS, effectiveTotal + createdCount));
 
     await writeSeedMarker(markerPath, {
       firstSeedCompleted: true,
       completed_at: new Date().toISOString(),
-      count: totalAds + (result.created ?? desiredCount),
+      count: newTotal,
     });
 
     return NextResponse.json({

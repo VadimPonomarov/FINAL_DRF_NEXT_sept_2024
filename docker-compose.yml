@@ -8,7 +8,7 @@ services:
       - backend-static:/app/static
       - backend-temp:/app/temp
       - backend-staticfiles:/app/staticfiles
-      - ./media:/app/media  # Только медиа файлы
+      - ./backend/media:/app/media  # Только медиа файлы (перенесено під backend)
     environment:
       IS_DOCKER: true
       DISABLE_RATELIMIT: true

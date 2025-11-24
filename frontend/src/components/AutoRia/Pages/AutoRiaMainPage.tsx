@@ -316,7 +316,7 @@ const AutoRiaMainPage = () => {
                   <CardDescription className="mb-4 text-slate-600 dark:text-gray-300">
                     {feature.description}
                   </CardDescription>
-                  <Button className="w-full group-hover:bg-primary/90 transition-colors pointer-events-none">
+                  <Button className="w-full pointer-events-none">
                     {t('common.continue')}
                   </Button>
                 </CardContent>
