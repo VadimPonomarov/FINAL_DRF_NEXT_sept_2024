@@ -84,6 +84,8 @@ python deploy.py --mode with_frontend   # повністю у Docker
 node deploy.js
 ```
 
+> ℹ️ Режим `--mode with_frontend` автоматично передає у `docker-compose` два файли: `docker-compose.yml` та `docker-compose.with_frontend.yml`, щоб увімкнути контейнер Frontend. Якщо запускаєте вручну, використовуйте `docker-compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build`.
+
 **📖 Детальна інструкція**: [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ---
