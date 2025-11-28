@@ -1,4 +1,6 @@
+import React from 'react';
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export type StatusConfig = {
   label: string;
@@ -57,4 +59,20 @@ export const getStatusLabel = (status: string, t: (key: string, defaultValue?: s
   }
 
   return translatedLabel;
+};
+
+export const getStatusBadge = (
+  status: string,
+  t: (key: string, defaultValue?: string) => string
+): React.ReactNode => {
+  const config = getStatusConfig(status);
+  const Icon = config.icon;
+  const label = getStatusLabel(status, t);
+
+  return React.createElement(
+    Badge,
+    { variant: config.variant, className: 'flex items-center gap-1' },
+    React.createElement(Icon, { className: 'h-3 w-3' }),
+    label,
+  );
 };
