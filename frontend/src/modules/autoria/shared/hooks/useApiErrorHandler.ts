@@ -82,9 +82,18 @@ class ApiErrorTracker {
 
   private isCriticalError(status: number, url: string): boolean {
     // Критические ошибки:
-    // 1. 500+ серверные ошибки - НО НЕ для /api/autoria/* (backend может быть недоступен)
+    // 1. 500+ серверные ошибки - НО ТОЛЬКО для API эндпоинтов
     // 2. Network errors (status 0) - НО НЕ CORS ошибки для backend
     // 3. 404 для API endpoints (НО НЕ для /api/auth/* и /api/public/*)
+    //
+    // Для не-API маршрутов (например, /autoria, /, /profile) НИКОГДА не считаем ошибки критическими.
+    // Это защищает навигацию и RSC-запросы Next.js от влияния глобального обработчика.
+
+    const isApiEndpoint = url.includes('/api/');
+
+    if (!isApiEndpoint) {
+      return false;
+    }
 
     // Исключаем все auth endpoints - они могут возвращать 400/401/404 в нормальном режиме
     if (url.includes('/api/auth/')) {
@@ -132,10 +141,8 @@ class ApiErrorTracker {
       return false;
     }
 
-    const isApiEndpoint = url.includes('/api/');
-
     return (
-      status >= 500 ||  // Серверные ошибки
+      status >= 500 ||  // Серверные ошибки для API
       status === 0 ||   // Network error (но CORS для backend уже отфильтрованы выше)
       (status === 404 && isApiEndpoint) // 404 для API (но уже отфильтрованы auth/public/redis выше)
     );
@@ -340,7 +347,17 @@ export function setupGlobalFetchErrorTracking(trackErrorCallback?: (url: string,
       return response;
     } catch (error) {
       // Отслеживаем сетевые ошибки
-      const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+      const firstArg = args[0];
+      let url: string;
+      if (typeof firstArg === 'string') {
+        url = firstArg;
+      } else if (firstArg instanceof Request) {
+        url = firstArg.url;
+      } else if (firstArg instanceof URL) {
+        url = firstArg.toString();
+      } else {
+        url = String(firstArg);
+      }
       tracker.trackError(url, 0, error);
       throw error;
     }

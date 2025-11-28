@@ -148,16 +148,35 @@ export async function fetchWithDomain<T = any>(
     }
 
     // Make request through Next.js API route
-    const response = await fetch(url, requestOptions);
+    let response = await fetch(url, requestOptions);
 
-    // Handle errors
+    // Handle 401 errors on client-side with redirect
+    if (!response.ok && (response.status === 401 || response.status === 403)) {
+      console.error(`[fetchWithDomain] Auth error: ${response.status} ${response.statusText}`);
+
+      // On client-side, use client-side redirect
+      if (typeof window !== 'undefined') {
+        console.log('[fetchWithDomain] Client-side redirect to login');
+        const { redirectToLogin } = await import('@/shared/utils/auth/redirectToAuth');
+        const currentPath = window.location.pathname + window.location.search;
+        redirectToLogin(currentPath, 'session_expired');
+        return null;
+      }
+
+      // On server-side, use Next.js redirect
+      if (redirectOnError) {
+        redirect('/login');
+      }
+
+      return null;
+    }
+
+    // Handle other errors
     if (!response.ok) {
       console.error(`[fetchWithDomain] Error: ${response.status} ${response.statusText}`);
 
       if (redirectOnError) {
-        if (response.status === 401 || response.status === 403) {
-          redirect('/login');
-        } else if (response.status === 404) {
+        if (response.status === 404) {
           redirect('/not-found');
         } else {
           redirect('/error');

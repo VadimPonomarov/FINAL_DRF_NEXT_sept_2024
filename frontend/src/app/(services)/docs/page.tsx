@@ -1,7 +1,7 @@
 "use client";
 
 import DocumentsFrame from "@/components/Documents/DocumentsFrame";
-import { useDocsPageState } from "./docs.hooks";
+import { useDocsPageState } from "./useDocsPageState";
 import { DocsLoadingView } from "./DocsLoadingView";
 import { DocsErrorView } from "./DocsErrorView";
 

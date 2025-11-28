@@ -29,7 +29,10 @@ export interface LocaleConfig {
   };
 }
 
-export type TranslationFunction = (key: string, params?: Record<string, any>) => string;
+export type TranslationFunction = (
+  key: string,
+  paramsOrFallback?: Record<string, any> | string,
+) => string;
 
 // Get supported locales in the current environment
 function getSupportedLocales(): string[] {

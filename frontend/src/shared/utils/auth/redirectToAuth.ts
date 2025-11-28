@@ -127,6 +127,13 @@ export function redirectToSignin(currentPath?: string): void {
 export function redirectToLogin(currentPath?: string, reason?: string): void {
   if (typeof window === 'undefined') return;
 
+  // Защита от циклов: если уже на /login, не создаём новый redirect с ещё более вложенным callbackUrl
+  const currentPathname = window.location.pathname;
+  if (currentPathname.startsWith('/login')) {
+    console.warn('[redirectToLogin] Already on /login, skip redirect to avoid loop');
+    return;
+  }
+
   const path = currentPath || window.location.pathname + window.location.search;
   const params = new URLSearchParams({
     callbackUrl: path

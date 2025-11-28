@@ -73,7 +73,15 @@ async function attemptTokenRefresh(): Promise<boolean> {
  */
 function redirectToLogin(currentUrl?: string) {
   if (typeof window === 'undefined') return;
-  
+
+  // Защита от циклов: если уже на странице логина или на странице NextAuth sign-in,
+  // не инициируем новый редирект с ещё более вложенным callbackUrl
+  const currentPathname = window.location.pathname;
+  if (currentPathname.startsWith('/login') || currentPathname.startsWith('/api/auth/signin')) {
+    console.warn('[apiInterceptor] Already on auth page, skip redirect to avoid loop');
+    return;
+  }
+
   const callbackUrl = currentUrl || window.location.pathname + window.location.search;
   const loginUrl = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
   

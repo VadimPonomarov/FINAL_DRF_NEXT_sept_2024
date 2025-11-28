@@ -1,10 +1,7 @@
-'use client';
-
-import { use } from 'react';
 import { redirect } from 'next/navigation';
 
 interface CarShowroomPageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 /**
@@ -12,8 +9,6 @@ interface CarShowroomPageProps {
  * Обеспечивает обратную совместимость для старых ссылок
  */
 export default function CarShowroomPage({ params }: CarShowroomPageProps) {
-  const resolvedParams = use(params);
-
   // Редиректим на новый маршрут
-  redirect(`/autoria/ad/${resolvedParams.id}`);
+  redirect(`/autoria/ad/${params.id}`);
 }

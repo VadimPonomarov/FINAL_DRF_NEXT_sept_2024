@@ -139,7 +139,7 @@ export class UserAccountService {
 
       const data = await fetchWithDomain<AccountApiResponse>('/api/user/account/', {
         domain: 'internal',
-        redirectOnError: false
+        redirectOnError: true
       });
 
       // Возвращаем аккаунт пользователя
@@ -361,7 +361,7 @@ export class UserAddressService {
 
       const data = await fetchWithDomain<BackendRawAddress[]>('/api/user/addresses/', {
         domain: 'internal',
-        redirectOnError: false
+        redirectOnError: true
       });
 
       if (!data) {
@@ -384,21 +384,13 @@ export class UserAddressService {
     try {
       console.log('[UserAddressService] 📤 Creating new address...', addressData);
 
-      // Use Next.js API route instead of direct backend call
-      const response = await fetch('/api/accounts/addresses', {
+      // Use fetchWithDomain for proper error handling and 401 redirect
+      const data = await fetchWithDomain<BackendRawAddress>('/api/user/addresses/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(addressData)
+        body: addressData,
+        domain: 'internal',
+        redirectOnError: true
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
 
       if (!data) {
         console.log('[UserAddressService] ❌ No response from address creation');
@@ -420,21 +412,13 @@ export class UserAddressService {
     try {
       console.log('[UserAddressService] 📤 Updating address...', addressId, addressData);
 
-      // Use Next.js API route instead of direct backend call
-      const response = await fetch(`/api/accounts/addresses/${addressId}`, {
+      // Use fetchWithDomain for proper error handling and 401 redirect
+      const data = await fetchWithDomain<BackendRawAddress>(`/api/user/addresses/${addressId}/`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(addressData)
+        body: addressData,
+        domain: 'internal',
+        redirectOnError: true
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
 
       if (!data) {
         console.log('[UserAddressService] ❌ No response from address update');
@@ -456,21 +440,23 @@ export class UserAddressService {
     try {
       console.log('[UserAddressService] 📤 Deleting address...', addressId);
 
-      // Use Next.js API route instead of direct backend call
-      const response = await fetch(`/api/accounts/addresses/${addressId}`, {
-        method: 'DELETE'
+      // Use fetchWithDomain for proper error handling and 401 redirect
+      const data = await fetchWithDomain<{ success: boolean }>(`/api/user/addresses/${addressId}/`, {
+        method: 'DELETE',
+        domain: 'internal',
+        redirectOnError: true
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+      if (!data) {
+        console.log('[UserAddressService] ❌ No response from address deletion');
+        return false;
       }
 
       console.log('[UserAddressService] ✅ Address deleted successfully');
       return true;
     } catch (error) {
       console.error('[UserAddressService] ❌ Error deleting address:', error);
-      return false;
+      throw error;
     }
   }
 }

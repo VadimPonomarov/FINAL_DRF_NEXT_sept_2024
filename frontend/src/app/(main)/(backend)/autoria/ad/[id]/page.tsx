@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import AdDetailPage from "@/components/AutoRia/Pages/AdDetailPage";
+import { AdDetailPageView } from "./AdDetailPageView";
 
 interface Props {
   params: { id: string };
@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const AdDetail = ({ params }: Props) => {
-  return <AdDetailPage adId={parseInt(params.id)} />;
+  return <AdDetailPageView id={params.id} />;
 };
 
 export default AdDetail;

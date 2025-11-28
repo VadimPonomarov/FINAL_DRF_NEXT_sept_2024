@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import '@/lib/env-loader';
 
 import fs from 'fs/promises';
 import path from 'path';
@@ -143,3 +142,4 @@ export async function POST(request: NextRequest) {
     }, { status: 500 });
   }
 }
+

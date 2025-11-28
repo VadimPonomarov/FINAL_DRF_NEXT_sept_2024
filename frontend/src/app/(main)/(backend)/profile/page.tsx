@@ -1,9 +1,9 @@
 import React from 'react';
-import {getServerSession} from "next-auth/next"
-import {authConfig} from "@/configs/auth.ts";
+import { getProfilePageSession } from "./profilePage.service";
 
 const Page = async () => {
-    const session = await getServerSession(authConfig)
+    const session = await getProfilePageSession();
+
     return (
         <div className={"h-[85vh] w-screen flex flex-col justify-center items-center"}>
             <h1>Hello</h1>

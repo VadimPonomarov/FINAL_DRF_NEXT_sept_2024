@@ -3,7 +3,7 @@
 import { FC } from "react";
 import LoginForm from "@/components/Forms/LoginForm/LoginForm";
 import { LoginLoading } from "./LoginLoading";
-import { useLoginPageLogic } from "./login.hooks";
+import { useLoginPageLogic } from "./useLoginPageLogic";
 
 const LoginPage: FC = () => {
   const { status, isCheckingAuth } = useLoginPageLogic();

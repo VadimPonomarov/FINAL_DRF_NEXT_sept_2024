@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "kill": "npx kill-port",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "format": "prettier --check .",
+    "format:write": "prettier --write ."
   },
   "dependencies": {
     "@google-cloud/translate": "^9.2.0",
@@ -84,11 +87,13 @@
     "cross-env": "^7.0.3",
     "eslint": "9.31.0",
     "eslint-config-next": "15.4.1",
+    "eslint-config-prettier": "^9.1.2",
     "glob": "^11.0.3",
     "inquirer": "^12.9.3",
     "kill-port": "^2.0.1",
     "ora": "^8.2.0",
     "postcss": "^8.5.3",
+    "prettier": "^3.6.2",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.20.4",
     "typescript": "5.8.3"

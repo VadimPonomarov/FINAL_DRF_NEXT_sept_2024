@@ -1,0 +1,4791 @@
+{
+  "$schema": "./translations.schema.json",
+  "meta": {
+    "version": "2.2.0",
+    "lastUpdated": "2025-11-07T23:23:27.908977Z",
+    "totalKeys": 853,
+    "languages": [
+      "en",
+      "ru",
+      "uk"
+    ]
+  },
+  "translations": {
+    "": {
+      "": {
+        "en": "Home",
+        "ru": "Главная",
+        "uk": "Головна"
+      }
+    },
+    ",": {
+      "en": ",",
+      "ru": ",",
+      "uk": ","
+    },
+    "-": {
+      "en": "-",
+      "ru": "-",
+      "uk": "-"
+    },
+    "/": {
+      "en": "/",
+      "ru": "/",
+      "uk": "/"
+    },
+    "/api/auth/logout": {
+      "en": "Logout",
+      "ru": "Выход",
+      "uk": "Вихід"
+    },
+    "/autoria/create-ad": {
+      "en": "Create",
+      "ru": "Создать",
+      "uk": "Створити"
+    },
+    "/autoria/search?favorites_only=true": {
+      "en": "Search",
+      "ru": "Поиск",
+      "uk": "Пошук"
+    },
+    "/error": {
+      "en": "Error",
+      "ru": "Ошибка",
+      "uk": "Помилка"
+    },
+    "/login": {
+      "en": "Login",
+      "ru": "Вход",
+      "uk": "Вхід"
+    },
+    "=": {
+      "en": "=",
+      "ru": "=",
+      "uk": "="
+    },
+    "@/components/Forms/RegistrationForm/RegistrationForm": {
+      "en": "@/components/Forms/RegistrationForm/RegistrationForm",
+      "ru": "@/components/Forms/RegistrationForm/RegistrationForm",
+      "uk": "@/components/Forms/RegistrationForm/RegistrationForm"
+    },
+    "@/services/serviceRegistry": {
+      "en": "@/services/serviceRegistry",
+      "ru": "@/services/serviceRegistry",
+      "uk": "@/services/serviceRegistry"
+    },
+    "Ad Preview": {
+      "en": "Ad Preview",
+      "ru": "Предпросмотр объявления",
+      "uk": "Попередній перегляд оголошення"
+    },
+    "Ad Title Placeholder": {
+      "en": "Ad Title Placeholder",
+      "ru": "Заголовок объявления",
+      "uk": "Заголовок оголошення"
+    },
+    "Auth": {
+      "en": "Auth",
+      "ru": "Авторизация",
+      "uk": "Авторизація"
+    },
+    "Contact Information": {
+      "en": "Contact Information",
+      "ru": "Контактная информация",
+      "uk": "Контактна інформація"
+    },
+    "Content-Type": {
+      "en": "Content-Type",
+      "ru": "Content-Type",
+      "uk": "Content-Type"
+    },
+    "Currency Not Selected": {
+      "en": "Currency Not Selected",
+      "ru": "Валюта не выбрана",
+      "uk": "Валюта не обрана"
+    },
+    "Description": {
+      "en": "description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "Description Not Added": {
+      "en": "Description Not Added",
+      "ru": "Описание не добавлено",
+      "uk": "Опис не додано"
+    },
+    "Fill Required Fields": {
+      "en": "Fill Required Fields",
+      "ru": "Заполните обязательные поля",
+      "uk": "Заповніть обов'язкові поля"
+    },
+    "Fuel": {
+      "en": "fuel",
+      "ru": "Топливо",
+      "uk": "Паливо"
+    },
+    "Home": {
+      "en": "Home",
+      "ru": "Главная",
+      "uk": "Головна"
+    },
+    "Language": {
+      "en": "Language",
+      "ru": "Language",
+      "uk": "Language"
+    },
+    "Login": {
+      "en": "Login",
+      "ru": "Войти",
+      "uk": "Увійти"
+    },
+    "Mileage": {
+      "en": "mileage",
+      "ru": "Пробег",
+      "uk": "Пробіг"
+    },
+    "Name Not Specified": {
+      "en": "Name Not Specified",
+      "ru": "Имя не указано",
+      "uk": "Ім'я не вказано"
+    },
+    "Phone Not Specified": {
+      "en": "Phone Not Specified",
+      "ru": "Телефон не указан",
+      "uk": "Телефон не вказано"
+    },
+    "Preview": {
+      "en": "preview",
+      "ru": "Предпросмотр",
+      "uk": "Попередній перегляд"
+    },
+    "Price Not Specified": {
+      "en": "Price Not Specified",
+      "ru": "Цена не указана",
+      "uk": "Ціна не вказана"
+    },
+    "Review Data Before Publishing": {
+      "en": "Review Data Before Publishing",
+      "ru": "Проверьте данные перед публикацией",
+      "uk": "Перевірте дані перед публікацією"
+    },
+    "Transmission": {
+      "en": "transmission",
+      "ru": "Коробка передач",
+      "uk": "Коробка передач"
+    },
+    "Year": {
+      "en": "year",
+      "ru": "Год",
+      "uk": "Рік"
+    },
+    "\\n": {
+      "en": "\\n",
+      "ru": "\\n",
+      "uk": "\\n"
+    },
+    "a": {
+      "en": "Search",
+      "ru": "Поиск",
+      "uk": "Пошук"
+    },
+    "accessDenied": {
+      "moderationDescription": {
+        "en": "Moderation description",
+        "ru": "Описание",
+        "uk": "Опис"
+      },
+      "moderationTitle": {
+        "en": "Moderation title",
+        "ru": "Заголовок",
+        "uk": "Заголовок"
+      },
+      "moderatorRequired": {
+        "en": "Moderator access required",
+        "ru": "Требуется доступ модератора",
+        "uk": "Потрібен доступ модератора"
+      },
+      "superuserRequired": {
+        "en": "Superuser access required",
+        "ru": "Требуется доступ суперпользователя",
+        "uk": "Потрібен доступ суперкористувача"
+      }
+    },
+    "adStatistics": {
+      "en": "Advertisement",
+      "ru": "Объявление",
+      "uk": "Оголошення"
+    },
+    "adView": {
+      "backButton": {
+        "en": "Back",
+        "ru": "Назад",
+        "uk": "Назад"
+      },
+      "brand": {
+        "en": "Brand",
+        "ru": "Марка",
+        "uk": "Марка"
+      },
+      "characteristics": {
+        "en": "Characteristics",
+        "ru": "Характеристики",
+        "uk": "Характеристики"
+      },
+      "contactInfo": {
+        "en": "Contact info",
+        "ru": "Контактная информация",
+        "uk": "Контактна інформація"
+      },
+      "description": {
+        "en": "Description",
+        "ru": "Описание",
+        "uk": "Опис"
+      },
+      "fuelType": {
+        "en": "Fuel type",
+        "ru": "Тип топлива",
+        "uk": "Тип палива"
+      },
+      "location": {
+        "en": "Location",
+        "ru": "Местоположение",
+        "uk": "Місцезнаходження"
+      },
+      "mileage": {
+        "en": "Mileage",
+        "ru": "Пробег",
+        "uk": "Пробіг"
+      },
+      "model": {
+        "en": "Model",
+        "ru": "Модель",
+        "uk": "Модель"
+      },
+      "sendEmail": {
+        "en": "Send email",
+        "ru": "Отправить письмо",
+        "uk": "Надіслати лист"
+      },
+      "showPhone": {
+        "en": "Show phone",
+        "ru": "Показать телефон",
+        "uk": "Показати телефон"
+      },
+      "transmission": {
+        "en": "Transmission",
+        "ru": "Трансмиссия",
+        "uk": "Трансмісія"
+      },
+      "type": {
+        "en": "Type",
+        "ru": "Тип",
+        "uk": "Тип"
+      },
+      "year": {
+        "en": "Year",
+        "ru": "Год",
+        "uk": "Рік"
+      }
+    },
+    "ad_id": {
+      "en": "Advertisement",
+      "ru": "Объявление",
+      "uk": "Оголошення"
+    },
+    "addContact": {
+      "en": "add contact",
+      "ru": "Добавить контакт",
+      "uk": "Додати контакт"
+    },
+    "additionalInfo": {
+      "en": "additional info",
+      "ru": "Дополнительная информация",
+      "uk": "Додаткова інформація"
+    },
+    "additionalInfoPlaceholder": {
+      "en": "additional info placeholder",
+      "ru": "Любая дополнительная информация об автомобиле",
+      "uk": "Будь-яка додаткова інформація про автомобіль"
+    },
+    "address": {
+      "geocodingInProgress": {
+        "en": "Geocoding address...",
+        "ru": "Геокодирование адреса...",
+        "uk": "Геокодування адреси..."
+      },
+      "howItWorks": {
+        "en": "How it works:",
+        "ru": "Как это работает:",
+        "uk": "Як це працює:"
+      },
+      "loadingDetails": {
+        "en": "Loading detailed data...",
+        "ru": "Загрузка детальных данных...",
+        "uk": "Завантаження детальних даних..."
+      }
+    },
+    "ai": {
+      "pleaseGoToTabs": {
+        "en": "please go to tabs",
+        "ru": "Пожалуйста, перейдите к соответствующим вкладкам и заполните эти поля.",
+        "uk": "Будь ласка, перейдіть до відповідних вкладок та заповніть ці поля."
+      },
+      "requiredFieldsDescription": {
+        "en": "Required fields description",
+        "ru": "Описание",
+        "uk": "Опис"
+      },
+      "requiredFieldsTitle": {
+        "en": "required fields title",
+        "ru": "Необходимо заполнить обязательные поля",
+        "uk": "Необхідно заповнити обов'язкові поля"
+      }
+    },
+    "alert": {
+      "en": "alert",
+      "ru": "alert",
+      "uk": "alert"
+    },
+    "allDrive": {
+      "en": "allDrive",
+      "ru": "allDrive",
+      "uk": "allDrive"
+    },
+    "allTime": {
+      "en": "allTime",
+      "ru": "allTime",
+      "uk": "allTime"
+    },
+    "auth": {
+      "authenticationTitle": {
+        "en": "Authentication",
+        "ru": "Авторизация",
+        "uk": "Авторизація"
+      },
+      "backendAuthRequired": {
+        "en": "Please log in with backend authentication to access AutoRia features",
+        "ru": "Пожалуйста, войдите с backend авторизацией для доступа к функциям AutoRia",
+        "uk": "Будь ласка, увійдіть з backend авторизацією для доступу до функцій AutoRia"
+      },
+      "backendAuthRequiredTitle": {
+        "en": "Backend Authentication Required",
+        "ru": "Требуется Backend авторизация",
+        "uk": "Потрібна Backend авторизація"
+      },
+      "checkingAuth": {
+        "en": "Checking authorization...",
+        "ru": "Проверка авторизации...",
+        "uk": "Перевірка авторизації..."
+      },
+      "confirmPassword": {
+        "en": "Confirm Password",
+        "ru": "Подтвердите пароль",
+        "uk": "Підтвердьте пароль"
+      },
+      "confirmPasswordPlaceholder": {
+        "en": "Confirm your password",
+        "ru": "Подтвердите ваш пароль",
+        "uk": "Підтвердьте ваш пароль"
+      },
+      "dockerEnvironmentDescription": {
+        "en": "Running in Docker environment. If you experience Redis connection issues, visit /test-redis",
+        "ru": "Запущено в Docker среде. При проблемах с Redis подключением, посетите /test-redis",
+        "uk": "Запущено в Docker середовищі. При проблемах з Redis підключенням, відвідайте /test-redis"
+      },
+      "dockerEnvironmentDetected": {
+        "en": "Docker Environment Detected",
+        "ru": "Обнаружена Docker среда",
+        "uk": "Виявлено Docker середовище"
+      },
+      "email": {
+        "en": "Email",
+        "ru": "Электронная почта",
+        "uk": "Електронна пошта"
+      },
+      "emailPlaceholder": {
+        "en": "Enter your email",
+        "ru": "Введите вашу почту",
+        "uk": "Введіть вашу пошту"
+      },
+      "failedToClearTokens": {
+        "en": "Failed to clear tokens",
+        "ru": "Не удалось очистить токены",
+        "uk": "Не вдалося очистити токени"
+      },
+      "loggingOut": {
+        "en": "Logging out...",
+        "ru": "Выход...",
+        "uk": "Вихід..."
+      },
+      "login": {
+        "en": "Login",
+        "ru": "Вход",
+        "uk": "Вхід"
+      },
+      "loginRequiredDesc": {
+        "en": "Please log in to continue",
+        "ru": "Пожалуйста, войдите чтобы продолжить",
+        "uk": "Будь ласка, увійдіть щоб продовжити"
+      },
+      "loginRequiredTitle": {
+        "en": "Login Required",
+        "ru": "Требуется вход",
+        "uk": "Потрібен вхід"
+      },
+      "noticeTitle": {
+        "en": "Authentication",
+        "ru": "Авторизация",
+        "uk": "Авторизація"
+      },
+      "password": {
+        "en": "Password",
+        "ru": "Пароль",
+        "uk": "Пароль"
+      },
+      "passwordPlaceholder": {
+        "en": "Enter your password",
+        "ru": "Введите ваш пароль",
+        "uk": "Введіть ваш пароль"
+      },
+      "passwordsDoNotMatch": {
+        "en": "Passwords do not match",
+        "ru": "Пароли не совпадают",
+        "uk": "Паролі не співпадають"
+      },
+      "register": {
+        "en": "Register",
+        "ru": "Регистрация",
+        "uk": "Реєстрація"
+      },
+      "reset": {
+        "en": "Reset",
+        "ru": "Сбросить",
+        "uk": "Скинути"
+      },
+      "selectAuthType": {
+        "en": "Select auth type",
+        "ru": "Выберите тип авторизации",
+        "uk": "Оберіть тип авторизації"
+      },
+      "sessionDuration": {
+        "en": "Session Duration",
+        "ru": "Продолжительность сессии",
+        "uk": "Тривалість сесії"
+      },
+      "tokensClearedPleaseLogin": {
+        "en": "Tokens cleared, please login",
+        "ru": "Токены очищены, пожалуйста войдите",
+        "uk": "Токени очищено, будь ласка увійдіть"
+      },
+      "username": {
+        "en": "Username",
+        "ru": "Имя пользователя",
+        "uk": "Ім'я користувача"
+      },
+      "usernamePlaceholder": {
+        "en": "Enter your username",
+        "ru": "Введите имя пользователя",
+        "uk": "Введіть ім'я користувача"
+      },
+      "validationError": {
+        "en": "Validation Error",
+        "ru": "Ошибка валидации",
+        "uk": "Помилка валідації"
+      },
+      "validationErrorDescription": {
+        "en": "Please fill in all required fields correctly",
+        "ru": "Пожалуйста, правильно заполните все обязательные поля",
+        "uk": "Будь ласка, правильно заповніть всі обов'язкові поля"
+      }
+    },
+    "authRequired": {
+      "autoRedirect": {
+        "en": "Auto redirect in 5 seconds",
+        "ru": "Автоперенаправление через 5 секунд",
+        "uk": "Автоперенаправлення через 5 секунд"
+      },
+      "description": {
+        "en": "You need to log in to access AutoRia",
+        "ru": "Необходимо войти для доступа к AutoRia",
+        "uk": "Необхідно увійти для доступу до AutoRia"
+      },
+      "loginButton": {
+        "en": "Log in",
+        "ru": "Войти",
+        "uk": "Увійти"
+      },
+      "title": {
+        "en": "Authentication Required",
+        "ru": "Требуется авторизация",
+        "uk": "Потрібна авторизація"
+      }
+    },
+    "auth_token": {
+      "en": "auth_token",
+      "ru": "auth_token",
+      "uk": "auth_token"
+    },
+    "autoFill": {
+      "additionalPhone": {
+        "en": "Advertisement",
+        "ru": "Объявление",
+        "uk": "Оголошення"
+      },
+      "city": {
+        "en": "autoFill.city",
+        "ru": "autoFill.city",
+        "uk": "autoFill.city"
+      },
+      "email": {
+        "en": "Email",
+        "ru": "Электронная почта",
+        "uk": "Електронна пошта"
+      },
+      "mainPhone": {
+        "en": "Phone",
+        "ru": "Телефон",
+        "uk": "Телефон"
+      },
+      "region": {
+        "en": "autoFill.region",
+        "ru": "autoFill.region",
+        "uk": "autoFill.region"
+      },
+      "sellerName": {
+        "en": "autoFill.sellerName",
+        "ru": "autoFill.sellerName",
+        "uk": "autoFill.sellerName"
+      },
+      "telegram": {
+        "en": "autoFill.telegram",
+        "ru": "autoFill.telegram",
+        "uk": "autoFill.telegram"
+      },
+      "viber": {
+        "en": "autoFill.viber",
+        "ru": "autoFill.viber",
+        "uk": "autoFill.viber"
+      },
+      "whatsapp": {
+        "en": "autoFill.whatsapp",
+        "ru": "autoFill.whatsapp",
+        "uk": "autoFill.whatsapp"
+      }
+    },
+    "autoria": {
+      "activeAds": {
+        "en": "active ads",
+        "ru": "Активных объявлений",
+        "uk": "Активних оголошень"
+      },
+      "ad": {
+        "en": "Ad",
+        "ru": "Обновить",
+        "uk": "Оновити"
+      },
+      "adApproved": {
+        "en": "Advertisement",
+        "ru": "Объявление",
+        "uk": "Оголошення"
+      },
+      "adRejected": {
+        "en": "Advertisement",
+        "ru": "Объявление",
+        "uk": "Оголошення"
+      },
+      "additional": {
+        "metadata": {
+          "seoTitle": {
+            "en": "Seo title",
+            "ru": "Заголовок",
+            "uk": "Заголовок"
+          },
+          "seoTitlePlaceholder": {
+            "en": "Seo title placeholder",
+            "ru": "Заголовок",
+            "uk": "Заголовок"
+          },
+          "title": {
+            "en": "Title",
+            "ru": "Заголовок",
+            "uk": "Заголовок"
+          }
+        },
+        "privacy": {
+          "exactAddressDesc": {
+            "en": "Show exact address on map",
+            "ru": "Показывать точный адрес на карте",
+            "uk": "Показувати точну адресу на карті"
+          },
+          "exactAddressTitle": {
+            "en": "Exact address title",
+            "ru": "Заголовок",
+            "uk": "Заголовок"
+          },
+          "ownerNameDesc": {
+            "en": "Display your name publicly",
+            "ru": "Отображать ваше имя публично",
+            "uk": "Відображати ваше ім'я публічно"
+          },
+          "ownerNameTitle": {
+            "en": "Owner name title",
+            "ru": "Заголовок",
+            "uk": "Заголовок"
+          },
+          "phoneDesc": {
+            "en": "Show phone number to all users",
+            "ru": "Показывать номер телефона всем пользователям",
+            "uk": "Показувати номер телефону всім користувачам"
+          },
+          "phoneTitle": {
+            "en": "Phone title",
+            "ru": "Заголовок",
+            "uk": "Заголовок"
+          },
+          "showPublic": {
+            "en": "Show publicly",
+            "ru": "Показывать публично",
+            "uk": "Показувати публічно"
+          }
+        },
+        "settings": {
+          "active": {
+            "en": "Active",
+            "ru": "Активно",
+            "uk": "Активно"
+          },
+          "draft": {
+            "en": "Draft",
+            "ru": "Черновик",
+            "uk": "Чернетка"
+          },
+          "internalNotes": {
+            "en": "Internal notes",
+            "ru": "Внутренние заметки",
+            "uk": "Внутрішні нотатки"
+          },
+          "internalNotesPlaceholder": {
+            "en": "Add internal notes...",
+            "ru": "Добавить внутренние заметки...",
+            "uk": "Додати внутрішні нотатки..."
+          },
+          "paused": {
+            "en": "Paused",
+            "ru": "Приостановлено",
+            "uk": "Призупинено"
+          },
+          "status": {
+            "en": "Status",
+            "ru": "Статус",
+            "uk": "Статус"
+          },
+          "tags": {
+            "add": {
+              "en": "Add",
+              "ru": "Добавить",
+              "uk": "Додати"
+            }
+          },
+          "title": {
+            "en": "Title",
+            "ru": "Заголовок",
+            "uk": "Заголовок"
+          }
+        }
+      },
+      "additionalInfo": {
+        "en": "Additional info",
+        "ru": "Дополнительная информация",
+        "uk": "Додаткова інформація"
+      },
+      "adminLabel": {
+        "en": "admin label",
+        "ru": "Админ",
+        "uk": "Адмін"
+      },
+      "all": {
+        "en": "All",
+        "ru": "Все",
+        "uk": "Всі"
+      },
+      "allImages": {
+        "en": "All images",
+        "ru": "Все изображения",
+        "uk": "Всі зображення"
+      },
+      "analytics": {
+        "ads": {
+          "en": "Ads",
+          "ru": "Объявления",
+          "uk": "Оголошення"
+        },
+        "adsCount": {
+          "en": "Ads count",
+          "ru": "Количество объявлений",
+          "uk": "Кількість оголошень"
+        },
+        "adsInSelection": {
+          "en": "Ads in selection",
+          "ru": "Объявлений в выборке",
+          "uk": "Оголошень у вибірці"
+        },
+        "adsPerDay": {
+          "en": "Ads per day",
+          "ru": "Объявлений в день",
+          "uk": "Оголошень на день"
+        },
+        "adsQuantity": {
+          "en": "Ads quantity",
+          "ru": "Количество объявлений",
+          "uk": "Кількість оголошень"
+        },
+        "averagePrice": {
+          "en": "Average price",
+          "ru": "Средняя цена",
+          "uk": "Середня ціна"
+        },
+        "basedOnCurrentResults": {
+          "en": "Based on current results",
+          "ru": "На основе текущих результатов",
+          "uk": "На основі поточних результатів"
+        },
+        "binsBuiltFromSelection": {
+          "en": "Bins built from selection",
+          "ru": "Интервалы построены на основе выборки",
+          "uk": "Інтервали побудовані на основі вибірки"
+        },
+        "brand": {
+          "en": "Brand",
+          "ru": "Бренд",
+          "uk": "Бренд"
+        },
+        "brandComparison": {
+          "en": "Brand comparison",
+          "ru": "Сравнение брендов",
+          "uk": "Порівняння брендів"
+        },
+        "brandPopularityTitle": {
+          "en": "Brand popularity",
+          "ru": "Популярность брендов",
+          "uk": "Популярність брендів"
+        },
+        "comparison": {
+          "en": "Comparison",
+          "ru": "Сравнение",
+          "uk": "Порівняння"
+        },
+        "currentSelectionSummary": {
+          "en": "Current selection summary",
+          "ru": "Сводка текущей выборки",
+          "uk": "Зведення поточної вибірки"
+        },
+        "distributions": {
+          "en": "Distributions",
+          "ru": "Распределения",
+          "uk": "Розподіли"
+        },
+        "en": "Analytics",
+        "filtersAppliedToAnalytics": {
+          "en": "Filters applied to analytics",
+          "ru": "Фильтры применены к аналитике",
+          "uk": "Фільтри застосовані до аналітики"
+        },
+        "forecasts": {
+          "en": "Forecasts",
+          "ru": "Прогнозы",
+          "uk": "Прогнози"
+        },
+        "fromDate": {
+          "en": "From date",
+          "ru": "С даты",
+          "uk": "З дати"
+        },
+        "mlForecastsPricesAndDemand": {
+          "en": "Views and revenue statistics with ML forecasts",
+          "ru": "Просмотры и выручка с ML прогнозами",
+          "uk": "Перегляди та виручка з ML прогнозами"
+        },
+        "month": {
+          "en": "Month",
+          "ru": "Месяц",
+          "uk": "Місяць"
+        },
+        "monthlyTrends": {
+          "en": "Monthly trends",
+          "ru": "Месячные тренды",
+          "uk": "Місячні тренди"
+        },
+        "noData": {
+          "en": "No data",
+          "ru": "Нет данных",
+          "uk": "Немає даних"
+        },
+        "price": {
+          "en": "Price",
+          "ru": "Цена",
+          "uk": "Ціна"
+        },
+        "priceDistribution": {
+          "en": "Price distribution",
+          "ru": "Распределение цен",
+          "uk": "Розподіл цін"
+        },
+        "priceDistributionTitle": {
+          "en": "Price distribution",
+          "ru": "Распределение цен",
+          "uk": "Розподіл цін"
+        },
+        "regionalStatsTitle": {
+          "en": "Regional statistics",
+          "ru": "Региональная статистика",
+          "uk": "Регіональна статистика"
+        },
+        "ru": "Аналитика",
+        "salesTrendTitle": {
+          "en": "Sales trend",
+          "ru": "Тренд продаж",
+          "uk": "Тренд продажів"
+        },
+        "toDate": {
+          "en": "To date",
+          "ru": "До даты",
+          "uk": "До дати"
+        },
+        "topBrands": {
+          "en": "Top brands",
+          "ru": "Топ брендов",
+          "uk": "Топ брендів"
+        },
+        "totalViews": {
+          "en": "Total views",
+          "ru": "Всего просмотров",
+          "uk": "Всього переглядів"
+        },
+        "trends": {
+          "en": "Trends",
+          "ru": "Тренды",
+          "uk": "Тренди"
+        },
+        "uk": "Аналітика",
+        "viewsDynamics": {
+          "en": "User activity dynamics",
+          "ru": "Активность пользователей",
+          "uk": "Активність користувачів"
+        }
+      },
+      "analyticsDesc": {
+        "en": "analytics desc",
+        "ru": "Статистика ваших объявлений",
+        "uk": "Статистика ваших оголошень"
+      },
+      "applySuggestions": {
+        "en": "autoria.applySuggestions",
+        "ru": "autoria.applySuggestions",
+        "uk": "autoria.applySuggestions"
+      },
+      "approved": {
+        "en": "autoria.approved",
+        "ru": "autoria.approved",
+        "uk": "autoria.approved"
+      },
+      "autoModerationDesc": {
+        "en": "Moderation",
+        "ru": "Модерация",
+        "uk": "Модерація"
+      },
+      "autoSave": {
+        "en": "auto save",
+        "ru": "Автоматически сохраняется в вашем аккаунте",
+        "uk": "Автоматично зберігається у вашому акаунті"
+      },
+      "back": {
+        "en": "back",
+        "ru": "Назад",
+        "uk": "Назад"
+      },
+      "basicInfo": {
+        "en": "basic info",
+        "ru": "Основная информация",
+        "uk": "Основна інформація"
+      },
+      "basicInfoDesc": {
+        "en": "basic info desc",
+        "ru": "Введите основную информацию о вашем автомобиле",
+        "uk": "Введіть основну інформацію про ваш автомобіль"
+      },
+      "basicInfoDescription": {
+        "en": "Basic info description",
+        "ru": "Описание",
+        "uk": "Опис"
+      },
+      "basicInfoTitle": {
+        "en": "basic info title",
+        "ru": "Основная информация",
+        "uk": "Основна інформація"
+      },
+      "beingChecked": {
+        "en": "autoria.beingChecked",
+        "ru": "autoria.beingChecked",
+        "uk": "autoria.beingChecked"
+      },
+      "benefits": {
+        "effective": {
+          "description": {
+            "en": "description",
+            "ru": "Получите результаты быстро",
+            "uk": "Отримайте результати швидко"
+          },
+          "title": {
+            "en": "title",
+            "ru": "Эффективно",
+            "uk": "Ефективно"
+          }
+        },
+        "fast": {
+          "description": {
+            "en": "description",
+            "ru": "Быстрый и простой процесс",
+            "uk": "Швидкий та простий процес"
+          },
+          "title": {
+            "en": "title",
+            "ru": "Быстро",
+            "uk": "Швидко"
+          }
+        },
+        "security": {
+          "description": {
+            "en": "description",
+            "ru": "Безопасные и надежные транзакции",
+            "uk": "Безпечні та надійні транзакції"
+          },
+          "title": {
+            "en": "title",
+            "ru": "Безопасность",
+            "uk": "Безпека"
+          }
+        }
+      },
+      "brand": {
+        "en": "brand",
+        "ru": "Марка",
+        "uk": "Марка"
+      },
+      "byDate": {
+        "en": "By date",
+        "ru": "По дате",
+        "uk": "За датою"
+      },
+      "byMileage": {
+        "en": "By mileage",
+        "ru": "По пробегу",
+        "uk": "За пробігом"
+      },
+      "byPrice": {
+        "en": "By price",
+        "ru": "Цена",
+        "uk": "Ціна"
+      },
+      "byTitle": {
+        "en": "By title",
+        "ru": "Заголовок",
+        "uk": "Заголовок"
+      },
+      "byViews": {
+        "en": "by views",
+        "ru": "По просмотрам",
+        "uk": "За переглядами"
+      },
+      "byYear": {
+        "en": "By year",
+        "ru": "По году",
+        "uk": "За роком"
+      },
+      "carSpecsDescription": {
+        "en": "car specs description",
+        "ru": "Укажите детальные характеристики вашего автомобиля",
+        "uk": "Вкажіть детальні характеристики вашого автомобіля"
+      },
+      "carSpecsTitle": {
+        "en": "car specs title",
+        "ru": "Характеристики автомобиля",
+        "uk": "Характеристики автомобіля"
+      },
+      "changeSearchParams": {
+        "en": "change search params",
+        "ru": "Попробуйте изменить параметры поиска",
+        "uk": "Спробуйте змінити параметри пошуку"
+      },
+      "characters": {
+        "en": "characters",
+        "ru": "символов",
+        "uk": "символів"
+      },
+      "completed": {
+        "en": "Completed",
+        "ru": "Завершено",
+        "uk": "Завершено"
+      },
+      "completeness": {
+        "en": "Completeness",
+        "ru": "Заполненность",
+        "uk": "Заповненість"
+      },
+      "condition": {
+        "en": "condition",
+        "ru": "Состояние",
+        "uk": "Стан"
+      },
+      "confirmDelete": {
+        "en": "Confirm delete",
+        "ru": "Подтвердить удаление",
+        "uk": "Підтвердити видалення"
+      },
+      "confirmDeleteDesc": {
+        "en": "Are you sure you want to delete this ad?",
+        "ru": "Вы уверены, что хотите удалить это объявление?",
+        "uk": "Ви впевнені, що хочете видалити це оголошення?"
+      },
+      "contactDesc": {
+        "en": "contact desc",
+        "ru": "Предоставьте ваши контактные данные",
+        "uk": "Надайте ваші контактні дані"
+      },
+      "contactTitle": {
+        "en": "contact title",
+        "ru": "Контактная информация",
+        "uk": "Контактна інформація"
+      },
+      "continue": {
+        "en": "continue",
+        "ru": "Продолжить",
+        "uk": "Продовжити"
+      },
+      "createAd": {
+        "en": "Create Ad",
+        "ru": "Создать объявление",
+        "uk": "Створити оголошення"
+      },
+      "createAdBlock": {
+        "continue": {
+          "en": "Continue",
+          "ru": "Продолжить",
+          "uk": "Продовжити"
+        },
+        "description": {
+          "en": "Place an ad for the sale of a car",
+          "ru": "Разместить объявление о продаже автомобиля",
+          "uk": "Розмістити оголошення про продаж автомобіля"
+        },
+        "title": {
+          "en": "Create Ad",
+          "ru": "Создать объявление",
+          "uk": "Створити оголошення"
+        }
+      },
+      "createAdDesc": {
+        "en": "create ad desc",
+        "ru": "Разместить объявление о продаже автомобиля",
+        "uk": "Розмістити оголошення про продаж автомобіля"
+      },
+      "createAdTitle": {
+        "en": "create ad title",
+        "ru": "Создать объявление",
+        "uk": "Створити оголошення"
+      },
+      "createFirstAd": {
+        "en": "create first ad",
+        "ru": "Создайте первое объявление для начала продаж",
+        "uk": "Створіть перше оголошення для початку продажів"
+      },
+      "creating": {
+        "en": "Creating...",
+        "ru": "Создание...",
+        "uk": "Створення..."
+      },
+      "currentRates": {
+        "en": "current rates",
+        "ru": "Текущие курсы валют",
+        "uk": "Поточні курси валют"
+      },
+      "dataSource": {
+        "cache": {
+          "en": "Cache",
+          "ru": "Кэш",
+          "uk": "Кеш"
+        },
+        "error": {
+          "en": "Error",
+          "ru": "Ошибка",
+          "uk": "Помилка"
+        },
+        "errorFallback": {
+          "en": "Error fallback",
+          "ru": "Ошибка",
+          "uk": "Помилка"
+        },
+        "fresh": {
+          "en": "Fresh",
+          "ru": "Свежие данные",
+          "uk": "Свіжі дані"
+        },
+        "mockFallback": {
+          "en": "Mock fallback",
+          "ru": "Тестовые данные",
+          "uk": "Тестові дані"
+        }
+      },
+      "deleteAdDesc": {
+        "en": "Delete this advertisement",
+        "ru": "Удалить это объявление",
+        "uk": "Видалити це оголошення"
+      },
+      "deleteAdTitle": {
+        "en": "Delete ad title",
+        "ru": "Заголовок",
+        "uk": "Заголовок"
+      },
+      "description": {
+        "en": "Description",
+        "ru": "Описание",
+        "uk": "Опис"
+      },
+      "descriptionCounter": {
+        "en": "description counter",
+        "ru": "Описание",
+        "uk": "Опис"
+      },
+      "editAd": {
+        "en": "Edit ad",
+        "ru": "Редактировать объявление",
+        "uk": "Редагувати оголошення"
+      },
+      "editAdDesc": {
+        "en": "Edit and update your advertisement",
+        "ru": "Редактировать и обновить ваше объявление",
+        "uk": "Редагувати та оновити ваше оголошення"
+      },
+      "editAdTitle": {
+        "en": "Edit ad title",
+        "ru": "Заголовок",
+        "uk": "Заголовок"
+      },
+      "favorites": {
+        "en": "favorites",
+        "ru": "Избранные",
+        "uk": "Обрані"
+      },
+      "fileNotImage": {
+        "en": "File is not an image",
+        "ru": "Файл не является изображением",
+        "uk": "Файл не є зображенням"
+      },
+      "fileTooLarge": {
+        "en": "File too large",
+        "ru": "Файл слишком большой",
+        "uk": "Файл занадто великий"
+      },
+      "fillRequiredFieldsForGeneration": {
+        "en": "Fill required fields for generation",
+        "ru": "Заполните обязательные поля для генерации",
+        "uk": "Заповніть обов'язкові поля для генерації"
+      },
+      "fixFollowingErrors": {
+        "en": "Error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "form": {
+        "tabs": {
+          "additional": {
+            "description": {
+              "en": "Description",
+              "ru": "Описание",
+              "uk": "Опис"
+            },
+            "label": {
+              "en": "Additional",
+              "ru": "Дополнительно",
+              "uk": "Додатково"
+            }
+          },
+          "basic": {
+            "description": {
+              "en": "Description",
+              "ru": "Описание",
+              "uk": "Опис"
+            },
+            "label": {
+              "en": "Basic",
+              "ru": "Основное",
+              "uk": "Основне"
+            }
+          },
+          "images": {
+            "description": {
+              "en": "Description",
+              "ru": "Описание",
+              "uk": "Опис"
+            },
+            "label": {
+              "en": "Images",
+              "ru": "Изображения",
+              "uk": "Зображення"
+            }
+          },
+          "preview": {
+            "description": {
+              "en": "Description",
+              "ru": "Описание",
+              "uk": "Опис"
+            },
+            "label": {
+              "en": "Preview",
+              "ru": "Предпросмотр",
+              "uk": "Попередній перегляд"
+            }
+          }
+        }
+      },
+      "formFieldErrors": {
+        "en": "Error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "hide": {
+        "en": "Hide",
+        "ru": "Скрыть",
+        "uk": "Сховати"
+      },
+      "images": {
+        "en": "images",
+        "ru": "Фотографии",
+        "uk": "Фотографії"
+      },
+      "imagesDesc": {
+        "en": "images desc",
+        "ru": "Добавьте фотографии вашего автомобиля",
+        "uk": "Додайте фотографії вашого автомобіля"
+      },
+      "inFavorites": {
+        "en": "Favorites",
+        "ru": "Избранное",
+        "uk": "Обране"
+      },
+      "loading": {
+        "en": "loading",
+        "ru": "loading (ru)",
+        "uk": "Завантаження..."
+      },
+      "loadingAds": {
+        "en": "loading ads",
+        "ru": "Загрузка объявлений...",
+        "uk": "Завантаження оголошень..."
+      },
+      "locationDesc": {
+        "en": "location desc",
+        "ru": "Укажите местоположение вашего автомобиля",
+        "uk": "Вкажіть місцезнаходження вашого автомобіля"
+      },
+      "locationDescription": {
+        "en": "Location description",
+        "ru": "Описание",
+        "uk": "Опис"
+      },
+      "locationTitle": {
+        "en": "location title",
+        "ru": "Местоположение",
+        "uk": "Місцезнаходження"
+      },
+      "mainImage": {
+        "en": "Main image",
+        "ru": "Главное изображение",
+        "uk": "Головне зображення"
+      },
+      "manualReviewDesc": {
+        "en": "autoria.manualReviewDesc",
+        "ru": "autoria.manualReviewDesc",
+        "uk": "autoria.manualReviewDesc"
+      },
+      "max10MB": {
+        "en": "Max 10 MB",
+        "ru": "Макс 10 МБ",
+        "uk": "Макс 10 МБ"
+      },
+      "metadataDescription": {
+        "en": "metadata description",
+        "ru": "Дополнительные настройки и метаданные",
+        "uk": "Додаткові налаштування та метадані"
+      },
+      "metadataTitle": {
+        "en": "metadata title",
+        "ru": "Дополнительная информация",
+        "uk": "Додаткова інформація"
+      },
+      "model": {
+        "en": "model",
+        "ru": "Модель",
+        "uk": "Модель"
+      },
+      "moderation": {
+        "accessDenied": {
+          "en": "access denied",
+          "ru": "У вас немає прав доступу до цієї сторінки",
+          "uk": "У вас немає прав доступу до цієї сторінки"
+        },
+        "actions": {
+          "en": "Actions",
+          "ru": "Действия",
+          "uk": "Дії"
+        },
+        "activate": {
+          "en": "Activate",
+          "ru": "Активировать",
+          "uk": "Активувати"
+        },
+        "active": {
+          "en": "active",
+          "ru": "Активних",
+          "uk": "Активних"
+        },
+        "adDeleted": {
+          "en": "Ad deleted",
+          "ru": "Объявление удалено",
+          "uk": "Оголошення видалено"
+        },
+        "adDetails": {
+          "en": "Ad details",
+          "ru": "Детали объявления",
+          "uk": "Деталі оголошення"
+        },
+        "addNotes": {
+          "en": "Add notes",
+          "ru": "Добавить заметки",
+          "uk": "Додати нотатки"
+        },
+        "allStatuses": {
+          "en": "all statuses",
+          "ru": "Всі статуси",
+          "uk": "Всі статуси"
+        },
+        "approve": {
+          "en": "approve",
+          "ru": "Схвалити",
+          "uk": "Схвалити"
+        },
+        "authLoading": {
+          "en": "Auth loading",
+          "ru": "Загрузка",
+          "uk": "Завантаження"
+        },
+        "basicInfo": {
+          "en": "Basic info",
+          "ru": "Основная информация",
+          "uk": "Основна інформація"
+        },
+        "block": {
+          "en": "Block",
+          "ru": "Заблокировать",
+          "uk": "Заблокувати"
+        },
+        "blockReason": {
+          "en": "Block reason",
+          "ru": "Причина блокировки",
+          "uk": "Причина блокування"
+        },
+        "bodyType": {
+          "en": "Body type",
+          "ru": "Тип кузова",
+          "uk": "Тип кузова"
+        },
+        "brand": {
+          "en": "Brand",
+          "ru": "Марка",
+          "uk": "Марка"
+        },
+        "bulkDeleted": {
+          "en": "Bulk deleted",
+          "ru": "Массово удалено",
+          "uk": "Масово видалено"
+        },
+        "bulkDone": {
+          "en": "Bulk action completed",
+          "ru": "Массовое действие выполнено",
+          "uk": "Масова дія виконана"
+        },
+        "confirmBulkDelete": {
+          "en": "Confirm bulk delete",
+          "ru": "Подтвердить массовое удаление",
+          "uk": "Підтвердити масове видалення"
+        },
+        "confirmDelete": {
+          "en": "Confirm delete",
+          "ru": "Подтвердить удаление",
+          "uk": "Підтвердити видалення"
+        },
+        "contactInfo": {
+          "en": "Contact info",
+          "ru": "Контактная информация",
+          "uk": "Контактна інформація"
+        },
+        "created": {
+          "en": "Created",
+          "ru": "Создано",
+          "uk": "Створено"
+        },
+        "createdAt": {
+          "en": "created at",
+          "ru": "Створено",
+          "uk": "Створено"
+        },
+        "deleteFailed": {
+          "en": "Delete failed",
+          "ru": "Удаление не удалось",
+          "uk": "Видалення не вдалося"
+        },
+        "description": {
+          "en": "description",
+          "ru": "Управління та модерація оголошень на платформі",
+          "uk": "Управління та модерація оголошень на платформі"
+        },
+        "editNotes": {
+          "en": "Edit notes",
+          "ru": "Редактировать заметки",
+          "uk": "Редагувати нотатки"
+        },
+        "filters": {
+          "en": "Filters",
+          "ru": "Фильтры",
+          "uk": "Фільтри"
+        },
+        "fuelType": {
+          "en": "Fuel type",
+          "ru": "Тип топлива",
+          "uk": "Тип палива"
+        },
+        "images": {
+          "en": "Images",
+          "ru": "Изображения",
+          "uk": "Зображення"
+        },
+        "loadingModeration": {
+          "en": "Loading moderation",
+          "ru": "Загрузка",
+          "uk": "Завантаження"
+        },
+        "location": {
+          "en": "Location",
+          "ru": "Местоположение",
+          "uk": "Розташування"
+        },
+        "mileage": {
+          "en": "Mileage",
+          "ru": "Пробег",
+          "uk": "Пробіг"
+        },
+        "model": {
+          "en": "Model",
+          "ru": "Модель",
+          "uk": "Модель"
+        },
+        "moderationNotes": {
+          "en": "Moderation notes",
+          "ru": "Заметки модератора",
+          "uk": "Нотатки модератора"
+        },
+        "needsReview": {
+          "en": "needs review",
+          "ru": "Потребує перевірки",
+          "uk": "Потребує перевірки"
+        },
+        "noAdsDescription": {
+          "en": "no ads description",
+          "ru": "Немає оголошень для модерації з обраними фільтрами",
+          "uk": "Немає оголошень для модерації з обраними фільтрами"
+        },
+        "noAdsFound": {
+          "en": "no ads found",
+          "ru": "Оголошень не знайдено",
+          "uk": "Оголошень не знайдено"
+        },
+        "notesPlaceholder": {
+          "en": "Enter notes here...",
+          "ru": "Введите заметки здесь...",
+          "uk": "Введіть нотатки тут..."
+        },
+        "notesSaveError": {
+          "en": "Notes save error",
+          "ru": "Ошибка",
+          "uk": "Помилка"
+        },
+        "notesSaved": {
+          "en": "Notes saved",
+          "ru": "Заметки сохранены",
+          "uk": "Нотатки збережено"
+        },
+        "pendingModeration": {
+          "en": "pending moderation",
+          "ru": "На модерації",
+          "uk": "На модерації"
+        },
+        "phone": {
+          "en": "Phone",
+          "ru": "Телефон",
+          "uk": "Телефон"
+        },
+        "price": {
+          "en": "Price",
+          "ru": "Цена",
+          "uk": "Ціна"
+        },
+        "refresh": {
+          "en": "Refresh",
+          "ru": "Обновить",
+          "uk": "Оновити"
+        },
+        "reject": {
+          "en": "reject",
+          "ru": "Відхилити",
+          "uk": "Відхилити"
+        },
+        "rejected": {
+          "en": "rejected",
+          "ru": "Відхилено",
+          "uk": "Відхилено"
+        },
+        "rejectionReasonPrompt": {
+          "en": "Please enter rejection reason",
+          "ru": "Пожалуйста, укажите причину отклонения",
+          "uk": "Будь ласка, вкажіть причину відхилення"
+        },
+        "review": {
+          "en": "review",
+          "ru": "На перевірку",
+          "uk": "На перевірку"
+        },
+        "saveNotes": {
+          "en": "Save notes",
+          "ru": "Сохранить заметки",
+          "uk": "Зберегти нотатки"
+        },
+        "searchPlaceholder": {
+          "en": "search placeholder",
+          "ru": "Пошук за заголовком, описом, email...",
+          "uk": "Пошук за заголовком, описом, email..."
+        },
+        "selected": {
+          "en": "Selected",
+          "ru": "Выбрано",
+          "uk": "Вибрано"
+        },
+        "sortBy": {
+          "en": "Sort by",
+          "ru": "Сортировка",
+          "uk": "Сортування"
+        },
+        "status": {
+          "active": {
+            "en": "Active",
+            "ru": "Активно",
+            "uk": "Активно"
+          },
+          "archived": {
+            "en": "Archived",
+            "ru": "Архивировано",
+            "uk": "Архівовано"
+          },
+          "blocked": {
+            "en": "Blocked",
+            "ru": "Заблокировано",
+            "uk": "Заблоковано"
+          },
+          "draft": {
+            "en": "Draft",
+            "ru": "Черновик",
+            "uk": "Чернетка"
+          },
+          "needsReview": {
+            "en": "Needs review",
+            "ru": "Вид",
+            "uk": "Вигляд"
+          },
+          "pending": {
+            "en": "Pending",
+            "ru": "На рассмотрении",
+            "uk": "На розгляді"
+          },
+          "rejected": {
+            "en": "Rejected",
+            "ru": "Отклонено",
+            "uk": "Відхилено"
+          },
+          "sold": {
+            "en": "Sold",
+            "ru": "Продано",
+            "uk": "Продано"
+          }
+        },
+        "statusUpdateFailed": {
+          "en": "Status update failed",
+          "ru": "Обновление статуса не удалось",
+          "uk": "Оновлення статусу не вдалося"
+        },
+        "statusUpdated": {
+          "en": "Status updated",
+          "ru": "Статус обновлен",
+          "uk": "Статус оновлено"
+        },
+        "superuser": {
+          "en": "Superuser",
+          "ru": "Суперпользователь",
+          "uk": "Суперкористувач"
+        },
+        "technicalSpecs": {
+          "en": "Technical specs",
+          "ru": "Технические характеристики",
+          "uk": "Технічні характеристики"
+        },
+        "todayModerated": {
+          "en": "today moderated",
+          "ru": "Сьогодні перевірено",
+          "uk": "Сьогодні перевірено"
+        },
+        "totalAds": {
+          "en": "total ads",
+          "ru": "Всього оголошень",
+          "uk": "Всього оголошень"
+        },
+        "transmission": {
+          "en": "Transmission",
+          "ru": "Трансмиссия",
+          "uk": "Трансмісія"
+        },
+        "user": {
+          "en": "User",
+          "ru": "Пользователь",
+          "uk": "Користувач"
+        },
+        "userProfile": {
+          "en": "User profile",
+          "ru": "Профиль пользователя",
+          "uk": "Профіль користувача"
+        },
+        "userStatus": {
+          "en": "User status",
+          "ru": "Статус пользователя",
+          "uk": "Статус користувача"
+        },
+        "view": {
+          "en": "View",
+          "ru": "Вид",
+          "uk": "Вигляд"
+        },
+        "viewDetails": {
+          "en": "view details",
+          "ru": "Переглянути",
+          "uk": "Переглянути"
+        },
+        "year": {
+          "en": "Year",
+          "ru": "Год",
+          "uk": "Рік"
+        }
+      },
+      "moderationInProgress": {
+        "en": "Moderation",
+        "ru": "Модерация",
+        "uk": "Модерація"
+      },
+      "moderationInfo": {
+        "en": "moderation info",
+        "ru": "Информация о модерации",
+        "uk": "Інформація про модерацію"
+      },
+      "myAds": {
+        "en": "my ads",
+        "ru": "Мои объявления",
+        "uk": "Мої оголошення"
+      },
+      "needToFill": {
+        "en": "need to fill",
+        "ru": "Необходимо заполнить",
+        "uk": "Необхідно заповнити"
+      },
+      "needsManualReview": {
+        "en": "autoria.needsManualReview",
+        "ru": "autoria.needsManualReview",
+        "uk": "autoria.needsManualReview"
+      },
+      "new": {
+        "en": "New",
+        "ru": "Новый",
+        "uk": "Новий"
+      },
+      "newest": {
+        "en": "newest",
+        "ru": "Новые",
+        "uk": "Нові"
+      },
+      "next": {
+        "en": "Next",
+        "ru": "След",
+        "uk": "Наст"
+      },
+      "noAdsFound": {
+        "en": "no ads found",
+        "ru": "Объявления не найдены",
+        "uk": "Оголошення не знайдено"
+      },
+      "noAdsYet": {
+        "en": "no ads yet",
+        "ru": "Пока нет объявлений",
+        "uk": "Поки немає оголошень"
+      },
+      "noDescription": {
+        "en": "No description",
+        "ru": "Описание",
+        "uk": "Опис"
+      },
+      "noImages": {
+        "en": "No images",
+        "ru": "Нет изображений",
+        "uk": "Немає зображень"
+      },
+      "noTitle": {
+        "en": "No title",
+        "ru": "Заголовок",
+        "uk": "Заголовок"
+      },
+      "of": {
+        "en": "of",
+        "ru": "из",
+        "uk": "з"
+      },
+      "oldest": {
+        "en": "oldest",
+        "ru": "Старые",
+        "uk": "Старі"
+      },
+      "perPage": {
+        "en": "Per page",
+        "ru": "Страница",
+        "uk": "Сторінка"
+      },
+      "platformStats": {
+        "en": "Platform stats",
+        "ru": "Статистика платформы",
+        "uk": "Статистика платформи"
+      },
+      "premium": {
+        "en": "Premium",
+        "ru": "Премиум",
+        "uk": "Преміум"
+      },
+      "premiumUsers": {
+        "en": "premium users",
+        "ru": "Премиум пользователей",
+        "uk": "Преміум користувачів"
+      },
+      "prev": {
+        "en": "Prev",
+        "ru": "Пред",
+        "uk": "Попер"
+      },
+      "preview": {
+        "en": "preview",
+        "ru": "Предпросмотр",
+        "uk": "Попередній перегляд"
+      },
+      "priceDesc": {
+        "en": "price desc",
+        "ru": "Установите цену для вашего автомобиля",
+        "uk": "Встановіть ціну для вашого автомобіля"
+      },
+      "priceHigh": {
+        "en": "price high",
+        "ru": "Цена: по убыванию",
+        "uk": "Ціна: за спаданням"
+      },
+      "priceLow": {
+        "en": "price low",
+        "ru": "Цена: по возрастанию",
+        "uk": "Ціна: за зростанням"
+      },
+      "priceTitle": {
+        "en": "price title",
+        "ru": "Ценообразование",
+        "uk": "Ціноутворення"
+      },
+      "pricingDesc": {
+        "en": "Set the price for your vehicle",
+        "ru": "Установите цену для вашего автомобиля",
+        "uk": "Встановіть ціну для вашого автомобіля"
+      },
+      "profile": {
+        "en": "profile",
+        "ru": "Профиль",
+        "uk": "Профіль"
+      },
+      "profileDesc": {
+        "en": "profile desc",
+        "ru": "Управление настройками профиля",
+        "uk": "Управління налаштуваннями профілю"
+      },
+      "progressFill": {
+        "en": "progress fill",
+        "ru": "Прогресс заполнения",
+        "uk": "Прогрес заповнення"
+      },
+      "quickSearch": {
+        "en": "quick search",
+        "ru": "Быстрый поиск",
+        "uk": "Швидкий пошук"
+      },
+      "readyToPublish": {
+        "en": "ready to publish",
+        "ru": "Готово к публикации",
+        "uk": "Готово до публікації"
+      },
+      "recommendations": {
+        "en": "autoria.recommendations",
+        "ru": "autoria.recommendations",
+        "uk": "autoria.recommendations"
+      },
+      "rejected": {
+        "en": "rejected",
+        "ru": "Отклонено",
+        "uk": "Відхилено"
+      },
+      "requiredSections": {
+        "en": "required sections",
+        "ru": "обязательных разделов",
+        "uk": "обов'язкових розділів"
+      },
+      "retry": {
+        "en": "autoria.retry",
+        "ru": "autoria.retry",
+        "uk": "autoria.retry"
+      },
+      "saveChanges": {
+        "en": "save changes",
+        "ru": "Сохранить изменения",
+        "uk": "Зберегти зміни"
+      },
+      "saving": {
+        "en": "saving",
+        "ru": "Сохранение...",
+        "uk": "Збереження..."
+      },
+      "searchAutoApplyNotice": {
+        "en": "Search auto apply notice",
+        "ru": "Поиск",
+        "uk": "Пошук"
+      },
+      "searchCars": {
+        "en": "search cars",
+        "ru": "Поиск",
+        "uk": "Пошук автомобілів"
+      },
+      "searchCarsDesc": {
+        "en": "search cars desc",
+        "ru": "Найти автомобиль мечты",
+        "uk": "Знайти автомобіль мрії"
+      },
+      "searchPlaceholder": {
+        "en": "search placeholder",
+        "ru": "Поиск автомобилей...",
+        "uk": "Пошук автомобілів..."
+      },
+      "selectCondition": {
+        "en": "select condition",
+        "ru": "Выберите состояние",
+        "uk": "Оберіть стан"
+      },
+      "selectVehicleType": {
+        "en": "select vehicle type",
+        "ru": "Выберите тип транспорта",
+        "uk": "Оберіть тип транспорту"
+      },
+      "sortBy": {
+        "en": "sort by",
+        "ru": "Сортировка",
+        "uk": "Сортування"
+      },
+      "statusFilter": {
+        "en": "status filter",
+        "ru": "Фильтр статуса",
+        "uk": "Фільтр статусу"
+      },
+      "subtitle": {
+        "en": "subtitle",
+        "ru": "Платформа автомобильного рынка",
+        "uk": "Платформа автомобільного ринку"
+      },
+      "tabs": {
+        "contact": {
+          "en": "contact",
+          "ru": "Контакты",
+          "uk": "Контакти"
+        },
+        "contactDesc": {
+          "en": "contact desc",
+          "ru": "Контактная информация",
+          "uk": "Контактна інформація"
+        },
+        "images": {
+          "en": "images",
+          "ru": "Изображения",
+          "uk": "Зображення"
+        },
+        "location": {
+          "en": "location",
+          "ru": "Местоположение",
+          "uk": "Місцезнаходження"
+        },
+        "locationDesc": {
+          "en": "location desc",
+          "ru": "Регион и город продажи",
+          "uk": "Регіон та місто продажу"
+        },
+        "pricing": {
+          "en": "pricing",
+          "ru": "Цена",
+          "uk": "Ціна"
+        },
+        "pricingDesc": {
+          "en": "pricing desc",
+          "ru": "Стоимость и условия продажи",
+          "uk": "Вартість та умови продажу"
+        },
+        "specs": {
+          "en": "specs",
+          "ru": "Характеристики",
+          "uk": "Характеристики"
+        },
+        "specsDesc": {
+          "en": "specs desc",
+          "ru": "Марка, модель, год и технические характеристики",
+          "uk": "Марка, модель, рік та технічні характеристики"
+        },
+        "statistics": {
+          "en": "statistics",
+          "ru": "Статистика",
+          "uk": "Статистика"
+        },
+        "statisticsDesc": {
+          "en": "statistics desc",
+          "ru": "Аналитика и статистика",
+          "uk": "Аналітика та статистика"
+        }
+      },
+      "testAds": {
+        "allTestAds": {
+          "en": "All test ads",
+          "ru": "Объявления",
+          "uk": "Оголошення"
+        },
+        "clearAll": {
+          "en": "🗑️ Clear All",
+          "ru": "🗑️ Очистить все",
+          "uk": "🗑️ Очистити все"
+        },
+        "creating": {
+          "en": "Creating...",
+          "ru": "Создание...",
+          "uk": "Створення..."
+        },
+        "creatingDemo": {
+          "en": "Creating demo list...",
+          "ru": "Создание демо-списка...",
+          "uk": "Створення демо-списку..."
+        },
+        "errorDeleting": {
+          "en": "❌ Error deleting ads",
+          "ru": "❌ Ошибка при удалении объявлений",
+          "uk": "❌ Помилка при видаленні оголошень"
+        },
+        "existingAds": {
+          "addImages": {
+            "en": "Add images to ads without photos or with less than 5 images",
+            "ru": "Добавить изображения в записи без фото или с менее чем 5 изображениями",
+            "uk": "Додати зображення в записи без фото або з менше ніж 5 зображеннями"
+          },
+          "noOptions": {
+            "en": "❌ Select at least one action",
+            "ru": "❌ Выберите хотя бы одно действие",
+            "uk": "❌ Оберіть хоча б одну дію"
+          },
+          "options": {
+            "en": "Select actions for existing ads:",
+            "ru": "Выберите действия для существующих объявлений:",
+            "uk": "Оберіть дії для існуючих оголошень:"
+          },
+          "processing": {
+            "en": "Processing existing ads...",
+            "ru": "Обработка существующих объявлений...",
+            "uk": "Обробка існуючих оголошень..."
+          },
+          "removeEmpty": {
+            "en": "Remove empty/corrupted images",
+            "ru": "Удалить пустые/поврежденные изображения",
+            "uk": "Видалити порожні/пошкоджені зображення"
+          },
+          "rewriteRecords": {
+            "en": "Completely rewrite all records (new data + images)",
+            "ru": "Полностью переписать все записи (новые данные + изображения)",
+            "uk": "Повністю переписати всі записи (нові дані + зображення)"
+          },
+          "title": {
+            "en": "Manage existing ads",
+            "ru": "Управление существующими объявлениями",
+            "uk": "Управління існуючими оголошеннями"
+          }
+        },
+        "generatorButton": {
+          "en": "🎲 Demo Ads Generator",
+          "ru": "🎲 Генератор демо-объявлений",
+          "uk": "🎲 Генератор демо-оголошень"
+        },
+        "generatorButtonShort": {
+          "en": "🎲 Demo",
+          "ru": "🎲 Демо",
+          "uk": "🎲 Демо"
+        },
+        "imageTypes": {
+          "front": {
+            "en": "Front view",
+            "ru": "Вид спереди",
+            "uk": "Вид спереду"
+          },
+          "generate": {
+            "en": "Generate with selected types",
+            "ru": "Генерировать с выбранными типами",
+            "uk": "Генерувати з обраними типами"
+          },
+          "interior": {
+            "en": "Interior",
+            "ru": "Интерьер",
+            "uk": "Інтер'єр"
+          },
+          "noSelection": {
+            "en": "❌ Please select at least one image type",
+            "ru": "❌ Пожалуйста, выберите хотя бы один тип изображения",
+            "uk": "❌ Будь ласка, оберіть хоча б один тип зображення"
+          },
+          "rear": {
+            "en": "Rear view",
+            "ru": "Вид сзади",
+            "uk": "Вид ззаду"
+          },
+          "selectAll": {
+            "en": "Select all",
+            "ru": "Выбрать все",
+            "uk": "Обрати все"
+          },
+          "side": {
+            "en": "Side view",
+            "ru": "Вид сбоку",
+            "uk": "Вид збоку"
+          },
+          "title": {
+            "en": "Select image types to generate:",
+            "ru": "Выберите типы изображений для генерации:",
+            "uk": "Оберіть типи зображень для генерації:"
+          },
+          "top": {
+            "en": "Top view",
+            "ru": "Вид сверху",
+            "uk": "Вид зверху"
+          }
+        },
+        "manageAccounts": {
+          "en": "👑 Account Management",
+          "ru": "👑 Управление аккаунтами",
+          "uk": "👑 Управління акаунтами"
+        },
+        "successCreatedTitle": {
+          "en": "Success created title",
+          "ru": "Заголовок",
+          "uk": "Заголовок"
+        }
+      },
+      "thisAd": {
+        "en": "This ad",
+        "ru": "Это объявление",
+        "uk": "Це оголошення"
+      },
+      "tip1": {
+        "en": "tip1",
+        "ru": "Используйте четкий и описательный заголовок",
+        "uk": "Використовуйте чіткий та описовий заголовок"
+      },
+      "tip2": {
+        "en": "tip2",
+        "ru": "Напишите подробное описание",
+        "uk": "Напишіть детальний опис"
+      },
+      "tip3": {
+        "en": "tip3",
+        "ru": "Добавьте качественные фото",
+        "uk": "Додайте якісні фото"
+      },
+      "tip4": {
+        "en": "tip4",
+        "ru": "Установите конкурентную цену",
+        "uk": "Встановіть конкурентну ціну"
+      },
+      "title": {
+        "en": "title",
+        "ru": "CarHub",
+        "uk": "CarHub"
+      },
+      "titleCounter": {
+        "en": "title counter",
+        "ru": "Заголовок",
+        "uk": "Заголовок"
+      },
+      "totalAds": {
+        "en": "total ads",
+        "ru": "Всего объявлений",
+        "uk": "Всього оголошень"
+      },
+      "totalUsers": {
+        "en": "total users",
+        "ru": "Всего пользователей",
+        "uk": "Всього користувачів"
+      },
+      "tryAdjustFilters": {
+        "en": "Try adjust filters",
+        "ru": "Фильтры",
+        "uk": "Фільтри"
+      },
+      "underReview": {
+        "en": "autoria.underReview",
+        "ru": "autoria.underReview",
+        "uk": "autoria.underReview"
+      },
+      "updated": {
+        "en": "updated",
+        "ru": "Обновлено",
+        "uk": "Оновлено"
+      },
+      "used": {
+        "en": "Used",
+        "ru": "Б/у",
+        "uk": "Б/в"
+      },
+      "validationErrors": {
+        "en": "validation errors",
+        "ru": "Ошибки валидации",
+        "uk": "Помилки валідації"
+      },
+      "verified": {
+        "en": "Verified",
+        "ru": "Проверено",
+        "uk": "Перевірено"
+      },
+      "view": {
+        "en": "View",
+        "ru": "Вид",
+        "uk": "Вигляд"
+      },
+      "violations": {
+        "en": "autoria.violations",
+        "ru": "autoria.violations",
+        "uk": "autoria.violations"
+      },
+      "whyChoose": {
+        "en": "why choose",
+        "ru": "Почему выбирают CarHub?",
+        "uk": "Чому обирають CarHub?"
+      },
+      "withPhotos": {
+        "en": "With photos",
+        "ru": "С фото",
+        "uk": "З фото"
+      }
+    },
+    "backend_auth": {
+      "en": "Back",
+      "ru": "Назад",
+      "uk": "Назад"
+    },
+    "basic": {
+      "en": "basic",
+      "ru": "basic",
+      "uk": "basic"
+    },
+    "basicInfo": {
+      "demoTab": {
+        "en": "demo tab",
+        "ru": "Демо валидации",
+        "uk": "Демо валідації"
+      },
+      "fillTitleDescription": {
+        "en": "Fill title description",
+        "ru": "Заголовок",
+        "uk": "Заголовок"
+      },
+      "formTab": {
+        "en": "form tab",
+        "ru": "Форма создания",
+        "uk": "Форма створення"
+      },
+      "validationError": {
+        "en": "Validation error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      }
+    },
+    "bg": {
+      "en": "bg",
+      "ru": "bg",
+      "uk": "bg"
+    },
+    "bodyType": {
+      "en": "body type",
+      "ru": "Тип кузова",
+      "uk": "Тип кузова"
+    },
+    "bodyTypes": {
+      "convertible": {
+        "en": "Convertible",
+        "ru": "Кабриолет",
+        "uk": "Кабріолет"
+      },
+      "coupe": {
+        "en": "Coupe",
+        "ru": "Купе",
+        "uk": "Купе"
+      },
+      "hatchback": {
+        "en": "Hatchback",
+        "ru": "Хэтчбек",
+        "uk": "Хетчбек"
+      },
+      "minivan": {
+        "en": "Minivan",
+        "ru": "Минивэн",
+        "uk": "Мінівен"
+      },
+      "pickup": {
+        "en": "Pickup",
+        "ru": "Пикап",
+        "uk": "Пікап"
+      },
+      "sedan": {
+        "en": "Sedan",
+        "ru": "Седан",
+        "uk": "Седан"
+      },
+      "suv": {
+        "en": "SUV",
+        "ru": "Внедорожник",
+        "uk": "Позашляховик"
+      },
+      "van": {
+        "en": "Van",
+        "ru": "Фургон",
+        "uk": "Фургон"
+      },
+      "wagon": {
+        "en": "Wagon",
+        "ru": "Универсал",
+        "uk": "Універсал"
+      }
+    },
+    "brand": {
+      "en": "brand",
+      "ru": "Марка",
+      "uk": "Марка"
+    },
+    "callbackUrl": {
+      "en": "Back",
+      "ru": "Назад",
+      "uk": "Назад"
+    },
+    "chartsAndTrends": {
+      "en": "charts and trends",
+      "ru": "Графики и тренды",
+      "uk": "Графіки та тренди"
+    },
+    "city": {
+      "en": "city",
+      "ru": "Город",
+      "uk": "Місто"
+    },
+    "clear-file-upload-notification": {
+      "en": "Advertisement",
+      "ru": "Объявление",
+      "uk": "Оголошення"
+    },
+    "color": {
+      "en": "color",
+      "ru": "Цвет",
+      "uk": "Колір"
+    },
+    "common": {
+      "error": {
+        "en": "Error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "login": {
+        "en": "Login",
+        "ru": "Вход",
+        "uk": "Вхід"
+      },
+      "register": {
+        "en": "Register",
+        "ru": "Регистрация",
+        "uk": "Реєстрація"
+      },
+      "success": {
+        "en": "Success",
+        "ru": "Успех",
+        "uk": "Успіх"
+      }
+    },
+    "companySeller": {
+      "en": "companySeller",
+      "ru": "companySeller",
+      "uk": "companySeller"
+    },
+    "condition": {
+      "en": "condition",
+      "ru": "Состояние",
+      "uk": "Стан"
+    },
+    "conditions": {
+      "damaged": {
+        "en": "Damaged",
+        "ru": "Поврежденный",
+        "uk": "Пошкоджений"
+      },
+      "new": {
+        "en": "New",
+        "ru": "Новый",
+        "uk": "Новий"
+      },
+      "used": {
+        "en": "Used",
+        "ru": "Б/у",
+        "uk": "Б/в"
+      }
+    },
+    "contactNotePlaceholder": {
+      "en": "contact note placeholder",
+      "ru": "Дополнительная контактная информация",
+      "uk": "Додаткова контактна інформація"
+    },
+    "contactTip": {
+      "en": "contact tip",
+      "ru": "Предоставьте точную контактную информацию для потенциальных покупателей",
+      "uk": "Надайте точну контактну інформацію для потенційних покупців"
+    },
+    "contactType": {
+      "en": "contact type",
+      "ru": "Тип контакта",
+      "uk": "Тип контакту"
+    },
+    "contactValue": {
+      "en": "contact value",
+      "ru": "Значение контакта",
+      "uk": "Значення контакту"
+    },
+    "contactsSaved": {
+      "en": "Contacts saved",
+      "ru": "Контакты сохранены",
+      "uk": "Контакти збережено"
+    },
+    "contactsSavedDescription": {
+      "en": "Contacts saved description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "content-type": {
+      "en": "content-type",
+      "ru": "content-type",
+      "uk": "content-type"
+    },
+    "contentValidationModal": {
+      "acceptAndContinue": {
+        "en": "accept and continue",
+        "ru": "Принять и продолжить",
+        "uk": "Прийняти та продовжити"
+      },
+      "censoredContent": {
+        "en": "censored content",
+        "ru": "Отцензурированный контент",
+        "uk": "Відцензурований контент"
+      },
+      "close": {
+        "en": "close",
+        "ru": "Закрыть",
+        "uk": "Закрити"
+      },
+      "confidence": {
+        "en": "confidence",
+        "ru": "Уверенность",
+        "uk": "Впевненість"
+      },
+      "contentRejected": {
+        "en": "content rejected",
+        "ru": "Контент отклонен",
+        "uk": "Контент відхилено"
+      },
+      "fixAndRetry": {
+        "en": "fix and retry",
+        "ru": "Исправить и повторить",
+        "uk": "Виправити та повторити"
+      },
+      "inappropriateWords": {
+        "en": "inappropriate words",
+        "ru": "Неподходящие слова",
+        "uk": "Неприйнятні слова"
+      },
+      "originalContent": {
+        "en": "original content",
+        "ru": "Исходный контент",
+        "uk": "Вихідний контент"
+      },
+      "statusValidation": {
+        "en": "status validation",
+        "ru": "Статус валидации",
+        "uk": "Статус валідації"
+      },
+      "suggestions": {
+        "en": "suggestions",
+        "ru": "Рекомендации",
+        "uk": "Рекомендації"
+      },
+      "title": {
+        "en": "title",
+        "ru": "Результат валидации контента",
+        "uk": "Результат валідації контенту"
+      },
+      "violations": {
+        "en": "violations",
+        "ru": "Нарушения",
+        "uk": "Порушення"
+      }
+    },
+    "continue": {
+      "en": "continue",
+      "ru": "Продолжить",
+      "uk": "Продовжити"
+    },
+    "created_desc": {
+      "en": "Create",
+      "ru": "Создать",
+      "uk": "Створити"
+    },
+    "currency": {
+      "en": "currency",
+      "ru": "Валюта",
+      "uk": "Валюта"
+    },
+    "currencyDescription": {
+      "en": "currency description",
+      "ru": "Выберите предпочитаемую валюту",
+      "uk": "Оберіть бажану валюту"
+    },
+    "dark-mode-changed": {
+      "en": "dark-mode-changed",
+      "ru": "dark-mode-changed",
+      "uk": "dark-mode-changed"
+    },
+    "date-changed": {
+      "en": "date-changed",
+      "ru": "date-changed",
+      "uk": "date-changed"
+    },
+    "dealerSeller": {
+      "en": "dealerSeller",
+      "ru": "dealerSeller",
+      "uk": "dealerSeller"
+    },
+    "delete": {
+      "en": "delete",
+      "ru": "Удалить",
+      "uk": "Видалити"
+    },
+    "description": {
+      "en": "description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "descriptionDescription": {
+      "en": "description description",
+      "ru": "Предоставьте подробное описание вашего автомобиля",
+      "uk": "Надайте детальний опис вашого автомобіля"
+    },
+    "detailedAnalytics": {
+      "en": "Analytics",
+      "ru": "Аналитика",
+      "uk": "Аналітика"
+    },
+    "detailedStatistics": {
+      "en": "detailed statistics",
+      "ru": "Детальная статистика",
+      "uk": "Детальна статистика"
+    },
+    "doors": {
+      "en": "doors",
+      "ru": "doors",
+      "uk": "doors"
+    },
+    "doorsDescription": {
+      "en": "Description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "driveType": {
+      "en": "driveType",
+      "ru": "driveType",
+      "uk": "driveType"
+    },
+    "driveTypeDescription": {
+      "en": "Description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "edit": {
+      "en": "edit",
+      "ru": "Редактировать",
+      "uk": "Редагувати"
+    },
+    "email": {
+      "en": "email",
+      "ru": "Email",
+      "uk": "Email"
+    },
+    "enginePower": {
+      "en": "Engine",
+      "ru": "Двигатель",
+      "uk": "Двигун"
+    },
+    "enginePowerDescription": {
+      "en": "Engine",
+      "ru": "Двигатель",
+      "uk": "Двигун"
+    },
+    "engineVolume": {
+      "en": "engine volume",
+      "ru": "Объем двигателя",
+      "uk": "Об'єм двигуна"
+    },
+    "enterBrandModel": {
+      "en": "Enter brand and model",
+      "ru": "Введите марку и модель",
+      "uk": "Введіть марку та модель"
+    },
+    "enterDescription": {
+      "en": "enter description",
+      "ru": "Введите описание",
+      "uk": "Введіть опис"
+    },
+    "enterEnginePower": {
+      "en": "Enter engine power",
+      "ru": "Введите мощность двигателя",
+      "uk": "Введіть потужність двигуна"
+    },
+    "enterEngineVolume": {
+      "en": "Enter engine volume",
+      "ru": "Введите объем двигателя",
+      "uk": "Введіть об'єм двигуна"
+    },
+    "enterLicensePlate": {
+      "en": "enterLicensePlate",
+      "ru": "enterLicensePlate",
+      "uk": "enterLicensePlate"
+    },
+    "enterMileage": {
+      "en": "enter mileage",
+      "ru": "Введите пробег",
+      "uk": "Введіть пробіг"
+    },
+    "enterPower": {
+      "en": "enterPower",
+      "ru": "enterPower",
+      "uk": "enterPower"
+    },
+    "enterPrice": {
+      "en": "enter price",
+      "ru": "Введите цену",
+      "uk": "Введіть ціну"
+    },
+    "enterSeats": {
+      "en": "enterSeats",
+      "ru": "enterSeats",
+      "uk": "enterSeats"
+    },
+    "enterTitle": {
+      "en": "enter title",
+      "ru": "Введите заголовок",
+      "uk": "Введіть заголовок"
+    },
+    "enterVin": {
+      "en": "enter vin",
+      "ru": "Введите VIN",
+      "uk": "Введіть VIN"
+    },
+    "enterVinCode": {
+      "en": "Enter VIN code",
+      "ru": "Введите VIN код",
+      "uk": "Введіть VIN код"
+    },
+    "enterVolume": {
+      "en": "enter volume",
+      "ru": "Введите объем",
+      "uk": "Введіть об'єм"
+    },
+    "enterYear": {
+      "en": "enter year",
+      "ru": "Введите год",
+      "uk": "Введіть рік"
+    },
+    "error": {
+      "en": "error",
+      "ru": "Ошибка",
+      "uk": "Помилка"
+    },
+    "eur": {
+      "en": "eur",
+      "ru": "Евро",
+      "uk": "Євро"
+    },
+    "exchange": {
+      "en": "exchange",
+      "ru": "Обмен",
+      "uk": "Обмін"
+    },
+    "exchangePossible": {
+      "en": "exchangePossible",
+      "ru": "exchangePossible",
+      "uk": "exchangePossible"
+    },
+    "exchangeStatus": {
+      "en": "exchangeStatus",
+      "ru": "exchangeStatus",
+      "uk": "exchangeStatus"
+    },
+    "exchangeStatusDescription": {
+      "en": "Description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "favoritesDesc": {
+      "en": "favorites desc",
+      "ru": "Ваши избранные автомобили",
+      "uk": "Ваші обрані автомобілі"
+    },
+    "favoritesTitle": {
+      "en": "favorites title",
+      "ru": "Избранное",
+      "uk": "Обране"
+    },
+    "form": {
+      "clearAllForm": {
+        "en": "Clear all form",
+        "ru": "Очистить всю форму",
+        "uk": "Очистити всю форму"
+      },
+      "clearForm": {
+        "en": "Clear form",
+        "ru": "Очистить форму",
+        "uk": "Очистити форму"
+      },
+      "generateTestData": {
+        "en": "Generate all test data for form",
+        "ru": "Сгенерировать все тестовые данные для формы",
+        "uk": "Згенерувати всі тестові дані для форми"
+      },
+      "quickGenerate": {
+        "en": "Quick data generation",
+        "ru": "Быстрая генерация данных",
+        "uk": "Швидка генерація даних"
+      },
+      "quickPreview": {
+        "en": "Quick ad preview",
+        "ru": "Быстрый просмотр объявления",
+        "uk": "Швидкий перегляд оголошення"
+      }
+    },
+    "frontDrive": {
+      "en": "frontDrive",
+      "ru": "frontDrive",
+      "uk": "frontDrive"
+    },
+    "fuelType": {
+      "en": "fuel type",
+      "ru": "Тип топлива",
+      "uk": "Тип палива"
+    },
+    "fuelTypes": {
+      "diesel": {
+        "en": "Diesel",
+        "ru": "Дизель",
+        "uk": "Дизель"
+      },
+      "electric": {
+        "en": "Electric",
+        "ru": "Электро",
+        "uk": "Електро"
+      },
+      "gas": {
+        "en": "Gas",
+        "ru": "Газ",
+        "uk": "Газ"
+      },
+      "hybrid": {
+        "en": "Hybrid",
+        "ru": "Гибрид",
+        "uk": "Гібрид"
+      },
+      "petrol": {
+        "en": "Petrol",
+        "ru": "Бензин",
+        "uk": "Бензин"
+      }
+    },
+    "highlightAd": {
+      "en": "Advertisement",
+      "ru": "Объявление",
+      "uk": "Оголошення"
+    },
+    "highlightAdDescription": {
+      "en": "Advertisement",
+      "ru": "Объявление",
+      "uk": "Оголошення"
+    },
+    "imageTypes": {
+      "en": "Image types",
+      "ru": "Типы изображений",
+      "uk": "Типи зображень"
+    },
+    "includeImages": {
+      "en": "Include images",
+      "ru": "Включить изображения",
+      "uk": "Включити зображення"
+    },
+    "instagram": {
+      "en": "instagram",
+      "ru": "Instagram",
+      "uk": "Instagram"
+    },
+    "interactiveEditor": {
+      "adDescription": {
+        "en": "ad description",
+        "ru": "Описание объявления",
+        "uk": "Опис оголошення"
+      },
+      "adTitle": {
+        "en": "ad title",
+        "ru": "Заголовок объявления",
+        "uk": "Заголовок оголошення"
+      },
+      "close": {
+        "en": "close",
+        "ru": "Закрыть",
+        "uk": "Закрити"
+      },
+      "descriptionCharacters": {
+        "en": "description characters",
+        "ru": "Описание: {count} символов",
+        "uk": "Опис: {count} символів"
+      },
+      "descriptionPlaceholder": {
+        "en": "description placeholder",
+        "ru": "Введите описание объявления...",
+        "uk": "Введіть опис оголошення..."
+      },
+      "resetToOriginal": {
+        "en": "reset to original",
+        "ru": "Сбросить к оригиналу",
+        "uk": "Скинути до оригіналу"
+      },
+      "runValidation": {
+        "en": "run validation",
+        "ru": "Запустить валидацию",
+        "uk": "Запустити валідацію"
+      },
+      "title": {
+        "en": "title",
+        "ru": "Интерактивное редактирование",
+        "uk": "Інтерактивне редагування"
+      },
+      "titleCharacters": {
+        "en": "title characters",
+        "ru": "Заголовок: {count} символов",
+        "uk": "Заголовок: {count} символів"
+      },
+      "titlePlaceholder": {
+        "en": "title placeholder",
+        "ru": "Введите заголовок объявления...",
+        "uk": "Введіть заголовок оголошення..."
+      },
+      "validating": {
+        "en": "validating",
+        "ru": "Валидация",
+        "uk": "Валідація"
+      }
+    },
+    "key": {
+      "en": "key",
+      "ru": "key",
+      "uk": "key"
+    },
+    "last30Days": {
+      "en": "last30Days",
+      "ru": "last30Days",
+      "uk": "last30Days"
+    },
+    "last7Days": {
+      "en": "last7Days",
+      "ru": "last7Days",
+      "uk": "last7Days"
+    },
+    "leftSteering": {
+      "en": "leftSteering",
+      "ru": "leftSteering",
+      "uk": "leftSteering"
+    },
+    "licensePlate": {
+      "en": "licensePlate",
+      "ru": "licensePlate",
+      "uk": "licensePlate"
+    },
+    "licensePlateDescription": {
+      "en": "Description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "limit": {
+      "en": "limit",
+      "ru": "limit",
+      "uk": "limit"
+    },
+    "link": {
+      "en": "link",
+      "ru": "link",
+      "uk": "link"
+    },
+    "loading": {
+      "en": "loading",
+      "pleaseWait": {
+        "en": "Please wait",
+        "ru": "ru.loading.pleaseWait",
+        "uk": "uk.loading.pleaseWait"
+      },
+      "ru": "Загрузка",
+      "uk": "Завантаження..."
+    },
+    "login": {
+      "backendForm": {
+        "email": {
+          "en": "Email",
+          "ru": "Электронная почта",
+          "uk": "Електронна пошта"
+        },
+        "password": {
+          "en": "Password",
+          "ru": "Пароль",
+          "uk": "Пароль"
+        }
+      },
+      "dummyForm": {
+        "duration": {
+          "en": "Session Duration (minutes)",
+          "ru": "Продолжительность сессии (минуты)",
+          "uk": "Тривалість сесії (хвилини)"
+        },
+        "durationPlaceholder": {
+          "en": "Select duration",
+          "ru": "Выберите продолжительность",
+          "uk": "Оберіть тривалість"
+        },
+        "options": {
+          "minutes30": {
+            "en": "30 minutes",
+            "ru": "30 минут",
+            "uk": "30 хвилин"
+          },
+          "minutes60": {
+            "en": "60 minutes",
+            "ru": "60 минут",
+            "uk": "60 хвилин"
+          }
+        },
+        "password": {
+          "en": "Password",
+          "ru": "Пароль",
+          "uk": "Пароль"
+        },
+        "username": {
+          "en": "Username",
+          "ru": "Имя пользователя",
+          "uk": "Ім'я користувача"
+        }
+      },
+      "register": {
+        "en": "Register",
+        "ru": "Регистрация",
+        "uk": "Реєстрація"
+      },
+      "selectProviderPlaceholder": {
+        "en": "Select auth provider",
+        "ru": "Выберите провайдера авторизации",
+        "uk": "Оберіть провайдера авторизації"
+      },
+      "title": {
+        "en": "Login",
+        "ru": "Вход",
+        "uk": "Вхід"
+      },
+      "toast": {
+        "authTitle": {
+          "en": "Authentication",
+          "ru": "Авторизация",
+          "uk": "Авторизація"
+        },
+        "validationDescription": {
+          "en": "Please fill in all required fields correctly",
+          "ru": "Пожалуйста, заполните все обязательные поля правильно",
+          "uk": "Будь ласка, заповніть всі обов'язкові поля правильно"
+        },
+        "validationTitle": {
+          "en": "Validation Error",
+          "ru": "Ошибка валидации",
+          "uk": "Помилка валідації"
+        }
+      }
+    },
+    "lowViewsToday": {
+      "en": "low views today",
+      "ru": "Мало просмотров сегодня. Рассмотрите обновление объявления.",
+      "uk": "Мало переглядів сьогодні. Розгляньте оновлення оголошення."
+    },
+    "message": {
+      "en": "message",
+      "ru": "message",
+      "uk": "message"
+    },
+    "mileage": {
+      "en": "mileage",
+      "ru": "Пробег",
+      "uk": "Пробіг"
+    },
+    "model": {
+      "en": "model",
+      "ru": "Модель",
+      "uk": "Модель"
+    },
+    "moderation": {
+      "errorBlocking": {
+        "en": "Error blocking",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "errorSaving": {
+        "en": "Error saving",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "errorUnblocking": {
+        "en": "Error unblocking",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "savedSuccessfully": {
+        "en": "Saved successfully",
+        "ru": "Сохранено успешно",
+        "uk": "Збережено успішно"
+      },
+      "userBlocked": {
+        "en": "User blocked",
+        "ru": "Пользователь заблокирован",
+        "uk": "Користувача заблоковано"
+      },
+      "userUnblocked": {
+        "en": "User unblocked",
+        "ru": "Пользователь разблокирован",
+        "uk": "Користувача розблоковано"
+      }
+    },
+    "myAds": {
+      "deleteError": {
+        "en": "Delete error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      }
+    },
+    "myAdsDesc": {
+      "en": "my ads desc",
+      "ru": "Управляйте своими объявлениями",
+      "uk": "Керуйте своїми оголошеннями"
+    },
+    "myAdsTitle": {
+      "en": "my ads title",
+      "ru": "Мои объявления",
+      "uk": "Мої оголошення"
+    },
+    "navigation": {
+      "analytics": {
+        "en": "Analytics",
+        "ru": "Аналитика",
+        "uk": "Аналітика"
+      },
+      "createAd": {
+        "en": "Create Ad",
+        "ru": "Создать объявление",
+        "uk": "Створити оголошення"
+      },
+      "favorites": {
+        "en": "Favorites",
+        "ru": "Избранные",
+        "uk": "Обрані"
+      },
+      "home": {
+        "en": "Home",
+        "ru": "Главная",
+        "uk": "Головна"
+      },
+      "language": {
+        "en": "Language",
+        "ru": "Язык",
+        "uk": "Мова"
+      },
+      "moderation": {
+        "en": "Moderation",
+        "ru": "Модерация",
+        "uk": "Модерація"
+      },
+      "myAds": {
+        "en": "My Ads",
+        "ru": "Мои объявления",
+        "uk": "Мої оголошення"
+      },
+      "profile": {
+        "en": "Profile",
+        "ru": "Профиль",
+        "uk": "Профіль"
+      },
+      "search": {
+        "en": "Search",
+        "ru": "Поиск",
+        "uk": "Пошук"
+      }
+    },
+    "next": {
+      "en": "next",
+      "ru": "Далее",
+      "uk": "Далі"
+    },
+    "noExchange": {
+      "en": "noExchange",
+      "ru": "noExchange",
+      "uk": "noExchange"
+    },
+    "noRegions": {
+      "en": "No regions",
+      "ru": "Нет регионов",
+      "uk": "Немає регіонів"
+    },
+    "nothingFound": {
+      "en": "Nothing found",
+      "ru": "Найдено",
+      "uk": "Знайдено"
+    },
+    "notifications": {
+      "error": {
+        "en": "Error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "favoriteAddError": {
+        "en": "Favorite add error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "loginRequiredForFavorites": {
+        "en": "Login required for favorites",
+        "ru": "Избранное",
+        "uk": "Обрані"
+      },
+      "moderationActionError": {
+        "en": "Moderation action error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "moderationActivated": {
+        "en": "Moderation activated",
+        "ru": "Модерация активирована",
+        "uk": "Модерація активована"
+      },
+      "moderationApproved": {
+        "en": "Moderation approved",
+        "ru": "Модерация одобрена",
+        "uk": "Модерація схвалена"
+      },
+      "moderationBlocked": {
+        "en": "Moderation blocked",
+        "ru": "Модерация заблокирована",
+        "uk": "Модерація заблокована"
+      },
+      "moderationRejected": {
+        "en": "Moderation rejected",
+        "ru": "Модерация отклонена",
+        "uk": "Модерація відхилена"
+      },
+      "moderationReviewSent": {
+        "en": "Moderation review sent",
+        "ru": "Вид",
+        "uk": "Вигляд"
+      },
+      "phoneNumber": {
+        "en": "Phone number",
+        "ru": "Номер телефона",
+        "uk": "Номер телефону"
+      },
+      "phoneShown": {
+        "en": "Phone shown",
+        "ru": "Телефон показан",
+        "uk": "Телефон показано"
+      },
+      "success": {
+        "en": "Success",
+        "ru": "Успешно",
+        "uk": "Успішно"
+      },
+      "tryAgain": {
+        "en": "Try again",
+        "ru": "Попробуйте снова",
+        "uk": "Спробуйте знову"
+      }
+    },
+    "numberOfDoors": {
+      "en": "numberOfDoors",
+      "ru": "numberOfDoors",
+      "uk": "numberOfDoors"
+    },
+    "numberOfSeats": {
+      "en": "numberOfSeats",
+      "ru": "numberOfSeats",
+      "uk": "numberOfSeats"
+    },
+    "onlyExchange": {
+      "en": "onlyExchange",
+      "ru": "onlyExchange",
+      "uk": "onlyExchange"
+    },
+    "optionalNote": {
+      "en": "optional note",
+      "ru": "Дополнительная заметка",
+      "uk": "Додаткова примітка"
+    },
+    "page": {
+      "en": "page",
+      "ru": "page",
+      "uk": "page"
+    },
+    "page_size": {
+      "en": "page_size",
+      "ru": "page_size",
+      "uk": "page_size"
+    },
+    "password": {
+      "en": "password",
+      "ru": "password",
+      "uk": "password"
+    },
+    "phone": {
+      "en": "phone",
+      "ru": "Телефон",
+      "uk": "Телефон"
+    },
+    "premium": {
+      "en": "premium",
+      "ru": "premium",
+      "uk": "premium"
+    },
+    "premiumBenefits": {
+      "en": "premium benefits",
+      "ru": "Преимущества Премиум",
+      "uk": "Переваги Преміум"
+    },
+    "premiumFeature": {
+      "contactAdmin": {
+        "en": "Contact administrator to get premium access.",
+        "ru": "Обратитесь к администратору для получения премиум доступа.",
+        "uk": "Зверніться до адміністратора для отримання преміум доступу."
+      },
+      "description": {
+        "en": "Analytics is only available to users with premium account.",
+        "ru": "Аналитика доступна только пользователям с премиум аккаунтом.",
+        "uk": "Аналітика доступна тільки користувачам з преміум акаунтом."
+      },
+      "title": {
+        "en": "Premium Feature",
+        "ru": "Премиум функция",
+        "uk": "Преміум функція"
+      },
+      "upgradeButton": {
+        "en": "Premium",
+        "ru": "Премиум",
+        "uk": "Преміум"
+      }
+    },
+    "price": {
+      "en": "price",
+      "ru": "Цена",
+      "uk": "Ціна"
+    },
+    "priceAboveRegionAverage": {
+      "en": "Price",
+      "ru": "Цена",
+      "uk": "Ціна"
+    },
+    "priceAnalysis": {
+      "en": "price analysis",
+      "ru": "Анализ цен",
+      "uk": "Аналіз цін"
+    },
+    "priceDescription": {
+      "en": "price description",
+      "ru": "Установите конкурентную цену для вашего автомобиля",
+      "uk": "Встановіть конкурентну ціну для вашого автомобіля"
+    },
+    "price_from": {
+      "en": "Price",
+      "ru": "Цена",
+      "uk": "Ціна"
+    },
+    "priorityPlacement": {
+      "en": "priority placement",
+      "ru": "Приоритетное размещение",
+      "uk": "Пріоритетне розміщення"
+    },
+    "privateSeller": {
+      "en": "privateSeller",
+      "ru": "privateSeller",
+      "uk": "privateSeller"
+    },
+    "profile": {
+      "account": {
+        "accountId": {
+          "en": "account id",
+          "ru": "ID аккаунта",
+          "uk": "ID акаунту"
+        },
+        "adminOnlyFields": {
+          "en": "admin only fields",
+          "ru": "Некоторые поля доступны только администраторам",
+          "uk": "Некоторые поля доступны только администраторам"
+        },
+        "created": {
+          "en": "created",
+          "ru": "Создан",
+          "uk": "Створено"
+        },
+        "enableStats": {
+          "en": "enable stats",
+          "ru": "Включить статистику",
+          "uk": "Увімкнути статистику"
+        },
+        "moderationLevel": {
+          "en": "moderation level",
+          "ru": "Уровень модерации",
+          "uk": "Рівень модерації"
+        },
+        "noAccount": {
+          "en": "no account",
+          "ru": "Аккаунт не найден",
+          "uk": "Аккаунт не найден"
+        },
+        "orgPlaceholder": {
+          "en": "org placeholder",
+          "ru": "Введите название организации",
+          "uk": "Введіть назву організації"
+        },
+        "organizationName": {
+          "en": "organization name",
+          "ru": "Название организации",
+          "uk": "Назва організації"
+        },
+        "role": {
+          "en": "role",
+          "ru": "Роль",
+          "uk": "Роль"
+        },
+        "save": {
+          "en": "save",
+          "ru": "Сохранить",
+          "uk": "Зберегти"
+        },
+        "saving": {
+          "en": "saving",
+          "ru": "Сохранение...",
+          "uk": "Сохранение..."
+        },
+        "selectAccountType": {
+          "en": "select account type",
+          "ru": "Выберите тип аккаунта",
+          "uk": "Выберите тип аккаунта"
+        },
+        "selectModerationLevel": {
+          "en": "select moderation level",
+          "ru": "Выберите уровень модерации",
+          "uk": "Выберите уровень модерации"
+        },
+        "selectRole": {
+          "en": "select role",
+          "ru": "Выберите роль",
+          "uk": "Выберите роль"
+        },
+        "status": {
+          "en": "status",
+          "ru": "Статус аккаунта",
+          "uk": "Статус акаунту"
+        },
+        "type": {
+          "en": "type",
+          "ru": "Тип аккаунта",
+          "uk": "Тип акаунту"
+        },
+        "updateError": {
+          "en": "update error",
+          "ru": "Ошибка обновления аккаунта",
+          "uk": "Помилка оновлення акаунту"
+        },
+        "updateSuccess": {
+          "en": "update success",
+          "ru": "Аккаунт успешно обновлен",
+          "uk": "Акаунт успішно оновлено"
+        }
+      },
+      "accountSettings": {
+        "en": "account settings",
+        "ru": "Настройки аккаунта",
+        "uk": "Налаштування акаунту"
+      },
+      "accountTypes": {
+        "basic": {
+          "en": "basic",
+          "ru": "Базовый",
+          "uk": "Базовий"
+        },
+        "business": {
+          "en": "business",
+          "ru": "Бизнес",
+          "uk": "Бізнес"
+        },
+        "premium": {
+          "en": "premium",
+          "ru": "Премиум",
+          "uk": "Преміум"
+        }
+      },
+      "address": {
+        "aboutRaw": {
+          "en": "profile.address.aboutRaw",
+          "ru": "profile.address.aboutRaw",
+          "uk": "profile.address.aboutRaw"
+        },
+        "aboutRawDesc": {
+          "coordinates": {
+            "en": "profile.address.aboutRawDesc.coordinates",
+            "ru": "profile.address.aboutRawDesc.coordinates",
+            "uk": "profile.address.aboutRawDesc.coordinates"
+          },
+          "geocoding": {
+            "en": "profile.address.aboutRawDesc.geocoding",
+            "ru": "profile.address.aboutRawDesc.geocoding",
+            "uk": "profile.address.aboutRawDesc.geocoding"
+          },
+          "placeId": {
+            "en": "profile.address.aboutRawDesc.placeId",
+            "ru": "profile.address.aboutRawDesc.placeId",
+            "uk": "profile.address.aboutRawDesc.placeId"
+          }
+        },
+        "add": {
+          "en": "add",
+          "ru": "Добавить адрес",
+          "uk": "Добавить адрес"
+        },
+        "addAddressDescription": {
+          "en": "Advertisement",
+          "ru": "Объявление",
+          "uk": "Оголошення"
+        },
+        "addressComponents": {
+          "en": "Advertisement",
+          "ru": "Объявление",
+          "uk": "Оголошення"
+        },
+        "addressDetails": {
+          "en": "address details",
+          "ru": "Детали адреса",
+          "uk": "Деталі адреси"
+        },
+        "addressHash": {
+          "en": "Advertisement",
+          "ru": "Объявление",
+          "uk": "Оголошення"
+        },
+        "addresses": {
+          "en": "Advertisement",
+          "ru": "Объявление",
+          "uk": "Оголошення"
+        },
+        "autoGenerated": {
+          "en": "profile.address.autoGenerated",
+          "ru": "profile.address.autoGenerated",
+          "uk": "profile.address.autoGenerated"
+        },
+        "autoRefresh": {
+          "en": "profile.address.autoRefresh",
+          "ru": "profile.address.autoRefresh",
+          "uk": "profile.address.autoRefresh"
+        },
+        "cancel": {
+          "en": "cancel",
+          "ru": "Отмена",
+          "uk": "Отмена"
+        },
+        "coordinates": {
+          "en": "coordinates",
+          "ru": "Координаты",
+          "uk": "Координати"
+        },
+        "delete": {
+          "en": "delete",
+          "ru": "Удалить",
+          "uk": "Видалити"
+        },
+        "edit": {
+          "en": "edit",
+          "ru": "Редактировать",
+          "uk": "Редагувати"
+        },
+        "formattedAddress": {
+          "en": "Advertisement",
+          "ru": "Объявление",
+          "uk": "Оголошення"
+        },
+        "geocoded": {
+          "en": "profile.address.geocoded",
+          "ru": "profile.address.geocoded",
+          "uk": "profile.address.geocoded"
+        },
+        "geocoding": {
+          "en": "profile.address.geocoding",
+          "ru": "profile.address.geocoding",
+          "uk": "profile.address.geocoding"
+        },
+        "geocodingError": {
+          "en": "Error",
+          "ru": "Ошибка",
+          "uk": "Помилка"
+        },
+        "googlePlaceId": {
+          "en": "google place id",
+          "ru": "Google Place ID",
+          "uk": "Google Place ID"
+        },
+        "helpText": {
+          "autoGeocode": {
+            "en": "profile.address.helpText.autoGeocode",
+            "ru": "profile.address.helpText.autoGeocode",
+            "uk": "profile.address.helpText.autoGeocode"
+          },
+          "selectRegion": {
+            "en": "select region",
+            "ru": "Select region first",
+            "uk": "Select region first"
+          }
+        },
+        "hideMap": {
+          "en": "profile.address.hideMap",
+          "ru": "profile.address.hideMap",
+          "uk": "profile.address.hideMap"
+        },
+        "input": {
+          "en": "profile.address.input",
+          "ru": "profile.address.input",
+          "uk": "profile.address.input"
+        },
+        "latin": {
+          "en": "profile.address.latin",
+          "ru": "profile.address.latin",
+          "uk": "profile.address.latin"
+        },
+        "liveSync": {
+          "en": "profile.address.liveSync",
+          "ru": "profile.address.liveSync",
+          "uk": "profile.address.liveSync"
+        },
+        "locality": {
+          "en": "locality",
+          "ru": "Населенный пункт",
+          "uk": "Населений пункт"
+        },
+        "localityPlaceholder": {
+          "en": "locality placeholder",
+          "ru": "Выберите населенный пункт",
+          "uk": "Select city"
+        },
+        "location": {
+          "en": "location",
+          "ru": "Местоположение",
+          "uk": "Місцезнаходження"
+        },
+        "noAddress": {
+          "en": "Advertisement",
+          "ru": "Объявление",
+          "uk": "Оголошення"
+        },
+        "noAddresses": {
+          "en": "No addresses",
+          "ru": "Нет адресов",
+          "uk": "Немає адрес"
+        },
+        "noCitiesFound": {
+          "en": "no cities found",
+          "ru": "Города не найдены",
+          "uk": "Города не найдены"
+        },
+        "noRegionsFound": {
+          "en": "no regions found",
+          "ru": "Регионы не найдены",
+          "uk": "Регионы не найдены"
+        },
+        "openInGoogleMaps": {
+          "en": "open in google maps",
+          "ru": "Открыть в Google Maps",
+          "uk": "Відкрити в Google Maps"
+        },
+        "pending": {
+          "en": "profile.address.pending",
+          "ru": "profile.address.pending",
+          "uk": "profile.address.pending"
+        },
+        "pendingGeocoding": {
+          "en": "profile.address.pendingGeocoding",
+          "ru": "profile.address.pendingGeocoding",
+          "uk": "profile.address.pendingGeocoding"
+        },
+        "placeId": {
+          "en": "profile.address.placeId",
+          "ru": "profile.address.placeId",
+          "uk": "profile.address.placeId"
+        },
+        "primary": {
+          "en": "Primary",
+          "ru": "Основной",
+          "uk": "Основна"
+        },
+        "region": {
+          "en": "region",
+          "ru": "Регион",
+          "uk": "Регіон"
+        },
+        "regionPlaceholder": {
+          "en": "region placeholder",
+          "ru": "Выберите регион",
+          "uk": "Select region"
+        },
+        "save": {
+          "en": "save",
+          "ru": "Сохранить",
+          "uk": "Сохранить"
+        },
+        "searchCity": {
+          "en": "search city",
+          "ru": "Поиск города...",
+          "uk": "Поиск города..."
+        },
+        "searchRegion": {
+          "en": "search region",
+          "ru": "Поиск региона...",
+          "uk": "Поиск региона..."
+        },
+        "selectRegionFirst": {
+          "en": "select region first",
+          "ru": "Сначала выберите регион",
+          "uk": "Сначала выберите регион"
+        },
+        "showMap": {
+          "en": "show map",
+          "ru": "Показать карту",
+          "uk": "Показати карту"
+        },
+        "standardized": {
+          "en": "profile.address.standardized",
+          "ru": "profile.address.standardized",
+          "uk": "profile.address.standardized"
+        },
+        "standardizedData": {
+          "en": "standardized data",
+          "ru": "Стандартизированные данные",
+          "uk": "Стандартизовані дані"
+        },
+        "standardizedLocality": {
+          "en": "standardized locality",
+          "ru": "Стандартизированный населенный пункт",
+          "uk": "Стандартизований населений пункт"
+        },
+        "standardizedRegion": {
+          "en": "standardized region",
+          "ru": "Стандартизированный регион",
+          "uk": "Стандартизований регіон"
+        },
+        "syncing": {
+          "en": "profile.address.syncing",
+          "ru": "profile.address.syncing",
+          "uk": "profile.address.syncing"
+        },
+        "thisAddress": {
+          "en": "This address",
+          "ru": "Этот адрес",
+          "uk": "Ця адреса"
+        },
+        "ukrainian": {
+          "en": "profile.address.ukrainian",
+          "ru": "profile.address.ukrainian",
+          "uk": "profile.address.ukrainian"
+        },
+        "updateSuccess": {
+          "en": "update success",
+          "ru": "Адрес успешно обновлен",
+          "uk": "Адресу успішно оновлено"
+        },
+        "userInput": {
+          "en": "user input",
+          "ru": "Пользовательский ввод",
+          "uk": "Користувацький ввід"
+        },
+        "verified": {
+          "en": "verified",
+          "ru": "Подтвержден",
+          "uk": "Підтверджено"
+        },
+        "yourAddress": {
+          "en": "your address",
+          "ru": "Ваш адрес",
+          "uk": "Ваша адреса"
+        }
+      },
+      "addresses": {
+        "en": "addresses",
+        "ru": "Адреса",
+        "uk": "Адреси"
+      },
+      "avatar": {
+        "cancel": {
+          "en": "cancel",
+          "ru": "Отмена",
+          "uk": "Скасувати"
+        },
+        "customPlaceholder": {
+          "en": "custom placeholder",
+          "ru": "Опишите дополнительные требования...",
+          "uk": "Опишіть ваші вимоги до аватара..."
+        },
+        "customRequirements": {
+          "en": "custom requirements",
+          "ru": "Дополнительные требования",
+          "uk": "Додаткові вимоги"
+        },
+        "failed": {
+          "en": "failed",
+          "ru": "Ошибка генерации аватара",
+          "uk": "Помилка генерації аватара"
+        },
+        "fileInfo": {
+          "en": "file info",
+          "ru": "Поддерживаемые форматы: JPG, PNG. Максимальный размер: 5MB",
+          "uk": "Інформація про файл"
+        },
+        "gender": {
+          "en": "gender",
+          "ru": "Пол",
+          "uk": "Стать"
+        },
+        "genders": {
+          "female": {
+            "en": "female",
+            "ru": "Женский",
+            "uk": "Жіночий"
+          },
+          "male": {
+            "en": "male",
+            "ru": "Мужской",
+            "uk": "Чоловічий"
+          },
+          "neutral": {
+            "en": "neutral",
+            "ru": "Нейтральный",
+            "uk": "Нейтральний"
+          }
+        },
+        "generate": {
+          "en": "generate",
+          "ru": "Сгенерировать ИИ аватар",
+          "uk": "Згенерувати ШІ аватар"
+        },
+        "generate_button": {
+          "en": "generate_button",
+          "ru": "Сгенерировать",
+          "uk": "Згенерувати аватар"
+        },
+        "generating": {
+          "en": "generating",
+          "ru": "Генерация...",
+          "uk": "Генерація..."
+        },
+        "saveWarning": {
+          "en": "Save",
+          "ru": "Сохранить",
+          "uk": "Зберегти"
+        },
+        "selectGender": {
+          "en": "select gender",
+          "ru": "Выберите пол",
+          "uk": "Оберіть стать"
+        },
+        "selectStyle": {
+          "en": "select style",
+          "ru": "Выберите стиль",
+          "uk": "Оберіть стиль"
+        },
+        "style": {
+          "en": "style",
+          "ru": "Стиль",
+          "uk": "Стиль"
+        },
+        "styles": {
+          "anime": {
+            "en": "anime",
+            "ru": "Аниме",
+            "uk": "Аніме"
+          },
+          "artistic": {
+            "en": "artistic",
+            "ru": "Художественный",
+            "uk": "Художній"
+          },
+          "caricature": {
+            "en": "caricature",
+            "ru": "Карикатура",
+            "uk": "Карикатура"
+          },
+          "cartoon": {
+            "en": "cartoon",
+            "ru": "Мультяшный",
+            "uk": "Мультяшний"
+          },
+          "professional": {
+            "en": "professional",
+            "ru": "Профессиональный",
+            "uk": "Професійний"
+          },
+          "realistic": {
+            "en": "realistic",
+            "ru": "Реалистичный",
+            "uk": "Реалістичний"
+          }
+        },
+        "success": {
+          "en": "success",
+          "ru": "Аватар успешно сгенерирован",
+          "uk": "Аватар успішно згенеровано"
+        },
+        "title": {
+          "en": "title",
+          "ru": "Настройки аватара",
+          "uk": "Налаштування аватара"
+        },
+        "upload": {
+          "en": "upload",
+          "ru": "Загрузить аватар",
+          "uk": "Завантажити аватар"
+        }
+      },
+      "contact": {
+        "add": {
+          "en": "add",
+          "ru": "Добавить контакт",
+          "uk": "Додати контакт"
+        },
+        "addFirst": {
+          "en": "add first",
+          "ru": "Добавьте свой первый контакт для начала",
+          "uk": "Додайте свій перший контакт для початку"
+        },
+        "deleteError": {
+          "en": "Delete error",
+          "ru": "Ошибка",
+          "uk": "Помилка"
+        },
+        "deleteSuccess": {
+          "en": "Deleted successfully",
+          "ru": "Удалено успешно",
+          "uk": "Видалено успішно"
+        },
+        "edit": {
+          "en": "Edit",
+          "ru": "Редактировать",
+          "uk": "Редагувати"
+        },
+        "email": {
+          "en": "email",
+          "ru": "Email",
+          "uk": "Email"
+        },
+        "list": {
+          "en": "list",
+          "ru": "Список контактов",
+          "uk": "Список контактів"
+        },
+        "noContacts": {
+          "en": "no contacts",
+          "ru": "Контакты еще не добавлены",
+          "uk": "Контакти ще не додані"
+        },
+        "phone": {
+          "en": "phone",
+          "ru": "Телефон",
+          "uk": "Телефон"
+        },
+        "primary": {
+          "en": "primary",
+          "ru": "Основной",
+          "uk": "Основний"
+        },
+        "selectType": {
+          "en": "select type",
+          "ru": "Выберите тип контакта",
+          "uk": "Оберіть тип контакту"
+        },
+        "telegram": {
+          "en": "telegram",
+          "ru": "Telegram",
+          "uk": "Telegram"
+        },
+        "thisContact": {
+          "en": "This contact",
+          "ru": "Этот контакт",
+          "uk": "Цей контакт"
+        },
+        "type": {
+          "en": "type",
+          "ru": "Тип контакта",
+          "uk": "Тип контакту"
+        },
+        "update": {
+          "en": "Update",
+          "ru": "Обновить",
+          "uk": "Оновити"
+        },
+        "value": {
+          "en": "value",
+          "ru": "Значение контакта",
+          "uk": "Значення контакту"
+        },
+        "valuePlaceholder": {
+          "en": "value placeholder",
+          "ru": "Введите значение контакта",
+          "uk": "Введіть значення контакту"
+        },
+        "verified": {
+          "en": "verified",
+          "ru": "Подтвержден",
+          "uk": "Підтверджено"
+        },
+        "viber": {
+          "en": "viber",
+          "ru": "Viber",
+          "uk": "Viber"
+        },
+        "whatsapp": {
+          "en": "whatsapp",
+          "ru": "WhatsApp",
+          "uk": "WhatsApp"
+        }
+      },
+      "contacts": {
+        "en": "contacts",
+        "ru": "Контакты",
+        "uk": "Контакти"
+      },
+      "form": {
+        "age": {
+          "en": "age",
+          "ru": "Возраст",
+          "uk": "Вік"
+        },
+        "agePlaceholder": {
+          "en": "age placeholder",
+          "ru": "Введите возраст",
+          "uk": "Введите возраст"
+        },
+        "email": {
+          "en": "email",
+          "ru": "Email",
+          "uk": "Email"
+        },
+        "emailNote": {
+          "en": "email note",
+          "ru": "Email нельзя изменить",
+          "uk": "Примітка до email"
+        },
+        "firstName": {
+          "en": "first name",
+          "ru": "Имя",
+          "uk": "Ім'я"
+        },
+        "firstNamePlaceholder": {
+          "en": "first name placeholder",
+          "ru": "Введите имя",
+          "uk": "Введите имя"
+        },
+        "lastName": {
+          "en": "last name",
+          "ru": "Фамилия",
+          "uk": "Прізвище"
+        },
+        "lastNamePlaceholder": {
+          "en": "last name placeholder",
+          "ru": "Введите фамилию",
+          "uk": "Введите фамилию"
+        },
+        "save": {
+          "en": "save",
+          "ru": "Сохранить",
+          "uk": "Зберегти"
+        },
+        "saving": {
+          "en": "saving",
+          "ru": "Сохранение...",
+          "uk": "Сохранение..."
+        },
+        "updateError": {
+          "en": "update error",
+          "ru": "Ошибка обновления профиля",
+          "uk": "Помилка оновлення профілю"
+        },
+        "updateSuccess": {
+          "en": "update success",
+          "ru": "Профиль успешно обновлен",
+          "uk": "Профіль успішно оновлено"
+        }
+      },
+      "moderationLevels": {
+        "auto": {
+          "en": "auto",
+          "ru": "Автоматический",
+          "uk": "Автоматичний"
+        },
+        "manual": {
+          "en": "manual",
+          "ru": "Ручной",
+          "uk": "Ручний"
+        },
+        "strict": {
+          "en": "strict",
+          "ru": "Строгий",
+          "uk": "Суворий"
+        }
+      },
+      "personalInfo": {
+        "en": "personal info",
+        "ru": "Личная информация",
+        "uk": "Особиста інформація"
+      },
+      "roles": {
+        "buyer": {
+          "en": "buyer",
+          "ru": "Покупатель",
+          "uk": "Покупець"
+        },
+        "dealer": {
+          "en": "dealer",
+          "ru": "Дилер",
+          "uk": "Дилер"
+        },
+        "seller": {
+          "en": "seller",
+          "ru": "Продавец",
+          "uk": "Продавець"
+        }
+      },
+      "saving": {
+        "en": "saving",
+        "ru": "Сохранение...",
+        "uk": "Сохранение..."
+      },
+      "title": {
+        "en": "title",
+        "ru": "Профиль пользователя",
+        "uk": "Профіль користувача"
+      }
+    },
+    "profile.avatar.failed": {
+      "en": "Avatar upload failed",
+      "ru": "Не удалось загрузить аватар",
+      "uk": "Не вдалося завантажити аватар"
+    },
+    "profile.avatar.saveWarning": {
+      "en": "Save changes before uploading avatar",
+      "ru": "Сохраните изменения перед загрузкой аватара",
+      "uk": "Збережіть зміни перед завантаженням аватара"
+    },
+    "rearDrive": {
+      "en": "rearDrive",
+      "ru": "rearDrive",
+      "uk": "rearDrive"
+    },
+    "recommendations": {
+      "en": "recommendations",
+      "ru": "recommendations",
+      "uk": "recommendations"
+    },
+    "region": {
+      "en": "region",
+      "ru": "Регион",
+      "uk": "Регіон"
+    },
+    "regionAverage": {
+      "en": "regionAverage",
+      "ru": "regionAverage",
+      "uk": "regionAverage"
+    },
+    "region_id": {
+      "en": "region_id",
+      "ru": "region_id",
+      "uk": "region_id"
+    },
+    "registration": {
+      "button": {
+        "register": {
+          "en": "Register",
+          "ru": "Зарегистрироваться",
+          "uk": "Зареєструватися"
+        },
+        "reset": {
+          "en": "Reset",
+          "ru": "Сбросить",
+          "uk": "Скинути"
+        }
+      },
+      "fields": {
+        "confirmPassword": {
+          "en": "Confirm Password",
+          "ru": "Подтвердите пароль",
+          "uk": "Підтвердьте пароль"
+        },
+        "email": {
+          "en": "Email",
+          "ru": "Электронная почта",
+          "uk": "Електронна пошта"
+        },
+        "password": {
+          "en": "Password",
+          "ru": "Пароль",
+          "uk": "Пароль"
+        }
+      },
+      "login": {
+        "en": "Login",
+        "ru": "Войти",
+        "uk": "Увійти"
+      },
+      "title": {
+        "en": "Register",
+        "ru": "Регистрация",
+        "uk": "Реєстрація"
+      }
+    },
+    "required": {
+      "en": "required",
+      "ru": "Обязательно",
+      "uk": "Обов'язково"
+    },
+    "returnUrl": {
+      "en": "returnUrl",
+      "ru": "returnUrl",
+      "uk": "returnUrl"
+    },
+    "rightSteering": {
+      "en": "rightSteering",
+      "ru": "rightSteering",
+      "uk": "rightSteering"
+    },
+    "saveContacts": {
+      "en": "Save contacts",
+      "ru": "Сохранить контакты",
+      "uk": "Зберегти контакти"
+    },
+    "scroll-chat-to-bottom": {
+      "en": "scroll-chat-to-bottom",
+      "ru": "scroll-chat-to-bottom",
+      "uk": "scroll-chat-to-bottom"
+    },
+    "search": {
+      "en": "Search",
+      "ru": "Поиск",
+      "toast": {
+        "adDeleted": {
+          "en": "Ad deleted",
+          "ru": "ru.search.toast.adDeleted",
+          "uk": "uk.search.toast.adDeleted"
+        },
+        "adDeletedDescription": {
+          "en": "Ad deleted description",
+          "ru": "ru.search.toast.adDeletedDescription",
+          "uk": "uk.search.toast.adDeletedDescription"
+        },
+        "deleteError": {
+          "en": "Delete error",
+          "ru": "ru.search.toast.deleteError",
+          "uk": "uk.search.toast.deleteError"
+        },
+        "deleteErrorDescription": {
+          "en": "Delete error description",
+          "ru": "ru.search.toast.deleteErrorDescription",
+          "uk": "uk.search.toast.deleteErrorDescription"
+        },
+        "favoriteToggleError": {
+          "en": "Favorite toggle error",
+          "ru": "ru.search.toast.favoriteToggleError",
+          "uk": "uk.search.toast.favoriteToggleError"
+        },
+        "favoriteToggleErrorDescription": {
+          "en": "Favorite toggle error description",
+          "ru": "ru.search.toast.favoriteToggleErrorDescription",
+          "uk": "uk.search.toast.favoriteToggleErrorDescription"
+        },
+        "loginRequired": {
+          "en": "Login required",
+          "ru": "ru.search.toast.loginRequired",
+          "uk": "uk.search.toast.loginRequired"
+        },
+        "loginRequiredDelete": {
+          "en": "Login required delete",
+          "ru": "ru.search.toast.loginRequiredDelete",
+          "uk": "uk.search.toast.loginRequiredDelete"
+        },
+        "loginRequiredDeleteDescription": {
+          "en": "Login required delete description",
+          "ru": "ru.search.toast.loginRequiredDeleteDescription",
+          "uk": "uk.search.toast.loginRequiredDeleteDescription"
+        },
+        "loginRequiredDescription": {
+          "en": "Login required description",
+          "ru": "ru.search.toast.loginRequiredDescription",
+          "uk": "uk.search.toast.loginRequiredDescription"
+        },
+        "noAccess": {
+          "en": "No access",
+          "ru": "ru.search.toast.noAccess",
+          "uk": "uk.search.toast.noAccess"
+        },
+        "noAccessDescription": {
+          "en": "No access description",
+          "ru": "ru.search.toast.noAccessDescription",
+          "uk": "uk.search.toast.noAccessDescription"
+        }
+      },
+      "uk": "Пошук"
+    },
+    "searchAutoApplyNotice": {
+      "en": "Search auto apply notice",
+      "ru": "Поиск",
+      "uk": "Пошук"
+    },
+    "searchCity": {
+      "en": "Search city",
+      "ru": "Поиск",
+      "uk": "Пошук"
+    },
+    "searchDesc": {
+      "en": "search desc",
+      "ru": "Найдите свой идеальный автомобиль",
+      "uk": "Знайдіть свій ідеальний автомобіль"
+    },
+    "searchFilters": {
+      "en": "Search filters",
+      "ru": "Фильтры поиска",
+      "uk": "Фільтри пошуку"
+    },
+    "searchRegion": {
+      "en": "Search region",
+      "ru": "Поиск",
+      "uk": "Пошук"
+    },
+    "searchResults": {
+      "en": "Search results",
+      "ru": "Результаты поиска",
+      "uk": "Результати пошуку"
+    },
+    "searchTitle": {
+      "en": "search title",
+      "ru": "Поиск",
+      "uk": "Пошук"
+    },
+    "seatsDescription": {
+      "en": "Description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "seed": {
+      "en": "seed",
+      "ru": "seed",
+      "uk": "seed"
+    },
+    "selectBodyType": {
+      "en": "select body type",
+      "ru": "Выберите тип кузова",
+      "uk": "Оберіть тип кузова"
+    },
+    "selectBrand": {
+      "en": "select brand",
+      "ru": "Выберите марку",
+      "uk": "Оберіть марку"
+    },
+    "selectBrandFirst": {
+      "en": "select brand first",
+      "ru": "Сначала выберите марку",
+      "uk": "Спочатку оберіть марку"
+    },
+    "selectCity": {
+      "en": "select city",
+      "ru": "Выберите город",
+      "uk": "Оберіть місто"
+    },
+    "selectColor": {
+      "en": "select color",
+      "ru": "Выберите цвет",
+      "uk": "Оберіть колір"
+    },
+    "selectCondition": {
+      "en": "select condition",
+      "ru": "Выберите состояние",
+      "uk": "Оберіть стан"
+    },
+    "selectCurrency": {
+      "en": "select currency",
+      "ru": "Выберите валюту",
+      "uk": "Оберіть валюту"
+    },
+    "selectDoors": {
+      "en": "selectDoors",
+      "ru": "selectDoors",
+      "uk": "selectDoors"
+    },
+    "selectDriveType": {
+      "en": "selectDriveType",
+      "ru": "selectDriveType",
+      "uk": "selectDriveType"
+    },
+    "selectExchangeStatus": {
+      "en": "selectExchangeStatus",
+      "ru": "selectExchangeStatus",
+      "uk": "selectExchangeStatus"
+    },
+    "selectFuelType": {
+      "en": "select fuel type",
+      "ru": "Выберите тип топлива",
+      "uk": "Оберіть тип палива"
+    },
+    "selectModel": {
+      "en": "select model",
+      "ru": "Выберите модель",
+      "uk": "Оберіть модель"
+    },
+    "selectRegion": {
+      "en": "select region",
+      "ru": "Выберите регион",
+      "uk": "Оберіть регіон"
+    },
+    "selectRegionFirst": {
+      "en": "select region first",
+      "ru": "Сначала выберите регион",
+      "uk": "Спочатку оберіть регіон"
+    },
+    "selectSellerType": {
+      "en": "selectSellerType",
+      "ru": "selectSellerType",
+      "uk": "selectSellerType"
+    },
+    "selectSteeringWheel": {
+      "en": "selectSteeringWheel",
+      "ru": "selectSteeringWheel",
+      "uk": "selectSteeringWheel"
+    },
+    "selectTransmission": {
+      "en": "select transmission",
+      "ru": "Выберите коробку передач",
+      "uk": "Оберіть коробку передач"
+    },
+    "selectVehicleType": {
+      "en": "select vehicle type",
+      "ru": "Выберите тип транспорта",
+      "uk": "Оберіть тип транспорту"
+    },
+    "selectVehicleTypeFirst": {
+      "en": "select vehicle type first",
+      "ru": "Сначала выберите тип транспорта",
+      "uk": "Спочатку оберіть тип транспорту"
+    },
+    "sellerType": {
+      "en": "sellerType",
+      "ru": "sellerType",
+      "uk": "sellerType"
+    },
+    "sellerTypeDescription": {
+      "en": "Description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "session_token": {
+      "en": "session_token",
+      "ru": "session_token",
+      "uk": "session_token"
+    },
+    "skip": {
+      "en": "skip",
+      "ru": "skip",
+      "uk": "skip"
+    },
+    "statisticsAfterPublication": {
+      "en": "Statistics",
+      "ru": "Статистика",
+      "uk": "Статистика"
+    },
+    "statisticsUnavailable": {
+      "en": "statistics unavailable",
+      "ru": "Статистика недоступна",
+      "uk": "Статистика недоступна"
+    },
+    "statisticsUnavailableDesc": {
+      "en": "statistics unavailable desc",
+      "ru": "Требуется премиум подписка для просмотра детальной статистики",
+      "uk": "Потрібна преміум підписка для перегляду детальної статистики"
+    },
+    "steeringWheel": {
+      "en": "steeringWheel",
+      "ru": "steeringWheel",
+      "uk": "steeringWheel"
+    },
+    "steeringWheelDescription": {
+      "en": "Description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "telegram": {
+      "en": "telegram",
+      "ru": "Telegram",
+      "uk": "Telegram"
+    },
+    "text": {
+      "en": "text",
+      "ru": "text",
+      "uk": "text"
+    },
+    "thisMonth": {
+      "en": "this month",
+      "ru": "В этом месяце",
+      "uk": "У цьому місяці"
+    },
+    "thisWeek": {
+      "en": "this week",
+      "ru": "На этой неделе",
+      "uk": "На цьому тижні"
+    },
+    "tip": {
+      "en": "tip",
+      "ru": "Совет",
+      "uk": "Порада"
+    },
+    "title": {
+      "en": "title",
+      "ru": "Заголовок",
+      "uk": "Заголовок"
+    },
+    "titleDescription": {
+      "en": "title description",
+      "ru": "Введите четкий и описательный заголовок",
+      "uk": "Введіть чіткий та описовий заголовок"
+    },
+    "toast": {
+      "error": {
+        "en": "Error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "info": {
+        "en": "Info",
+        "ru": "Информация",
+        "uk": "Інформація"
+      },
+      "success": {
+        "en": "Success",
+        "ru": "Успешно",
+        "uk": "Успішно"
+      },
+      "warning": {
+        "en": "Warning",
+        "ru": "Предупреждение",
+        "uk": "Попередження"
+      }
+    },
+    "today": {
+      "en": "today",
+      "ru": "Сегодня",
+      "uk": "Сьогодні"
+    },
+    "totalViews": {
+      "en": "total views",
+      "ru": "Всего просмотров",
+      "uk": "Всього переглядів"
+    },
+    "transmission": {
+      "en": "transmission",
+      "ru": "Коробка передач",
+      "uk": "Коробка передач"
+    },
+    "transmissions": {
+      "automatic": {
+        "en": "Automatic",
+        "ru": "Автомат",
+        "uk": "Автомат"
+      },
+      "cvt": {
+        "en": "CVT",
+        "ru": "Вариатор",
+        "uk": "Варіатор"
+      },
+      "manual": {
+        "en": "Manual",
+        "ru": "Механика",
+        "uk": "Механіка"
+      },
+      "robot": {
+        "en": "Robot",
+        "ru": "Робот",
+        "uk": "Робот"
+      }
+    },
+    "tryUpdatePhotosOrDescription": {
+      "en": "Update",
+      "ru": "Обновить",
+      "uk": "Оновити"
+    },
+    "uah": {
+      "en": "uah",
+      "ru": "Украинская гривна",
+      "uk": "Українська гривня"
+    },
+    "uk-UA": {
+      "en": "uk-UA",
+      "ru": "uk-UA",
+      "uk": "uk-UA"
+    },
+    "ukraineAverage": {
+      "en": "ukraineAverage",
+      "ru": "ukraineAverage",
+      "uk": "ukraineAverage"
+    },
+    "unlimitedAds": {
+      "en": "unlimited ads",
+      "ru": "Неограниченные объявления",
+      "uk": "Необмежені оголошення"
+    },
+    "upgradeToPremium": {
+      "en": "upgrade to premium",
+      "ru": "Обновить до Премиум",
+      "uk": "Оновити до Преміум"
+    },
+    "urgentSale": {
+      "en": "urgentSale",
+      "ru": "urgentSale",
+      "uk": "urgentSale"
+    },
+    "urgentSaleDescription": {
+      "en": "Description",
+      "ru": "Описание",
+      "uk": "Опис"
+    },
+    "usd": {
+      "en": "usd",
+      "ru": "Доллар США",
+      "uk": "Долар США"
+    },
+    "userSelector": {
+      "error": {
+        "en": "Error",
+        "ru": "Ошибка",
+        "uk": "Помилка"
+      },
+      "loading": {
+        "en": "Loading...",
+        "ru": "Загрузка...",
+        "uk": "Завантаження..."
+      },
+      "placeholder": {
+        "en": "Select user",
+        "ru": "Выберите пользователя",
+        "uk": "Оберіть користувача"
+      }
+    },
+    "validating": {
+      "en": "validating",
+      "ru": "Проверка",
+      "uk": "Перевірка"
+    },
+    "validation": {
+      "attemptsLeft": {
+        "en": "attempts left",
+        "ru": "попыток редактирования",
+        "uk": "спроб редагування"
+      },
+      "autoModeration": {
+        "en": "auto moderation",
+        "ru": "Автоматическая модерация",
+        "uk": "Автоматична модерація"
+      },
+      "checkNow": {
+        "en": "check now",
+        "ru": "Проверить сейчас",
+        "uk": "Перевірити зараз"
+      },
+      "checkPlatformCompliance": {
+        "en": "check platform compliance",
+        "ru": "Проверка соответствия платформе",
+        "uk": "Перевірка відповідності платформі"
+      },
+      "checkProfanity": {
+        "en": "check profanity",
+        "ru": "Проверка на нецензурную лексику",
+        "uk": "Перевірка на нецензурну лексику"
+      },
+      "checkSuspiciousContent": {
+        "en": "check suspicious content",
+        "ru": "Проверка на подозрительный контент",
+        "uk": "Перевірка на підозрілий контент"
+      },
+      "confirmPassword": {
+        "mustMatch": {
+          "en": "Passwords must match",
+          "ru": "Пароли должны совпадать",
+          "uk": "Паролі повинні співпадати"
+        },
+        "required": {
+          "en": "Password confirmation is required",
+          "ru": "Подтверждение пароля обязательно",
+          "uk": "Підтвердження пароля обов'язкове"
+        }
+      },
+      "email": {
+        "invalid": {
+          "en": "Invalid email format",
+          "ru": "Неверный формат email",
+          "uk": "Невірний формат email"
+        },
+        "required": {
+          "en": "Email is required",
+          "ru": "Email обязателен",
+          "uk": "Email обов'язковий"
+        }
+      },
+      "password": {
+        "minLength": {
+          "en": "Password must be at least 8 characters",
+          "ru": "Пароль должен содержать минимум 8 символов",
+          "uk": "Пароль повинен містити мінімум 8 символів"
+        },
+        "required": {
+          "en": "Password is required",
+          "ru": "Пароль обязателен",
+          "uk": "Пароль обов'язковий"
+        }
+      },
+      "passwordsDoNotMatch": {
+        "en": "Passwords do not match",
+        "ru": "Пароли не совпадают",
+        "uk": "Паролі не співпадають"
+      },
+      "yourAdWillBeChecked": {
+        "en": "your ad will be checked",
+        "ru": "Ваше объявление будет проверено",
+        "uk": "Ваше оголошення буде перевірено"
+      }
+    },
+    "validationDemo": {
+      "buttons": {
+        "editAndValidate": {
+          "en": "edit and validate",
+          "ru": "Редактировать и валидировать",
+          "uk": "Редагувати та валідувати"
+        },
+        "quickValidation": {
+          "en": "quick validation",
+          "ru": "Быстрая валидация",
+          "uk": "Швидка валідація"
+        }
+      },
+      "scenarios": {
+        "correctAd": {
+          "description": {
+            "en": "description",
+            "ru": "Пример хорошего объявления без нарушений",
+            "uk": "Приклад хорошого оголошення без порушень"
+          },
+          "title": {
+            "en": "title",
+            "ru": "Корректное объявление",
+            "uk": "Коректне оголошення"
+          }
+        },
+        "nonAutomotive": {
+          "description": {
+            "en": "description",
+            "ru": "Тест обнаружения контента не связанного с продажей авто",
+            "uk": "Тест виявлення контенту не пов'язаного з продажем авто"
+          },
+          "title": {
+            "en": "title",
+            "ru": "Не автомобильная тематика",
+            "uk": "Не автомобільна тематика"
+          }
+        },
+        "profanityRussian": {
+          "description": {
+            "en": "description",
+            "ru": "Тест обнаружения мата на русском языке",
+            "uk": "Тест виявлення мату російською мовою"
+          },
+          "title": {
+            "en": "title",
+            "ru": "Нецензурная лексика (русский)",
+            "uk": "Нецензурна лексика (російська)"
+          }
+        },
+        "profanityTranslit": {
+          "description": {
+            "en": "description",
+            "ru": "Тест обнаружения замаскированного мата",
+            "uk": "Тест виявлення замаскованого мату"
+          },
+          "title": {
+            "en": "title",
+            "ru": "Мат в транслитерации",
+            "uk": "Мат у транслітерації"
+          }
+        },
+        "spamAdvertising": {
+          "description": {
+            "en": "description",
+            "ru": "Тест обнаружения спама и рекламного контента",
+            "uk": "Тест виявлення спаму та рекламного контенту"
+          },
+          "title": {
+            "en": "title",
+            "ru": "Спам и реклама",
+            "uk": "Спам і реклама"
+          }
+        }
+      },
+      "status": {
+        "approved": {
+          "en": "approved",
+          "ru": "Одобрено",
+          "uk": "Схвалено"
+        },
+        "needsReview": {
+          "en": "needs review",
+          "ru": "Требует проверки",
+          "uk": "Потребує перевірки"
+        },
+        "rejected": {
+          "en": "rejected",
+          "ru": "Отклонено",
+          "uk": "Відхилено"
+        }
+      },
+      "subtitle": {
+        "en": "subtitle",
+        "ru": "Выберите сценарий для тестирования различных типов контента",
+        "uk": "Оберіть сценарій для тестування різних типів контенту"
+      },
+      "title": {
+        "en": "title",
+        "ru": "Демонстрация системы валидации контента",
+        "uk": "Демонстрація системи валідації контенту"
+      }
+    },
+    "vehicleType": {
+      "en": "vehicle type",
+      "ru": "Тип транспорта",
+      "uk": "Тип транспорту"
+    },
+    "viber": {
+      "en": "viber",
+      "ru": "Viber",
+      "uk": "Viber"
+    },
+    "viewsToday": {
+      "en": "viewsToday",
+      "ru": "viewsToday",
+      "uk": "viewsToday"
+    },
+    "vinCode": {
+      "en": "vin code",
+      "ru": "VIN код",
+      "uk": "VIN код"
+    },
+    "vinDescription": {
+      "en": "vin description",
+      "ru": "17-значный идентификационный номер автомобиля",
+      "uk": "17-значний ідентифікаційний номер автомобіля"
+    },
+    "website": {
+      "en": "website",
+      "ru": "Веб-сайт",
+      "uk": "Веб-сайт"
+    },
+    "whatsapp": {
+      "en": "whatsapp",
+      "ru": "WhatsApp",
+      "uk": "WhatsApp"
+    },
+    "year": {
+      "en": "year",
+      "ru": "Год",
+      "uk": "Рік"
+    },
+    "year_from": {
+      "en": "Year",
+      "ru": "Год",
+      "uk": "Рік"
+    },
+    "yourPosition": {
+      "en": "your position",
+      "ru": "Ваша позиция: ",
+      "uk": "Ваша позиція: "
+    },
+    "yourPrice": {
+      "en": "your price",
+      "ru": "Ваша цена",
+      "uk": "Ваша ціна"
+    },
+    "yourPriceDesc": {
+      "en": "Price",
+      "ru": "Цена",
+      "uk": "Ціна"
+    }
+  }
+}
