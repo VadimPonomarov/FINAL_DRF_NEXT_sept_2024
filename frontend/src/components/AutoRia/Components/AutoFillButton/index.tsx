@@ -3,21 +3,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
-import { 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Zap,
-  CheckCircle,
-  AlertCircle,
-  Info
-} from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { User, Phone, Mail, MapPin, Zap, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { useAutoRiaFormPrefill } from '@/modules/autoria/shared/hooks/useAutoRiaFormPrefill';
 import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
@@ -40,7 +27,7 @@ const AutoFillButton: React.FC<AutoFillButtonProps> = ({
   const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  
+
   const {
     isAutoFillAvailable,
     getAutoFillSummary,
@@ -49,7 +36,6 @@ const AutoFillButton: React.FC<AutoFillButtonProps> = ({
     isAuthenticated
   } = useAutoRiaFormPrefill();
 
-  // Если пользователь не аутентифицирован или нет данных
   if (!isAuthenticated || !isAutoFillAvailable()) {
     return null;
   }
@@ -58,18 +44,14 @@ const AutoFillButton: React.FC<AutoFillButtonProps> = ({
 
   const handleAutoFill = async (options: { overwriteExisting?: boolean } = {}) => {
     setIsApplying(true);
-    
+
     try {
-      console.log('[AutoFillButton] 🔄 Applying auto-fill...');
-      
       const updatedData = applyAutoFill(currentFormData, {
         overwriteExisting: options.overwriteExisting || false
       });
-      
+
       onAutoFill(updatedData);
       setIsOpen(false);
-      
-      console.log('[AutoFillButton] ✅ Auto-fill applied successfully');
     } catch (error) {
       console.error('[AutoFillButton] ❌ Auto-fill failed:', error);
     } finally {
@@ -117,9 +99,9 @@ const AutoFillButton: React.FC<AutoFillButtonProps> = ({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button 
-          variant={variant} 
-          size={size} 
+        <Button
+          variant={variant}
+          size={size}
           className={className}
           disabled={isApplying}
         >
@@ -130,7 +112,7 @@ const AutoFillButton: React.FC<AutoFillButtonProps> = ({
           </Badge>
         </Button>
       </PopoverTrigger>
-      
+
       <PopoverContent className="w-80" align="start">
         <div className="space-y-4">
           <div className="space-y-2">
@@ -140,7 +122,6 @@ const AutoFillButton: React.FC<AutoFillButtonProps> = ({
             </p>
           </div>
 
-          {/* Доступні поля */}
           <div className="space-y-2">
             <div className="text-sm font-medium">Доступні дані ({summary.totalFields}):</div>
             <div className="grid grid-cols-1 gap-1">
@@ -153,7 +134,6 @@ const AutoFillButton: React.FC<AutoFillButtonProps> = ({
             </div>
           </div>
 
-          {/* Статус данных */}
           <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center gap-1">
               {summary.hasProfile ? (
@@ -181,10 +161,9 @@ const AutoFillButton: React.FC<AutoFillButtonProps> = ({
             </div>
           </div>
 
-          {/* Кнопки действий */}
           <div className="flex flex-col gap-2">
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={() => handleAutoFill({ overwriteExisting: false })}
               disabled={isApplying}
               className="w-full"
@@ -201,9 +180,9 @@ const AutoFillButton: React.FC<AutoFillButtonProps> = ({
                 </>
               )}
             </Button>
-            
-            <Button 
-              size="sm" 
+
+            <Button
+              size="sm"
               variant="outline"
               onClick={() => handleAutoFill({ overwriteExisting: true })}
               disabled={isApplying}

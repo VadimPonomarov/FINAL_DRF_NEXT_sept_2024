@@ -1,41 +1,28 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Car,
   Image as ImageIcon,
   MapPin,
   DollarSign,
   FileText,
-  Settings,
-  CheckCircle,
-  AlertCircle,
-  AlertTriangle,
-  Info,
   ArrowLeft,
-  ArrowRight,
   Save,
-  BarChart3,
-  Shield,
   Phone
 } from 'lucide-react';
-import Link from 'next/link';
 
 // Импорт компонентов форм для каждого таба
 import BasicInfoForm from '@/components/AutoRia/Forms/BasicInfoForm';
 import CarSpecsForm from '@/components/AutoRia/Forms/CarSpecsForm';
 import PricingForm from '@/components/AutoRia/Forms/PricingForm';
 import LocationForm from '@/components/AutoRia/Forms/LocationForm';
-import MetadataForm from '@/components/AutoRia/Forms/MetadataForm';
-import ImagesForm from '@/components/AutoRia/Forms/ImagesForm';
+import { ImagesForm } from '@/components/AutoRia/Forms/ImagesForm';
 import ContactForm from '@/components/AutoRia/Forms/ContactForm';
-import PreviewForm from '@/components/AutoRia/Forms/PreviewForm';
 
 import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';

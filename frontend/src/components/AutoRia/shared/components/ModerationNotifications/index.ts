@@ -1,2 +1,2 @@
-﻿// Re-export from modularized location
+// Barrel file for ModerationNotifications
 export { default } from './ModerationNotifications';

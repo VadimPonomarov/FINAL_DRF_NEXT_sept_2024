@@ -107,9 +107,12 @@ const AutoRiaUserBadge: React.FC = () => {
       }
 
       // Короткая пауза для отображения тоста и редирект на /login
-      const callbackUrl = '/login?message=' + encodeURIComponent(t('auth.tokensClearedPleaseLogin'));
+      const params = new URLSearchParams();
+      params.set('error', 'backend_auth_required');
+      params.set('message', t('auth.tokensClearedPleaseLogin'));
+      const loginUrl = `/login?${params.toString()}`;
       setTimeout(() => {
-        router.push(callbackUrl);
+        router.push(loginUrl);
       }, 400);
     } catch (error) {
       console.error('[AutoRiaUserBadge] Error during logout:', error);

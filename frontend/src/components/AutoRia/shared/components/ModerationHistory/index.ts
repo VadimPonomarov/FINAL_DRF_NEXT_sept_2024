@@ -1,2 +1,2 @@
-﻿// Re-export from modularized location
+// Barrel file for ModerationHistory
 export { default } from './ModerationHistory';

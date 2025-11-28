@@ -19,7 +19,7 @@ import {
 import Link from 'next/link';
 import { useI18n } from '@/contexts/I18nContext';
 import AccountTypeManager from '@/components/AutoRia/AccountTypeManager';
-import TestAdsGenerationModal from '@/components/AutoRia/Components/TestAdsGenerationModal';
+import TestAdsGenerationModal from '@/modules/autoria/shared/components/TestAdsGenerationModal';
 import PlatformStatsWidget from '@/components/AutoRia/Statistics/PlatformStatsWidget';
 import { useAutoRiaMainPageState } from '@/modules/autoria/main/useAutoRiaMainPageState';
 

@@ -40,7 +40,7 @@ import { generateFullMockData } from '@/modules/autoria/shared/utils/mockData';
 import SimpleCarSpecsForm from '@/components/AutoRia/Forms/SimpleCarSpecsForm';
 import SimpleLocationForm from '@/components/AutoRia/Forms/SimpleLocationForm';
 import AdContactsForm from '@/components/AutoRia/Forms/AdContactsForm';
-import ImagesForm from '@/components/AutoRia/Forms/ImagesForm';
+import { ImagesForm } from '@/components/AutoRia/Forms/ImagesForm';
 import ModernBasicInfoForm from '@/components/AutoRia/Forms/ModernBasicInfoForm';
 import AdditionalInfoForm from '@/components/AutoRia/Forms/AdditionalInfoForm';
 
