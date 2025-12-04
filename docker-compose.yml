@@ -54,6 +54,8 @@ services:
       - ./env-config/.env.base       # Base configuration
       - ./env-config/.env.secrets    # Secrets
       - ./env-config/.env.docker     # Docker overrides
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
     volumes:
@@ -144,11 +146,11 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       FROM_EMAIL: ${FROM_EMAIL:-noreply@example.com}
       # Push notifications
-      FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
+      # FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
       # SMS configuration
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+      # TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      # TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      # TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
     env_file:
       - ./env-config/.env.base       # Base configuration
       - ./env-config/.env.secrets    # Secrets

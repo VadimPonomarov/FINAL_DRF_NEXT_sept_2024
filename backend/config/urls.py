@@ -58,7 +58,10 @@ urlpatterns = [
     path("api/chat/", include('apps.chat.urls')),
     
     # Public reference endpoints (for frontend)
-    path("api/public/reference/", include('apps.ads.urls.reference_urls')),
+    path(
+        "api/public/reference/",
+        include(('apps.ads.urls.reference_urls', 'public_reference'), namespace='public_reference'),
+    ),
 
     # API Documentation
     path('', RedirectView.as_view(url='/api/doc', permanent=False)),
