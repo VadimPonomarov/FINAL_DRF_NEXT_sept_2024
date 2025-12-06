@@ -4,6 +4,7 @@ import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 import { mapFormDataToApiData } from '@/modules/autoria/shared/utils/carAdDataMapper';
 import type { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import type { AutoRiaUser } from '@/services/autoria/users.service';
+import { filterValidImages, generateFallbackImage } from './imageValidation';
 
 // Types
 type HeadersRecord = Record<string, string>;

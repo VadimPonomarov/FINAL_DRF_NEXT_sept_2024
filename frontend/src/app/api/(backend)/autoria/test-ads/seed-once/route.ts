@@ -49,6 +49,28 @@ function resolveMarkerPath(): string {
   return defaultPath;
 }
 
+// Direct count fallback method
+async function getDirectAdCount(backendUrl: string): Promise<number> {
+  try {
+    const countUrl = `${backendUrl}/api/ads/cars/`;
+    const response = await fetch(countUrl, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const count = data?.count ?? data?.total ?? data?.length ?? 0;
+      console.log(`[SeedOnce] Direct count result: ${count} ads`);
+      return Number(count);
+    }
+  } catch (error) {
+    console.warn('[SeedOnce] Direct count failed:', error);
+  }
+  return 0;
+}
+
 export async function POST(request: NextRequest) {
   const markerPath = resolveMarkerPath();
   const marker = await readSeedMarker(markerPath);
@@ -59,30 +81,45 @@ export async function POST(request: NextRequest) {
     // Always force fresh statistics to avoid stale cached values during seeding
     url.searchParams.set('force_refresh', 'true');
     console.log('[SeedOnce] Fetching quick stats from', url.toString());
-    const statsResponse = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
+    
+    // Get accurate statistics with multiple fallback methods
+    let activeAds = 0;
+    let totalAds = 0;
+    
+    try {
+      // Method 1: Quick stats API
+      const statsResponse = await fetch(url.toString(), {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+      });
 
-    if (!statsResponse.ok) {
-      const body = await statsResponse.text().catch(() => '');
-      throw new Error(`Stats request failed: ${statsResponse.status} ${body}`);
-    }
-
-    const statsJson = await statsResponse.json();
-    const data = statsJson?.data ?? statsJson;
-    const source = statsJson?.source;
-    let activeAds = Number(data?.active_ads ?? 0);
-    let totalAds = Number(data?.total_ads ?? 0);
-
-    // If QuickStats falls back to mock/error data, treat it as zero to force seeding
-    if (source === 'mock_fallback' || source === 'error_fallback') {
-      console.warn('[SeedOnce] QuickStats returned fallback source, forcing fresh seeding', { source, totalAds, activeAds });
-      activeAds = 0;
-      totalAds = 0;
+      if (statsResponse.ok) {
+        const statsJson = await statsResponse.json();
+        const data = statsJson?.data ?? statsJson;
+        const source = statsJson?.source;
+        
+        activeAds = Number(data?.active_ads ?? 0);
+        totalAds = Number(data?.total_ads ?? 0);
+        
+        console.log('[SeedOnce] QuickStats result:', { source, totalAds, activeAds });
+        
+        // If fallback data, try direct count
+        if (source === 'mock_fallback' || source === 'error_fallback') {
+          console.warn('[SeedOnce] QuickStats returned fallback, trying direct count...');
+          const directCount = await getDirectAdCount(backendUrl);
+          if (directCount > 0) {
+            totalAds = directCount;
+            activeAds = directCount;
+          }
+        }
+      } else {
+        throw new Error(`Stats request failed: ${statsResponse.status}`);
+      }
+    } catch (error) {
+      console.warn('[SeedOnce] Stats API failed, trying direct count:', error);
+      totalAds = await getDirectAdCount(backendUrl);
+      activeAds = totalAds;
     }
 
     const MIN_TOTAL_ADS = 10;
