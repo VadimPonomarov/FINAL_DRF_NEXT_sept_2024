@@ -3,7 +3,7 @@
 # Uses npm run build + npm run start for reliable data loading
 # =============================================================================
 
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Set UTF-8 locale and encoding
 ENV LANG=C.UTF-8

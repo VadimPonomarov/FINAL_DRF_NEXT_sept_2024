@@ -4,12 +4,6 @@
 /* Импорт глобальных стилей чатбота */
 @import '../components/ChatBot/styles/global-chatbot.css';
 
-/* Импорт стилей для исправления ховера кнопок */
-@import '../shared/styles/button-hover-fix.css';
-
-/* Импорт стилей для исправления контрастности всех UI элементов */
-@import '../shared/styles/ui-contrast-fix.css';
-
 /* Стили для моноширинных шрифтов */
 code, pre, .font-mono {
   font-family: Consolas, Menlo, Monaco, 'Courier New', monospace;
@@ -71,6 +65,7 @@ body {
     --z-index-toast: 1050;
     --z-index-modal: 1100;
     --z-index-badge: 99999;
+    --z-index-theme-toggle: 99999;
 
     /* Hover effects (DRY) */
     --hover-opacity: 0.9;
@@ -221,6 +216,8 @@ input, textarea, select { color: hsl(var(--form-text)); }
 
     .theme-toggle {
         @apply p-2 rounded-full transform transition-transform duration-200;
+        position: relative;
+        z-index: var(--z-index-theme-toggle);
     }
 
     .theme-toggle:hover {

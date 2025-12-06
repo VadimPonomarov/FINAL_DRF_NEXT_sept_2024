@@ -7,28 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '@/configs/auth';
-
-async function deleteRedisKeys(nextUrl: NextRequest['nextUrl'], keys: string[]) {
-  await Promise.all(
-    keys.map(async (key) => {
-      try {
-        const url = new URL(`${nextUrl.origin}/api/redis`);
-        url.searchParams.set('key', key);
-
-        const response = await fetch(url.toString(), {
-          method: 'DELETE',
-          cache: 'no-store',
-        });
-
-        if (!response.ok) {
-          console.warn('[API /auth/logout] ⚠️ Failed to delete Redis key:', key, response.status);
-        }
-      } catch (error) {
-        console.error('[API /auth/logout] ❌ Error deleting Redis key:', key, error);
-      }
-    })
-  );
-}
+import { deleteRedisKeys } from '../redis-cleanup.helper';
 
 export async function POST(request: NextRequest) {
   try {

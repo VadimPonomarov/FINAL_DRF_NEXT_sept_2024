@@ -27,11 +27,15 @@ cd autoria-clone
 python deploy.py
 ```
 
+> ℹ️ У діалозі оберіть режим `with_frontend`, якщо хочете повний Docker. Скрипт автоматично запустить `docker-compose` з файлами `docker-compose.yml` і `docker-compose.with_frontend.yml`.
+
 **Linux/Mac:**
 ```bash
 chmod +x deploy.sh
 ./deploy.sh
 ```
+
+> Якщо запускаєте `deploy.sh` з режимом `--with-frontend`, під капотом також використовуються обидва файли Compose.
 
 **Якщо встановлено Node.js:**
 ```bash

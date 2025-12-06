@@ -1,6 +1,228 @@
 # Керівництво з налаштування тем
 
-## Огляд системи
+## Огляд (актуальна реалізація)
+
+Реальна система налаштування тем працює через:
+
+1. **Глобальні токени** у `frontend/src/app/globals.css` (`:root` та `.dark`).
+2. **Tailwind**, який читає ці токени (`frontend/tailwind.config.ts`).
+3. **ThemeToggle** – вмикає/вимикає клас `.dark` на `<html>`.
+4. **ThemeSelector** – перемикає палітри, змінюючи CSS-змінні на `document.documentElement`.
+5. **Модульні стилі** (`*.module.(s)css`) – для локальних overrides токенів у межах окремих секцій/компонентів.
+
+---
+
+## 1. Глобальні зміни (tokens)
+
+### 1.1. Змінити базову палітру
+
+Відкрийте `frontend/src/app/globals.css` і оновіть токени в `:root`:
+
+```css
+:root {
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  /* ... */
+}
+```
+
+Наприклад, зробити primary зеленим:
+
+```css
+:root {
+  --primary: 142 70% 45%;
+  --primary-foreground: 0 0% 100%;
+}
+```
+
+Усі компоненти, що використовують `primary`, автоматично підлаштуються під новий колір.
+
+### 1.2. Налаштувати темну тему
+
+У тому ж файлі оновіть блок `.dark`:
+
+```css
+.dark {
+  --background: 220 15% 12%;
+  --foreground: 0 0% 96%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 10%;
+  /* ... */
+}
+```
+
+Компонент `ThemeToggle` відповідає за додавання/видалення класу `.dark` на `<html>`.
+
+---
+
+## 2. Кольорові палітри (ThemeSelector)
+
+Файл: `frontend/src/shared/components/ui/theme-selector.tsx`.
+
+### 2.1. Додати або змінити палітру
+
+Структура спрощеного об’єкта `themes`:
+
+```ts
+const themes = {
+  blue: {
+    name: "Blue",
+    light: {
+      primary: "221 83% 53%",
+      secondary: "210 40% 96.1%",
+      accent: "217 91% 60%",
+      destructive: "0 84.2% 60.2%",
+    },
+    dark: {
+      primary: "217 91% 60%",
+      secondary: "215 25% 27%",
+      accent: "217 91% 60%",
+      destructive: "0 62.8% 30.6%",
+    },
+  },
+  // ...інші теми
+};
+```
+
+Щоб додати нову тему `ocean`:
+
+```ts
+const themes = {
+  // ...існуючі теми
+  ocean: {
+    name: "Ocean",
+    light: {
+      primary: "200 100% 50%",
+      secondary: "198 40% 96%",
+      accent: "200 100% 50%",
+      destructive: "0 84.2% 60.2%",
+    },
+    dark: {
+      primary: "200 100% 60%",
+      secondary: "198 30% 25%",
+      accent: "200 100% 60%",
+      destructive: "0 62.8% 30.6%",
+    },
+  },
+};
+```
+
+`ThemeSelector` автоматично підхопить нову тему і покаже її в списку.
+
+### 2.2. Як палітра застосовується
+
+Усередині `applyTheme(themeKey)`:
+
+- визначається, чи активний dark mode;
+- обирається `theme.dark` або `theme.light`;
+- для кожної пари `[key, value]` викликається:
+
+  ```ts
+  document.documentElement.style.setProperty(`--${key}`, value);
+  ```
+
+- виставляється `data-theme` на `<body>`;
+- зберігається вибір у `localStorage`.
+
+Усі компоненти, що використовують токени, одразу отримують нові значення.
+
+---
+
+## 3. Локальні теми (module layer)
+
+Для індивідуальних секцій/сторінок можна перевизначати токени на рівні контейнера через `*.module.(s)css`.
+
+### 3.1. Приклад – темна pricing-секція
+
+```scss
+/* PricingSection.module.scss */
+
+.root {
+  --background: 240 10% 8%;
+  --foreground: 0 0% 95%;
+  --card: 240 10% 12%;
+  --card-foreground: 0 0% 95%;
+  --primary: 221 83% 63%;
+}
+```
+
+```tsx
+import styles from "./PricingSection.module.scss";
+import { Button } from "@/components/ui/button";
+
+export function PricingSection() {
+  return (
+    <section className={styles.root}>
+      <h2>Pricing Plans</h2>
+      <Button variant="default">Subscribe</Button>
+    </section>
+  );
+}
+```
+
+### 3.2. Приклад – особлива CTA-кнопка
+
+```scss
+/* CarAdCard.module.scss */
+
+.ctaButton {
+  --primary: 15 100% 55%;
+  --primary-foreground: 0 0% 100%;
+}
+```
+
+```tsx
+<Button variant="default" className={styles.ctaButton}>
+  Get Started
+</Button>
+```
+
+---
+
+## 4. Формат HSL
+
+Всі кольори задаються у форматі **H S L** (без `hsl(...)`):
+
+```text
+H S L
+220 100% 50%
+│   │    │
+│   │    └─ Lightness (яскравість, 0–100%)
+│   └────── Saturation (насиченість, 0–100%)
+└────────── Hue (відтінок, 0–360°)
+```
+
+Приклади:
+
+- Червоний: `0 84% 60%`
+- Помаранчевий: `15 100% 55%`
+- Жовтий: `45 93% 47%`
+- Зелений: `142 70% 45%`
+- Синій: `221 83% 53%`
+- Фіолетовий: `280 65% 60%`
+- Рожевий: `330 85% 65%`
+
+---
+
+## 5. Best practices
+
+- Не прописувати HEX/rgba напряму в компонентах – лише токени `--*`.
+- Layout робити Tailwind-класами (`flex`, `grid`, `gap-4`, `p-6` тощо).
+- Глобальні зміни палітри – через `globals.css` + (за потреби) стартові значення у `ThemeSelector`.
+- Локальні зміни – через `*.module.(s)css` із перевизначенням `--*` у межах контейнера.
+- Не використовувати inline-стилі (`style={...}`) для темізації.
+
+Детальні приклади з використанням компонентів див. у `DOCUMENTATION.md` та `README_THEME_SYSTEM.md`.
+
+---
+
+## Архівна інформація (старий SCSS-підхід – не використовується)
+
+> Нижченаведений матеріал описує попередню SCSS-систему з `_global-overrides.scss`, `_local-overrides.scss`, `_module-overrides.scss` та міксінами. Вона не використовується у поточному фронтенді й залишена лише як історична довідка.
+
+## Огляд (історичний SCSS-підхід)
 
 Система підтримує **три рівні переопределення стилів**:
 

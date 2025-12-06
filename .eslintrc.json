@@ -1,37 +1,11 @@
 {
   "root": true,
-  "extends": [
-    "next/core-web-vitals",
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended"
-  ],
-  "parser": "@typescript-eslint/parser",
-  "plugins": ["@typescript-eslint"],
-  "parserOptions": {
-    "ecmaVersion": 2020,
-    "sourceType": "module",
-    "ecmaFeatures": {
-      "jsx": true
-    },
-    "project": "./tsconfig.json"
-  },
-  "rules": {
-    "react/react-in-jsx-scope": "off",
-    "react/prop-types": "off",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/explicit-module-boundary-types": "off"
-  },
-  "settings": {
-    "react": {
-      "version": "detect"
-    },
-    "next": {
-      "rootDir": "frontend/"
-    }
-  },
   "ignorePatterns": [
     "node_modules/",
-    ".next/",
-    "out/"
+    "frontend/.next/",
+    "frontend/out/",
+    "backend/**",
+    "celery-service/**",
+    "logs/**"
   ]
 }

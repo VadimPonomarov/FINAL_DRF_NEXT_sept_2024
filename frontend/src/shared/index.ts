@@ -3,19 +3,8 @@
  * Единая точка экспорта для всего переиспользуемого кода
  */
 
-// UI Components
-export * from './components/ui/button';
-export * from './components/ui/card';
-export * from './components/ui/tabs';
-export * from './components/ui/badge';
-export * from './components/ui/input';
-export * from './components/ui/label';
-export * from './components/ui/select';
-export * from './components/ui/dropdown-menu';
-export * from './components/ui/dialog';
-export * from './components/ui/alert-dialog';
-export * from './components/ui/toast';
-export * from './components/ui/toaster';
+// Contexts (Global State)
+export * from './contexts';
 
 // Hooks
 export * from './hooks';
@@ -27,7 +16,16 @@ export * from './types';
 export * from './utils';
 
 // Constants
-export * from './constants';
+export * from './constants/constants';
 
 // Providers
 export * from './providers';
+
+// HOCs (Higher-Order Components)
+export * from './hoc';
+
+// Middleware utilities
+export * from './middleware';
+
+// Locales (i18n)
+export * from './locales';

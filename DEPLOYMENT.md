@@ -88,7 +88,7 @@ python scripts/check_environment.py
 
 Оберіть зручний для себе спосіб.
 
-### Варіант 1. Python-скрипт (рекомендовано)
+### Вариант 1. Python-скрипт (рекомендовано)
 
 ```bash
 # 1) Backend у Docker, frontend локально (найпростіший спосіб)
@@ -101,12 +101,14 @@ python deploy.py --mode with_frontend
 python deploy.py
 ```
 
+> ℹ️ **Повний Docker запуск** (`--mode with_frontend`) автоматично передає обидва файли `docker-compose.yml` та `docker-compose.with_frontend.yml` у `docker-compose`. Якщо ви запускаєте вручну, використовуйте `docker-compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build` — це вмикає сервіс Frontend.
+
 > 💡 За потреби перед запуском можна додатково звільнити порти
 > за допомогою утиліти:
 >
 > ```bash
 > python scripts/cleanup_ports.py --ports 80 3000 5432 5555 5540 6379 8000 8001 15672
-> ```
+```
 
 ### Варіант 2. Bash-скрипт (Linux/Mac)
 
@@ -152,22 +154,22 @@ node deploy.js --local-frontend
 
 Якщо автоматизація недоступна, скористайтесь ручними інструкціями.
 
-### Вариант A. Повний запуск у Docker
+### Варіант A. Повний запуск у Docker
 
 #### Крок 1. Запустити контейнери
 
 ```bash
-docker-compose up -d --build
+docker-compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build
 ```
 
 #### Крок 2. Дочекатися готовності сервісів
 
 ```bash
 # Перевірка статусу
-docker-compose ps
+docker-compose -f docker-compose.yml -f docker-compose.with_frontend.yml ps
 
 # Перегляд логів бекенду
-docker-compose logs -f app
+docker-compose -f docker-compose.yml -f docker-compose.with_frontend.yml logs -f app
 ```
 
 Очікуйте повідомлення `Listening on TCP address 0.0.0.0:8000`.

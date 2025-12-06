@@ -47,11 +47,12 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.3 python3 -
 ENV PATH="/root/.local/bin:$PATH"
 
 # Copy dependency files
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml poetry.lock* ./
 
-# Configure Poetry and install ALL dependencies (full installation)
+# Configure Poetry and regenerate lock file if needed
 RUN poetry config repositories.pypi https://pypi.org/simple && \
     poetry config virtualenvs.create false && \
+    poetry lock --no-update || poetry lock && \
     poetry install --no-interaction --no-ansi --no-root
 
 # Copy the entire application (this ensures all files are available)

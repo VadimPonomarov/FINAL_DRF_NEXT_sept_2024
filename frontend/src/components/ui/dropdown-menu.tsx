@@ -38,10 +38,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
-      // Light theme
-      "text-gray-900 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900 data-[state=open]:bg-gray-100 data-[state=open]:text-gray-900",
-      // Dark theme
-      "dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:bg-gray-700 dark:focus:text-white dark:data-[state=open]:bg-gray-700 dark:data-[state=open]:text-white",
+      "text-[hsl(var(--surface-text))] hover:bg-[hsl(var(--accent))]/60 hover:text-[hsl(var(--accent-foreground))] focus:bg-[hsl(var(--accent))]/60 focus:text-[hsl(var(--accent-foreground))] data-[state=open]:bg-[hsl(var(--accent))] data-[state=open]:text-[hsl(var(--accent-foreground))]",
       inset && "pl-8",
       className
     )}
@@ -61,11 +58,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "z-50 min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg",
-      // Light theme
-      "border-gray-300 bg-white text-gray-900",
-      // Dark theme
-      "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100",
+      "z-50 min-w-[8rem] overflow-hidden rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--popover))] p-1 text-[hsl(var(--popover-foreground))] shadow-lg",
       "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2",
       "data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
@@ -86,11 +79,7 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-[9999] min-w-[8rem] overflow-hidden rounded-md border shadow-md",
-        // Light theme
-        "border-gray-200 bg-white text-gray-900",
-        // Dark theme
-        "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100",
+        "z-[9999] min-w-[8rem] overflow-hidden rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--popover))] text-[hsl(var(--popover-foreground))] shadow-md",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2",
         "data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
@@ -112,10 +101,7 @@ const DropdownMenuItem = React.forwardRef<
     ref={ref}
     className={cn(
       "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
-      // Light theme
-      "text-gray-900 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900",
-      // Dark theme
-      "dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:bg-gray-700 dark:focus:text-white",
+      "text-[hsl(var(--surface-text))] hover:bg-[hsl(var(--accent))]/60 hover:text-[hsl(var(--accent-foreground))] focus:bg-[hsl(var(--accent))]/60 focus:text-[hsl(var(--accent-foreground))]",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       inset && "pl-8",
       className
@@ -133,10 +119,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
     ref={ref}
     className={cn(
       "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors",
-      // Light theme
-      "text-gray-900 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900",
-      // Dark theme
-      "dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:bg-gray-700 dark:focus:text-white",
+      "text-[hsl(var(--surface-text))] hover:bg-[hsl(var(--accent))]/60 hover:text-[hsl(var(--accent-foreground))] focus:bg-[hsl(var(--accent))]/60 focus:text-[hsl(var(--accent-foreground))]",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
@@ -145,7 +128,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="h-4 w-4 text-gray-900 dark:text-gray-100" />
+        <Check className="h-4 w-4 text-[hsl(var(--surface-text))]" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -162,10 +145,7 @@ const DropdownMenuRadioItem = React.forwardRef<
     ref={ref}
     className={cn(
       "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors",
-      // Light theme
-      "text-gray-900 hover:bg-gray-100 hover:text-gray-900 focus:bg-gray-100 focus:text-gray-900",
-      // Dark theme
-      "dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:bg-gray-700 dark:focus:text-white",
+      "text-[hsl(var(--surface-text))] hover:bg-[hsl(var(--accent))]/60 hover:text-[hsl(var(--accent-foreground))] focus:bg-[hsl(var(--accent))]/60 focus:text-[hsl(var(--accent-foreground))]",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
@@ -173,7 +153,7 @@ const DropdownMenuRadioItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Circle className="h-2 w-2 fill-current text-gray-900 dark:text-gray-100" />
+        <Circle className="h-2 w-2 fill-current text-[hsl(var(--surface-text))]" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}

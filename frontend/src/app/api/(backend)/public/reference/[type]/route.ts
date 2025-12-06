@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import '@/lib/env-loader'; // Загружаем переменные окружения во время выполнения
 
 /**
  * Универсальный API эндпоинт для публичных reference данных

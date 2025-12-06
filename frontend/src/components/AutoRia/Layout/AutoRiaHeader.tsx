@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import {
   Car,
@@ -111,7 +112,14 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
     label: t('navigation.analytics'),
     icon: <BarChart3 className="h-4 w-4" />,
     id: 'analytics',
-    badge: <Badge variant="secondary" className="ml-1 text-xs premium-badge">{t('autoria.premium')}</Badge>
+    badge: (
+      <Badge
+        variant="solid"
+        className="ml-1 text-xs premium-badge bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-sm"
+      >
+        {t('autoria.premium')}
+      </Badge>
+    ),
   };
 
   // ╨Я╤Г╨╜╨║╤В ╨╝╨╛╨┤╨╡╤А╨░╤Ж╨╕╨╕ (╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╤Б╤Г╨┐╨╡╤А╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╨╡╨╣ ╨╕ ╨╝╨╛╨┤╨╡╤А╨░╤В╨╛╤А╨╛╨▓)
@@ -174,9 +182,14 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
             {navigationItems.map((item) => (
               <Link key={item.id} href={item.href}>
                 <Button
-                  variant={currentPage === item.id ? "default" : "ghost"}
+                  variant="nav"
                   size="sm"
-                  className="flex items-center gap-2 relative overflow-visible px-4 py-2 rounded-md transition-all hover:scale-105"
+                  className={cn(
+                    "flex items-center gap-2 relative overflow-visible px-4 py-2 rounded-md transition-all",
+                    currentPage === item.id
+                      ? "shadow-md hover:-translate-y-[1px] hover:shadow-md"
+                      : "hover:-translate-y-[1px] hover:shadow-md",
+                  )}
                 >
                   {item.icon}
                   <span className="hidden xl:inline">{item.label}</span>
@@ -227,9 +240,12 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
             {navigationItems.slice(0, 4).map((item) => (
               <Link key={item.id} href={item.href}>
                 <Button
-                  variant={currentPage === item.id ? "default" : "ghost"}
+                  variant="nav"
                   size="sm"
-                  className="flex flex-col items-center gap-1 min-w-[60px] h-auto py-2 px-3 rounded-md transition-all"
+                  className={cn(
+                    "flex flex-col items-center gap-1 min-w-[60px] h-auto py-2 px-3 rounded-md transition-all",
+                    currentPage === item.id ? "shadow-md" : "hover:-translate-y-[1px] hover:shadow-md",
+                  )}
                 >
                   {item.icon}
                   <span className="text-xs">{item.label.split(' ')[0]}</span>

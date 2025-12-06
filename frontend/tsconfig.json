@@ -12,8 +12,8 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    "noImplicitReturns": false,
-    "strictNullChecks": false,
+    "noImplicitReturns": true,
+    "strictNullChecks": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -55,6 +55,7 @@
   ],
   "exclude": [
     "node_modules",
-    "scripts"
+    "scripts",
+    "src/components/AutoRia/Search/**/*"
   ]
 }

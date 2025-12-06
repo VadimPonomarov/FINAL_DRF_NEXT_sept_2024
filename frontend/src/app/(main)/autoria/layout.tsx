@@ -1,5 +1,6 @@
 import AutoRiaLayout from "@/modules/autoria/layout";
 import { BackendTokenPresenceGate } from "@/modules/autoria/auth";
+import AutoRiaBootstrap from "@/modules/autoria/layout/AutoRiaBootstrap";
 
 /**
  * УНІВЕРСАЛЬНИЙ Layout для всіх сторінок AutoRia
@@ -28,9 +29,12 @@ export default function AutoRiaLayoutWrapper({
 }) {
   return (
     <BackendTokenPresenceGate>
-      <AutoRiaLayout>
-        {children}
-      </AutoRiaLayout>
+      <>
+        <AutoRiaBootstrap />
+        <AutoRiaLayout>
+          {children}
+        </AutoRiaLayout>
+      </>
     </BackendTokenPresenceGate>
   );
 }

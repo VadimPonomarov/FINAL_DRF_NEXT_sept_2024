@@ -12,7 +12,9 @@ import { Activity, TrendingUp, Users, Car, Eye, DollarSign, Target, Zap, Calenda
 // Charts
 import { PriceDistributionChart, TopBrandsChart, MonthlyTrendsChart } from "@/components/AutoRia/Analytics/Charts/ChartComponents";
 import { Line } from "react-chartjs-2";
-import { useI18n } from '@/contexts/I18nContext';
+import { useI18n } from "@/contexts/I18nContext";
+import type { CarAd } from "@/modules/autoria/shared/types/autoria";
+import type { SearchFiltersState } from "@/modules/autoria/search/useSearchPageState";
 
 // Регистрация Chart.js компонентов
 import {
@@ -40,9 +42,13 @@ ChartJS.register(
   ArcElement
 );
 
+interface AnalyticsFilters extends Partial<SearchFiltersState> {
+  mark?: string;
+}
+
 interface AnalyticsTabContentProps {
-  filters: Record<string, any>;
-  results: any[];
+  filters: AnalyticsFilters;
+  results: CarAd[];
   loading?: boolean;
 }
 
@@ -53,20 +59,25 @@ export default function AnalyticsTabContent({ filters, results, loading }: Analy
   // Простая агрегация поверх текущей выдачи (как сигнал; реальные графики подключим к API)
   const total = results?.length || 0;
   const avgPrice = (() => {
-    const prices = (results || []).map((r: any) => r.price_usd || r.price || 0).filter(Boolean);
+    const prices = (results || []).map((r) => r.price_usd ?? r.price ?? 0).filter(Boolean);
     if (!prices.length) return 0;
     return Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
   })();
 
-  const viewsSum = (results || []).reduce((acc: number, r: any) => acc + (r.views_count || r.view_count || 0), 0);
+  const viewsSum = (results || []).reduce(
+    (acc: number, r) => acc + (r.views_count || r.view_count || 0),
+    0
+  );
 
   const [dateFrom, setDateFrom] = React.useState<Date | undefined>();
 
   const topBrandsData = useMemo(() => {
     const counts: Record<string, number> = {};
-    (results || []).forEach((r: any) => {
-      const brand = r?.mark?.name || r?.mark_name || r?.brand || '—';
-      counts[brand] = (counts[brand] || 0) + 1;
+    (results || []).forEach((r) => {
+      const markValue = r.mark;
+      const markName = typeof markValue === "object" && markValue !== null ? (markValue as { name?: string }).name : undefined;
+      const brand = markName || r.mark_name || r.brand || "—";
+      counts[String(brand)] = (counts[String(brand)] || 0) + 1;
     });
     const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
     return {
@@ -83,14 +94,17 @@ export default function AnalyticsTabContent({ filters, results, loading }: Analy
 
   const monthlyTrendsData = useMemo(() => {
     const map: Record<string, { count: number; sum: number; n: number }> = {};
-    (results || []).forEach((r: any) => {
-      const created = r?.created_at || r?.createdAt;
+    (results || []).forEach((r) => {
+      const created = r.created_at;
       if (!created) return;
       const month = String(created).slice(0, 7);
-      const price = Number(r?.price_usd || r?.price || 0) || 0;
+      const price = Number(r.price_usd ?? r.price ?? 0) || 0;
       if (!map[month]) map[month] = { count: 0, sum: 0, n: 0 };
       map[month].count += 1;
-      if (price > 0) { map[month].sum += price; map[month].n += 1; }
+      if (price > 0) {
+        map[month].sum += price;
+        map[month].n += 1;
+      }
     });
     const labels = Object.keys(map).sort();
     const counts = labels.map(l => map[l].count);

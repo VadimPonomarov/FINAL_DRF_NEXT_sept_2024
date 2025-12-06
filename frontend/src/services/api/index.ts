@@ -233,6 +233,7 @@ export const api = {
 
 // Экспортируем все API
 export { apiClient };
+export { apiClient as centralizedApiClient } from './client';
 export default {
   auth: authApi,
   users: usersApi,

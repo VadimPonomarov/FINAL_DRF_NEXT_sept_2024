@@ -21,7 +21,7 @@ export const useRegistrationForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [formKey, setFormKey] = useState(0);
     const router = useRouter();
-    const { data: sessionData } = useSession();
+    const { data: sessionData } = useSession({ required: false });
     const session = sessionData as unknown as ISession;
     const { setNotification } = useNotification();
     

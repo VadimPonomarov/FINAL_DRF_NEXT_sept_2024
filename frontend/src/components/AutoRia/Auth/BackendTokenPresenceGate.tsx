@@ -81,7 +81,12 @@ export default function BackendTokenPresenceGate({ children }: { children: React
         setIsAuthorized(false);
 
         const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-        const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
+        const params = new URLSearchParams();
+        if (currentPath !== '/autoria') {
+          params.set('callbackUrl', currentPath);
+        }
+        params.set('error', 'backend_auth_required');
+        const loginUrl = `/login?${params.toString()}`;
         
         console.log('[BackendTokenPresenceGate] Redirecting to:', loginUrl);
         if (typeof window !== 'undefined') {
@@ -105,7 +110,12 @@ export default function BackendTokenPresenceGate({ children }: { children: React
           setIsAuthorized(false);
 
           const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-          const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
+          const params = new URLSearchParams();
+          if (currentPath !== '/autoria') {
+            params.set('callbackUrl', currentPath);
+          }
+          params.set('error', 'backend_auth_required');
+          const loginUrl = `/login?${params.toString()}`;
           
           console.log('[BackendTokenPresenceGate] Redirecting to (invalid structure):', loginUrl);
           if (typeof window !== 'undefined') {
@@ -122,7 +132,12 @@ export default function BackendTokenPresenceGate({ children }: { children: React
         setIsAuthorized(false);
 
         const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-        const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
+        const params = new URLSearchParams();
+        if (currentPath !== '/autoria') {
+          params.set('callbackUrl', currentPath);
+        }
+        params.set('error', 'backend_auth_required');
+        const loginUrl = `/login?${params.toString()}`;
         
         console.log('[BackendTokenPresenceGate] Redirecting to (parse error):', loginUrl);
         if (typeof window !== 'undefined') {
@@ -152,7 +167,12 @@ export default function BackendTokenPresenceGate({ children }: { children: React
 
       // Немедленный редирект на /login с сохранением текущего пути для возврата
       const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-      const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
+      const params = new URLSearchParams();
+      if (currentPath !== '/autoria') {
+        params.set('callbackUrl', currentPath);
+      }
+      params.set('error', 'backend_auth_required');
+      const loginUrl = `/login?${params.toString()}`;
       
       console.log('[BackendTokenPresenceGate] Redirecting to:', loginUrl);
       // Используем window.location.replace для немедленного редиректа (не добавляет в историю)
@@ -172,7 +192,12 @@ export default function BackendTokenPresenceGate({ children }: { children: React
       setIsAuthorized(false);
 
       const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-      const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
+      const params = new URLSearchParams();
+      if (currentPath !== '/autoria') {
+        params.set('callbackUrl', currentPath);
+      }
+      params.set('error', 'backend_auth_required');
+      const loginUrl = `/login?${params.toString()}`;
       
       console.log('[BackendTokenPresenceGate] Redirecting to (error):', loginUrl);
       // Используем window.location.replace для немедленного редиректа (не добавляет в историю)

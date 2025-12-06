@@ -3,7 +3,7 @@
 import React, { FC, useEffect } from "react";
 import Link from "next/link";
 import { ArrowPathIcon, PaperAirplaneIcon } from "@heroicons/react/16/solid";
-import NewResizableWrapper from "@/components/All/ResizableWrapper/NewResizableWrapper";
+import { ResizableWrapper } from "@/components/shared/layout";
 
 import FormFieldsRenderer from "@/components/All/FormFieldsRenderer/FormFieldsRenderer";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,7 @@ const LoginForm: FC = () => {
 
     return (
         <div className="flex items-center justify-center w-full h-full p-4">
-            <NewResizableWrapper
+            <ResizableWrapper
               storageKey="login-form"
               className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col"
               defaultWidth={350}
@@ -229,7 +229,7 @@ const LoginForm: FC = () => {
                         )}
                     </div>
                 </div>
-            </NewResizableWrapper>
+            </ResizableWrapper>
         </div>
     );
 };

@@ -4,29 +4,29 @@
 .form-input:hover,
 .form-input:focus,
 .form-input:focus-visible {
-  background-color: rgba(var(--primary), 0.05) !important;
-  border-color: rgba(var(--primary), 0.5) !important;
+  background-color: hsl(var(--primary) / 0.05) !important;
+  border-color: hsl(var(--primary) / 0.5) !important;
 }
 
 /* Стили для select */
 .form-select:hover,
 .form-select:focus,
 .form-select:focus-visible {
-  background-color: rgba(var(--primary), 0.05) !important;
-  border-color: rgba(var(--primary), 0.5) !important;
+  background-color: hsl(var(--primary) / 0.05) !important;
+  border-color: hsl(var(--primary) / 0.5) !important;
 }
 
 /* Стили для textarea */
 .form-textarea:hover,
 .form-textarea:focus,
 .form-textarea:focus-visible {
-  background-color: rgba(var(--primary), 0.05) !important;
-  border-color: rgba(var(--primary), 0.5) !important;
+  background-color: hsl(var(--primary) / 0.05) !important;
+  border-color: hsl(var(--primary) / 0.5) !important;
 }
 
 /* Стили для кнопок */
 .form-button:hover {
-  background-color: rgba(var(--primary), 0.7) !important;
+  background-color: hsl(var(--primary) / 0.7) !important;
 }
 
 /* Стили для кнопок с выпадающим списком */
@@ -40,13 +40,13 @@
 /* Стили для чекбоксов и радио-кнопок */
 .form-checkbox:hover,
 .form-radio:hover {
-  background-color: rgba(var(--primary), 0.1) !important;
+  background-color: hsl(var(--primary) / 0.1) !important;
 }
 
 /* Стили для полей с ошибками */
 .form-input.error,
 .form-select.error,
 .form-textarea.error {
-  border-color: rgba(var(--destructive), 0.8) !important;
-  background-color: rgba(var(--destructive), 0.05) !important;
+  border-color: hsl(var(--destructive) / 0.8) !important;
+  background-color: hsl(var(--destructive) / 0.05) !important;
 }

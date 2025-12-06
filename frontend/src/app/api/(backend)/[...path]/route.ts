@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import '@/lib/env-loader'; // Загружаем переменные окружения во время выполнения
 import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
 // Generic backend proxy for ANY /api/* path that doesn't have a more specific route.

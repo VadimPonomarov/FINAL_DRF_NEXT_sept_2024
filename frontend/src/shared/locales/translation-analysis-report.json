@@ -1,0 +1,2247 @@
+{
+  "timestamp": "2025-11-07T10:11:20.357Z",
+  "summary": {
+    "totalKeys": {
+      "en": 1953,
+      "ru": 1518,
+      "uk": 1518
+    },
+    "duplicates": {
+      "en": 436,
+      "ru": 2,
+      "uk": 2
+    },
+    "missingKeys": {
+      "en": 0,
+      "ru": 0,
+      "uk": 0
+    }
+  },
+  "details": {
+    "duplicates": {
+      "en": [
+        {
+          "key": "common.continue",
+          "firstValue": "Continue",
+          "duplicateValue": "continue"
+        },
+        {
+          "key": "common.save",
+          "firstValue": "Save",
+          "duplicateValue": "save"
+        },
+        {
+          "key": "common.cancel",
+          "firstValue": "Cancel",
+          "duplicateValue": "cancel"
+        },
+        {
+          "key": "common.edit",
+          "firstValue": "Edit",
+          "duplicateValue": "edit"
+        },
+        {
+          "key": "common.delete",
+          "firstValue": "Delete",
+          "duplicateValue": "delete"
+        },
+        {
+          "key": "common.loading",
+          "firstValue": "Loading...",
+          "duplicateValue": "loading"
+        },
+        {
+          "key": "common.select",
+          "firstValue": "Select",
+          "duplicateValue": "select"
+        },
+        {
+          "key": "common.search",
+          "firstValue": "Search",
+          "duplicateValue": "search"
+        },
+        {
+          "key": "common.none",
+          "firstValue": "Nothing found",
+          "duplicateValue": "none"
+        },
+        {
+          "key": "common.selectOption",
+          "firstValue": "Select option...",
+          "duplicateValue": "select option"
+        },
+        {
+          "key": "common.searchPlaceholder",
+          "firstValue": "Search...",
+          "duplicateValue": "search placeholder"
+        },
+        {
+          "key": "common.anyRegion",
+          "firstValue": "Any region",
+          "duplicateValue": "any region"
+        },
+        {
+          "key": "common.error",
+          "firstValue": "Error",
+          "duplicateValue": "error"
+        },
+        {
+          "key": "common.success",
+          "firstValue": "Success",
+          "duplicateValue": "success"
+        },
+        {
+          "key": "common.validation.error",
+          "firstValue": "Validation Error",
+          "duplicateValue": "error"
+        },
+        {
+          "key": "common.validation.requiredFields",
+          "firstValue": "Required fields",
+          "duplicateValue": "required fields"
+        },
+        {
+          "key": "common.validation.title.required",
+          "firstValue": "Title is required",
+          "duplicateValue": "required"
+        },
+        {
+          "key": "common.validation.title.minLength",
+          "firstValue": "Title must be at least {{min}} characters",
+          "duplicateValue": "min length"
+        },
+        {
+          "key": "common.validation.title.maxLength",
+          "firstValue": "Title must not exceed {{max}} characters",
+          "duplicateValue": "max length"
+        },
+        {
+          "key": "common.validation.description.required",
+          "firstValue": "Description is required",
+          "duplicateValue": "required"
+        },
+        {
+          "key": "common.validation.description.minLength",
+          "firstValue": "Description must be at least {{min}} characters",
+          "duplicateValue": "min length"
+        },
+        {
+          "key": "common.validation.description.maxLength",
+          "firstValue": "Description must not exceed {{max}} characters",
+          "duplicateValue": "max length"
+        },
+        {
+          "key": "common.validation.vehicleType.required",
+          "firstValue": "Please select vehicle type",
+          "duplicateValue": "required"
+        },
+        {
+          "key": "common.validation.brand.required",
+          "firstValue": "Please select car brand",
+          "duplicateValue": "required"
+        },
+        {
+          "key": "common.validation.model.required",
+          "firstValue": "Please select car model",
+          "duplicateValue": "required"
+        },
+        {
+          "key": "common.validation.year.required",
+          "firstValue": "Please specify year",
+          "duplicateValue": "required"
+        },
+        {
+          "key": "common.validation.year.invalid",
+          "firstValue": "Year must be a number",
+          "duplicateValue": "invalid"
+        },
+        {
+          "key": "common.validation.year.min",
+          "firstValue": "Year cannot be less than {{min}}",
+          "duplicateValue": "min"
+        },
+        {
+          "key": "common.validation.year.max",
+          "firstValue": "Year cannot be greater than {{max}}",
+          "duplicateValue": "max"
+        },
+        {
+          "key": "common.validation.mileage.required",
+          "firstValue": "Please specify mileage",
+          "duplicateValue": "required"
+        },
+        {
+          "key": "common.validation.mileage.invalid",
+          "firstValue": "Mileage must be a number",
+          "duplicateValue": "invalid"
+        },
+        {
+          "key": "common.validation.mileage.min",
+          "firstValue": "Mileage cannot be negative",
+          "duplicateValue": "min"
+        },
+        {
+          "key": "common.validation.mileage.max",
+          "firstValue": "Mileage cannot exceed {{max}} km",
+          "duplicateValue": "max"
+        },
+        {
+          "key": "profile.title",
+          "firstValue": "User Profile",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "profile.personalInfo",
+          "firstValue": "Personal Information",
+          "duplicateValue": "personal info"
+        },
+        {
+          "key": "profile.accountSettings",
+          "firstValue": "Account Settings",
+          "duplicateValue": "account settings"
+        },
+        {
+          "key": "profile.addresses",
+          "firstValue": "Addresses",
+          "duplicateValue": "addresses"
+        },
+        {
+          "key": "profile.contacts",
+          "firstValue": "Contacts",
+          "duplicateValue": "contacts"
+        },
+        {
+          "key": "profile.loading",
+          "firstValue": "Loading profile...",
+          "duplicateValue": "loading"
+        },
+        {
+          "key": "profile.error",
+          "firstValue": "Error loading profile data",
+          "duplicateValue": "error"
+        },
+        {
+          "key": "profile.address.yourAddress",
+          "firstValue": "Your Address",
+          "duplicateValue": "your address"
+        },
+        {
+          "key": "profile.address.add",
+          "firstValue": "Добавить адрес",
+          "duplicateValue": "add"
+        },
+        {
+          "key": "profile.address.edit",
+          "firstValue": "Edit",
+          "duplicateValue": "edit"
+        },
+        {
+          "key": "profile.address.delete",
+          "firstValue": "Delete",
+          "duplicateValue": "delete"
+        },
+        {
+          "key": "profile.address.save",
+          "firstValue": "Save",
+          "duplicateValue": "save"
+        },
+        {
+          "key": "profile.address.cancel",
+          "firstValue": "Cancel",
+          "duplicateValue": "cancel"
+        },
+        {
+          "key": "profile.address.verified",
+          "firstValue": "Verified",
+          "duplicateValue": "verified"
+        },
+        {
+          "key": "profile.address.confirmDelete",
+          "firstValue": "Вы уверены, что хотите удалить этот адрес?",
+          "duplicateValue": "confirm delete"
+        },
+        {
+          "key": "profile.address.addressDetails",
+          "firstValue": "Address Details",
+          "duplicateValue": "address details"
+        },
+        {
+          "key": "profile.address.userInput",
+          "firstValue": "User Input",
+          "duplicateValue": "user input"
+        },
+        {
+          "key": "profile.address.region",
+          "firstValue": "Region",
+          "duplicateValue": "region"
+        },
+        {
+          "key": "profile.address.locality",
+          "firstValue": "Locality",
+          "duplicateValue": "locality"
+        },
+        {
+          "key": "profile.address.regionPlaceholder",
+          "firstValue": "Select region",
+          "duplicateValue": "region placeholder"
+        },
+        {
+          "key": "profile.address.localityPlaceholder",
+          "firstValue": "Select city",
+          "duplicateValue": "locality placeholder"
+        },
+        {
+          "key": "profile.address.selectRegionFirst",
+          "firstValue": "Сначала выберите регион",
+          "duplicateValue": "select region first"
+        },
+        {
+          "key": "profile.address.searchRegion",
+          "firstValue": "Поиск региона...",
+          "duplicateValue": "search region"
+        },
+        {
+          "key": "profile.address.searchCity",
+          "firstValue": "Поиск города...",
+          "duplicateValue": "search city"
+        },
+        {
+          "key": "profile.address.noRegionsFound",
+          "firstValue": "Регионы не найдены",
+          "duplicateValue": "no regions found"
+        },
+        {
+          "key": "profile.address.noCitiesFound",
+          "firstValue": "Города не найдены",
+          "duplicateValue": "no cities found"
+        },
+        {
+          "key": "profile.address.standardizedData",
+          "firstValue": "Standardized Data",
+          "duplicateValue": "standardized data"
+        },
+        {
+          "key": "profile.address.standardizedRegion",
+          "firstValue": "Standardized Region",
+          "duplicateValue": "standardized region"
+        },
+        {
+          "key": "profile.address.standardizedLocality",
+          "firstValue": "Standardized Locality",
+          "duplicateValue": "standardized locality"
+        },
+        {
+          "key": "profile.address.coordinates",
+          "firstValue": "Coordinates",
+          "duplicateValue": "coordinates"
+        },
+        {
+          "key": "profile.address.googlePlaceId",
+          "firstValue": "Google Place ID",
+          "duplicateValue": "google place id"
+        },
+        {
+          "key": "profile.address.location",
+          "firstValue": "Location",
+          "duplicateValue": "location"
+        },
+        {
+          "key": "profile.address.showMap",
+          "firstValue": "Show Map",
+          "duplicateValue": "show map"
+        },
+        {
+          "key": "profile.address.openInGoogleMaps",
+          "firstValue": "Open in Google Maps",
+          "duplicateValue": "open in google maps"
+        },
+        {
+          "key": "profile.address.updateSuccess",
+          "firstValue": "Address updated successfully",
+          "duplicateValue": "update success"
+        },
+        {
+          "key": "profile.address.updateError",
+          "firstValue": "Failed to update address",
+          "duplicateValue": "update error"
+        },
+        {
+          "key": "profile.address.helpText.selectRegion",
+          "firstValue": "Select region first",
+          "duplicateValue": "select region"
+        },
+        {
+          "key": "profile.contact.add",
+          "firstValue": "Add Contact",
+          "duplicateValue": "add"
+        },
+        {
+          "key": "profile.contact.list",
+          "firstValue": "Contact List",
+          "duplicateValue": "list"
+        },
+        {
+          "key": "profile.contact.type",
+          "firstValue": "Contact Type",
+          "duplicateValue": "type"
+        },
+        {
+          "key": "profile.contact.value",
+          "firstValue": "Contact Value",
+          "duplicateValue": "value"
+        },
+        {
+          "key": "profile.contact.selectType",
+          "firstValue": "Select contact type",
+          "duplicateValue": "select type"
+        },
+        {
+          "key": "profile.contact.valuePlaceholder",
+          "firstValue": "Enter contact value",
+          "duplicateValue": "value placeholder"
+        },
+        {
+          "key": "profile.contact.phone",
+          "firstValue": "Phone",
+          "duplicateValue": "phone"
+        },
+        {
+          "key": "profile.contact.email",
+          "firstValue": "Email",
+          "duplicateValue": "email"
+        },
+        {
+          "key": "profile.contact.telegram",
+          "firstValue": "Telegram",
+          "duplicateValue": "telegram"
+        },
+        {
+          "key": "profile.contact.viber",
+          "firstValue": "Viber",
+          "duplicateValue": "viber"
+        },
+        {
+          "key": "profile.contact.whatsapp",
+          "firstValue": "WhatsApp",
+          "duplicateValue": "whatsapp"
+        },
+        {
+          "key": "profile.contact.primary",
+          "firstValue": "Primary",
+          "duplicateValue": "primary"
+        },
+        {
+          "key": "profile.contact.verified",
+          "firstValue": "Verified",
+          "duplicateValue": "verified"
+        },
+        {
+          "key": "profile.contact.noContacts",
+          "firstValue": "No contacts added yet",
+          "duplicateValue": "no contacts"
+        },
+        {
+          "key": "profile.contact.addFirst",
+          "firstValue": "Add your first contact to get started",
+          "duplicateValue": "add first"
+        },
+        {
+          "key": "profile.account.type",
+          "firstValue": "Account Type",
+          "duplicateValue": "type"
+        },
+        {
+          "key": "profile.account.role",
+          "firstValue": "Role",
+          "duplicateValue": "role"
+        },
+        {
+          "key": "profile.account.organizationName",
+          "firstValue": "Organization Name",
+          "duplicateValue": "organization name"
+        },
+        {
+          "key": "profile.account.orgPlaceholder",
+          "firstValue": "Enter organization name",
+          "duplicateValue": "org placeholder"
+        },
+        {
+          "key": "profile.account.moderationLevel",
+          "firstValue": "Moderation Level",
+          "duplicateValue": "moderation level"
+        },
+        {
+          "key": "profile.account.enableStats",
+          "firstValue": "Enable Statistics",
+          "duplicateValue": "enable stats"
+        },
+        {
+          "key": "profile.account.save",
+          "firstValue": "Save",
+          "duplicateValue": "save"
+        },
+        {
+          "key": "profile.account.saving",
+          "firstValue": "Сохранение...",
+          "duplicateValue": "saving"
+        },
+        {
+          "key": "profile.account.status",
+          "firstValue": "Account Status",
+          "duplicateValue": "status"
+        },
+        {
+          "key": "profile.account.accountId",
+          "firstValue": "Account ID",
+          "duplicateValue": "account id"
+        },
+        {
+          "key": "profile.account.created",
+          "firstValue": "Created",
+          "duplicateValue": "created"
+        },
+        {
+          "key": "profile.account.noAccount",
+          "firstValue": "Аккаунт не найден",
+          "duplicateValue": "no account"
+        },
+        {
+          "key": "profile.account.selectAccountType",
+          "firstValue": "Выберите тип аккаунта",
+          "duplicateValue": "select account type"
+        },
+        {
+          "key": "profile.account.selectRole",
+          "firstValue": "Выберите роль",
+          "duplicateValue": "select role"
+        },
+        {
+          "key": "profile.account.selectModerationLevel",
+          "firstValue": "Выберите уровень модерации",
+          "duplicateValue": "select moderation level"
+        },
+        {
+          "key": "profile.account.adminOnlyFields",
+          "firstValue": "Некоторые поля доступны только администраторам",
+          "duplicateValue": "admin only fields"
+        },
+        {
+          "key": "profile.account.updateSuccess",
+          "firstValue": "Account updated successfully",
+          "duplicateValue": "update success"
+        },
+        {
+          "key": "profile.account.updateError",
+          "firstValue": "Failed to update account",
+          "duplicateValue": "update error"
+        },
+        {
+          "key": "profile.accountTypes.basic",
+          "firstValue": "Basic",
+          "duplicateValue": "basic"
+        },
+        {
+          "key": "profile.accountTypes.premium",
+          "firstValue": "Premium",
+          "duplicateValue": "premium"
+        },
+        {
+          "key": "profile.accountTypes.business",
+          "firstValue": "Business",
+          "duplicateValue": "business"
+        },
+        {
+          "key": "profile.roles.seller",
+          "firstValue": "Seller",
+          "duplicateValue": "seller"
+        },
+        {
+          "key": "profile.roles.buyer",
+          "firstValue": "Buyer",
+          "duplicateValue": "buyer"
+        },
+        {
+          "key": "profile.roles.dealer",
+          "firstValue": "Dealer",
+          "duplicateValue": "dealer"
+        },
+        {
+          "key": "profile.moderationLevels.auto",
+          "firstValue": "Automatic",
+          "duplicateValue": "auto"
+        },
+        {
+          "key": "profile.moderationLevels.manual",
+          "firstValue": "Manual",
+          "duplicateValue": "manual"
+        },
+        {
+          "key": "profile.moderationLevels.strict",
+          "firstValue": "Strict",
+          "duplicateValue": "strict"
+        },
+        {
+          "key": "profile.styles.realistic",
+          "firstValue": "Реалистичный",
+          "duplicateValue": "realistic"
+        },
+        {
+          "key": "profile.styles.professional",
+          "firstValue": "Профессиональный",
+          "duplicateValue": "professional"
+        },
+        {
+          "key": "profile.styles.cartoon",
+          "firstValue": "Мультяшный",
+          "duplicateValue": "cartoon"
+        },
+        {
+          "key": "profile.styles.caricature",
+          "firstValue": "Карикатура",
+          "duplicateValue": "caricature"
+        },
+        {
+          "key": "profile.styles.artistic",
+          "firstValue": "Художественный",
+          "duplicateValue": "artistic"
+        },
+        {
+          "key": "profile.styles.abstract",
+          "firstValue": "Абстрактный",
+          "duplicateValue": "abstract"
+        },
+        {
+          "key": "profile.styles.anime",
+          "firstValue": "Аниме",
+          "duplicateValue": "anime"
+        },
+        {
+          "key": "profile.styles.vintage",
+          "firstValue": "Винтажный",
+          "duplicateValue": "vintage"
+        },
+        {
+          "key": "profile.genders.male",
+          "firstValue": "Мужской",
+          "duplicateValue": "male"
+        },
+        {
+          "key": "profile.genders.female",
+          "firstValue": "Женский",
+          "duplicateValue": "female"
+        },
+        {
+          "key": "profile.genders.neutral",
+          "firstValue": "Нейтральный",
+          "duplicateValue": "neutral"
+        },
+        {
+          "key": "profile.avatar.upload",
+          "firstValue": "Upload Avatar",
+          "duplicateValue": "upload"
+        },
+        {
+          "key": "profile.avatar.generate",
+          "firstValue": "Generate AI Avatar",
+          "duplicateValue": "generate"
+        },
+        {
+          "key": "profile.avatar.generating",
+          "firstValue": "Generating...",
+          "duplicateValue": "generating"
+        },
+        {
+          "key": "profile.avatar.generate_button",
+          "firstValue": "Generate Avatar",
+          "duplicateValue": "generate_button"
+        },
+        {
+          "key": "profile.avatar.success",
+          "firstValue": "Avatar generated successfully",
+          "duplicateValue": "success"
+        },
+        {
+          "key": "profile.avatar.failed",
+          "firstValue": "Avatar generation failed",
+          "duplicateValue": "failed"
+        },
+        {
+          "key": "profile.avatar.title",
+          "firstValue": "Avatar Settings",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "profile.avatar.style",
+          "firstValue": "Style",
+          "duplicateValue": "style"
+        },
+        {
+          "key": "profile.avatar.selectStyle",
+          "firstValue": "Select style",
+          "duplicateValue": "select style"
+        },
+        {
+          "key": "profile.avatar.gender",
+          "firstValue": "Gender",
+          "duplicateValue": "gender"
+        },
+        {
+          "key": "profile.avatar.selectGender",
+          "firstValue": "Select gender",
+          "duplicateValue": "select gender"
+        },
+        {
+          "key": "profile.avatar.customRequirements",
+          "firstValue": "Custom Requirements",
+          "duplicateValue": "custom requirements"
+        },
+        {
+          "key": "profile.avatar.customPlaceholder",
+          "firstValue": "Describe your avatar requirements...",
+          "duplicateValue": "custom placeholder"
+        },
+        {
+          "key": "profile.avatar.cancel",
+          "firstValue": "Cancel",
+          "duplicateValue": "cancel"
+        },
+        {
+          "key": "profile.avatar.fileInfo",
+          "firstValue": "File Info",
+          "duplicateValue": "file info"
+        },
+        {
+          "key": "profile.avatar.styles.realistic",
+          "firstValue": "Realistic",
+          "duplicateValue": "realistic"
+        },
+        {
+          "key": "profile.avatar.styles.professional",
+          "firstValue": "Professional",
+          "duplicateValue": "professional"
+        },
+        {
+          "key": "profile.avatar.styles.cartoon",
+          "firstValue": "Cartoon",
+          "duplicateValue": "cartoon"
+        },
+        {
+          "key": "profile.avatar.styles.caricature",
+          "firstValue": "Caricature",
+          "duplicateValue": "caricature"
+        },
+        {
+          "key": "profile.avatar.styles.artistic",
+          "firstValue": "Artistic",
+          "duplicateValue": "artistic"
+        },
+        {
+          "key": "profile.avatar.styles.anime",
+          "firstValue": "Anime",
+          "duplicateValue": "anime"
+        },
+        {
+          "key": "profile.avatar.genders.male",
+          "firstValue": "Male",
+          "duplicateValue": "male"
+        },
+        {
+          "key": "profile.avatar.genders.female",
+          "firstValue": "Female",
+          "duplicateValue": "female"
+        },
+        {
+          "key": "profile.avatar.genders.neutral",
+          "firstValue": "Neutral",
+          "duplicateValue": "neutral"
+        },
+        {
+          "key": "profile.form.firstName",
+          "firstValue": "First Name",
+          "duplicateValue": "first name"
+        },
+        {
+          "key": "profile.form.lastName",
+          "firstValue": "Last Name",
+          "duplicateValue": "last name"
+        },
+        {
+          "key": "profile.form.age",
+          "firstValue": "Age",
+          "duplicateValue": "age"
+        },
+        {
+          "key": "profile.form.email",
+          "firstValue": "Email",
+          "duplicateValue": "email"
+        },
+        {
+          "key": "profile.form.emailNote",
+          "firstValue": "Email Note",
+          "duplicateValue": "email note"
+        },
+        {
+          "key": "profile.form.save",
+          "firstValue": "Save",
+          "duplicateValue": "save"
+        },
+        {
+          "key": "profile.form.saving",
+          "firstValue": "Сохранение...",
+          "duplicateValue": "saving"
+        },
+        {
+          "key": "profile.form.firstNamePlaceholder",
+          "firstValue": "Введите имя",
+          "duplicateValue": "first name placeholder"
+        },
+        {
+          "key": "profile.form.lastNamePlaceholder",
+          "firstValue": "Введите фамилию",
+          "duplicateValue": "last name placeholder"
+        },
+        {
+          "key": "profile.form.agePlaceholder",
+          "firstValue": "Введите возраст",
+          "duplicateValue": "age placeholder"
+        },
+        {
+          "key": "profile.form.updateSuccess",
+          "firstValue": "Profile updated successfully",
+          "duplicateValue": "update success"
+        },
+        {
+          "key": "profile.form.updateError",
+          "firstValue": "Failed to update profile",
+          "duplicateValue": "update error"
+        },
+        {
+          "key": "profile.saving",
+          "firstValue": "Сохранение...",
+          "duplicateValue": "saving"
+        },
+        {
+          "key": "navigation.home",
+          "firstValue": "Home",
+          "duplicateValue": "home"
+        },
+        {
+          "key": "navigation.myAds",
+          "firstValue": "My Ads",
+          "duplicateValue": "my ads"
+        },
+        {
+          "key": "navigation.favorites",
+          "firstValue": "Favorites",
+          "duplicateValue": "favorites"
+        },
+        {
+          "key": "navigation.analytics",
+          "firstValue": "Analytics",
+          "duplicateValue": "analytics"
+        },
+        {
+          "key": "navigation.profile",
+          "firstValue": "Profile",
+          "duplicateValue": "profile"
+        },
+        {
+          "key": "autoria.title",
+          "firstValue": "CarHub",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "autoria.subtitle",
+          "firstValue": "Automotive Marketplace Platform",
+          "duplicateValue": "subtitle"
+        },
+        {
+          "key": "autoria.myAds",
+          "firstValue": "My Ads",
+          "duplicateValue": "my ads"
+        },
+        {
+          "key": "autoria.myAdsDesc",
+          "firstValue": "View and manage your ads",
+          "duplicateValue": "my ads desc"
+        },
+        {
+          "key": "autoria.createAd",
+          "firstValue": "Create Ad",
+          "duplicateValue": "create ad"
+        },
+        {
+          "key": "autoria.createAdDesc",
+          "firstValue": "Post an ad to sell your car",
+          "duplicateValue": "create ad desc"
+        },
+        {
+          "key": "autoria.searchCars",
+          "firstValue": "Search Cars",
+          "duplicateValue": "search cars"
+        },
+        {
+          "key": "autoria.searchCarsDesc",
+          "firstValue": "Find your dream car",
+          "duplicateValue": "search cars desc"
+        },
+        {
+          "key": "autoria.favorites",
+          "firstValue": "Favorites",
+          "duplicateValue": "favorites"
+        },
+        {
+          "key": "autoria.favoritesDesc",
+          "firstValue": "Saved ads",
+          "duplicateValue": "favorites desc"
+        },
+        {
+          "key": "autoria.analytics",
+          "firstValue": "Analytics",
+          "duplicateValue": "analytics"
+        },
+        {
+          "key": "autoria.analyticsDesc",
+          "firstValue": "Your ads statistics",
+          "duplicateValue": "analytics desc"
+        },
+        {
+          "key": "autoria.profile",
+          "firstValue": "Profile",
+          "duplicateValue": "profile"
+        },
+        {
+          "key": "autoria.profileDesc",
+          "firstValue": "Manage your profile settings",
+          "duplicateValue": "profile desc"
+        },
+        {
+          "key": "autoria.statusFilter",
+          "firstValue": "Status Filter",
+          "duplicateValue": "status filter"
+        },
+        {
+          "key": "autoria.active",
+          "firstValue": "Active",
+          "duplicateValue": "active"
+        },
+        {
+          "key": "autoria.allStatuses",
+          "firstValue": "All statuses",
+          "duplicateValue": "all statuses"
+        },
+        {
+          "key": "autoria.quickSearch",
+          "firstValue": "Quick search",
+          "duplicateValue": "quick search"
+        },
+        {
+          "key": "autoria.searchPlaceholder",
+          "firstValue": "Search cars...",
+          "duplicateValue": "search placeholder"
+        },
+        {
+          "key": "autoria.findCars",
+          "firstValue": "Find cars",
+          "duplicateValue": "find cars"
+        },
+        {
+          "key": "autoria.saving",
+          "firstValue": "Saving...",
+          "duplicateValue": "saving"
+        },
+        {
+          "key": "autoria.saveChanges",
+          "firstValue": "Save Changes",
+          "duplicateValue": "save changes"
+        },
+        {
+          "key": "autoria.totalAds",
+          "firstValue": "Total Ads",
+          "duplicateValue": "total ads"
+        },
+        {
+          "key": "autoria.activeAds",
+          "firstValue": "Active Ads",
+          "duplicateValue": "active ads"
+        },
+        {
+          "key": "autoria.totalUsers",
+          "firstValue": "Total Users",
+          "duplicateValue": "total users"
+        },
+        {
+          "key": "autoria.premiumUsers",
+          "firstValue": "Premium Users",
+          "duplicateValue": "premium users"
+        },
+        {
+          "key": "autoria.whyChoose",
+          "firstValue": "Why Choose CarHub?",
+          "duplicateValue": "why choose"
+        },
+        {
+          "key": "autoria.benefits.security.title",
+          "firstValue": "Security",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "autoria.benefits.security.description",
+          "firstValue": "Safe and secure transactions",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "autoria.benefits.fast.title",
+          "firstValue": "Fast",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "autoria.benefits.fast.description",
+          "firstValue": "Quick and easy process",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "autoria.benefits.effective.title",
+          "firstValue": "Effective",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "autoria.benefits.effective.description",
+          "firstValue": "Get results quickly",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "autoria.brand",
+          "firstValue": "Brand",
+          "duplicateValue": "brand"
+        },
+        {
+          "key": "autoria.model",
+          "firstValue": "Model",
+          "duplicateValue": "model"
+        },
+        {
+          "key": "autoria.anyBrand",
+          "firstValue": "Any Brand",
+          "duplicateValue": "any brand"
+        },
+        {
+          "key": "autoria.anyModel",
+          "firstValue": "Any Model",
+          "duplicateValue": "any model"
+        },
+        {
+          "key": "autoria.yearFrom",
+          "firstValue": "Year From",
+          "duplicateValue": "year from"
+        },
+        {
+          "key": "autoria.yearTo",
+          "firstValue": "Year To",
+          "duplicateValue": "year to"
+        },
+        {
+          "key": "autoria.priceFrom",
+          "firstValue": "Price From",
+          "duplicateValue": "price from"
+        },
+        {
+          "key": "autoria.priceTo",
+          "firstValue": "Price To",
+          "duplicateValue": "price to"
+        },
+        {
+          "key": "autoria.searchPlaceholderCars",
+          "firstValue": "Search cars...",
+          "duplicateValue": "search placeholder cars"
+        },
+        {
+          "key": "autoria.sortBy",
+          "firstValue": "Sort By",
+          "duplicateValue": "sort by"
+        },
+        {
+          "key": "autoria.sortByNewestFirst",
+          "firstValue": "Newest First",
+          "duplicateValue": "sort by newest first"
+        },
+        {
+          "key": "autoria.sortByCheapest",
+          "firstValue": "Cheapest First",
+          "duplicateValue": "sort by cheapest"
+        },
+        {
+          "key": "autoria.sortByExpensive",
+          "firstValue": "Most Expensive",
+          "duplicateValue": "sort by expensive"
+        },
+        {
+          "key": "autoria.sortByNewestCars",
+          "firstValue": "Newest Cars",
+          "duplicateValue": "sort by newest cars"
+        },
+        {
+          "key": "autoria.sortByLowerMileage",
+          "firstValue": "Lower Mileage",
+          "duplicateValue": "sort by lower mileage"
+        },
+        {
+          "key": "autoria.found",
+          "firstValue": "Found",
+          "duplicateValue": "found"
+        },
+        {
+          "key": "autoria.cars",
+          "firstValue": "cars",
+          "duplicateValue": "cars"
+        },
+        {
+          "key": "autoria.loadingAds",
+          "firstValue": "Loading ads...",
+          "duplicateValue": "loading ads"
+        },
+        {
+          "key": "autoria.pending",
+          "firstValue": "Pending",
+          "duplicateValue": "pending"
+        },
+        {
+          "key": "autoria.rejected",
+          "firstValue": "Rejected",
+          "duplicateValue": "rejected"
+        },
+        {
+          "key": "autoria.inactive",
+          "firstValue": "Inactive",
+          "duplicateValue": "inactive"
+        },
+        {
+          "key": "autoria.newest",
+          "firstValue": "Newest",
+          "duplicateValue": "newest"
+        },
+        {
+          "key": "autoria.oldest",
+          "firstValue": "Oldest",
+          "duplicateValue": "oldest"
+        },
+        {
+          "key": "autoria.priceHigh",
+          "firstValue": "Price: High to Low",
+          "duplicateValue": "price high"
+        },
+        {
+          "key": "autoria.priceLow",
+          "firstValue": "Price: Low to High",
+          "duplicateValue": "price low"
+        },
+        {
+          "key": "autoria.byViews",
+          "firstValue": "By Views",
+          "duplicateValue": "by views"
+        },
+        {
+          "key": "autoria.noAdsYet",
+          "firstValue": "No ads yet",
+          "duplicateValue": "no ads yet"
+        },
+        {
+          "key": "autoria.noAdsFound",
+          "firstValue": "No ads found",
+          "duplicateValue": "no ads found"
+        },
+        {
+          "key": "autoria.createFirstAd",
+          "firstValue": "Create your first ad to start selling",
+          "duplicateValue": "create first ad"
+        },
+        {
+          "key": "autoria.changeSearchParams",
+          "firstValue": "Try changing search parameters",
+          "duplicateValue": "change search params"
+        },
+        {
+          "key": "autoria.views",
+          "firstValue": "views",
+          "duplicateValue": "views"
+        },
+        {
+          "key": "autoria.createdOn",
+          "firstValue": "Created on",
+          "duplicateValue": "created on"
+        },
+        {
+          "key": "autoria.loadingFavorites",
+          "firstValue": "Loading favorites...",
+          "duplicateValue": "loading favorites"
+        },
+        {
+          "key": "autoria.totalFavorites",
+          "firstValue": "Total Favorites",
+          "duplicateValue": "total favorites"
+        },
+        {
+          "key": "autoria.activeFavorites",
+          "firstValue": "Active Favorites",
+          "duplicateValue": "active favorites"
+        },
+        {
+          "key": "autoria.averagePrice",
+          "firstValue": "Average Price",
+          "duplicateValue": "average price"
+        },
+        {
+          "key": "autoria.noFavoritesYet",
+          "firstValue": "No favorites yet",
+          "duplicateValue": "no favorites yet"
+        },
+        {
+          "key": "autoria.noFavoritesDesc",
+          "firstValue": "Start adding cars to favorites to see them here",
+          "duplicateValue": "no favorites desc"
+        },
+        {
+          "key": "autoria.noPhoto",
+          "firstValue": "No Photo",
+          "duplicateValue": "no photo"
+        },
+        {
+          "key": "autoria.km",
+          "firstValue": "km",
+          "duplicateValue": "km"
+        },
+        {
+          "key": "autoria.activeStatus",
+          "firstValue": "Active",
+          "duplicateValue": "active status"
+        },
+        {
+          "key": "autoria.inactiveStatus",
+          "firstValue": "Inactive",
+          "duplicateValue": "inactive status"
+        },
+        {
+          "key": "autoria.favoriteTips",
+          "firstValue": "Favorite Tips",
+          "duplicateValue": "favorite tips"
+        },
+        {
+          "key": "autoria.howToAddFavorites",
+          "firstValue": "How to add favorites",
+          "duplicateValue": "how to add favorites"
+        },
+        {
+          "key": "autoria.clickHeartIcon",
+          "firstValue": "Click the heart icon on any car",
+          "duplicateValue": "click heart icon"
+        },
+        {
+          "key": "autoria.autoSave",
+          "firstValue": "Automatically saved to your account",
+          "duplicateValue": "auto save"
+        },
+        {
+          "key": "autoria.getNotifications",
+          "firstValue": "Get notifications about changes",
+          "duplicateValue": "get notifications"
+        },
+        {
+          "key": "autoria.notifications",
+          "firstValue": "Notifications",
+          "duplicateValue": "notifications"
+        },
+        {
+          "key": "autoria.priceChanges",
+          "firstValue": "Price changes",
+          "duplicateValue": "price changes"
+        },
+        {
+          "key": "autoria.soldNotification",
+          "firstValue": "When car is sold",
+          "duplicateValue": "sold notification"
+        },
+        {
+          "key": "autoria.adUpdates",
+          "firstValue": "Ad updates",
+          "duplicateValue": "ad updates"
+        },
+        {
+          "key": "autoria.selectAdForAnalysis",
+          "firstValue": "Select Ad for Analysis",
+          "duplicateValue": "select ad for analysis"
+        },
+        {
+          "key": "autoria.selectAdPlaceholder",
+          "firstValue": "Choose an ad to view analytics",
+          "duplicateValue": "select ad placeholder"
+        },
+        {
+          "key": "autoria.loadingAnalytics",
+          "firstValue": "Loading analytics...",
+          "duplicateValue": "loading analytics"
+        },
+        {
+          "key": "autoria.totalViews",
+          "firstValue": "Total Views",
+          "duplicateValue": "total views"
+        },
+        {
+          "key": "autoria.today",
+          "firstValue": "Today",
+          "duplicateValue": "today"
+        },
+        {
+          "key": "autoria.thisWeek",
+          "firstValue": "This Week",
+          "duplicateValue": "this week"
+        },
+        {
+          "key": "autoria.thisMonth",
+          "firstValue": "This Month",
+          "duplicateValue": "this month"
+        },
+        {
+          "key": "autoria.regionComparison",
+          "firstValue": "Region Comparison",
+          "duplicateValue": "region comparison"
+        },
+        {
+          "key": "autoria.averagePriceIn",
+          "firstValue": "Average price in",
+          "duplicateValue": "average price in"
+        },
+        {
+          "key": "autoria.yourPrice",
+          "firstValue": "Your Price",
+          "duplicateValue": "your price"
+        },
+        {
+          "key": "autoria.adsCount",
+          "firstValue": "Ads Count",
+          "duplicateValue": "ads count"
+        },
+        {
+          "key": "autoria.yourPosition",
+          "firstValue": "Your position: ",
+          "duplicateValue": "your position"
+        },
+        {
+          "key": "autoria.fromMaximum",
+          "firstValue": "% from maximum",
+          "duplicateValue": "from maximum"
+        },
+        {
+          "key": "autoria.optimizationRecommendations",
+          "firstValue": "Optimization Recommendations",
+          "duplicateValue": "optimization recommendations"
+        },
+        {
+          "key": "autoria.lowViewsToday",
+          "firstValue": "Low views today. Consider updating your ad.",
+          "duplicateValue": "low views today"
+        },
+        {
+          "key": "autoria.priceHigherThanAverage",
+          "firstValue": "Your price is higher than average in the region",
+          "duplicateValue": "price higher than average"
+        },
+        {
+          "key": "autoria.tipsToIncreaseViews",
+          "firstValue": "Tips to increase views:",
+          "duplicateValue": "tips to increase views"
+        },
+        {
+          "key": "autoria.addQualityPhotos",
+          "firstValue": "Add quality photos",
+          "duplicateValue": "add quality photos"
+        },
+        {
+          "key": "autoria.updateRegularly",
+          "firstValue": "Update regularly",
+          "duplicateValue": "update regularly"
+        },
+        {
+          "key": "autoria.detailedDescription",
+          "firstValue": "Write detailed description",
+          "duplicateValue": "detailed description"
+        },
+        {
+          "key": "autoria.competitivePrice",
+          "firstValue": "Set competitive price",
+          "duplicateValue": "competitive price"
+        },
+        {
+          "key": "autoria.selectAdForAnalysisEmpty",
+          "firstValue": "Select an ad to view analytics",
+          "duplicateValue": "select ad for analysis empty"
+        },
+        {
+          "key": "autoria.selectAdFromListAbove",
+          "firstValue": "Select an ad from the list above to see detailed analytics",
+          "duplicateValue": "select ad from list above"
+        },
+        {
+          "key": "autoria.basicInfoTitle",
+          "firstValue": "Basic Information",
+          "duplicateValue": "basic info title"
+        },
+        {
+          "key": "autoria.basicInfoDesc",
+          "firstValue": "Enter basic information about your car",
+          "duplicateValue": "basic info desc"
+        },
+        {
+          "key": "autoria.adTips",
+          "firstValue": "Tips for a good ad",
+          "duplicateValue": "ad tips"
+        },
+        {
+          "key": "autoria.tip1",
+          "firstValue": "Use a clear and descriptive title",
+          "duplicateValue": "tip1"
+        },
+        {
+          "key": "autoria.tip2",
+          "firstValue": "Write a detailed description",
+          "duplicateValue": "tip2"
+        },
+        {
+          "key": "autoria.tip3",
+          "firstValue": "Add quality photos",
+          "duplicateValue": "tip3"
+        },
+        {
+          "key": "autoria.tip4",
+          "firstValue": "Set a competitive price",
+          "duplicateValue": "tip4"
+        },
+        {
+          "key": "autoria.validationErrors",
+          "firstValue": "Validation Errors",
+          "duplicateValue": "validation errors"
+        },
+        {
+          "key": "autoria.titleCounter",
+          "firstValue": "Title",
+          "duplicateValue": "title counter"
+        },
+        {
+          "key": "autoria.descriptionCounter",
+          "firstValue": "Description",
+          "duplicateValue": "description counter"
+        },
+        {
+          "key": "autoria.characters",
+          "firstValue": "characters",
+          "duplicateValue": "characters"
+        },
+        {
+          "key": "autoria.continue",
+          "firstValue": "Continue",
+          "duplicateValue": "continue"
+        },
+        {
+          "key": "autoria.carSpecsTitle",
+          "firstValue": "Car Specifications",
+          "duplicateValue": "car specs title"
+        },
+        {
+          "key": "autoria.carSpecsDescription",
+          "firstValue": "Specify detailed characteristics of your car",
+          "duplicateValue": "car specs description"
+        },
+        {
+          "key": "autoria.priceTitle",
+          "firstValue": "Pricing",
+          "duplicateValue": "price title"
+        },
+        {
+          "key": "autoria.priceDesc",
+          "firstValue": "Set the price for your car",
+          "duplicateValue": "price desc"
+        },
+        {
+          "key": "autoria.currentRates",
+          "firstValue": "Current Exchange Rates",
+          "duplicateValue": "current rates"
+        },
+        {
+          "key": "autoria.updated",
+          "firstValue": "Updated",
+          "duplicateValue": "updated"
+        },
+        {
+          "key": "autoria.uah",
+          "firstValue": "Ukrainian Hryvnia",
+          "duplicateValue": "uah"
+        },
+        {
+          "key": "autoria.usd",
+          "firstValue": "US Dollar",
+          "duplicateValue": "usd"
+        },
+        {
+          "key": "autoria.eur",
+          "firstValue": "Euro",
+          "duplicateValue": "eur"
+        },
+        {
+          "key": "autoria.priceDescription",
+          "firstValue": "Enter the price of your car",
+          "duplicateValue": "price description"
+        },
+        {
+          "key": "autoria.currencyDescription",
+          "firstValue": "Select currency",
+          "duplicateValue": "currency description"
+        },
+        {
+          "key": "autoria.locationTitle",
+          "firstValue": "Location",
+          "duplicateValue": "location title"
+        },
+        {
+          "key": "autoria.locationDesc",
+          "firstValue": "Specify the location of your car",
+          "duplicateValue": "location desc"
+        },
+        {
+          "key": "autoria.contactTitle",
+          "firstValue": "Contact Information",
+          "duplicateValue": "contact title"
+        },
+        {
+          "key": "autoria.contactDesc",
+          "firstValue": "Provide your contact details",
+          "duplicateValue": "contact desc"
+        },
+        {
+          "key": "autoria.metadataTitle",
+          "firstValue": "Additional Information",
+          "duplicateValue": "metadata title"
+        },
+        {
+          "key": "autoria.metadataDescription",
+          "firstValue": "Additional settings and metadata",
+          "duplicateValue": "metadata description"
+        },
+        {
+          "key": "autoria.imagesTitle",
+          "firstValue": "Photos",
+          "duplicateValue": "images title"
+        },
+        {
+          "key": "autoria.imagesDesc",
+          "firstValue": "Add photos of your car",
+          "duplicateValue": "images desc"
+        },
+        {
+          "key": "autoria.createAdTitle",
+          "firstValue": "Create Advertisement",
+          "duplicateValue": "create ad title"
+        },
+        {
+          "key": "autoria.saveDraft",
+          "firstValue": "Save Draft",
+          "duplicateValue": "save draft"
+        },
+        {
+          "key": "autoria.back",
+          "firstValue": "Back",
+          "duplicateValue": "back"
+        },
+        {
+          "key": "autoria.progressFill",
+          "firstValue": "Completion Progress",
+          "duplicateValue": "progress fill"
+        },
+        {
+          "key": "autoria.of",
+          "firstValue": "of",
+          "duplicateValue": "of"
+        },
+        {
+          "key": "autoria.requiredSections",
+          "firstValue": "required sections",
+          "duplicateValue": "required sections"
+        },
+        {
+          "key": "autoria.readyToPublish",
+          "firstValue": "Ready to publish",
+          "duplicateValue": "ready to publish"
+        },
+        {
+          "key": "autoria.needToFill",
+          "firstValue": "Need to fill",
+          "duplicateValue": "need to fill"
+        },
+        {
+          "key": "autoria.tabs.specs",
+          "firstValue": "Specifications",
+          "duplicateValue": "specs"
+        },
+        {
+          "key": "autoria.tabs.specsDesc",
+          "firstValue": "Brand, model, year and technical specifications",
+          "duplicateValue": "specs desc"
+        },
+        {
+          "key": "autoria.tabs.pricing",
+          "firstValue": "Price",
+          "duplicateValue": "pricing"
+        },
+        {
+          "key": "autoria.tabs.pricingDesc",
+          "firstValue": "Cost and sale conditions",
+          "duplicateValue": "pricing desc"
+        },
+        {
+          "key": "autoria.tabs.location",
+          "firstValue": "Location",
+          "duplicateValue": "location"
+        },
+        {
+          "key": "autoria.tabs.locationDesc",
+          "firstValue": "Region and city of sale",
+          "duplicateValue": "location desc"
+        },
+        {
+          "key": "autoria.tabs.contact",
+          "firstValue": "Contacts",
+          "duplicateValue": "contact"
+        },
+        {
+          "key": "autoria.tabs.contactDesc",
+          "firstValue": "Contact information",
+          "duplicateValue": "contact desc"
+        },
+        {
+          "key": "autoria.tabs.images",
+          "firstValue": "Images",
+          "duplicateValue": "images"
+        },
+        {
+          "key": "autoria.tabs.imagesDesc",
+          "firstValue": "Photos or generated images",
+          "duplicateValue": "images desc"
+        },
+        {
+          "key": "autoria.tabs.metadata",
+          "firstValue": "Additional",
+          "duplicateValue": "metadata"
+        },
+        {
+          "key": "autoria.tabs.metadataDesc",
+          "firstValue": "Additional parameters",
+          "duplicateValue": "metadata desc"
+        },
+        {
+          "key": "autoria.tabs.basic",
+          "firstValue": "Ad Text",
+          "duplicateValue": "basic"
+        },
+        {
+          "key": "autoria.tabs.basicDesc",
+          "firstValue": "Title and description (generated automatically)",
+          "duplicateValue": "basic desc"
+        },
+        {
+          "key": "autoria.tabs.statistics",
+          "firstValue": "Statistics",
+          "duplicateValue": "statistics"
+        },
+        {
+          "key": "autoria.tabs.statisticsDesc",
+          "firstValue": "Analytics and statistics",
+          "duplicateValue": "statistics desc"
+        },
+        {
+          "key": "autoria.tabs.preview",
+          "firstValue": "Preview",
+          "duplicateValue": "preview"
+        },
+        {
+          "key": "autoria.tabs.previewDesc",
+          "firstValue": "Final ad preview",
+          "duplicateValue": "preview desc"
+        },
+        {
+          "key": "autoria.moderationInfo",
+          "firstValue": "Moderation Information",
+          "duplicateValue": "moderation info"
+        },
+        {
+          "key": "autoria.publishAd",
+          "firstValue": "Publish Advertisement",
+          "duplicateValue": "publish ad"
+        },
+        {
+          "key": "autoria.automaticModeration",
+          "firstValue": "Automatic Moderation",
+          "duplicateValue": "automatic moderation"
+        },
+        {
+          "key": "autoria.adWillBeChecked",
+          "firstValue": "Your ad will be checked",
+          "duplicateValue": "ad will be checked"
+        },
+        {
+          "key": "autoria.profanityCheck",
+          "firstValue": "Profanity check",
+          "duplicateValue": "profanity check"
+        },
+        {
+          "key": "autoria.suspiciousContent",
+          "firstValue": "Suspicious content check",
+          "duplicateValue": "suspicious content"
+        },
+        {
+          "key": "autoria.platformCompliance",
+          "firstValue": "Platform compliance check",
+          "duplicateValue": "platform compliance"
+        },
+        {
+          "key": "autoria.editAttemptsLeft",
+          "firstValue": "Edit attempts left",
+          "duplicateValue": "edit attempts left"
+        },
+        {
+          "key": "autoria.vehicleType",
+          "firstValue": "Vehicle Type",
+          "duplicateValue": "vehicle type"
+        },
+        {
+          "key": "autoria.selectVehicleType",
+          "firstValue": "Select vehicle type",
+          "duplicateValue": "select vehicle type"
+        },
+        {
+          "key": "autoria.selectVehicleTypeFirst",
+          "firstValue": "Select vehicle type first",
+          "duplicateValue": "select vehicle type first"
+        },
+        {
+          "key": "autoria.condition",
+          "firstValue": "Condition",
+          "duplicateValue": "condition"
+        },
+        {
+          "key": "autoria.selectCondition",
+          "firstValue": "Select condition",
+          "duplicateValue": "select condition"
+        },
+        {
+          "key": "autoria.vinCode",
+          "firstValue": "VIN Code",
+          "duplicateValue": "vin code"
+        },
+        {
+          "key": "autoria.enterVin",
+          "firstValue": "Enter VIN code",
+          "duplicateValue": "enter vin"
+        },
+        {
+          "key": "autoria.vinDescription",
+          "firstValue": "Vehicle identification number",
+          "duplicateValue": "vin description"
+        },
+        {
+          "key": "autoria.exchange",
+          "firstValue": "Exchange possible",
+          "duplicateValue": "exchange"
+        },
+        {
+          "key": "autoria.price",
+          "firstValue": "Price",
+          "duplicateValue": "price"
+        },
+        {
+          "key": "autoria.enterPrice",
+          "firstValue": "Enter price",
+          "duplicateValue": "enter price"
+        },
+        {
+          "key": "autoria.currency",
+          "firstValue": "Currency",
+          "duplicateValue": "currency"
+        },
+        {
+          "key": "autoria.selectCurrency",
+          "firstValue": "Select currency",
+          "duplicateValue": "select currency"
+        },
+        {
+          "key": "autoria.basicInfo",
+          "firstValue": "Basic Info",
+          "duplicateValue": "basic info"
+        },
+        {
+          "key": "autoria.carSpecs",
+          "firstValue": "Car Specs",
+          "duplicateValue": "car specs"
+        },
+        {
+          "key": "autoria.pricing",
+          "firstValue": "Pricing",
+          "duplicateValue": "pricing"
+        },
+        {
+          "key": "autoria.location",
+          "firstValue": "Location",
+          "duplicateValue": "location"
+        },
+        {
+          "key": "autoria.metadata",
+          "firstValue": "Metadata",
+          "duplicateValue": "metadata"
+        },
+        {
+          "key": "autoria.images",
+          "firstValue": "Images",
+          "duplicateValue": "images"
+        },
+        {
+          "key": "autoria.contact",
+          "firstValue": "Contact",
+          "duplicateValue": "contact"
+        },
+        {
+          "key": "autoria.statistics",
+          "firstValue": "Statistics",
+          "duplicateValue": "statistics"
+        },
+        {
+          "key": "autoria.preview",
+          "firstValue": "Preview",
+          "duplicateValue": "preview"
+        },
+        {
+          "key": "autoria.moderation.queue",
+          "firstValue": "Модерація",
+          "duplicateValue": "queue"
+        },
+        {
+          "key": "autoria.moderation.title",
+          "firstValue": "Модерація оголошень",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "autoria.moderation.description",
+          "firstValue": "Управління та модерація оголошень на платформі",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "autoria.moderation.statistics",
+          "firstValue": "Статистика модерації",
+          "duplicateValue": "statistics"
+        },
+        {
+          "key": "autoria.moderation.totalAds",
+          "firstValue": "Всього оголошень",
+          "duplicateValue": "total ads"
+        },
+        {
+          "key": "autoria.moderation.pendingModeration",
+          "firstValue": "На модерації",
+          "duplicateValue": "pending moderation"
+        },
+        {
+          "key": "autoria.moderation.needsReview",
+          "firstValue": "Потребує перевірки",
+          "duplicateValue": "needs review"
+        },
+        {
+          "key": "autoria.moderation.rejected",
+          "firstValue": "Відхилено",
+          "duplicateValue": "rejected"
+        },
+        {
+          "key": "autoria.moderation.active",
+          "firstValue": "Активних",
+          "duplicateValue": "active"
+        },
+        {
+          "key": "autoria.moderation.todayModerated",
+          "firstValue": "Сьогодні перевірено",
+          "duplicateValue": "today moderated"
+        },
+        {
+          "key": "autoria.moderation.approve",
+          "firstValue": "Схвалити",
+          "duplicateValue": "approve"
+        },
+        {
+          "key": "autoria.moderation.reject",
+          "firstValue": "Відхилити",
+          "duplicateValue": "reject"
+        },
+        {
+          "key": "autoria.moderation.review",
+          "firstValue": "На перевірку",
+          "duplicateValue": "review"
+        },
+        {
+          "key": "autoria.moderation.viewDetails",
+          "firstValue": "Переглянути",
+          "duplicateValue": "view details"
+        },
+        {
+          "key": "autoria.moderation.rejectionReason",
+          "firstValue": "Причина відхилення",
+          "duplicateValue": "rejection reason"
+        },
+        {
+          "key": "autoria.moderation.noAdsFound",
+          "firstValue": "Оголошень не знайдено",
+          "duplicateValue": "no ads found"
+        },
+        {
+          "key": "autoria.moderation.noAdsDescription",
+          "firstValue": "Немає оголошень для модерації з обраними фільтрами",
+          "duplicateValue": "no ads description"
+        },
+        {
+          "key": "autoria.moderation.searchPlaceholder",
+          "firstValue": "Пошук за заголовком, описом, email...",
+          "duplicateValue": "search placeholder"
+        },
+        {
+          "key": "autoria.moderation.allStatuses",
+          "firstValue": "Всі статуси",
+          "duplicateValue": "all statuses"
+        },
+        {
+          "key": "autoria.moderation.createdAt",
+          "firstValue": "Створено",
+          "duplicateValue": "created at"
+        },
+        {
+          "key": "autoria.moderation.accessDenied",
+          "firstValue": "У вас немає прав доступу до цієї сторінки",
+          "duplicateValue": "access denied"
+        },
+        {
+          "key": "basicInfo.formTab",
+          "firstValue": "Creation Form",
+          "duplicateValue": "form tab"
+        },
+        {
+          "key": "basicInfo.demoTab",
+          "firstValue": "Validation Demo",
+          "duplicateValue": "demo tab"
+        },
+        {
+          "key": "benefits.security.title",
+          "firstValue": "Security",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "benefits.security.description",
+          "firstValue": "Safe and secure transactions",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "benefits.fast.title",
+          "firstValue": "Fast",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "benefits.fast.description",
+          "firstValue": "Quick and easy process",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "benefits.effective.title",
+          "firstValue": "Effective",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "benefits.effective.description",
+          "firstValue": "Get results quickly",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "validationDemo.title",
+          "firstValue": "Content Validation System Demo",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "validationDemo.subtitle",
+          "firstValue": "Select a scenario to test different types of content",
+          "duplicateValue": "subtitle"
+        },
+        {
+          "key": "validationDemo.scenarios.profanityRussian.title",
+          "firstValue": "Profanity (Russian)",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "validationDemo.scenarios.profanityRussian.description",
+          "firstValue": "Test for detecting profanity in Russian",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "validationDemo.scenarios.profanityTranslit.title",
+          "firstValue": "Profanity in Transliteration",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "validationDemo.scenarios.profanityTranslit.description",
+          "firstValue": "Test for detecting masked profanity",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "validationDemo.scenarios.nonAutomotive.title",
+          "firstValue": "Non-automotive Content",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "validationDemo.scenarios.nonAutomotive.description",
+          "firstValue": "Test for detecting content not related to car sales",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "validationDemo.scenarios.spamAdvertising.title",
+          "firstValue": "Spam and Advertising",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "validationDemo.scenarios.spamAdvertising.description",
+          "firstValue": "Test for detecting spam and advertising content",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "validationDemo.scenarios.correctAd.title",
+          "firstValue": "Correct Ad",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "validationDemo.scenarios.correctAd.description",
+          "firstValue": "Example of a good ad without violations",
+          "duplicateValue": "description"
+        },
+        {
+          "key": "validationDemo.status.approved",
+          "firstValue": "Approved",
+          "duplicateValue": "approved"
+        },
+        {
+          "key": "validationDemo.status.rejected",
+          "firstValue": "Rejected",
+          "duplicateValue": "rejected"
+        },
+        {
+          "key": "validationDemo.status.needsReview",
+          "firstValue": "Needs Review",
+          "duplicateValue": "needs review"
+        },
+        {
+          "key": "validationDemo.buttons.quickValidation",
+          "firstValue": "Quick Validation",
+          "duplicateValue": "quick validation"
+        },
+        {
+          "key": "validationDemo.buttons.editAndValidate",
+          "firstValue": "Edit and Validate",
+          "duplicateValue": "edit and validate"
+        },
+        {
+          "key": "validation.autoModeration",
+          "firstValue": "Automatic Moderation",
+          "duplicateValue": "auto moderation"
+        },
+        {
+          "key": "validation.yourAdWillBeChecked",
+          "firstValue": "Your ad will be checked",
+          "duplicateValue": "your ad will be checked"
+        },
+        {
+          "key": "validation.checkProfanity",
+          "firstValue": "Profanity check",
+          "duplicateValue": "check profanity"
+        },
+        {
+          "key": "validation.checkSuspiciousContent",
+          "firstValue": "Suspicious content check",
+          "duplicateValue": "check suspicious content"
+        },
+        {
+          "key": "validation.checkPlatformCompliance",
+          "firstValue": "Platform compliance check",
+          "duplicateValue": "check platform compliance"
+        },
+        {
+          "key": "validation.attemptsLeft",
+          "firstValue": "editing attempts left",
+          "duplicateValue": "attempts left"
+        },
+        {
+          "key": "validation.checkNow",
+          "firstValue": "Check Now",
+          "duplicateValue": "check now"
+        },
+        {
+          "key": "contentValidationModal.title",
+          "firstValue": "Content Validation Result",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "contentValidationModal.statusValidation",
+          "firstValue": "Validation Status",
+          "duplicateValue": "status validation"
+        },
+        {
+          "key": "contentValidationModal.confidence",
+          "firstValue": "Confidence",
+          "duplicateValue": "confidence"
+        },
+        {
+          "key": "contentValidationModal.violations",
+          "firstValue": "Violations",
+          "duplicateValue": "violations"
+        },
+        {
+          "key": "contentValidationModal.inappropriateWords",
+          "firstValue": "Inappropriate Words",
+          "duplicateValue": "inappropriate words"
+        },
+        {
+          "key": "contentValidationModal.originalContent",
+          "firstValue": "Original Content",
+          "duplicateValue": "original content"
+        },
+        {
+          "key": "contentValidationModal.censoredContent",
+          "firstValue": "Censored Content",
+          "duplicateValue": "censored content"
+        },
+        {
+          "key": "contentValidationModal.suggestions",
+          "firstValue": "Recommendations",
+          "duplicateValue": "suggestions"
+        },
+        {
+          "key": "contentValidationModal.close",
+          "firstValue": "Close",
+          "duplicateValue": "close"
+        },
+        {
+          "key": "contentValidationModal.fixAndRetry",
+          "firstValue": "Fix and Retry",
+          "duplicateValue": "fix and retry"
+        },
+        {
+          "key": "contentValidationModal.acceptAndContinue",
+          "firstValue": "Accept and Continue",
+          "duplicateValue": "accept and continue"
+        },
+        {
+          "key": "contentValidationModal.contentRejected",
+          "firstValue": "Content Rejected",
+          "duplicateValue": "content rejected"
+        },
+        {
+          "key": "interactiveEditor.title",
+          "firstValue": "Interactive Editing",
+          "duplicateValue": "title"
+        },
+        {
+          "key": "interactiveEditor.close",
+          "firstValue": "Close",
+          "duplicateValue": "close"
+        },
+        {
+          "key": "interactiveEditor.adTitle",
+          "firstValue": "Ad Title",
+          "duplicateValue": "ad title"
+        },
+        {
+          "key": "interactiveEditor.adDescription",
+          "firstValue": "Ad Description",
+          "duplicateValue": "ad description"
+        },
+        {
+          "key": "interactiveEditor.titlePlaceholder",
+          "firstValue": "Enter ad title...",
+          "duplicateValue": "title placeholder"
+        },
+        {
+          "key": "interactiveEditor.descriptionPlaceholder",
+          "firstValue": "Enter ad description...",
+          "duplicateValue": "description placeholder"
+        },
+        {
+          "key": "interactiveEditor.runValidation",
+          "firstValue": "Run Validation",
+          "duplicateValue": "run validation"
+        },
+        {
+          "key": "interactiveEditor.validating",
+          "firstValue": "Validating",
+          "duplicateValue": "validating"
+        },
+        {
+          "key": "interactiveEditor.resetToOriginal",
+          "firstValue": "Reset to Original",
+          "duplicateValue": "reset to original"
+        },
+        {
+          "key": "interactiveEditor.titleCharacters",
+          "firstValue": "Title: {count} characters",
+          "duplicateValue": "title characters"
+        },
+        {
+          "key": "interactiveEditor.descriptionCharacters",
+          "firstValue": "Description: {count} characters",
+          "duplicateValue": "description characters"
+        },
+        {
+          "key": "",
+          "firstValue": {
+            "": "Home"
+          },
+          "duplicateValue": "Home"
+        }
+      ],
+      "ru": [
+        {
+          "key": "autoria.admin",
+          "firstValue": {
+            "detailedStats": "Детальная статистика",
+            "detailedStatsDesc": "Полная аналитика платформы с графиками и отчетами"
+          },
+          "duplicateValue": "admin (ru)"
+        },
+        {
+          "key": "",
+          "firstValue": {
+            "": "Главная"
+          },
+          "duplicateValue": "Главная"
+        }
+      ],
+      "uk": [
+        {
+          "key": "autoria.admin",
+          "firstValue": {
+            "detailedStats": "Детальна статистика",
+            "detailedStatsDesc": "Повна аналітика платформи з графіками та звітами"
+          },
+          "duplicateValue": "admin (uk)"
+        },
+        {
+          "key": "",
+          "firstValue": {
+            "": "Головна"
+          },
+          "duplicateValue": "Головна"
+        }
+      ]
+    },
+    "missingKeys": {
+      "en": [],
+      "ru": [],
+      "uk": []
+    }
+  }
+}

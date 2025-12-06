@@ -8,7 +8,6 @@ import { ChatProvider } from "@/contexts/ChatContext";
 import { ChatContextProvider } from "@/components/ChatBot/providers/ChatContextProvider";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
-import { preloadCriticalReferenceData, fetchBrandsWithCache } from "@/modules/autoria/shared/utils/cachedFetch";
 import { setupGlobalFetchErrorTracking, useApiErrorHandler } from "@/modules/autoria/shared/hooks/useApiErrorHandler";
 
 import { IProps } from ".";
@@ -84,27 +83,6 @@ const RootProvider: FC<IProps> = ({ children }) => {
   // Wait for client-side mount before rendering components with useRouter
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  // Preload critical data on app startup
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        console.log('[RootProvider] 🚀 Starting app initialization...');
-
-        // Preload critical data
-        await Promise.all([
-          preloadCriticalReferenceData(),
-          fetchBrandsWithCache(),
-        ]);
-
-        console.log('[RootProvider] ✅ App initialization completed');
-      } catch (error) {
-        console.error('[RootProvider] ❌ App initialization failed:', error);
-      }
-    };
-
-    initializeApp();
   }, []);
 
   return (

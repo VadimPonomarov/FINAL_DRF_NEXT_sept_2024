@@ -3,7 +3,7 @@
 import React, { FC } from "react";
 import Link from "next/link";
 import { ArrowPathIcon, PaperAirplaneIcon } from "@heroicons/react/16/solid";
-import NewResizableWrapper from "@/components/All/ResizableWrapper/NewResizableWrapper";
+import { ResizableWrapper } from "@/components/shared/layout";
 import { Button } from "@/components/ui/button";
 import ButtonGroup from "@/components/All/ButtonGroup/ButtonGroup";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -55,7 +55,7 @@ const RegistrationForm: FC = () => {
 
     return (
         <div className="flex items-center justify-center w-full h-full p-4">
-            <NewResizableWrapper
+            <ResizableWrapper
               storageKey="registration-form"
               className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col"
               defaultWidth={350}
@@ -150,7 +150,7 @@ const RegistrationForm: FC = () => {
                         </form>
                     </div>
                 </div>
-            </NewResizableWrapper>
+            </ResizableWrapper>
         </div>
     );
 };
