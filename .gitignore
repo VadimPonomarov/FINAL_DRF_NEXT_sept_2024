@@ -292,7 +292,6 @@ $RECYCLE.BIN/
 # TEMPORARY FILES
 # =============================================================================
 *.tmp
-*.temp
 *.swp
 *.swo
 *~
@@ -303,7 +302,6 @@ $RECYCLE.BIN/
 *.log
 logs/
 log/
-docs/
 frontend/docs/
 /rabbitmq/
 
