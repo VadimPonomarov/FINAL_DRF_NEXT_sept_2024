@@ -113,7 +113,9 @@ npm run start
 
 Якщо не хочете використовувати `deploy.py`, `deploy.sh` або `deploy.js`, можна запустити все напряму через Docker Compose.
 
-### Варіант A: Full Docker (backend + frontend в контейнерах)
+### ⭐ Варіант A: Full Docker (backend + frontend в контейнерах) — РЕКОМЕНДОВАНО
+
+**Це найпростіший спосіб розгорнути весь проєкт одною командою:**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build
@@ -125,7 +127,19 @@ docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d -
 docker-compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build
 ```
 
-Щоб зупинити full‑Docker варіант:
+**Що буде запущено:**
+- ✅ PostgreSQL (база даних)
+- ✅ Redis (кеш)
+- ✅ RabbitMQ (черга повідомлень)
+- ✅ Django Backend (API)
+- ✅ Next.js Frontend (веб-інтерфейс)
+- ✅ Celery Worker (фоновий обробник завдань)
+- ✅ Celery Beat (планувальник завдань)
+- ✅ Flower (моніторинг Celery)
+- ✅ Mailing Service (сервіс розсилки)
+- ✅ Nginx (зворотний проксі)
+
+**Щоб зупинити:**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml down

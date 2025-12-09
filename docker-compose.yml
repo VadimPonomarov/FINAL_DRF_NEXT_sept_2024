@@ -57,11 +57,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      # IMPORTANT: Use named volume instead of local directory
-      # This ensures data persistence even if ./pg/data is deleted
-      - postgres-data:/var/lib/postgresql/data
-      # Alternative: uncomment below to use local directory
-      # - ./pg/data:/var/lib/postgresql/data
+      # Use bind mount to make PostgreSQL data visible on host
+      # This allows you to see and manage database files directly
+      - ./pg/data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-autoria_db} || exit 1"]
@@ -376,8 +374,7 @@ services:
 
 
 volumes:
-  # PostgreSQL data - named volume for persistence
-  postgres-data:
+  # PostgreSQL data is now stored in ./pg/data (bind mount) for visibility on host
   redis-data:
   rabbitmq-data:
   redis-insight:
