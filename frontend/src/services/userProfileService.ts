@@ -4,6 +4,7 @@
  */
 
 import { fetchData, fetchWithDomain } from '@/app/api/common';
+import { logger } from '@/shared/utils/logger';
 import {
   BackendUser,
   BackendProfile,
@@ -33,7 +34,7 @@ export class UserProfileService {
    */
   static async getUserProfile(): Promise<ProfileApiResponse | null> {
     try {
-      console.log('[UserProfileService] 📤 Fetching user profile...');
+      logger.debug('[UserProfileService] 📤 Fetching user profile...');
 
       const data = await fetchWithDomain<ProfileApiResponse>('/api/user/profile/', {
         domain: 'internal',
@@ -41,14 +42,14 @@ export class UserProfileService {
       });
 
       if (!data) {
-        console.log('[UserProfileService] ❌ No profile data received');
+        logger.debug('[UserProfileService] ❌ No profile data received');
         return null;
       }
 
-      console.log('[UserProfileService] ✅ Profile data received successfully');
+      logger.debug('[UserProfileService] ✅ Profile data received successfully');
       return data;
     } catch (error) {
-      console.error('[UserProfileService] ❌ Error fetching profile:', error);
+      logger.error('[UserProfileService] ❌ Error fetching profile:', error);
       throw error;
     }
   }
@@ -58,18 +59,18 @@ export class UserProfileService {
    */
   static async updateUserProfile(updateData: { profile: ProfileUpdateData }): Promise<ProfileApiResponse | null> {
     try {
-      console.log('==================================================');
-      console.log('[UserProfileService] 🚀 updateUserProfile called!');
-      console.log('[UserProfileService] 📤 Input data:', JSON.stringify(updateData, null, 2));
-      console.log('==================================================');
+      logger.debug('==================================================');
+      logger.debug('[UserProfileService] 🚀 updateUserProfile called!');
+      logger.debug('[UserProfileService] 📤 Input data:', JSON.stringify(updateData, null, 2));
+      logger.debug('==================================================');
 
       // Данные уже правильно структурированы в хуке
-      console.log('[UserProfileService] 📋 Final update data:', updateData);
+      logger.debug('[UserProfileService] 📋 Final update data:', updateData);
 
-      console.log('[UserProfileService] 🔄 Calling fetchWithDomain...');
-      console.log('[UserProfileService] 📤 URL: /api/user/profile/');
-      console.log('[UserProfileService] 📤 Method: PATCH');
-      console.log('[UserProfileService] 📤 Body:', JSON.stringify(updateData, null, 2));
+      logger.debug('[UserProfileService] 🔄 Calling fetchWithDomain...');
+      logger.debug('[UserProfileService] 📤 URL: /api/user/profile/');
+      logger.debug('[UserProfileService] 📤 Method: PATCH');
+      logger.debug('[UserProfileService] 📤 Body:', JSON.stringify(updateData, null, 2));
 
       const data = await fetchWithDomain<ProfileApiResponse>('/api/user/profile/', {
         method: 'PATCH',
@@ -78,17 +79,17 @@ export class UserProfileService {
         redirectOnError: false
       });
 
-      console.log('[UserProfileService] 📥 fetchWithDomain response:', data);
+      logger.debug('[UserProfileService] 📥 fetchWithDomain response:', data);
 
       if (!data) {
-        console.log('[UserProfileService] ❌ No response from profile update');
+        logger.debug('[UserProfileService] ❌ No response from profile update');
         return null;
       }
 
-      console.log('[UserProfileService] ✅ Profile updated successfully');
+      logger.debug('[UserProfileService] ✅ Profile updated successfully');
       return data;
     } catch (error) {
-      console.error('[UserProfileService] ❌ Error updating profile:', error);
+      logger.error('[UserProfileService] ❌ Error updating profile:', error);
       throw error;
     }
   }
@@ -98,7 +99,7 @@ export class UserProfileService {
    */
   static async uploadAvatar(avatarFile: File, userId: number): Promise<BackendProfile | null> {
     try {
-      console.log('[UserProfileService] 📤 Uploading avatar...');
+      logger.debug('[UserProfileService] 📤 Uploading avatar...');
 
       const formData = new FormData();
       formData.append('avatar', avatarFile);
@@ -112,14 +113,14 @@ export class UserProfileService {
       });
 
       if (!data) {
-        console.log('[UserProfileService] ❌ No response from avatar upload');
+        logger.debug('[UserProfileService] ❌ No response from avatar upload');
         return null;
       }
 
-      console.log('[UserProfileService] ✅ Avatar uploaded successfully');
+      logger.debug('[UserProfileService] ✅ Avatar uploaded successfully');
       return data;
     } catch (error) {
-      console.error('[UserProfileService] ❌ Error uploading avatar:', error);
+      logger.error('[UserProfileService] ❌ Error uploading avatar:', error);
       throw error;
     }
   }

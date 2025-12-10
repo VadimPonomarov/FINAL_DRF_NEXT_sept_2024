@@ -9,6 +9,8 @@
  * - Защита от циклических запросов refresh
  */
 
+import { logger } from '@/shared/utils/logger';
+
 interface FetchOptions extends RequestInit {
   _retry?: boolean;
   _skipInterceptor?: boolean;
@@ -23,12 +25,12 @@ let refreshPromise: Promise<boolean> | null = null;
 async function attemptTokenRefresh(): Promise<boolean> {
   // Если уже идет refresh - ждем его завершения
   if (isRefreshing && refreshPromise) {
-    console.log('[apiInterceptor] Refresh already in progress, waiting...');
+    logger.debug('[apiInterceptor] Refresh already in progress, waiting...');
     return await refreshPromise;
   }
 
   isRefreshing = true;
-  console.log('[apiInterceptor] Starting token refresh...');
+  logger.debug('[apiInterceptor] Starting token refresh...');
 
   refreshPromise = (async () => {
     try {
@@ -42,7 +44,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
       });
 
       if (!response.ok) {
-        console.error('[apiInterceptor] Token refresh failed:', response.status);
+        logger.error('[apiInterceptor] Token refresh failed:', response.status);
         return false;
       }
 
@@ -50,14 +52,14 @@ async function attemptTokenRefresh(): Promise<boolean> {
       const success = data.success === true;
       
       if (success) {
-        console.log('[apiInterceptor] ✅ Token refreshed successfully');
+        logger.debug('[apiInterceptor] ✅ Token refreshed successfully');
       } else {
-        console.error('[apiInterceptor] ❌ Token refresh returned success=false');
+        logger.error('[apiInterceptor] ❌ Token refresh returned success=false');
       }
       
       return success;
     } catch (error) {
-      console.error('[apiInterceptor] ❌ Token refresh error:', error);
+      logger.error('[apiInterceptor] ❌ Token refresh error:', error);
       return false;
     } finally {
       isRefreshing = false;
@@ -77,7 +79,7 @@ function redirectToLogin(currentUrl?: string) {
   const callbackUrl = currentUrl || window.location.pathname + window.location.search;
   const loginUrl = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
   
-  console.log('[apiInterceptor] Redirecting to login:', loginUrl);
+  logger.debug('[apiInterceptor] Redirecting to login:', loginUrl);
   window.location.href = loginUrl;
 }
 
@@ -101,7 +103,7 @@ export async function fetchWithAuth(
     return fetch(input, init);
   }
 
-  console.log('[apiInterceptor] Fetching:', url);
+  logger.debug('[apiInterceptor] Fetching:', url);
   
   try {
     // Первая попытка запроса
@@ -114,11 +116,11 @@ export async function fetchWithAuth(
 
     // Обрабатываем 401/403 ошибки
     if (response.status === 401 || response.status === 403) {
-      console.warn(`[apiInterceptor] ⚠️ Received ${response.status} for:`, url);
+      logger.warn(`[apiInterceptor] ⚠️ Received ${response.status} for:`, url);
 
       // Если это уже retry попытка - не пытаемся снова
       if (init?._retry) {
-        console.error('[apiInterceptor] ❌ Retry failed, redirecting to login');
+        logger.error('[apiInterceptor] ❌ Retry failed, redirecting to login');
         redirectToLogin();
         return response;
       }
@@ -128,16 +130,16 @@ export async function fetchWithAuth(
 
       if (refreshSuccess) {
         // Повторяем оригинальный запрос с обновленным токеном
-        console.log('[apiInterceptor] Retrying original request with refreshed token...');
+        logger.debug('[apiInterceptor] Retrying original request with refreshed token...');
         const retryResponse = await fetch(input, {
           ...init,
           _retry: true, // Помечаем как retry
         });
 
         if (retryResponse.ok) {
-          console.log('[apiInterceptor] ✅ Retry successful');
+          logger.debug('[apiInterceptor] ✅ Retry successful');
         } else {
-          console.error('[apiInterceptor] ❌ Retry failed with status:', retryResponse.status);
+          logger.error('[apiInterceptor] ❌ Retry failed with status:', retryResponse.status);
           if (retryResponse.status === 401 || retryResponse.status === 403) {
             redirectToLogin();
           }
@@ -146,7 +148,7 @@ export async function fetchWithAuth(
         return retryResponse;
       } else {
         // Refresh не удался - редирект на login
-        console.error('[apiInterceptor] ❌ Token refresh failed, redirecting to login');
+        logger.error('[apiInterceptor] ❌ Token refresh failed, redirecting to login');
         redirectToLogin();
         return response;
       }
@@ -155,7 +157,7 @@ export async function fetchWithAuth(
     // Для других ошибок возвращаем ответ как есть
     return response;
   } catch (error) {
-    console.error('[apiInterceptor] ❌ Fetch error:', error);
+    logger.error('[apiInterceptor] ❌ Fetch error:', error);
     throw error;
   }
 }
@@ -257,7 +259,7 @@ export async function checkAuthStatus(): Promise<{ authenticated: boolean; needs
       needsRefresh: false,
     };
   } catch (error) {
-    console.error('[apiInterceptor] Auth status check failed:', error);
+    logger.error('[apiInterceptor] Auth status check failed:', error);
     return {
       authenticated: false,
       needsRefresh: false,

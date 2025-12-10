@@ -6,6 +6,7 @@
 import { getAuthorizationHeaders } from '@/shared/constants/headers';
 import { resolveServiceUrl } from '@/shared/utils/api/serviceUrlResolver';
 import { redirect } from 'next/navigation';
+import { logger } from '@/shared/utils/logger';
 
 // Server-side check
 const __isServer = typeof window === 'undefined';
@@ -77,7 +78,7 @@ export async function fetchWithDomain<T = any>(
   } = options;
 
   try {
-    console.log(`[fetchWithDomain] ${method} ${endpoint}`);
+    logger.debug(`[fetchWithDomain] ${method} ${endpoint}`);
 
     // Determine if we're on server or client
     const isServer = typeof window === 'undefined';
@@ -126,9 +127,9 @@ export async function fetchWithDomain<T = any>(
       }
     }
 
-    console.log(`[fetchWithDomain] 🔍 Endpoint: ${endpoint}`);
-    console.log(`[fetchWithDomain] 🔍 isDirectApiRoute: ${isDirectApiRoute}`);
-    console.log(`[fetchWithDomain] ${isDirectApiRoute ? 'Direct' : 'Proxied'} URL: ${url}`);
+    logger.debug(`[fetchWithDomain] 🔍 Endpoint: ${endpoint}`);
+    logger.debug(`[fetchWithDomain] 🔍 isDirectApiRoute: ${isDirectApiRoute}`);
+    logger.debug(`[fetchWithDomain] ${isDirectApiRoute ? 'Direct' : 'Proxied'} URL: ${url}`);
 
     // Prepare request options
     const requestOptions: RequestInit = {
@@ -152,7 +153,7 @@ export async function fetchWithDomain<T = any>(
 
     // Handle errors
     if (!response.ok) {
-      console.error(`[fetchWithDomain] Error: ${response.status} ${response.statusText}`);
+      logger.error(`[fetchWithDomain] Error: ${response.status} ${response.statusText}`);
 
       if (redirectOnError) {
         if (response.status === 401 || response.status === 403) {
@@ -169,12 +170,12 @@ export async function fetchWithDomain<T = any>(
 
     // Parse response
     const data = await response.json();
-    console.log(`[fetchWithDomain] Success`);
+    logger.debug(`[fetchWithDomain] Success`);
 
     return data as T;
 
   } catch (error) {
-    console.error('[fetchWithDomain] Exception:', error);
+    logger.error('[fetchWithDomain] Exception:', error);
 
     if (redirectOnError) {
       redirect('/error');

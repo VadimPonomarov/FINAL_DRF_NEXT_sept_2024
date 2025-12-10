@@ -62,6 +62,13 @@ const nextConfig = {
   // React strict mode off in development to avoid double-invoking effects (faster dev)
   reactStrictMode: process.env.NODE_ENV !== 'development',
 
+  // Remove console.log in production builds
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+
   // Experimental features - оптимизировано для ChatBot
   experimental: {
     // React Compiler: отключен из-за отсутствия babel-plugin-react-compiler
