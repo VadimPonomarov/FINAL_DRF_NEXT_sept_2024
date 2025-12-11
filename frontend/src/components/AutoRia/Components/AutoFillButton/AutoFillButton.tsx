@@ -22,7 +22,7 @@ import { useAutoRiaFormPrefill } from '@/modules/autoria/shared/hooks/useAutoRia
 import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 
-interface AutoFillButtonProps {
+export interface AutoFillButtonProps {
   onAutoFill: (data: Partial<CarAdFormData>) => void;
   currentFormData: Partial<CarAdFormData>;
   className?: string;

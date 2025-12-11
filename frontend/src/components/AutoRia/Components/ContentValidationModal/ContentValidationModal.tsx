@@ -6,34 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useI18n } from '@/contexts/I18nContext';
-
-interface ValidationResult {
-  status: 'approved' | 'rejected' | 'needs_review';
-  reason?: string;
-  violations?: string[];
-  censored_content?: {
-    title?: string;
-    description?: string;
-  };
-  inappropriate_words?: string[];
-  suggestions?: string[];
-  confidence?: number;
-}
-
-interface FormData {
-  title: string;
-  description: string;
-  [key: string]: any;
-}
-
-interface ContentValidationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  formData: FormData;
-  validationResult: ValidationResult;
-  onRetry?: () => void;
-  onAccept?: () => void;
-}
+import type { ContentValidationModalProps } from './types';
 
 const ContentValidationModal: React.FC<ContentValidationModalProps> = ({
   isOpen,

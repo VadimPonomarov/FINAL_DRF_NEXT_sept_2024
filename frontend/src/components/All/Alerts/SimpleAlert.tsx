@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert.tsx";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface IProps {
   children: React.ReactNode;

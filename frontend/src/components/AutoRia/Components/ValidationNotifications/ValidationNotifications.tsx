@@ -16,13 +16,13 @@ import {
 } from 'lucide-react';
 
 // Типы для валидационных ошибок от backend
-interface ValidationError {
+export interface ValidationError {
   field: string;
   message: string;
   code?: string;
 }
 
-interface ModerationResult {
+export interface ModerationResult {
   status: 'approved' | 'rejected' | 'needs_review' | 'pending';
   reason?: string;
   violations?: string[];
@@ -36,14 +36,14 @@ interface ModerationResult {
   };
 }
 
-interface LLMValidationResult {
+export interface LLMValidationResult {
   is_valid: boolean;
   errors: Record<string, string[]>;
   corrections: Record<string, string>;
   moderation?: ModerationResult;
 }
 
-interface ValidationNotificationsProps {
+export interface ValidationNotificationsProps {
   validationResult?: LLMValidationResult;
   fieldErrors?: Record<string, string[]>;
   generalErrors?: string[];

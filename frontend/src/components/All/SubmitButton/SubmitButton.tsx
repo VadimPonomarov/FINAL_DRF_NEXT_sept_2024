@@ -1,8 +1,8 @@
 "use client"
 import React, {FC} from 'react';
 import {useFormStatus} from "react-dom";
-import {Button, ButtonProps} from "@/components/ui/button.tsx";
-import {Spinner} from "@/components/ui/spinner.tsx";
+import {Button, ButtonProps} from "@/components/ui/button";
+import {Spinner} from "@/components/ui/spinner";
 
 
 const SubmitButton: FC<ButtonProps> = (props) => {

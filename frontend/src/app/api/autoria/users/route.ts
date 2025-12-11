@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/shared/utils/logger';
 
 /**
  * API /api/autoria/users
@@ -7,14 +8,14 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('[AutoRia Users API - proxy] Getting users...');
+    logger.info('[AutoRia Users API - proxy] Getting users...');
 
     // ВАЖНО: В Server-side API routes используем BACKEND_URL (без NEXT_PUBLIC_)
     // Если NEXT_PUBLIC_BACKEND_URL относительный ("/api"), используем локальный backend
     const raw = process.env.BACKEND_URL
       || (process.env.NEXT_PUBLIC_BACKEND_URL?.startsWith('http') ? process.env.NEXT_PUBLIC_BACKEND_URL : undefined)
       || 'http://localhost:8000';
-    console.log('[AutoRia Users API - proxy] Raw backend URL:', raw);
+    logger.info('[AutoRia Users API - proxy] Raw backend URL:', raw);
 
     // Аккуратно собираем URL, чтобы избежать двойного "/api"
     const base = raw.replace(/\/$/, '');
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     const apiBase = hasApi ? base : `${base}/api`;
     const fullUrl = `${apiBase}/users/public/list/`;
     
-    console.log('[AutoRia Users API - proxy] Fetching from:', fullUrl);
+    logger.info('[AutoRia Users API - proxy] Fetching from:', fullUrl);
 
     const usersResponse = await fetch(fullUrl, {
       method: 'GET',
@@ -30,11 +31,11 @@ export async function GET(request: NextRequest) {
       cache: 'no-store',
     });
 
-    console.log('[AutoRia Users API - proxy] Response status:', usersResponse.status);
+    logger.info('[AutoRia Users API - proxy] Response status:', usersResponse.status);
 
     if (!usersResponse.ok) {
       const errorText = await usersResponse.text();
-      console.error('[AutoRia Users API - proxy] Backend error:', usersResponse.status, errorText);
+      logger.error('[AutoRia Users API - proxy] Backend error:', usersResponse.status, errorText);
       return NextResponse.json({ 
         success: false, 
         error: 'Backend error', 
@@ -45,12 +46,12 @@ export async function GET(request: NextRequest) {
     }
 
     const usersData = await usersResponse.json();
-    console.log('[AutoRia Users API - proxy] Received users count:', usersData.results?.length || 0);
+    logger.info('[AutoRia Users API - proxy] Received users count:', usersData.results?.length || 0);
     
     const allUsers = usersData.results || usersData || [];
     const activeUsers = allUsers.filter((u: any) => u.is_active);
     
-    console.log('[AutoRia Users API - proxy] Active users count:', activeUsers.length);
+    logger.info('[AutoRia Users API - proxy] Active users count:', activeUsers.length);
 
     return NextResponse.json({
       success: true,
@@ -58,8 +59,11 @@ export async function GET(request: NextRequest) {
       source: 'backend',
     });
   } catch (error) {
-    console.error('[AutoRia Users API - proxy] Error:', error);
-    console.error('[AutoRia Users API - proxy] Error stack:', error instanceof Error ? error.stack : 'N/A');
+    logger.error('[AutoRia Users API - proxy] Error:', error);
+    logger.error(
+      '[AutoRia Users API - proxy] Error stack:',
+      error instanceof Error ? error.stack : 'N/A',
+    );
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error',

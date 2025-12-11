@@ -5,7 +5,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card.tsx";
+} from "@/components/ui/card";
 
 import Link from "next/link";
 import { IRecipe } from "@/shared/types/recipe.interfaces.ts";

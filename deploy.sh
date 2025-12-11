@@ -150,12 +150,29 @@ main() {
 
     # Step 3: Start Docker containers
     print_step 3 "Starting Docker containers..."
-    if [ "$LOCAL_FRONTEND" = true ]; then
-        print_warning "Starting backend services only (frontend will run locally)"
-        docker-compose up -d pg redis rabbitmq redis-insight mailing celery-worker celery-beat celery-flower app
-    else
-        docker-compose up -d --build
-    fi
+    max_attempts=2
+    attempt=1
+    while [ $attempt -le $max_attempts ]; do
+        if [ "$LOCAL_FRONTEND" = true ]; then
+            print_warning "Starting backend services only (frontend will run locally)"
+            docker-compose up -d pg redis rabbitmq redis-insight mailing celery-worker celery-beat celery-flower app
+        else
+            docker-compose up -d --build
+        fi
+
+        if [ $? -eq 0 ]; then
+            break
+        fi
+
+        print_error "docker-compose up failed (attempt $attempt/$max_attempts)"
+        if [ $attempt -ge $max_attempts ]; then
+            exit 1
+        fi
+
+        print_warning "Cleaning up orphan containers and retrying..."
+        docker-compose down --remove-orphans || true
+        attempt=$((attempt + 1))
+    done
     
     print_success "Docker containers started"
     echo ""

@@ -1,6 +1,6 @@
 import styles from "@/app/(main)/(dummy)/users/(details)/UserCard/index.module.css";
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,} from "@/components/ui/card.tsx";
-import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,} from "@/components/ui/card";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import clsx from "clsx";
 import { IUser } from "@/shared/types/users.interfaces";
 import { IRecipesResponse } from "@/shared/types/recipe.interfaces";

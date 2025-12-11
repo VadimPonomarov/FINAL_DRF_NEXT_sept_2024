@@ -649,31 +649,41 @@ def main():
                 print("🔨 Запуск збірки та запуску всіх Docker контейнерів...")
                 print("⏳ Це може зайняти 5-10 хвилин...")
                 
-                # Запускаємо docker-compose.local.yml up --build
+                # Запускаємо docker-compose.local.yml up --build з повторною спробою при конфліктах контейнерів
                 compose_files_current = compose_files
-                process = subprocess.Popen(
-                    ["docker-compose", *[arg for f in compose_files_current for arg in ("-f", f)], "up", "--build", "-d"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    bufsize=1,
-                    universal_newlines=True,
-                    encoding=DEFAULT_SUBPROCESS_ENCODING,
-                    errors="replace",
-                )
-                
-                # Показуємо вивід в реальному часі
-                for line in iter(process.stdout.readline, ''):
-                    if line:
-                        print(f"   {line.rstrip()}")
-                
-                return_code = process.wait()
-                
-                if return_code != 0:
+                max_attempts = 2
+                attempt = 1
+                while attempt <= max_attempts:
+                    process = subprocess.Popen(
+                        ["docker-compose", *[arg for f in compose_files_current for arg in ("-f", f)], "up", "--build", "-d"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        bufsize=1,
+                        universal_newlines=True,
+                        encoding=DEFAULT_SUBPROCESS_ENCODING,
+                        errors="replace",
+                    )
+
+                    # Показуємо вивід в реальному часі
+                    for line in iter(process.stdout.readline, ''):
+                        if line:
+                            print(f"   {line.rstrip()}")
+
+                    return_code = process.wait()
+
+                    if return_code == 0:
+                        print_success("✅ docker-compose.local.yml up --build завершено успішно!")
+                        break
+
                     print_error(f"❌ Помилка при виконанні docker-compose up --build (код: {return_code})")
-                    sys.exit(1)
-                
-                print_success("✅ docker-compose.local.yml up --build завершено успішно!")
+
+                    if attempt >= max_attempts:
+                        sys.exit(1)
+
+                    print_warning("🔁 Виявлено помилку docker-compose up. Виконуємо очищення конфліктуючих контейнерів та повторюємо спробу...")
+                    cleanup_conflicting_containers()
+                    attempt += 1
         else:
             print_warning("⏭️  Пропущено docker-compose.local.yml up --build (--skip-docker)")
 
@@ -827,9 +837,10 @@ def main():
             env['NEXT_TELEMETRY_DISABLED'] = '1'
         
         # Встановлюємо значення за замовчуванням для критичних змінних якщо вони не встановлені
+        # ВАЖЛИВО: базовий URL бекенда без префікса /api (шлях /api додається в коді фронтенда)
         if 'NEXT_PUBLIC_BACKEND_URL' not in env or not env['NEXT_PUBLIC_BACKEND_URL']:
-            env['NEXT_PUBLIC_BACKEND_URL'] = 'http://localhost/api'
-            print_warning("⚠️  NEXT_PUBLIC_BACKEND_URL не знайдено, встановлюємо за замовчуванням: http://localhost/api")
+            env['NEXT_PUBLIC_BACKEND_URL'] = 'http://localhost:8000'
+            print_warning("⚠️  NEXT_PUBLIC_BACKEND_URL не знайдено, встановлюємо за замовчуванням: http://localhost:8000")
         
         if 'BACKEND_URL' not in env or not env['BACKEND_URL']:
             env['BACKEND_URL'] = 'http://localhost:8000'
@@ -944,9 +955,10 @@ def main():
             env['NEXTAUTH_URL'] = 'http://localhost:3000'
         
         # Встановлюємо значення за замовчуванням для критичних змінних якщо вони не встановлені
+        # Базовий URL бекенда без /api (шлях /api додається у frontend‑коді)
         if 'NEXT_PUBLIC_BACKEND_URL' not in env or not env['NEXT_PUBLIC_BACKEND_URL']:
-            env['NEXT_PUBLIC_BACKEND_URL'] = 'http://localhost/api'
-            print_warning("⚠️  NEXT_PUBLIC_BACKEND_URL не знайдено, встановлюємо за замовчуванням: http://localhost/api")
+            env['NEXT_PUBLIC_BACKEND_URL'] = 'http://localhost:8000'
+            print_warning("⚠️  NEXT_PUBLIC_BACKEND_URL не знайдено, встановлюємо за замовчуванням: http://localhost:8000")
         
         if 'BACKEND_URL' not in env or not env['BACKEND_URL']:
             env['BACKEND_URL'] = 'http://localhost:8000'

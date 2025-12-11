@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {useSearchParams, useRouter, usePathname} from "next/navigation";
-import { Input } from "@/components/ui/input.tsx";
+import { Input } from "@/components/ui/input";
 
 const SearchParamSkipSelector = () => {
   const searchParams = useSearchParams();

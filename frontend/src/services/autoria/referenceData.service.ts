@@ -48,7 +48,7 @@ export interface PaginatedResponse<T> {
 }
 
 export class ReferenceDataService {
-  private static readonly API_BASE = '/api/public/reference';
+  private static readonly API_BASE = '/api/ads/reference';
 
   // Получение типов транспортных средств
   static async getVehicleTypes(): Promise<VehicleType[]> {
@@ -83,7 +83,7 @@ export class ReferenceDataService {
         });
       }
 
-      const url = `${this.API_BASE}/brands${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const url = `${this.API_BASE}/marks/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -118,7 +118,7 @@ export class ReferenceDataService {
         });
       }
 
-      const url = `/api/public/reference/models${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const url = `${this.API_BASE}/car-models/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -149,7 +149,7 @@ export class ReferenceDataService {
         });
       }
 
-      const url = `${this.API_BASE}/regions${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const url = `${this.API_BASE}/regions/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -184,7 +184,7 @@ export class ReferenceDataService {
         });
       }
 
-      const url = `/api/public/reference/cities${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const url = `${this.API_BASE}/cities/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await fetch(url);
       
       if (!response.ok) {

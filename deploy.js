@@ -46,6 +46,26 @@ function printStep(step, message) {
     console.log(`${colors.blue}[STEP ${step}]${colors.reset} ${colors.bright}${message}${colors.reset}`);
 }
 
+async function dockerComposeUpWithRetry(args, { maxAttempts = 2 } = {}) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            await execCommand('docker-compose', { args });
+            return;
+        } catch (error) {
+            printError(`docker-compose up failed (attempt ${attempt}/${maxAttempts})`);
+            if (attempt >= maxAttempts) {
+                throw error;
+            }
+            printWarning('Cleaning up orphan containers and retrying...');
+            try {
+                await execCommand('docker-compose', { args: ['down', '--remove-orphans'], silent: true });
+            } catch (downError) {
+                printWarning('docker-compose down --remove-orphans failed, continuing to retry up...');
+            }
+        }
+    }
+}
+
 function printSuccess(message) {
     console.log(`${colors.green}✅ ${message}${colors.reset}`);
 }
@@ -265,14 +285,10 @@ async function main() {
                 ...baseServices,
                 ...optionalServices.filter((service) => availableServices.has(service)),
             ];
-            await execCommand('docker-compose', {
-                args: ['up', '-d', ...servicesToStart],
-            });
+            await dockerComposeUpWithRetry(['up', '-d', ...servicesToStart]);
         } else {
             // Full Docker deployment: include frontend service via override compose file
-            await execCommand('docker-compose', {
-                args: ['-f', 'docker-compose.yml', '-f', 'docker-compose.with_frontend.yml', 'up', '-d', '--build'],
-            });
+            await dockerComposeUpWithRetry(['-f', 'docker-compose.yml', '-f', 'docker-compose.with_frontend.yml', 'up', '-d', '--build']);
         }
         
         printSuccess('Docker containers started');

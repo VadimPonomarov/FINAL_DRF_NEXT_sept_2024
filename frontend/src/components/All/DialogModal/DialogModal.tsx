@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button.tsx";
+import { Button } from "@/components/ui/button";
 import { FC, useState } from "react";
 import { FaFilter } from 'react-icons/fa'; // Fixed import
 

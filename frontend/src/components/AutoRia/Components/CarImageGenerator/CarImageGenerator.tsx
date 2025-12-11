@@ -1,36 +1,23 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Camera, 
-  Download, 
-  RefreshCw, 
+import {
+  Camera,
+  Download,
+  RefreshCw,
   Eye,
   Car,
   Palette,
   Settings,
   Image as ImageIcon,
   Grid3X3,
-  Maximize2
+  Maximize2,
 } from 'lucide-react';
-import CarImageGeneratorService, { 
-  CarImageParams, 
-  GeneratedCarImage, 
-  CarViewAngle 
-} from '@/services/carImageGenerator.service';
-
-interface CarImageGeneratorProps {
-  carParams: CarImageParams;
-  onImagesGenerated?: (images: GeneratedCarImage[]) => void;
-  onImagesSelected?: (images: GeneratedCarImage[]) => void;
-  showExtended?: boolean;
-  className?: string;
-  mode?: 'preview' | 'selection'; // Режим: просмотр или выбор для объявления
-  maxImages?: number; // Максимальное количество изображений для выбора
-}
+import type { CarImageGeneratorProps } from './types';
+import { useCarImageGenerator, downloadImage, getAngleIcon, getAngleName } from './hooks';
 
 const CarImageGenerator: React.FC<CarImageGeneratorProps> = ({
   carParams,
@@ -39,126 +26,30 @@ const CarImageGenerator: React.FC<CarImageGeneratorProps> = ({
   showExtended = false,
   className = '',
   mode = 'preview',
-  maxImages = 6
+  maxImages = 6,
 }) => {
-  const [images, setImages] = useState<GeneratedCarImage[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<GeneratedCarImage | null>(null);
-  const [selectedImages, setSelectedImages] = useState<GeneratedCarImage[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'carousel'>('grid');
-
-  // Генерация изображений при изменении параметров
-  useEffect(() => {
-    generateImages();
-  }, [carParams, showExtended]);
-
-  const generateImages = async () => {
-    setLoading(true);
-    try {
-      const generatedImages = showExtended 
-        ? CarImageGeneratorService.generateExtendedCarImageSet(carParams)
-        : CarImageGeneratorService.generateCarImageSet(carParams);
-      
-      setImages(generatedImages);
-      setSelectedImage(generatedImages[0] || null);
-      
-      if (onImagesGenerated) {
-        onImagesGenerated(generatedImages);
-      }
-    } catch (error) {
-      console.error('Error generating car images:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const downloadImage = async (image: GeneratedCarImage) => {
-    try {
-      const response = await fetch(image.url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${carParams.brand}-${carParams.model}-${image.angle}.svg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading image:', error);
-    }
-  };
-
-  // Функции для режима выбора изображений
-  const toggleImageSelection = (image: GeneratedCarImage) => {
-    if (mode !== 'selection') return;
-
-    setSelectedImages(prev => {
-      const isSelected = prev.some(img => img.angle === image.angle);
-
-      if (isSelected) {
-        // Убираем из выбранных
-        const newSelected = prev.filter(img => img.angle !== image.angle);
-        if (onImagesSelected) {
-          onImagesSelected(newSelected);
-        }
-        return newSelected;
-      } else {
-        // Добавляем в выбранные (с ограничением)
-        if (prev.length >= maxImages) {
-          return prev; // Достигнут лимит
-        }
-        const newSelected = [...prev, image];
-        if (onImagesSelected) {
-          onImagesSelected(newSelected);
-        }
-        return newSelected;
-      }
-    });
-  };
-
-  const isImageSelected = (image: GeneratedCarImage) => {
-    return selectedImages.some(img => img.angle === image.angle);
-  };
-
-  const selectAllImages = () => {
-    const imagesToSelect = images.slice(0, maxImages);
-    setSelectedImages(imagesToSelect);
-    if (onImagesSelected) {
-      onImagesSelected(imagesToSelect);
-    }
-  };
-
-  const clearSelection = () => {
-    setSelectedImages([]);
-    if (onImagesSelected) {
-      onImagesSelected([]);
-    }
-  };
-
-  const getAngleIcon = (angle: CarViewAngle) => {
-    const iconMap = {
-      'front': '🚗',
-      'rear': '🚙', 
-      'side': '🚐',
-      'interior': '🪑',
-      'engine': '⚙️',
-      'dashboard': '📊'
-    };
-    return iconMap[angle] || '📷';
-  };
-
-  const getAngleName = (angle: CarViewAngle) => {
-    const nameMap = {
-      'front': 'Спереди',
-      'rear': 'Сзади',
-      'side': 'Сбоку', 
-      'interior': 'Салон',
-      'engine': 'Двигатель',
-      'dashboard': 'Панель'
-    };
-    return nameMap[angle] || angle;
-  };
+  const {
+    images,
+    loading,
+    selectedImage,
+    selectedImages,
+    viewMode,
+    generateImages,
+    setSelectedImage,
+    setViewMode,
+    toggleImageSelection,
+    isImageSelected,
+    selectAllImages,
+    clearSelection,
+  } = useCarImageGenerator({
+    carParams,
+    onImagesGenerated,
+    onImagesSelected,
+    showExtended,
+    className,
+    mode,
+    maxImages,
+  });
 
   if (loading) {
     return (
@@ -261,7 +152,7 @@ const CarImageGenerator: React.FC<CarImageGeneratorProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => downloadImage(selectedImage)}
+                  onClick={() => downloadImage(selectedImage, carParams)}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Скачать
@@ -275,11 +166,13 @@ const CarImageGenerator: React.FC<CarImageGeneratorProps> = ({
       {/* Image Grid/Thumbnails */}
       <Card>
         <CardContent className="p-6">
-          <div className={`grid gap-4 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' 
-              : 'grid-cols-6'
-          }`}>
+          <div
+            className={`grid gap-4 ${
+              viewMode === 'grid'
+                ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+                : 'grid-cols-6'
+            }`}
+          >
             {images.map((image, index) => (
               <div
                 key={`${image.angle}-${index}`}
@@ -309,7 +202,7 @@ const CarImageGenerator: React.FC<CarImageGeneratorProps> = ({
                     }}
                   />
                 </div>
-                
+
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 rounded-lg flex items-center justify-center">
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -318,8 +211,8 @@ const CarImageGenerator: React.FC<CarImageGeneratorProps> = ({
                 </div>
 
                 {/* Angle Badge */}
-                <Badge 
-                  variant="secondary" 
+                <Badge
+                  variant="secondary"
                   className="absolute bottom-2 left-2 text-xs bg-white/90 text-slate-700"
                 >
                   {getAngleIcon(image.angle)} {getAngleName(image.angle)}
@@ -346,7 +239,7 @@ const CarImageGenerator: React.FC<CarImageGeneratorProps> = ({
                   className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 hover:bg-white"
                   onClick={(e) => {
                     e.stopPropagation();
-                    downloadImage(image);
+                    downloadImage(image, carParams);
                   }}
                 >
                   <Download className="h-3 w-3" />
@@ -386,16 +279,28 @@ const CarImageGenerator: React.FC<CarImageGeneratorProps> = ({
             <div>
               <h4 className="font-medium text-blue-900 mb-1">Параметры генерации</h4>
               <div className="text-sm text-blue-800 space-y-1">
-                <div>Марка: <span className="font-medium">{carParams.brand}</span></div>
-                <div>Модель: <span className="font-medium">{carParams.model}</span></div>
-                <div>Год: <span className="font-medium">{carParams.year}</span></div>
+                <div>
+                  Марка: <span className="font-medium">{carParams.brand}</span>
+                </div>
+                <div>
+                  Модель: <span className="font-medium">{carParams.model}</span>
+                </div>
+                <div>
+                  Год: <span className="font-medium">{carParams.year}</span>
+                </div>
                 {carParams.color && (
-                  <div>Цвет: <span className="font-medium">{carParams.color}</span></div>
+                  <div>
+                    Цвет: <span className="font-medium">{carParams.color}</span>
+                  </div>
                 )}
                 {carParams.condition && (
-                  <div>Состояние: <span className="font-medium">{carParams.condition}</span></div>
+                  <div>
+                    Состояние: <span className="font-medium">{carParams.condition}</span>
+                  </div>
                 )}
-                <div>Ракурсов: <span className="font-medium">{images.length}</span></div>
+                <div>
+                  Ракурсов: <span className="font-medium">{images.length}</span>
+                </div>
               </div>
             </div>
           </div>

@@ -14,7 +14,7 @@ if (!(globalThis as any).__referenceCache__) {
 export async function GET(request: NextRequest, { params }: { params: { rest: string[] } }) {
   const rest = params.rest?.join('/') || '';
   const origin = request.nextUrl.origin;
-  const target = `${origin}/api/proxy/api/ads/reference/${rest}${request.nextUrl.search}`.replace('/api/api/', '/api/');
+  const target = `${origin}/api/proxy/ads/reference/${rest}${request.nextUrl.search}`;
 
   // Serve from cache when valid
   const now = Date.now();

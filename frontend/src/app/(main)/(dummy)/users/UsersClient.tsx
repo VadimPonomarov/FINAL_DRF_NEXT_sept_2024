@@ -1,11 +1,11 @@
 "use client";
 import {FC} from "react";
 import {IUser, IUsersResponse} from "@/shared/types/users.interfaces.ts";
-import {UserCard} from "@/app/(main)/(dummy)/users/(details)/UserCard/UserCard.tsx";
-import InfiniteScroll from "@/components/All/InfiniteScroll/InfiniteScroll.tsx";
-import {PaginationComponent} from "@/components/All/PaginationComponent/PaginationComponent.tsx";
-import UniversalFilter from "@/components/All/UniversalFilter/FilterInput.tsx";
-import DialogModal from "@/components/All/DialogModal/DialogModal.tsx";
+import {UserCard} from "@/app/(main)/(dummy)/users/(details)/UserCard/UserCard";
+import InfiniteScroll from "@/components/All/InfiniteScroll/InfiniteScroll";
+import {PaginationComponent} from "@/components/All/PaginationComponent/PaginationComponent";
+import UniversalFilter from "@/components/All/UniversalFilter/FilterInput";
+import DialogModal from "@/components/All/DialogModal/DialogModal";
 import {useSearchParams} from "next/navigation";
 import {motion} from "framer-motion";
 

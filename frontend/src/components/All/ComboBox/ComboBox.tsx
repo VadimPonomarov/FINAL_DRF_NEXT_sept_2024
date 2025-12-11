@@ -1,7 +1,7 @@
 "use client"
 import { Check } from "lucide-react";
 import {FC, useState, useEffect} from "react";
-import { Button } from "@/components/ui/button.tsx";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils.ts";
 import {
   Command,
@@ -10,8 +10,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command.tsx";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {IItem} from "@/components/All/ComboBox/interfaces.ts";
 
 // Global styles for combobox - always light theme for dropdowns
