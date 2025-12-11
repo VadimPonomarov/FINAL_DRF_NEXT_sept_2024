@@ -370,6 +370,61 @@ CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
 CELERY_BROKER_URL=amqp://guest:guest@localhost:5672//
 ```
 
+## Docker Commands
+
+### Полный ребилд всех сервисов
+```bash
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build
+```
+
+### Ребилд только frontend
+```bash
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build frontend
+```
+
+### Ребилд только backend
+```bash
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build app
+```
+
+### Перезапуск сервисов (без ребилда)
+```bash
+# Перезапустить все сервисы
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml restart
+
+# Перезапустить только frontend
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml restart frontend
+
+# Перезапустить только backend
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml restart app
+```
+
+### Просмотр логов
+```bash
+# Логи всех сервисов
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml logs -f
+
+# Логи конкретного сервиса
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml logs -f frontend
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml logs -f app
+
+# Последние 50 строк лога
+docker logs final_drf_next_sept_2024-frontend-1 --tail 50
+docker logs final_drf_next_sept_2024-app-1 --tail 50
+```
+
+### Удаление и пересборка (полная очистка)
+```bash
+# Остановка и удаление контейнеров
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml down
+
+# Удаление образов (для полной пересборки)
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml down --rmi all
+
+# Пересборка с нуля
+docker compose -f docker-compose.yml -f docker-compose.with_frontend.yml up -d --build --force-recreate
+```
+
 ## Best Practices
 
 1. **Використовувати .env.example**

@@ -15,7 +15,8 @@ export async function GET(
     console.log('[Car Detail API] Fetching car ad:', carId);
 
     // Формируем URL к backend
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // В Docker используем имя сервиса 'app', в разработке - localhost
+    const backendUrl = process.env.IS_DOCKER === 'true' ? 'http://app:8000' : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
     const apiUrl = `${backendUrl}/api/ads/cars/${carId}`;
 
     // Получаем заголовки авторизации — используем origin, чтобы корректно достучаться до /api/redis
@@ -92,9 +93,9 @@ export async function DELETE(
   try {
     const resolvedParams = await params;
     const id = resolvedParams.id;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.IS_DOCKER === 'true' ? 'http://app:8000' : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
     const apiUrl = `${backendUrl}/api/ads/cars/${id}/delete`;
-    const authHeaders = await getAuthorizationHeaders();
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
 
     const backendResponse = await fetch(apiUrl, { method: 'DELETE', headers: authHeaders });
     if (!backendResponse.ok) {

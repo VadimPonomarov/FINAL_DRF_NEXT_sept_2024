@@ -23,8 +23,8 @@ ENV LC_ALL=C.UTF-8
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm ci --legacy-peer-deps
+# Install dependencies with caching and optimizations
+RUN npm ci --legacy-peer-deps --cache /tmp/.npm --prefer-offline --no-audit
 
 # =============================================================================
 # Builder stage - build the application
@@ -99,8 +99,8 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/next.config.js ./next.config.js
 COPY --from=builder /app/package.json ./package.json
 
-# Change ownership
-RUN chown -R nextjs:nodejs /app
+# Change ownership - optimize for large .next directory
+RUN chown -R nextjs:nodejs /app/.next /app/public /app/node_modules /app/next.config.js /app/package.json || true
 
 # Switch to non-root user
 USER nextjs
