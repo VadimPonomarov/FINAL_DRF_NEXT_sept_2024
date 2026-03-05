@@ -460,7 +460,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ serverSession }) => {
   // 1. Стандартная NextAuth: { authenticated: true, user: { email } }
   // 2. Кастомная: { email }
   const isAuthenticated = !!(currentSession?.email || currentSession?.user?.email);
-  const isLoading = sessionStatus === 'loading' || !isMounted;
+  const isLoading = serverSession ? (sessionStatus === 'loading' || !isMounted) : false;
 
   // Проверяем на некорректную сессию используя утилитную функцию
   // Сессия считается поврежденной только если она существует, но невалидна
