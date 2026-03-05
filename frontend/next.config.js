@@ -161,7 +161,7 @@ const nextConfig = {
     minimumCacheTTL: 31536000, // 1 year
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    domains: ['localhost', 'image.pollinations.ai', 'autoria-backend.onrender.com'],
+    domains: ['localhost', 'image.pollinations.ai', 'autoria-backend.onrender.com', '91.98.238.47'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -174,6 +174,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '**.vercel.app',
+      },
+      {
+        protocol: 'http',
+        hostname: '91.98.238.47',
+        port: '8000',
       },
     ],
     // Turn off image optimization in development to speed up dev server
@@ -216,7 +221,9 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' http://localhost:* https://localhost:*"
+            value: process.env.NODE_ENV === 'production'
+              ? "frame-ancestors 'self'"
+              : "frame-ancestors 'self' http://localhost:* https://localhost:*"
           },
           {
             key: 'X-Content-Type-Options',

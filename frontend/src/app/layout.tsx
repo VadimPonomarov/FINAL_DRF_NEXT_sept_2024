@@ -22,8 +22,33 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Автомобильная площадка',
-  description: 'Покупка и продажа автомобилей',
+  title: {
+    default: 'AutoRia — Автомобільний маркетплейс',
+    template: '%s | AutoRia',
+  },
+  description: 'Купівля та продаж автомобілів. Найбільший маркетплейс оголошень про авто в Україні.',
+  keywords: ['автомобілі', 'авто', 'продаж авто', 'купити авто', 'маркетплейс', 'AutoRia'],
+  authors: [{ name: 'AutoRia' }],
+  creator: 'AutoRia',
+  metadataBase: new URL('https://autoria-clone.vercel.app'),
+  openGraph: {
+    type: 'website',
+    locale: 'uk_UA',
+    url: 'https://autoria-clone.vercel.app',
+    siteName: 'AutoRia',
+    title: 'AutoRia — Автомобільний маркетплейс',
+    description: 'Купівля та продаж автомобілів. Найбільший маркетплейс оголошень про авто.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'AutoRia — Автомобільний маркетплейс',
+    description: 'Купівля та продаж автомобілів.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
   icons: {
     icon: '/icon',
   },
