@@ -55,9 +55,8 @@ console.log(`📁 NEXT_PUBLIC_IS_DOCKER: ${process.env.NEXT_PUBLIC_IS_DOCKER || 
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // DISABLED standalone output - causes data loading issues
-  // Use standard build + start instead
-  // ...(process.env.NODE_ENV === 'production' && { output: 'standalone' }),
+  // Enable standalone output for Vercel optimization
+  ...(process.env.VERCEL && { output: 'standalone' }),
 
   // React strict mode off in development to avoid double-invoking effects (faster dev)
   reactStrictMode: process.env.NODE_ENV !== 'development',
@@ -162,9 +161,47 @@ const nextConfig = {
     minimumCacheTTL: 31536000, // 1 year
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    domains: ['localhost'],
+    domains: ['localhost', 'image.pollinations.ai', 'autoria-backend.onrender.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.onrender.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'image.pollinations.ai',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.vercel.app',
+      },
+    ],
     // Turn off image optimization in development to speed up dev server
     unoptimized: process.env.NODE_ENV !== 'production',
+  },
+
+  // API Rewrites - proxy requests to backend
+  async rewrites() {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
+      },
+      {
+        source: '/admin/:path*',
+        destination: `${backendUrl}/admin/:path*`,
+      },
+      {
+        source: '/media/:path*',
+        destination: `${backendUrl}/media/:path*`,
+      },
+      {
+        source: '/static/:path*',
+        destination: `${backendUrl}/static/:path*`,
+      },
+    ];
   },
 
   // Production headers with caching and security

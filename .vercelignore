@@ -1,0 +1,53 @@
+# Backend files
+backend/
+celery-service/
+mailing/
+nginx/
+pg/
+rabbitmq/
+redis/
+media/
+logs/
+
+# Docker files
+docker-compose.yml
+docker-compose.with_frontend.yml
+Dockerfile
+.dockerignore
+
+# Environment files
+.env
+.env.local
+env-config/
+
+# Python files
+*.pyc
+__pycache__/
+.mypy_cache/
+*.py
+requirements.txt
+Procfile
+runtime.txt
+
+# Scripts
+scripts/
+deploy.py
+deploy.sh
+deploy.js
+
+# Documentation
+DEPLOYMENT.md
+QUICKSTART.md
+autoRiaClone.txt
+
+# Git
+.git/
+.github/
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+
+# Deployment state
+.deployment_state.json

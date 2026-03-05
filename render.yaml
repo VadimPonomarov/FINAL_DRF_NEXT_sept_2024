@@ -1,0 +1,68 @@
+services:
+  # Django DRF Backend
+  - type: web
+    name: autoria-backend
+    runtime: python
+    region: frankfurt
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEBUG
+        value: False
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: autoria-db
+          property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: autoria-redis
+          property: connectionString
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CORS_ALLOW_CREDENTIALS
+        value: True
+    healthCheckPath: /health
+
+  # Celery Worker (optional)
+  - type: worker
+    name: autoria-celery-worker
+    runtime: python
+    region: frankfurt
+    plan: free
+    branch: main
+    rootDir: celery-service
+    buildCommand: pip install -r ../backend/requirements.txt
+    startCommand: celery -A config worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: autoria-db
+          property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: autoria-redis
+          property: connectionString
+
+databases:
+  # PostgreSQL Database
+  - name: autoria-db
+    databaseName: autoria
+    user: autoria_user
+    region: frankfurt
+    plan: free
+
+  # Redis Cache
+  - name: autoria-redis
+    region: frankfurt
+    plan: free
