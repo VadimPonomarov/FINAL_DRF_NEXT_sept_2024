@@ -38,8 +38,12 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Performance: preconnect/dns-prefetch to backend and image CDN */}
-        <link rel="preconnect" href="http://localhost:8000" />
-        <link rel="dns-prefetch" href="http://localhost:8000" />
+        {process.env.NEXT_PUBLIC_BACKEND_URL && (
+          <>
+            <link rel="preconnect" href={process.env.NEXT_PUBLIC_BACKEND_URL} />
+            <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_BACKEND_URL} />
+          </>
+        )}
         <link rel="preconnect" href="https://image.pollinations.ai" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://image.pollinations.ai" />
       </head>
