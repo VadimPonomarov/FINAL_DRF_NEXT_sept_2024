@@ -186,8 +186,8 @@ const nextConfig = {
     
     return [
       {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
+        source: '/api/((?!auth/).*)',
+        destination: `${backendUrl}/api/$1`,
       },
       {
         source: '/admin/:path*',
