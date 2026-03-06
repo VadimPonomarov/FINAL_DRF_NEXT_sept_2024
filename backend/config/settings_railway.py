@@ -172,7 +172,10 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all origins in debug mode
 
 # Add Railway domain to CORS if available
 if 'RAILWAY_STATIC_URL' in os.environ:
-    CORS_ALLOWED_ORIGINS.append(os.environ['RAILWAY_STATIC_URL'])
+    railway_url = os.environ['RAILWAY_STATIC_URL']
+    if not railway_url.startswith('http'):
+        railway_url = f'https://{railway_url}'
+    CORS_ALLOWED_ORIGINS.append(railway_url)
 
 # REST Framework
 REST_FRAMEWORK = {
