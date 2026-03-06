@@ -4,7 +4,6 @@ Stable configuration for production use.
 """
 
 import os
-import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -111,13 +110,14 @@ DATABASES = {
 _db_url = os.environ.get('DATABASE_URL', '')
 if _db_url and not _db_url.startswith('${{'):
     try:
+        import dj_database_url
         DATABASES['default'] = dj_database_url.parse(
             _db_url,
             conn_max_age=600,
             conn_health_checks=True,
         )
     except Exception as _e:
-        print(f"[settings_railway] DATABASE_URL parse failed ({_e}), using SQLite fallback")
+        print(f"[settings_railway] DATABASE_URL config failed ({_e}), using SQLite fallback")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
