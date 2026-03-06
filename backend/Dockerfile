@@ -26,4 +26,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-CMD ["gunicorn", "config.wsgi_simple:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--timeout", "120"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "config.asgi:application"]
