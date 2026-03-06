@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     console.log('[OpenAPI Proxy] Starting OpenAPI schema fetch...');
 
     // Use internal Docker URL for server-side requests
-    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000').trim();
 
     // Try multiple possible endpoints
     const possibleEndpoints = [

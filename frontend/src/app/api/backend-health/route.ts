@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
     
     // Try backend URLs - use configured URLs only (no hardcoded localhost for production)
     const possibleBackendUrls = [
-      process.env.BACKEND_URL,
-      process.env.NEXT_PUBLIC_BACKEND_URL,
+      process.env.BACKEND_URL?.trim(),
+      process.env.NEXT_PUBLIC_BACKEND_URL?.trim(),
       // Fallback to localhost only in development
       ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:8000', 'http://127.0.0.1:8000'] : []),
     ].filter(Boolean);
