@@ -89,9 +89,9 @@ export { getBackendUrl };
 
 // Define the base URLs as string constants
 export const API_URLS = {
-    [AuthProvider.Select]: BaseUrl.Backend,
+    [AuthProvider.Select]: BaseUrl.Internal,
     [AuthProvider.Dummy]: BaseUrl.Dummy,
-    [AuthProvider.MyBackendDocs]: BaseUrl.Backend
+    [AuthProvider.MyBackendDocs]: BaseUrl.Internal
 } as const;
 
 export const API_ENDPOINTS = {
