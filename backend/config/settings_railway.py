@@ -1,6 +1,7 @@
 """
 Production Django settings for Railway deployment.
 Stable configuration for production use.
+Build: force-rebuild-2
 """
 
 import os
