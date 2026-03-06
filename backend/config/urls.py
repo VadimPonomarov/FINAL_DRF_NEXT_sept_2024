@@ -7,7 +7,7 @@ The `urlpatterns` list routes URLs to views. For more information please see:
 
 from django.conf import settings
 from django.conf.urls.static import static
-# from django.contrib import admin  # Disabled for faster startup
+from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 from django.contrib.auth import views as auth_views
@@ -22,8 +22,8 @@ from .docs.urls import urlpatterns as docs_urls
 
 # Main URL patterns
 urlpatterns = [
-    # Admin interface (disabled for faster startup)
-    # path('admin/', admin.site.urls),
+    # Admin interface
+    path('admin/', admin.site.urls),
     
     # Authentication URLs (Django built-in)
     path('accounts/login/', auth_views.LoginView.as_view(template_name='admin/login.html'), name='login'),

@@ -7,8 +7,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # Points to backend/ directory
 
 INSTALLED_APPS = [
-    # Django Core Apps (admin disabled for faster startup)
-    # 'django.contrib.admin',
+    # Django Core Apps
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

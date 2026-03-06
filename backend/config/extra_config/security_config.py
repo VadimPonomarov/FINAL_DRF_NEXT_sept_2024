@@ -9,22 +9,27 @@ from core.utils.environment_detector import env_detector
 
 def get_security_config():
     """Get security configuration based on environment."""
-    is_production = os.getenv('DJANGO_ENV', 'development') == 'production'
+    # Check multiple environment indicators for production
+    is_production = (
+        os.getenv('DJANGO_ENV') == 'production' or
+        os.getenv('DEBUG', 'True').lower() in {'false', '0', 'no', 'off'} or
+        os.getenv('RENDER') is not None  # Render.com sets this
+    )
     is_docker = env_detector.is_docker()
 
     return {
         'USE_HTTPS': is_production,
         'SECURE_COOKIES': is_production,
         'HSTS_ENABLED': is_production,
-        'DEBUG': True,  # Принудительно включаем DEBUG для разработки
+        'IS_PRODUCTION': is_production,
     }
 
 
 # Get security configuration
 security_config = get_security_config()
 
-# Debug setting
-DEBUG = True
+# Debug setting - controlled by main settings.py
+# DEBUG = True  # Commented out to let main settings.py control this
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
