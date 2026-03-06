@@ -24,3 +24,4 @@ python-dateutil==2.9.0.post0
 loguru==0.7.2
 gunicorn==21.2.0
 dj-database-url==2.1.0
+whitenoise==6.6.0
