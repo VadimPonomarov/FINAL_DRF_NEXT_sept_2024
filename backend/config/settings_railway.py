@@ -18,10 +18,12 @@ DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
     '.railway.app',
+    '.railway.internal',
     '.onrender.com',
     'autoria-clone.vercel.app',
     'localhost',
     '127.0.0.1',
+    '*',
 ]
 
 # Add Railway domain if available
@@ -205,7 +207,9 @@ SIMPLE_JWT = {
 }
 
 # Security settings for production
-SECURE_SSL_REDIRECT = not DEBUG
+# SECURE_SSL_REDIRECT must be False on Railway — SSL is terminated at the load balancer level
+# Enabling it causes Railway healthcheck (HTTP) to receive 301 → healthcheck failure
+SECURE_SSL_REDIRECT = False
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
@@ -296,3 +300,30 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 
 # Admin settings
 ADMIN_URL = 'admin/'
+
+# Celery configuration
+# RabbitMQ broker (primary) with Redis fallback
+CELERY_BROKER_URL = os.environ.get(
+    'CELERY_BROKER_URL',
+    os.environ.get('RABBITMQ_URL', 'amqp://guest:guest@localhost:5672//')
+)
+CELERY_RESULT_BACKEND = os.environ.get(
+    'CELERY_RESULT_BACKEND',
+    os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+)
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_ENABLE_UTC = True
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_TASK_SOFT_TIME_LIMIT = 60
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_ACKS_LATE = True
+
+# RabbitMQ connection settings (from env)
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
+RABBITMQ_PORT = int(os.environ.get('RABBITMQ_PORT', '5672'))
+RABBITMQ_USER = os.environ.get('RABBITMQ_USER', 'guest')
+RABBITMQ_PASSWORD = os.environ.get('RABBITMQ_PASSWORD', 'guest')
