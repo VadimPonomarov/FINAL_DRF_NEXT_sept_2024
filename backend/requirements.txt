@@ -4,7 +4,7 @@ djangorestframework-simplejwt==5.5.0
 django-filter==25.1
 django-cors-headers==4.7.0
 drf-yasg==1.21.10
-psycopg2==2.9.10
+psycopg2-binary==2.9.10
 channels==4.2.2
 channels-redis==4.2.1
 django-redis==6.0.0
@@ -23,3 +23,4 @@ pillow==10.4.0
 python-dateutil==2.9.0.post0
 loguru==0.7.2
 gunicorn==21.2.0
+dj-database-url==2.1.0

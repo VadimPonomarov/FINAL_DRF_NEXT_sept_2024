@@ -8,14 +8,14 @@ services:
     branch: master
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: python manage.py migrate --noinput && python manage.py init_project_data --force && python manage.py collectstatic --noinput && daphne -b 0.0.0.0 -p $PORT config.asgi:application
+    startCommand: python manage.py collectstatic --noinput && python manage.py migrate --noinput && daphne -b 0.0.0.0 -p $PORT config.asgi:application
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: DEBUG
         value: False
       - key: DJANGO_SETTINGS_MODULE
-        value: config.settings
+        value: config.settings_production
       - key: DJANGO_ALLOWED_HOSTS
         value: .onrender.com,autoria-clone.vercel.app
       - key: SECRET_KEY
