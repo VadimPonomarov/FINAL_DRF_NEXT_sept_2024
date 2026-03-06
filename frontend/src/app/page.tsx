@@ -17,8 +17,8 @@ const Home = async () => {
 };
 
 export const metadata: Metadata = {
-  title: "Home",
-  description: "Welcome to AutoRia - Your trusted car marketplace",
+  title: "Головна",
+  description: "Купівля та продаж автомобілів. Найбільший маркетплейс оголошень про авто в Україні.",
 };
 
 export default Home;
