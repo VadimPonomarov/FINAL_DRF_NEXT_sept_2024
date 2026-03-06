@@ -114,8 +114,8 @@ if _db_url and not _db_url.startswith('${{'):
     try:
         import dj_database_url
         DATABASES['default'] = dj_database_url.parse(_db_url, conn_max_age=0)
-        # Add connect_timeout to prevent migrate from hanging indefinitely
-        DATABASES['default'].setdefault('OPTIONS', {})['connect_timeout'] = 5
+        # Add connect_timeout for Railway internal networking
+        DATABASES['default'].setdefault('OPTIONS', {})['connect_timeout'] = 10
     except Exception as _e:
         print(f"[settings_railway] DATABASE_URL parse failed ({_e}), using SQLite fallback")
 elif os.environ.get('PGHOST'):
@@ -127,7 +127,7 @@ elif os.environ.get('PGHOST'):
         'NAME': os.environ.get('PGDATABASE', 'railway'),
         'USER': os.environ.get('PGUSER', 'postgres'),
         'PASSWORD': os.environ.get('PGPASSWORD', ''),
-        'OPTIONS': {'connect_timeout': 5},
+        'OPTIONS': {'connect_timeout': 10},
         'CONN_MAX_AGE': 0,
     }
     print(f"[settings_railway] Using PostgreSQL via PGHOST: {os.environ['PGHOST']}")
