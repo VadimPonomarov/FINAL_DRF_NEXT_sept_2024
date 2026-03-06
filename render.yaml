@@ -5,19 +5,19 @@ services:
     runtime: python
     region: frankfurt
     plan: free
-    branch: main
+    branch: master
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120
+    buildCommand: pip install poetry==1.8.3 && poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --only main
+    startCommand: python manage.py migrate --noinput && python manage.py init_project_data --force && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: 3.12.0
       - key: DEBUG
         value: False
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings
-      - key: ALLOWED_HOSTS
-        sync: false
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com,autoria-clone.vercel.app
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
@@ -29,10 +29,14 @@ services:
           name: autoria-redis
           property: connectionString
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://autoria-clone.vercel.app
       - key: CORS_ALLOW_CREDENTIALS
         value: True
-    healthCheckPath: /health
+      - key: IS_DOCKER
+        value: false
+      - key: IS_SEEDING_REQUIRED
+        value: true
+    healthCheckPath: /health/
 
   # Celery Worker (optional)
   - type: worker
@@ -40,7 +44,7 @@ services:
     runtime: python
     region: frankfurt
     plan: free
-    branch: main
+    branch: master
     rootDir: celery-service
     buildCommand: pip install -r ../backend/requirements.txt
     startCommand: celery -A config worker --loglevel=info

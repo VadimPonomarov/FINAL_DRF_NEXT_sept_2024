@@ -8,6 +8,7 @@ import socket
 import subprocess
 from pathlib import Path
 from typing import Dict, Any
+from urllib.parse import urlparse
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,43 +66,59 @@ class EnvironmentDetector:
     def get_database_config(cls) -> Dict[str, str]:
         """
         Возвращает конфигурацию базы данных на основе окружения.
+        Supports DATABASE_URL (Render/cloud) and individual vars (Docker/local).
         """
-        if cls.is_docker():
-            # В Docker используем имена сервисов из docker-compose.yml
+        database_url = os.environ.get('DATABASE_URL', '')
+        if database_url:
+            parsed = urlparse(database_url)
             return {
-                'HOST': 'pg',  # Точное имя сервиса из docker-compose.yml
+                'HOST': parsed.hostname or 'localhost',
+                'PORT': str(parsed.port or 5432),
+                'NAME': (parsed.path or '/db').lstrip('/'),
+                'USER': parsed.username or 'user',
+                'PASSWORD': parsed.password or '',
+            }
+        if cls.is_docker():
+            return {
+                'HOST': 'pg',
                 'PORT': '5432',
                 'NAME': os.environ.get('POSTGRES_DB', os.environ.get('POSTGRES_NAME', 'db')),
                 'USER': os.environ.get('POSTGRES_USER', 'user'),
                 'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'password'),
             }
-        else:
-            # Локально используем localhost
-            return {
-                'HOST': 'localhost',
-                'PORT': '5432',
-                'NAME': os.environ.get('POSTGRES_DB', 'db'),
-                'USER': os.environ.get('POSTGRES_USER', 'user'),
-                'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'password'),
-            }
+        return {
+            'HOST': 'localhost',
+            'PORT': '5432',
+            'NAME': os.environ.get('POSTGRES_DB', 'db'),
+            'USER': os.environ.get('POSTGRES_USER', 'user'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'password'),
+        }
     
     @classmethod
     def get_redis_config(cls) -> Dict[str, str]:
         """
         Возвращает конфигурацию Redis на основе окружения.
+        Supports REDIS_URL (Render/cloud) and individual vars (Docker/local).
         """
+        redis_url = os.environ.get('REDIS_URL', '')
+        if redis_url:
+            parsed = urlparse(redis_url)
+            return {
+                'HOST': parsed.hostname or 'localhost',
+                'PORT': str(parsed.port or 6379),
+                'DB': (parsed.path or '/0').lstrip('/') or '0',
+            }
         if cls.is_docker():
             return {
-                'HOST': 'redis',  # Имя сервиса в docker-compose.yml
+                'HOST': 'redis',
                 'PORT': '6379',
                 'DB': '0',
             }
-        else:
-            return {
-                'HOST': 'localhost',
-                'PORT': '6379',
-                'DB': '0',
-            }
+        return {
+            'HOST': 'localhost',
+            'PORT': '6379',
+            'DB': '0',
+        }
     
     @classmethod
     def should_run_seeds(cls) -> bool:
