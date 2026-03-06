@@ -9,10 +9,12 @@ class AdsConfig(AppConfig):
     label = 'ads'
 
     def ready(self):
-        # Auto-populate reference data on startup if enabled
-        # Controlled by RUN_SEEDS environment variable (default: true)
-        # DISABLED: Seeds now run only through docker-compose to avoid cycles
-        pass
+        import os
+        # Run seeds automatically in non-Docker environments (Render, Railway, local)
+        # In Docker, seeds are managed by docker-compose start command
+        is_docker = os.getenv('IS_DOCKER', 'false').lower() in ('true', '1', 't', 'yes')
+        if not is_docker and self._should_run_seeds():
+            self._run_seeds_safely()
 
     def _run_seeds_safely(self):
         """Run seeds safely without blocking app startup."""
