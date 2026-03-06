@@ -18,18 +18,24 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", os.environ.get("DJANGO_SETTINGS_
 # Setup Django before importing any Django-dependent modules
 django.setup()
 
-# Now we can safely import Django-dependent modules
-from core.middlewares.auth_socket import JWTAuthMiddleware
-from .routing import websocket_urlpatterns
-
-# Initialize Django ASGI application
+# Initialize Django ASGI application first
 django_asgi_app = get_asgi_application()
 
-application = ProtocolTypeRouter({
-    "http": django_asgi_app,
-    "websocket": JWTAuthMiddleware(
-        URLRouter(
-            websocket_urlpatterns
+# Try to import WebSocket dependencies, fallback to HTTP-only if they fail
+try:
+    from core.middlewares.auth_socket import JWTAuthMiddleware
+    from .routing import websocket_urlpatterns
+    
+    application = ProtocolTypeRouter({
+        "http": django_asgi_app,
+        "websocket": JWTAuthMiddleware(
+            URLRouter(
+                websocket_urlpatterns
+            )
         )
-    )
-})
+    })
+except ImportError as e:
+    print(f"WebSocket dependencies not available: {e}")
+    print("Running in HTTP-only mode")
+    # Fallback to HTTP-only ASGI application
+    application = django_asgi_app
