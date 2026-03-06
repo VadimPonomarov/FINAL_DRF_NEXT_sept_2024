@@ -51,16 +51,25 @@ export function loadRuntimeEnv() {
 
     // Устанавливаем значения по умолчанию для критических переменных
     if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
-      // Для локальной разработки используем прямое подключение к Django (http://localhost:8000)
-      // Для production в Docker - используем внутренний сервис (http://app:8000)
       const isDocker = process.env.IS_DOCKER === 'true';
-      process.env.NEXT_PUBLIC_BACKEND_URL = isDocker ? 'http://app:8000' : 'http://localhost:8000';
+      const isProduction = process.env.NODE_ENV === 'production';
+      if (isDocker) {
+        process.env.NEXT_PUBLIC_BACKEND_URL = 'http://app:8000';
+      } else if (!isProduction) {
+        process.env.NEXT_PUBLIC_BACKEND_URL = 'http://localhost:8000';
+      }
+      // In production without IS_DOCKER, NEXT_PUBLIC_BACKEND_URL MUST be set via platform env vars
     }
     
     if (!process.env.BACKEND_URL) {
-      // BACKEND_URL используется на сервере для прямого подключения к Django
       const isDocker = process.env.IS_DOCKER === 'true';
-      process.env.BACKEND_URL = isDocker ? 'http://app:8000' : 'http://localhost:8000';
+      const isProduction = process.env.NODE_ENV === 'production';
+      if (isDocker) {
+        process.env.BACKEND_URL = 'http://app:8000';
+      } else if (!isProduction) {
+        process.env.BACKEND_URL = 'http://localhost:8000';
+      }
+      // In production without IS_DOCKER, BACKEND_URL MUST be set via platform env vars
     }
 
     envLoaded = true;
