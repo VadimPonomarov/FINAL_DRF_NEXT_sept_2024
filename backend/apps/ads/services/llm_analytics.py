@@ -2,18 +2,27 @@
 LLM сервис для генерации аналитических инсайтов
 Использует g4f и LangChain архитектуру из IChat системы
 """
-import g4f
-from g4f.client import Client
-import json
-from django.conf import settings
-from django.core.cache import cache
-from datetime import datetime
 import logging
-from typing import Dict, List, Optional, Any
-from langchain.schema.runnable import RunnableLambda
-from langchain.prompts import PromptTemplate
-from langchain.output_parsers import PydanticOutputParser
+from datetime import datetime
+from typing import List
+
+from django.core.cache import cache
 from pydantic import BaseModel, Field
+
+try:
+    import g4f
+    from g4f.client import Client
+    from langchain.schema.runnable import RunnableLambda
+    from langchain.prompts import PromptTemplate
+    from langchain.output_parsers import PydanticOutputParser
+    _LLM_AVAILABLE = True
+except ImportError:
+    _LLM_AVAILABLE = False
+    g4f = None
+    Client = None
+    RunnableLambda = None
+    PromptTemplate = None
+    PydanticOutputParser = None
 
 logger = logging.getLogger(__name__)
 

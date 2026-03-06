@@ -1,23 +1,25 @@
+import logging
+
 from django.contrib.auth import get_user_model
-from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import NotAcceptable
 from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView, get_object_or_404, )
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from langchain.prompts import PromptTemplate
-import logging
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from langchain.prompts import PromptTemplate
-import logging
+
+try:
+    from langchain.prompts import PromptTemplate
+    _LANGCHAIN_AVAILABLE = True
+except ImportError:
+    PromptTemplate = None
+    _LANGCHAIN_AVAILABLE = False
 import requests
 import uuid
-from io import BytesIO
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.conf import settings

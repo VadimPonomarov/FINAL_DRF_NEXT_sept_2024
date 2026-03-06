@@ -9,8 +9,14 @@ from typing import Any, Dict
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from ..services.llm_analytics import LLMAnalyticsService
-from ..services.analytics_dashboard import AnalyticsDashboardService
+try:
+    from ..services.llm_analytics import LLMAnalyticsService
+    from ..services.analytics_dashboard import AnalyticsDashboardService
+    _ANALYTICS_AVAILABLE = True
+except ImportError:
+    LLMAnalyticsService = None
+    AnalyticsDashboardService = None
+    _ANALYTICS_AVAILABLE = False
 
 
 class LLMMarketInsightsAPI(APIView):

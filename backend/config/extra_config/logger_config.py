@@ -4,7 +4,14 @@ from pathlib import Path
 from loguru import logger
 
 log_directory = os.environ.get("LOG_DIRECTORY", "./logs")
-os.makedirs(log_directory, exist_ok=True)
+try:
+    os.makedirs(log_directory, exist_ok=True)
+    _test_file = os.path.join(log_directory, '.write_test')
+    open(_test_file, 'a').close()
+    os.remove(_test_file)
+except OSError:
+    log_directory = '/tmp/logs'
+    os.makedirs(log_directory, exist_ok=True)
 
 enable_logging = (
         os.environ.get("ENABLE_LOGGING", "True").lower()
@@ -25,7 +32,13 @@ else:
 # Django LOGGING configuration
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 LOGS_DIR = BASE_DIR / 'logs'
-LOGS_DIR.mkdir(exist_ok=True)
+try:
+    LOGS_DIR.mkdir(exist_ok=True)
+    (LOGS_DIR / '.write_test').touch()
+    (LOGS_DIR / '.write_test').unlink()
+except OSError:
+    LOGS_DIR = Path('/tmp') / 'logs'
+    LOGS_DIR.mkdir(exist_ok=True)
 
 LOGGING = {
     'version': 1,
