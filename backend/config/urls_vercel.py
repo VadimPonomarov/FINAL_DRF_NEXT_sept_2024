@@ -35,18 +35,9 @@ try:
 except Exception:
     docs_urls = []
 
-from django.http import JsonResponse
-
-def _debug_urls_view(request):
-    return JsonResponse({
-        "registered": [str(p) for p in _safe_includes],
-        "errors": _include_errors
-    })
-
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", health_check, name="health_check"),
-    path("debug-urls/", _debug_urls_view),
     path("", RedirectView.as_view(url="/api/doc/", permanent=False)),
     *_safe_includes,
     *docs_urls,
