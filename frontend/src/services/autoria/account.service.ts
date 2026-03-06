@@ -10,7 +10,7 @@ export interface AccountUpdateData {
 }
 
 export class AccountService {
-  private static readonly BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  private static readonly BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000');
 
   /**
    * Обновляет тип аккаунта пользователя до PREMIUM для тестовых целей

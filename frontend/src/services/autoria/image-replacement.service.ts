@@ -43,7 +43,7 @@ export interface ReplacementResult {
 export class ImageReplacementService {
   private baseUrl: string;
 
-  constructor(baseUrl: string = 'http://localhost:8000') {
+  constructor(baseUrl: string = (typeof window !== 'undefined' ? '' : (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000'))) {
     this.baseUrl = baseUrl;
   }
 

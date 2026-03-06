@@ -10,7 +10,7 @@ export class ImageGenerationService {
     console.log(`🎨 Generating car image via backend: ${prompt}`);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = typeof window !== 'undefined' ? '' : (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000');
 
       // Используем универсальный backend endpoint для генерации изображений
       const response = await fetch(`${backendUrl}/api/users/generate-image/`, {
@@ -60,7 +60,7 @@ export class ImageGenerationService {
     }
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = typeof window !== 'undefined' ? '' : (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000');
 
       // Используем специализированный endpoint для генерации изображений автомобилей
       const response = await fetch(`${backendUrl}/api/chat/generate-car-images/`, {

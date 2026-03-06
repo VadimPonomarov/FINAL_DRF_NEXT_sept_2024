@@ -34,15 +34,17 @@ class ApiClient {
   }
 
   constructor(options: ApiClientOptions = {}) {
-    // Use environment variable for backend URL
-    const rawDefault = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    const defaultBaseUrl = this.normalizeBackendBase(rawDefault);
-    this.useProxy = false; // Direct backend requests
+    // In browser: use empty baseUrl so /api/* goes through Next.js proxy (avoids mixed content)
+    // On server: use NEXTAUTH_URL to call through Vercel edge which applies rewrites
+    const defaultBaseUrl = typeof window !== 'undefined'
+      ? ''
+      : (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000');
+    this.useProxy = typeof window !== 'undefined';
     this.baseUrl = options.baseUrl || defaultBaseUrl;
     this.timeout = options.timeout || 15000;
     this.retries = options.retries || 1;
 
-    console.log(`[ApiClient] Initialized with baseUrl: ${this.baseUrl}`);
+    console.log(`[ApiClient] Initialized with baseUrl: ${this.baseUrl || '(relative)'}`);
   }
 
   /**
