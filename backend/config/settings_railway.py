@@ -109,16 +109,28 @@ DATABASES = {
 
 # Use PostgreSQL if DATABASE_URL is provided (Railway format)
 _db_url = os.environ.get('DATABASE_URL', '')
+# ${{...}} is Railway unresolved template literal - skip it
 if _db_url and not _db_url.startswith('${{'):
     try:
         import dj_database_url
-        DATABASES['default'] = dj_database_url.parse(
-            _db_url,
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
+        DATABASES['default'] = dj_database_url.parse(_db_url, conn_max_age=0)
+        # Add connect_timeout to prevent migrate from hanging indefinitely
+        DATABASES['default'].setdefault('OPTIONS', {})['connect_timeout'] = 5
     except Exception as _e:
-        print(f"[settings_railway] DATABASE_URL config failed ({_e}), using SQLite fallback")
+        print(f"[settings_railway] DATABASE_URL parse failed ({_e}), using SQLite fallback")
+elif os.environ.get('PGHOST'):
+    # Fallback: construct from individual Railway PG* env vars
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': os.environ['PGHOST'],
+        'PORT': os.environ.get('PGPORT', '5432'),
+        'NAME': os.environ.get('PGDATABASE', 'railway'),
+        'USER': os.environ.get('PGUSER', 'postgres'),
+        'PASSWORD': os.environ.get('PGPASSWORD', ''),
+        'OPTIONS': {'connect_timeout': 5},
+        'CONN_MAX_AGE': 0,
+    }
+    print(f"[settings_railway] Using PostgreSQL via PGHOST: {os.environ['PGHOST']}")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
