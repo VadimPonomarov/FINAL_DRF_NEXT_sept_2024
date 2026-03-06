@@ -73,11 +73,11 @@ if (AUTH_CONFIG.GOOGLE_CLIENT_SECRET) {
 }
 
 export const BaseUrl = {
-    Backend: process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || `${PROTOCOLS.BACKEND}://localhost:${PORTS.BACKEND}`,
+    Backend: process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autoria-web-production.up.railway.app',
     Dummy: EXTERNAL_SERVICES.DUMMY_JSON,
-    Flower: process.env.NEXT_PUBLIC_FLOWER_URL || `${PROTOCOLS.FLOWER}://localhost:${PORTS.FLOWER}`,
-    RedisInsight: process.env.NEXT_PUBLIC_REDIS_INSIGHT_URL || `${PROTOCOLS.REDIS_INSIGHT}://localhost:${PORTS.REDIS_INSIGHT}`,
-    RabbitMQ: process.env.NEXT_PUBLIC_RABBITMQ_URL || `${PROTOCOLS.RABBITMQ_MANAGEMENT}://localhost:${PORTS.RABBITMQ_MANAGEMENT}`,
+    Flower: process.env.NEXT_PUBLIC_FLOWER_URL || 'https://autoria-flower-production.up.railway.app',
+    RedisInsight: process.env.NEXT_PUBLIC_REDIS_INSIGHT_URL || 'https://autoria-redis-insight-production.up.railway.app',
+    RabbitMQ: process.env.NEXT_PUBLIC_RABBITMQ_URL || 'https://autoria-rabbitmq-production.up.railway.app',
     // Внутренний API Next.js
     Internal: typeof window !== 'undefined'
         ? window.location.origin  // В браузере используем текущий origin
