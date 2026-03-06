@@ -65,6 +65,12 @@ class AdsConfig(AppConfig):
             ]
             if command in skip_commands:
                 return False
+        
+        # CRITICAL: Don't run seeds during ASGI/Daphne startup - only during runserver
+        # Seeds should run AFTER migrate, not during Django app initialization
+        if 'daphne' in ' '.join(sys.argv) or 'gunicorn' in ' '.join(sys.argv):
+            print("🚫 Skipping seeds during ASGI server startup - run seeds manually after deployment")
+            return False
 
         # Never run seeds in Docker by default
         is_docker = os.getenv('IS_DOCKER', 'false').lower() in ('true', '1', 't', 'yes')
