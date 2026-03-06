@@ -10,7 +10,7 @@ from pathlib import Path
 backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings_minimal')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings_railway')
 
 from django.core.wsgi import get_wsgi_application
 
