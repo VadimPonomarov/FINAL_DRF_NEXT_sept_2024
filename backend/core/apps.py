@@ -21,8 +21,10 @@ class CoreConfig(AppConfig):
         # Consumer startup moved to manage.py for better control
         logger.info("[READY] Core app ready - consumer startup handled by manage.py")
 
-        # Register service in Redis Service Registry
-        self._register_service_in_redis()
+        # Register service in Redis Service Registry in background thread
+        # to avoid blocking Daphne/server startup if Redis is slow or unavailable
+        t = threading.Thread(target=self._register_service_in_redis, daemon=True)
+        t.start()
 
         # Auto-seed car reference data if empty (temporarily disabled)
         # self._auto_seed_car_references()
