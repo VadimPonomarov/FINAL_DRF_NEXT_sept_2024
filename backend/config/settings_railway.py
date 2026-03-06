@@ -108,12 +108,16 @@ DATABASES = {
 }
 
 # Use PostgreSQL if DATABASE_URL is provided (Railway format)
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.parse(
-        os.environ['DATABASE_URL'],
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+_db_url = os.environ.get('DATABASE_URL', '')
+if _db_url and not _db_url.startswith('${{'):
+    try:
+        DATABASES['default'] = dj_database_url.parse(
+            _db_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    except Exception as _e:
+        print(f"[settings_railway] DATABASE_URL parse failed ({_e}), using SQLite fallback")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
