@@ -15,7 +15,10 @@ from django.contrib.auth import views as auth_views
 from apps.accounts.urls import urlpatterns as accounts_urls
 from apps.ads.urls import urlpatterns as ads_urls
 from apps.auth.urls import urlpatterns as auth_urls
-from apps.chat.urls import urlpatterns as chat_urls
+try:
+    from apps.chat.urls import urlpatterns as chat_urls
+except ImportError:
+    chat_urls = []
 from apps.users.urls import urlpatterns as users_urls
 from core.views import health_check, google_maps_api_key
 from .docs.urls import urlpatterns as docs_urls

@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'drf_yasg',
     'django_filters',
     
+    # Channels (WebSocket support)
+    'channels',
+
     # Local Apps
     'core',
     'apps.accounts',
@@ -52,6 +55,7 @@ INSTALLED_APPS = [
     'apps.auth',
     'apps.users',
     'apps.currency',
+    'apps.chat',
 ]
 
 MIDDLEWARE = [
@@ -258,6 +262,23 @@ if 'REDIS_URL' in os.environ:
             }
         }
     }
+
+# Channels configuration
+if 'REDIS_URL' in os.environ:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {'hosts': [os.environ['REDIS_URL']]},
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
+
+ASGI_APPLICATION = 'config.asgi.application'
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

@@ -19,11 +19,21 @@ class SeedingTracker:
     def __init__(self, tracker_file: str = None):
         """Initialize the seeding tracker."""
         if tracker_file is None:
-            # Store in media directory which is persistent
-            tracker_file = "/app/media/seeding_history.json"
-        
+            # Use environment variable override, then relative path from this file
+            env_path = os.environ.get('SEEDING_TRACKER_FILE')
+            if env_path:
+                tracker_file = env_path
+            else:
+                # Portable: store next to backend code, works on Docker, Render, Railway, local
+                base_dir = Path(__file__).resolve().parent.parent.parent
+                tracker_file = str(base_dir / "media" / "seeding_history.json")
+
         self.tracker_file = Path(tracker_file)
-        self.tracker_file.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            self.tracker_file.parent.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            # Fallback to /tmp if base dir is not writable
+            self.tracker_file = Path("/tmp/seeding_history.json")
         self._ensure_tracker_file()
     
     def _ensure_tracker_file(self):
