@@ -18,6 +18,7 @@ DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
     '.railway.app',
+    '.onrender.com',
     'autoria-clone.vercel.app',
     'localhost',
     '127.0.0.1',
@@ -27,6 +28,16 @@ ALLOWED_HOSTS = [
 if 'RAILWAY_STATIC_URL' in os.environ:
     railway_domain = os.environ['RAILWAY_STATIC_URL'].replace('https://', '').replace('http://', '')
     ALLOWED_HOSTS.append(railway_domain)
+
+# Add Render external URL if available
+if 'RENDER_EXTERNAL_URL' in os.environ:
+    render_domain = os.environ['RENDER_EXTERNAL_URL'].replace('https://', '').replace('http://', '')
+    ALLOWED_HOSTS.append(render_domain)
+
+# Support comma-separated DJANGO_ALLOWED_HOSTS env var
+if 'DJANGO_ALLOWED_HOSTS' in os.environ:
+    extra_hosts = [h.strip() for h in os.environ['DJANGO_ALLOWED_HOSTS'].split(',') if h.strip()]
+    ALLOWED_HOSTS.extend(extra_hosts)
 
 # Application definition
 INSTALLED_APPS = [
@@ -45,9 +56,6 @@ INSTALLED_APPS = [
     'drf_yasg',
     'django_filters',
     
-    # Channels (WebSocket support)
-    'channels',
-
     # Local Apps
     'core',
     'apps.accounts',
@@ -55,7 +63,6 @@ INSTALLED_APPS = [
     'apps.auth',
     'apps.users',
     'apps.currency',
-    'apps.chat',
 ]
 
 MIDDLEWARE = [
