@@ -46,9 +46,9 @@ class ServiceRegistry:
                 port=self._redis_config['port'],
                 db=self._redis_config['db'],
                 decode_responses=True,
-                socket_connect_timeout=5,
-                socket_timeout=5,
-                retry_on_timeout=True
+                socket_connect_timeout=3,
+                socket_timeout=3,
+                retry_on_timeout=False
             )
 
             # Проверяем подключение
