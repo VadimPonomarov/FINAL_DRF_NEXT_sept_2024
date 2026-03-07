@@ -49,9 +49,29 @@ const BackendUsersComboBox: FC<IProps> = ({ reset }) => {
         queryKey: ["backend-users"],
         queryFn: async () => {
             const url = backendUrl('/api/users/public/list/');
+            console.log('[BackendUsersComboBox] 🔍 Requesting users from URL:', url);
+            console.log('[BackendUsersComboBox] 📡 Environment vars:', {
+                BACKEND_URL: process.env.BACKEND_URL,
+                NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
+                NODE_ENV: process.env.NODE_ENV
+            });
+            
             const response = await fetch(url, { cache: 'no-store' });
-            if (!response.ok) throw new Error(`Backend responded ${response.status}`);
-            return response.json() as Promise<IBackendUsersResponse>;
+            console.log('[BackendUsersComboBox] 📩 Response status:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                console.error('[BackendUsersComboBox] ❌ Backend request failed:', {
+                    url,
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+                throw new Error(`Backend responded ${response.status} for ${url}`);
+            }
+            
+            const data = await response.json() as IBackendUsersResponse;
+            console.log('[BackendUsersComboBox] ✅ Successfully loaded', data.results?.length || 0, 'users');
+            return data;
         },
         staleTime: 5 * 60 * 1000, // 5 минут
         retry: 1,
