@@ -106,6 +106,13 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
 SESSION_COOKIE_AGE = 86400
 
+# Redis connection details (used by ServiceRegistry and cache)
+_redis_parsed = _urlparse(_redis_url) if _redis_url else None
+REDIS_HOST = (_redis_parsed.hostname if _redis_parsed else None) or os.environ.get('REDIS_HOST', 'autoria-redis.railway.internal')
+REDIS_PORT = int(_redis_parsed.port or 6379) if _redis_parsed else int(os.environ.get('REDIS_PORT', 6379))
+REDIS_DB = 0
+REDIS_URL = _redis_url or f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
+
 # ── Channels (inline — avoids core.utils import) ──────────────────────────────
 if _redis_url:
     CHANNEL_LAYERS = {
@@ -135,7 +142,7 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
-X_FRAME_OPTIONS = None
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 ADMIN_URL = os.environ.get('ADMIN_URL', 'admin/')
