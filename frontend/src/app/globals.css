@@ -126,7 +126,6 @@ body {
 
     body {
         @apply bg-background text-foreground;
-        position: relative;
 
         .theme-switch {
             @apply fixed right-2 top-[2px] m-2 h-6 w-6 rounded-full p-2;
@@ -148,18 +147,13 @@ body {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
   background-image:
     linear-gradient(hsla(210, 30%, 70%, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, hsla(210, 30%, 70%, 0.04) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
-}
-
-.dark body > * {
-  position: relative;
-  z-index: 1;
 }
 
 /* ── Form inputs in dark mode: use card surface, not white ────────────────── */
