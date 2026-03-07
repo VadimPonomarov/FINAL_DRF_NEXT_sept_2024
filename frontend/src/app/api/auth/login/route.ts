@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import redisHelper from '@/lib/redis-helper';
 
 /**
  * Dedicated API route for backend authentication login.
@@ -116,51 +117,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Save tokens to Redis
+    // Save tokens to Redis using helper
+    const userId = data.user?.id || 'unknown';
+    const sessionId = generateSessionId();
+    const tokenKey = redisHelper.generateTokenKey(userId, sessionId);
+
+    console.log(`[Login API] Saving tokens to Redis with key: ${tokenKey}`);
+
     const tokenData = {
       access: data.access,
       refresh: data.refresh,
+      userId: userId,
+      email: email,
+      sessionId: sessionId,
+      loginAt: Date.now(),
+      expiresAt: Date.now() + (3600 * 1000), // 1 час
       refreshAttempts: 0,
       lastRefreshTime: Date.now()
     };
 
-    console.log('[Login API] Saving tokens to Redis...');
+    const redisResult = await redisHelper.saveTokens(tokenKey, tokenData, 3600);
 
-    const redisSaveResponse = await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key: 'backend_auth',
-        value: JSON.stringify(tokenData)
-      })
-    });
-
-    if (!redisSaveResponse.ok) {
-      console.error('[Login API] Failed to save tokens to Redis');
+    if (!redisResult.success) {
+      console.error('[Login API] Failed to save tokens to Redis:', redisResult.error);
       return NextResponse.json(
         { 
-          error: 'Failed to save tokens',
+          error: 'Authentication successful but Redis storage failed',
+          details: redisResult.error,
           // Still return tokens so client can proceed, but flag the issue
           access: data.access,
           refresh: data.refresh,
           user: data.user,
-          redisSaveSuccess: false
+          redisSaveSuccess: false,
+          tokenKey: tokenKey
         },
         { status: 200 } // Return 200 since auth succeeded, just Redis save failed
       );
     }
 
     // Save provider to Redis
-    await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key: 'auth_provider',
-        value: 'backend'
-      })
-    });
+    await redisHelper.saveTokens('auth_provider', { provider: 'backend', lastLogin: Date.now() }, 3600);
 
-    console.log('[Login API] ✅ Login successful, tokens saved');
+    console.log('[Login API] ✅ Login successful, tokens saved to Redis');
 
     // Return success with tokens and user data
     return NextResponse.json({
