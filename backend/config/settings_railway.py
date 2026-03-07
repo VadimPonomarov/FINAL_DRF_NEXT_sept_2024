@@ -1,81 +1,161 @@
 """
 Railway production settings.
-Imports directly from extra_config submodules (safe — no django.conf.settings access
-at import time). Cannot use 'from config.settings import *' because that triggers
-EncryptionService() instantiation before settings are ready (circular import).
+
+IMPORTANT: This file MUST NOT import from any core.* module at all.
+core/utils/__init__.py imports from .encryption which instantiates EncryptionService()
+at module load time. EncryptionService.__init__ accesses django.conf.settings.SECRET_KEY
+before settings are ready — circular import. We replicate env_detector logic inline.
 """
-
 import os
+from pathlib import Path
+from urllib.parse import urlparse as _urlparse
+from datetime import timedelta
 
-# --- Base paths & core ---
-from config.extra_config.django_core import BASE_DIR, SECRET_KEY, IS_DOCKER, IS_PRODUCTION  # noqa
+# ── Paths ──────────────────────────────────────────────────────────────────────
+BASE_DIR = Path(__file__).resolve().parent.parent  # backend/
+ROOT_DIR = BASE_DIR.parent
 
-DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
-
+# ── Core ───────────────────────────────────────────────────────────────────────
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-key-for-development')
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 ALLOWED_HOSTS = [
-    *[h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()],
+    *[h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()],
     '.railway.app', '.railway.internal', 'localhost', '127.0.0.1', '*',
 ]
 
-# --- Apps, middleware, templates, static ---
-from config.extra_config.apps_config import (  # noqa
+# ── Apps (safe — apps_config.py only imports pathlib) ─────────────────────────
+from config.extra_config.apps_config import (  # noqa: E402
     INSTALLED_APPS, TEMPLATES,
-    LANGUAGE_CODE, TIME_ZONE, USE_I18N, USE_TZ, DEFAULT_AUTO_FIELD, AUTH_USER_MODEL,
+    LANGUAGE_CODE, TIME_ZONE, USE_I18N, USE_TZ, AUTH_USER_MODEL,
     STATIC_URL, STATIC_ROOT, MEDIA_URL, MEDIA_ROOT,
     WSGI_APPLICATION, ASGI_APPLICATION,
 )
-
 ROOT_URLCONF = 'config.urls_railway'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Build middleware list and inject WhiteNoise after SecurityMiddleware
-from config.extra_config.apps_config import MIDDLEWARE as _BASE_MIDDLEWARE  # noqa
-MIDDLEWARE = list(_BASE_MIDDLEWARE)
-_wn = 'whitenoise.middleware.WhiteNoiseMiddleware'
-if _wn not in MIDDLEWARE:
-    _sec = 'django.middleware.security.SecurityMiddleware'
-    _idx = MIDDLEWARE.index(_sec) + 1 if _sec in MIDDLEWARE else 1
-    MIDDLEWARE.insert(_idx, _wn)
+# Inject WhiteNoise after SecurityMiddleware
+from config.extra_config.apps_config import MIDDLEWARE as _MW  # noqa: E402
+MIDDLEWARE = list(_MW)
+_WN = 'whitenoise.middleware.WhiteNoiseMiddleware'
+if _WN not in MIDDLEWARE:
+    _SI = next((i for i, m in enumerate(MIDDLEWARE) if 'SecurityMiddleware' in m), 0)
+    MIDDLEWARE.insert(_SI + 1, _WN)
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# --- Database (env_detector reads DATABASE_URL automatically) ---
-from config.extra_config.db_config import DATABASES  # noqa
+# ── Database (inline env_detector — avoids core.utils import) ─────────────────
+_db_url = os.environ.get('DATABASE_URL', '')
+if _db_url and not _db_url.startswith('${{'):
+    _p = _urlparse(_db_url)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'HOST': _p.hostname or 'localhost',
+            'PORT': str(_p.port or 5432),
+            'NAME': (_p.path or '/db').lstrip('/'),
+            'USER': _p.username or 'user',
+            'PASSWORD': _p.password or '',
+            'OPTIONS': {
+                'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', 10)),
+                'options': '-c search_path=public -c client_encoding=utf8',
+            },
+            'CONN_MAX_AGE': 0,
+        }
+    }
+else:
+    _pg_host = os.environ.get('PGHOST', os.environ.get('PGDATABASE', 'localhost'))
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'HOST': _pg_host,
+            'PORT': os.environ.get('PGPORT', '5432'),
+            'NAME': os.environ.get('PGDATABASE', 'autoria_db'),
+            'USER': os.environ.get('PGUSER', 'autoria'),
+            'PASSWORD': os.environ.get('PGPASSWORD', ''),
+            'OPTIONS': {'connect_timeout': 10},
+            'CONN_MAX_AGE': 0,
+        }
+    }
 
-# --- Cache & Channels ---
-from config.extra_config.cache_config import (  # noqa
-    CACHES, SESSION_ENGINE, SESSION_CACHE_ALIAS, SESSION_COOKIE_AGE,
-)
-from config.extra_config.channels_config import CHANNEL_LAYERS  # noqa
+# ── Cache (inline — avoids core.utils import) ─────────────────────────────────
+_redis_url = os.environ.get('REDIS_URL', '')
+if _redis_url:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': _redis_url,
+            'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
+            'KEY_PREFIX': 'autoria',
+        },
+        'ratelimit': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': _redis_url,
+            'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
+            'KEY_PREFIX': 'autoria_rl',
+        },
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'railway-cache',
+        }
+    }
 
-# --- Security ---
-from config.extra_config.security_config import (  # noqa
-    SECURE_BROWSER_XSS_FILTER, SECURE_CONTENT_TYPE_NOSNIFF, SECURE_REFERRER_POLICY,
-    SECURE_HSTS_SECONDS, SECURE_HSTS_INCLUDE_SUBDOMAINS, SECURE_HSTS_PRELOAD,
-    SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE,
-    SESSION_COOKIE_HTTPONLY, CSRF_COOKIE_HTTPONLY,
-    SESSION_COOKIE_SAMESITE, CSRF_COOKIE_SAMESITE,
-    X_FRAME_OPTIONS, FILE_UPLOAD_MAX_MEMORY_SIZE, DATA_UPLOAD_MAX_MEMORY_SIZE,
-    ADMIN_URL,
-)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+SESSION_COOKIE_AGE = 86400
+
+# ── Channels (inline — avoids core.utils import) ──────────────────────────────
+if _redis_url:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {'hosts': [_redis_url]},
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'}
+    }
+
+# ── Security ──────────────────────────────────────────────────────────────────
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 # Railway terminates SSL at load balancer — never redirect inside container
 SECURE_SSL_REDIRECT = False
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_HSTS_SECONDS = 0  # Let Railway handle HSTS
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+X_FRAME_OPTIONS = None
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+ADMIN_URL = os.environ.get('ADMIN_URL', 'admin/')
 
-# --- CORS ---
-from config.extra_config.cors_config import (  # noqa
-    CORS_ALLOWED_ORIGINS, CORS_ALLOW_CREDENTIALS, CORS_ALLOW_ALL_ORIGINS,
-    CORS_ALLOW_HEADERS, CORS_ALLOW_METHODS,
-)
+# ── CORS ──────────────────────────────────────────────────────────────────────
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = False
+CORS_ALLOWED_ORIGINS = [
+    'https://autoria-clone.vercel.app',
+    'https://autoria-web-production.up.railway.app',
+    *[o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()],
+]
+CORS_ALLOW_HEADERS = [
+    'accept', 'accept-encoding', 'authorization', 'content-type', 'dnt',
+    'origin', 'user-agent', 'x-csrftoken', 'x-requested-with', 'x-api-key',
+    'cache-control', 'x-frame-options',
+]
+CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 
-# --- Logging ---
-from config.extra_config.logger_config import LOGGING  # noqa
-from config.extra_config.security_logging_config import SECURITY_LOGGING, SECURITY_MONITORING  # noqa
-
-# --- REST & JWT ---
-from config.extra_config.rest_framework_config import REST_FRAMEWORK  # noqa
-from config.extra_config.simple_jwt_config import SIMPLE_JWT  # noqa
-
-# --- Password validators ---
+# ── Password validators ────────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
@@ -84,27 +164,29 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# --- Email ---
-from config.extra_config.email_config import *  # noqa
+# ── Logging (safe — logger_config.py only imports loguru) ─────────────────────
+from config.extra_config.logger_config import LOGGING  # noqa: E402
 
-# --- Swagger ---
-from config.extra_config.swagger_config import SWAGGER_SETTINGS, SWAGGER_USE_COMPAT_RENDERERS  # noqa
+# ── REST Framework (safe — only imports os) ───────────────────────────────────
+from config.extra_config.rest_framework_config import REST_FRAMEWORK  # noqa: E402
+from config.extra_config.simple_jwt_config import SIMPLE_JWT  # noqa: E402
+from config.extra_config.swagger_config import SWAGGER_SETTINGS, SWAGGER_USE_COMPAT_RENDERERS  # noqa: E402
+from config.extra_config.email_config import *  # noqa: E402,F401,F403
+from config.extra_config.security_logging_config import SECURITY_LOGGING, SECURITY_MONITORING  # noqa: E402
 
-# --- Celery ---
-from config.extra_config.constants_config import CELERY_CONFIG  # noqa
+# ── Celery (safe — constants_config.py only imports os) ───────────────────────
+from config.extra_config.constants_config import CELERY_CONFIG  # noqa: E402
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL',
     os.environ.get('RABBITMQ_URL', 'amqp://guest:guest@autoria-rabbitmq.railway.internal:5672//'))
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND',
     os.environ.get('REDIS_URL', 'redis://autoria-redis.railway.internal:6379/0'))
-CELERY_TASK_SERIALIZER = CELERY_CONFIG['TASK_SERIALIZER']
-CELERY_ACCEPT_CONTENT = CELERY_CONFIG['ACCEPT_CONTENT']
-CELERY_RESULT_SERIALIZER = CELERY_CONFIG['RESULT_SERIALIZER']
-CELERY_TIMEZONE = CELERY_CONFIG['TIMEZONE']
-CELERY_ENABLE_UTC = CELERY_CONFIG['ENABLE_UTC']
-CELERY_TASK_TRACK_STARTED = CELERY_CONFIG['TASK_TRACK_STARTED']
-CELERY_TASK_TIME_LIMIT = CELERY_CONFIG['TASK_TIME_LIMIT']
-CELERY_TASK_SOFT_TIME_LIMIT = CELERY_CONFIG['TASK_SOFT_TIME_LIMIT']
-CELERY_WORKER_PREFETCH_MULTIPLIER = CELERY_CONFIG['WORKER_PREFETCH_MULTIPLIER']
-CELERY_TASK_ACKS_LATE = CELERY_CONFIG['TASK_ACKS_LATE']
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+CELERY_TASK_SERIALIZER = CELERY_CONFIG.get('TASK_SERIALIZER', 'json')
+CELERY_ACCEPT_CONTENT = CELERY_CONFIG.get('ACCEPT_CONTENT', ['json'])
+CELERY_RESULT_SERIALIZER = CELERY_CONFIG.get('RESULT_SERIALIZER', 'json')
+CELERY_TIMEZONE = CELERY_CONFIG.get('TIMEZONE', 'UTC')
+CELERY_ENABLE_UTC = CELERY_CONFIG.get('ENABLE_UTC', True)
+CELERY_TASK_TRACK_STARTED = CELERY_CONFIG.get('TASK_TRACK_STARTED', True)
+CELERY_TASK_TIME_LIMIT = CELERY_CONFIG.get('TASK_TIME_LIMIT', 1800)
+CELERY_TASK_SOFT_TIME_LIMIT = CELERY_CONFIG.get('TASK_SOFT_TIME_LIMIT', 60)
+CELERY_WORKER_PREFETCH_MULTIPLIER = CELERY_CONFIG.get('WORKER_PREFETCH_MULTIPLIER', 1)
+CELERY_TASK_ACKS_LATE = CELERY_CONFIG.get('TASK_ACKS_LATE', True)
