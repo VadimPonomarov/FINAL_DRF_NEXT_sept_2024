@@ -81,6 +81,11 @@ export const authProviderOptions: IAuthProviderOption[] = [
     { value: AuthProvider.MyBackendDocs, label: "My Backend Docs" }
 ];
 
+// Type guard function to check if AuthResponse is successful
+export const isSuccessAuthResponse = (response: AuthResponse): response is IBackendAuthResponse => {
+    return !('error' in response) && 'access' in response && 'refresh' in response;
+};
+
 export interface IRegistration {
     email: string;
     password: string;

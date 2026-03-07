@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import React from 'react';
 import { fetchAuth } from '@/app/api/helpers';
-import { IBackendAuthCredentials, AuthResponse } from '@/shared/types/auth.interfaces';
+import { IBackendAuthCredentials, AuthResponse, IBackendAuthResponse, isSuccessAuthResponse } from '@/shared/types/auth.interfaces';
 
 interface LoginFormData extends IBackendAuthCredentials {}
 
@@ -94,24 +94,32 @@ export default function TestLoginPage() {
       }
 
       addLog('✅ Login successful');
-      addLog(`📋 Received tokens: access=${authResult.access ? 'YES' : 'NO'}, refresh=${authResult.refresh ? 'YES' : 'NO'}`);
-      addLog(`💾 Redis save status: ${authResult.redisSaveSuccess ? 'SUCCESS' : 'FAILED'}`);
+      if (isSuccessAuthResponse(authResult)) {
+        addLog(`📋 Received tokens: access=${authResult.access ? 'YES' : 'NO'}, refresh=${authResult.refresh ? 'YES' : 'NO'}`);
+      }
+      
+      // Check if redisSaveSuccess exists (success case) before accessing it
+      if ('redisSaveSuccess' in authResult) {
+        addLog(`💾 Redis save status: ${authResult.redisSaveSuccess ? 'SUCCESS' : 'FAILED'}`);
 
-      if (!authResult.redisSaveSuccess) {
-        addLog('⚠️ Warning: Tokens received but Redis save failed');
-      } else {
-        addLog('✅ Tokens saved to Redis successfully by fetchAuth');
+        if (!authResult.redisSaveSuccess) {
+          addLog('⚠️ Warning: Tokens received but Redis save failed');
+        } else {
+          addLog('✅ Tokens saved to Redis successfully by fetchAuth');
+        }
       }
 
       // Сохраняем токены в state для отображения
-      const tokenData: TokenData = {
-        access: authResult.access!,
-        refresh: authResult.refresh!,
-        userId: authResult.user?.id?.toString(),
-        email: authResult.user?.email || formData.email
-      };
-      
-      setTokens(tokenData);
+      if (isSuccessAuthResponse(authResult)) {
+        const tokenData: TokenData = {
+          access: authResult.access,
+          refresh: authResult.refresh,
+          userId: authResult.user?.id?.toString(),
+          email: authResult.user?.email || formData.email
+        };
+        
+        setTokens(tokenData);
+      }
 
       // Шаг 3: Проверка получения токенов из Redis
       addLog('🔍 Verifying tokens in Redis...');

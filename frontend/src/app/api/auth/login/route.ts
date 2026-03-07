@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import redisHelper from '@/lib/redis-helper';
 
+// Generate unique session ID
+function generateSessionId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+}
+
 /**
  * Dedicated API route for backend authentication login.
  * This takes precedence over NextAuth's [...nextauth] catch-all.
