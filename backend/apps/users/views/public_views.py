@@ -1,3 +1,6 @@
+import traceback
+
+from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from drf_yasg.utils import swagger_auto_schema
@@ -14,8 +17,8 @@ class PublicUserListView(generics.ListAPIView):
     """
     queryset = UserModel.objects.filter(is_active=True).select_related('profile')
     serializer_class = AdminUserSerializer
-    permission_classes = [AllowAny]  # Публичный доступ
-    
+    permission_classes = [AllowAny]
+
     @swagger_auto_schema(
         operation_description="Get list of active users for login selection (Public access)",
         tags=['👤 Users'],
@@ -37,4 +40,10 @@ class PublicUserListView(generics.ListAPIView):
     )
     def get(self, request, *args, **kwargs):
         """Get active users for login selection - Public access"""
-        return super().get(request, *args, **kwargs)
+        try:
+            return super().get(request, *args, **kwargs)
+        except Exception as exc:
+            return JsonResponse(
+                {"error": str(exc), "trace": traceback.format_exc()},
+                status=500
+            )
