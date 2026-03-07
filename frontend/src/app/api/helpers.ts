@@ -11,7 +11,11 @@ import { resolveServiceUrl } from "@/shared/utils/api/serviceUrlResolver";
 
 // Use Redis only via API to avoid bundling Node 'net' in client
 const __isServer = typeof window === 'undefined';
-const __frontendBaseUrl = __isServer ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' ? 'http://frontend:3000' : 'http://localhost:3000') : '';
+const __frontendBaseUrl = __isServer 
+  ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' 
+      ? 'http://frontend:3000' 
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000')
+  : '';
 
 const performRedirect = (target: string): never | Promise<never> => {
     if (__isServer) {
@@ -361,7 +365,9 @@ export const fetchAuth = async (
     // Get absolute URL for Redis API (server-side needs absolute URLs)
     const isServerSide = typeof window === 'undefined';
     const baseUrl = isServerSide
-      ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' ? 'http://frontend:3000' : 'http://localhost:3000')
+      ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' 
+          ? 'http://frontend:3000' 
+          : process.env.NEXTAUTH_URL || 'http://localhost:3000')
       : ''; // На клиенте используем относительный URL
     const redisUrl = `${baseUrl}/api/redis`;
     console.log(`[fetchAuth] Using Redis URL: ${redisUrl} (server: ${isServerSide})`);
