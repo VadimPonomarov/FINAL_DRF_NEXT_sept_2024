@@ -332,3 +332,4 @@ frontend/.turbo/
 .husky
 .npm
 .npmrc
+env-config/.env.secrets
