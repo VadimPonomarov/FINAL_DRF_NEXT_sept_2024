@@ -79,43 +79,43 @@ body {
   }
 
   .dark {
-    /* Dark page background but keep surfaces (cards, forms, popovers) white */
-    --background: 220 15% 12%;
-    --foreground: var(--text); /* tie text color to selected palette */
+    /* Deep dark background with mesh gradient 3D effect applied via body pseudo */
+    --background: 222 18% 8%;
+    --foreground: var(--text);
 
-    /* Surfaces */
-    --card: 0 0% 100%;
-    --card-foreground: var(--surface-text); /* text color on white surfaces */
-    --popover: 0 0% 100%;
-    --popover-foreground: var(--surface-text);
+    /* Surfaces — slightly elevated from background */
+    --card: 222 16% 13%;
+    --card-foreground: var(--surface-text);
+    --popover: 222 16% 13%;
+    --popover-foreground: 210 20% 92%;
 
-    /* Accents & states */
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 10% 3.9%;
-    --secondary: 220 10% 22%;
-    --secondary-foreground: 0 0% 96%;
-    --muted: 220 10% 22%;
-    --muted-foreground: 220 6% 72%;
-    --accent: 220 10% 24%;
-    --accent-foreground: 0 0% 96%;
-    --destructive: 0 62.8% 30.6%;
+    /* Primary = selected palette color (overridden by theme-selector) */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 14% 20%;
+    --secondary-foreground: 210 20% 88%;
+    --muted: 222 14% 18%;
+    --muted-foreground: 215 16% 60%;
+    --accent: 222 14% 22%;
+    --accent-foreground: 210 20% 92%;
+    --destructive: 0 72% 42%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Borders & inputs — forms stay white in dark theme */
-    --border: 220 10% 26%;
-    --input: 0 0% 100%;
-    --ring: 0 0% 96%;
+    /* Borders & inputs */
+    --border: 222 14% 22%;
+    --input: 222 14% 16%;
+    --ring: 217 91% 60%;
 
     /* Semantic text tokens */
-    --text: 0 0% 96%; /* text on dark background */
-    --surface-text: 240 8% 20%;
-    --form-text: 240 10% 3.9%; /* text inside white form controls */
+    --text: 210 20% 92%;
+    --surface-text: 210 20% 88%;
+    --form-text: 210 20% 92%;
 
     /* Dropdowns */
-    --dropdown: 0 0% 100%;
-    --dropdown-bg: 0 0% 100%;
-    --dropdown-text: 240 10% 3.9%;
-    --dropdown-hover: 210 20% 96%;
+    --dropdown: 222 16% 16%;
+    --dropdown-bg: 222 16% 16%;
+    --dropdown-text: 210 20% 92%;
+    --dropdown-hover: 222 14% 22%;
   }
 }
 
@@ -126,11 +126,57 @@ body {
 
     body {
         @apply bg-background text-foreground;
+        position: relative;
 
         .theme-switch {
             @apply fixed right-2 top-[2px] m-2 h-6 w-6 rounded-full p-2;
         }
     }
+}
+
+/* ── Dark mode 3D mesh background ─────────────────────────────────────────── */
+.dark body {
+  background-color: hsl(222 18% 8%);
+  background-image:
+    radial-gradient(ellipse at 15% 15%, hsla(240, 80%, 18%, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 10%, hsla(200, 70%, 16%, 0.50) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 80%, hsla(260, 70%, 15%, 0.45) 0%, transparent 55%),
+    radial-gradient(ellipse at 10% 85%, hsla(210, 60%, 14%, 0.40) 0%, transparent 50%);
+}
+
+.dark body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(hsla(210, 30%, 70%, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, hsla(210, 30%, 70%, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+}
+
+.dark body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Form inputs in dark mode: use card surface, not white ────────────────── */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark select,
+.dark textarea {
+  background-color: hsl(var(--input)) !important;
+  color: hsl(var(--form-text)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
 }
 
 :root .hover-nudge {

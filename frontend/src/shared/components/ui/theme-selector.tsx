@@ -10,284 +10,145 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Palette } from "lucide-react"
 
-const themes = {
-  monochrome: {
-    name: "Monochrome",
+/* ─── Full CSS-variable set per theme variant ─────────────────────────────── */
+type ThemeVars = Record<string, string>
+type ThemeDef = { name: string; accent: string; light: ThemeVars; dark: ThemeVars }
+
+const mk = (
+  name: string,
+  accent: string,          // HSL for the accent swatch / palette button color
+  lightPrimary: string,    // HSL primary for light
+  darkPrimary: string,     // HSL primary for dark
+  extras: { lightSecondary?: string; darkSecondary?: string } = {}
+): ThemeDef => {
+  const ls = extras.lightSecondary ?? `${lightPrimary.split(' ')[0]} 30% 94%`
+  const ds = extras.darkSecondary  ?? `${darkPrimary.split(' ')[0]} 20% 22%`
+  return {
+    name, accent,
     light: {
-      // СВЕТЛАЯ ТЕМА: белый фон → черный текст
-      primary: "0 0% 0%", // черный
-      "primary-foreground": "0 0% 100%",
-      secondary: "0 0% 95%", // светло-серый фон
-      accent: "0 0% 92%", // серый фон для hover
-      destructive: "0 84.2% 60.2%",
-      foreground: "0 0% 0%",
-      text: "0 0% 0%", // черный текст на белом фоне
-      "form-text": "0 0% 0%", // черный текст в формах
-      "surface-text": "0 0% 15%",
-      "secondary-foreground": "0 0% 18%",
-      "accent-foreground": "0 0% 18%",
-      muted: "0 0% 94%",
-      "muted-foreground": "0 0% 30%",
-      dropdown: "0 0% 100%", // белый фон выпадающих списков
-      "dropdown-text": "0 0% 0%", // черный текст в выпадающих списках
-      "dropdown-hover": "0 0% 88%", // серый фон при hover
-      border: "0 0% 70%", // темно-серые границы
-      placeholder: "0 0% 55%", // серый placeholder
-      background: "0 0% 100%", // белый фон страницы
-      card: "0 0% 100%",
-      "card-foreground": "0 0% 12%",
-    },
-    dark: {
-      // ТЕМНАЯ ТЕМА: глубокий фон, светлый общий текст, светлые поверхности с тёмным контентом
-      primary: "0 0% 98%", // белый акцент для темной темы
-      "primary-foreground": "0 0% 8%",
-      secondary: "0 0% 92%", // светлая поверхность для бейджей
-      accent: "0 0% 88%", // светлый серый для hover на светлых поверхностях
-      destructive: "0 62.8% 30.6%",
-      foreground: "0 0% 96%",
-      text: "0 0% 96%", // светлый текст на темном фоне
-      "surface-text": "0 0% 12%", // тёмный текст на светлых картах/формах
-      "form-text": "0 0% 12%", // текст в светлых формах
-      "secondary-foreground": "0 0% 12%",
-      "accent-foreground": "0 0% 18%",
-      muted: "0 0% 92%",
-      "muted-foreground": "0 0% 25%",
+      primary: lightPrimary, "primary-foreground": "0 0% 100%",
+      secondary: ls, "secondary-foreground": "0 0% 15%",
+      accent: ls,   "accent-foreground": "0 0% 12%",
+      muted: ls,    "muted-foreground": "0 0% 40%",
+      background: "0 0% 100%", foreground: "240 10% 6%",
+      card: "0 0% 100%", "card-foreground": "240 10% 8%",
+      popover: "0 0% 100%", "popover-foreground": "240 10% 8%",
+      border: "0 0% 82%", input: "0 0% 90%", ring: lightPrimary,
+      destructive: "0 84% 60%", "destructive-foreground": "0 0% 98%",
+      text: lightPrimary,          // palette button / accent text = primary
+      "surface-text": "240 10% 8%",
+      "form-text": "240 10% 6%",
+      dropdown: "0 0% 100%", "dropdown-text": "240 10% 6%", "dropdown-hover": "0 0% 94%",
       placeholder: "0 0% 55%",
-      dropdown: "0 0% 94%",
-      "dropdown-text": "0 0% 12%",
-      "dropdown-hover": "0 0% 88%",
-      border: "0 0% 35%",
-      background: "0 0% 6%", // глубокий почти черный фон страницы
-      card: "0 0% 98%",
-      "card-foreground": "0 0% 12%",
-    }
-  },
-  orange: {
-    name: "Orange",
-    light: {
-      primary: "25 100% 50%", // оранжевый
-      secondary: "25 30% 95%", // светло-оранжевый
-      accent: "25 100% 50%", // оранжевый
-      destructive: "0 84.2% 60.2%",
     },
     dark: {
-      primary: "25 100% 50%", // оранжевый
-      secondary: "25 30% 25%", // темно-оранжевый
-      accent: "25 100% 50%", // оранжевый
-      destructive: "0 62.8% 30.6%",
-    }
-  },
-  blue: {
-    name: "Blue",
-    light: {
-      primary: "221 83% 53%",
-      secondary: "210 40% 96.1%",
-      accent: "217 91% 60%",
-      destructive: "0 84.2% 60.2%",
+      primary: darkPrimary, "primary-foreground": "0 0% 100%",
+      secondary: ds, "secondary-foreground": "210 20% 88%",
+      accent: ds,   "accent-foreground": "210 20% 90%",
+      muted: "222 14% 18%", "muted-foreground": "215 16% 58%",
+      background: "222 18% 8%", foreground: "210 20% 92%",
+      card: "222 16% 13%", "card-foreground": "210 20% 90%",
+      popover: "222 16% 13%", "popover-foreground": "210 20% 90%",
+      border: "222 14% 22%", input: "222 14% 16%", ring: darkPrimary,
+      destructive: "0 72% 42%", "destructive-foreground": "0 0% 98%",
+      text: darkPrimary,           // palette button / accent text = primary
+      "surface-text": "210 20% 88%",
+      "form-text": "210 20% 92%",
+      dropdown: "222 16% 16%", "dropdown-text": "210 20% 92%", "dropdown-hover": "222 14% 22%",
+      placeholder: "215 16% 55%",
     },
-    dark: {
-      primary: "217 91% 60%",
-      secondary: "215 25% 27%",
-      accent: "217 91% 60%",
-      destructive: "0 62.8% 30.6%",
-    }
-  },
-  green: {
-    name: "Green",
-    light: {
-      primary: "142 76% 36%",
-      secondary: "138 69% 97%",
-      accent: "142 71% 45%",
-      destructive: "0 84.2% 60.2%",
-    },
-    dark: {
-      primary: "142 71% 45%",
-      secondary: "143 64% 24%",
-      accent: "142 71% 45%",
-      destructive: "0 62.8% 30.6%",
-    }
-  },
-  purple: {
-    name: "Purple",
-    light: {
-      primary: "262 83% 58%",
-      secondary: "260 40% 96%",
-      accent: "262 83% 58%",
-      destructive: "0 84.2% 60.2%",
-    },
-    dark: {
-      primary: "262 83% 58%",
-      secondary: "261 25% 27%",
-      accent: "262 83% 58%",
-      destructive: "0 62.8% 30.6%",
-    }
-  },
-  red: {
-    name: "Red",
-    light: {
-      primary: "0 72% 51%",
-      secondary: "0 20% 96%",
-      accent: "0 72% 51%",
-      destructive: "0 84.2% 60.2%",
-    },
-    dark: {
-      primary: "0 72% 51%",
-      secondary: "0 30% 25%",
-      accent: "0 72% 51%",
-      destructive: "0 62.8% 30.6%",
-    }
-  },
-  pink: {
-    name: "Pink",
-    light: {
-      primary: "330 81% 60%",
-      secondary: "330 40% 96%",
-      accent: "330 81% 60%",
-      destructive: "0 84.2% 60.2%",
-    },
-    dark: {
-      primary: "330 81% 60%",
-      secondary: "330 30% 25%",
-      accent: "330 81% 60%",
-      destructive: "0 62.8% 30.6%",
-    }
-  },
-  teal: {
-    name: "Teal",
-    light: {
-      primary: "180 70% 40%",
-      secondary: "180 40% 96%",
-      accent: "180 70% 40%",
-      destructive: "0 84.2% 60.2%",
-    },
-    dark: {
-      primary: "180 70% 40%",
-      secondary: "180 30% 25%",
-      accent: "180 70% 40%",
-      destructive: "0 62.8% 30.6%",
-    }
-  },
-  amber: {
-    name: "Amber",
-    light: {
-      primary: "45 93% 47%",
-      secondary: "45 40% 96%",
-      accent: "45 93% 47%",
-      destructive: "0 84.2% 60.2%",
-    },
-    dark: {
-      primary: "45 93% 47%",
-      secondary: "45 30% 25%",
-      accent: "45 93% 47%",
-      destructive: "0 62.8% 30.6%",
-    }
   }
 }
 
-export function ThemeSelector() {
+const themes: Record<string, ThemeDef> = {
+  /* Mono — special: text is white (dark) or black (light), never the accent */
+  monochrome: {
+    name: "Mono",
+    accent: "0 0% 50%",
+    light: {
+      primary: "0 0% 8%", "primary-foreground": "0 0% 100%",
+      secondary: "0 0% 93%", "secondary-foreground": "0 0% 10%",
+      accent: "0 0% 90%", "accent-foreground": "0 0% 10%",
+      muted: "0 0% 93%", "muted-foreground": "0 0% 38%",
+      background: "0 0% 100%", foreground: "0 0% 6%",
+      card: "0 0% 100%", "card-foreground": "0 0% 8%",
+      popover: "0 0% 100%", "popover-foreground": "0 0% 8%",
+      border: "0 0% 80%", input: "0 0% 92%", ring: "0 0% 8%",
+      destructive: "0 84% 60%", "destructive-foreground": "0 0% 98%",
+      text: "0 0% 6%",           // BLACK text for light mono
+      "surface-text": "0 0% 8%",
+      "form-text": "0 0% 6%",
+      dropdown: "0 0% 100%", "dropdown-text": "0 0% 6%", "dropdown-hover": "0 0% 92%",
+      placeholder: "0 0% 55%",
+    },
+    dark: {
+      primary: "0 0% 96%", "primary-foreground": "0 0% 8%",
+      secondary: "0 0% 20%", "secondary-foreground": "0 0% 90%",
+      accent: "0 0% 22%", "accent-foreground": "0 0% 90%",
+      muted: "0 0% 18%", "muted-foreground": "0 0% 58%",
+      background: "0 0% 7%", foreground: "0 0% 94%",
+      card: "0 0% 12%", "card-foreground": "0 0% 90%",
+      popover: "0 0% 12%", "popover-foreground": "0 0% 90%",
+      border: "0 0% 22%", input: "0 0% 15%", ring: "0 0% 94%",
+      destructive: "0 72% 42%", "destructive-foreground": "0 0% 98%",
+      text: "0 0% 94%",          // WHITE text for dark mono
+      "surface-text": "0 0% 90%",
+      "form-text": "0 0% 92%",
+      dropdown: "0 0% 14%", "dropdown-text": "0 0% 92%", "dropdown-hover": "0 0% 20%",
+      placeholder: "0 0% 55%",
+    },
+  },
 
-  const [currentTheme, setCurrentTheme] = React.useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('color-theme');
-      // Проверяем, существует ли тема в объекте themes
-      if (savedTheme && Object.keys(themes).includes(savedTheme)) {
-        return savedTheme;
-      }
-      // Если сохраненная тема 'default' или 'orange', заменяем ее на 'monochrome'
-      if (savedTheme === 'default' || savedTheme === 'orange') {
-        localStorage.setItem('color-theme', 'monochrome');
-        return 'monochrome';
-      }
-      return 'monochrome';
-    }
-    return 'monochrome';
+  blue:   mk("Ocean Blue",  "217 91% 60%", "221 83% 52%", "217 91% 60%"),
+  green:  mk("Forest",      "142 71% 42%", "142 76% 36%", "142 71% 45%"),
+  purple: mk("Royal",       "262 83% 62%", "262 83% 52%", "263 70% 62%"),
+  orange: mk("Sunset",      "25 100% 55%", "25 100% 46%", "25 100% 58%"),
+  red:    mk("Ruby",        "0 75% 56%",   "0 72% 46%",   "0 75% 56%"),
+  pink:   mk("Neon Pink",   "328 86% 64%", "330 81% 55%", "328 80% 64%"),
+  teal:   mk("Cyan",        "183 74% 46%", "180 70% 38%", "183 74% 50%"),
+  amber:  mk("Gold",        "43 96% 52%",  "45 93% 42%",  "43 96% 55%"),
+}
+
+/* ─── Component ───────────────────────────────────────────────────────────── */
+export function ThemeSelector() {
+  const [currentTheme, setCurrentTheme] = React.useState<string>(() => {
+    if (typeof window === 'undefined') return 'monochrome'
+    const saved = localStorage.getItem('color-theme') ?? ''
+    return saved in themes ? saved : 'monochrome'
   })
 
-  const applyTheme = (themeKey: string) => {
-    // Проверяем, существует ли тема в объекте themes
-    if (!Object.keys(themes).includes(themeKey)) {
-      console.warn(`Theme "${themeKey}" not found, using monochrome theme`);
-      themeKey = 'monochrome'; // Используем тему по умолчанию
+  const applyTheme = React.useCallback((themeKey: string) => {
+    const key = themeKey in themes ? themeKey : 'monochrome'
+    const theme = themes[key]
+    const isDark = document.documentElement.classList.contains('dark')
+    const vars = isDark ? theme.dark : theme.light
+
+    for (const [k, v] of Object.entries(vars)) {
+      document.documentElement.style.setProperty(`--${k}`, v)
     }
 
-    const theme = themes[themeKey as keyof typeof themes];
-    if (!theme) {
-      console.error(`Theme "${themeKey}" is undefined`);
-      return;
-    }
+    setCurrentTheme(key)
+    localStorage.setItem('color-theme', key)
+    document.body.setAttribute('data-theme', key)
+    window.dispatchEvent(new CustomEvent('color-theme-changed', { detail: { theme: key } }))
+  }, [])
 
-    const isDark = document.documentElement.classList.contains("dark");
-    const colors = isDark ? (theme.dark || theme.light) : theme.light;
-
-    if (!colors) {
-      console.error(`Colors for theme "${themeKey}" in ${isDark ? 'dark' : 'light'} mode are undefined`);
-      return;
-    }
-
-    for (const [key, value] of Object.entries(colors)) {
-      // Для CSS-переменных, которые используют HSL
-      if (key !== "dropdown-text" && key !== "dropdown-hover") {
-        document.documentElement.style.setProperty(`--${key}`, value)
-      }
-      // Для CSS-переменных, которые используют прямые значения цвета
-      else {
-        document.documentElement.style.setProperty(`--${key}`, value)
-      }
-    }
-
-    setCurrentTheme(themeKey);
-    localStorage.setItem('color-theme', themeKey);
-
-    // Добавляем атрибут data-theme к body
-    document.body.setAttribute('data-theme', themeKey);
-
-    // Dispatch event for other components
-    window.dispatchEvent(new CustomEvent('color-theme-changed', { detail: { theme: themeKey } }))
-  }
-
-  // Apply theme on mount and when dark mode changes
   React.useEffect(() => {
-    // Устанавливаем атрибут data-theme при инициализации
-    if (typeof document !== 'undefined') {
-      document.body.setAttribute('data-theme', currentTheme);
-    }
-
     applyTheme(currentTheme)
+    const onDarkChange = () => applyTheme(currentTheme)
+    window.addEventListener('dark-mode-changed', onDarkChange)
+    return () => window.removeEventListener('dark-mode-changed', onDarkChange)
+  }, [currentTheme, applyTheme])
 
-    const handleDarkModeChange = () => {
-      applyTheme(currentTheme)
-    }
-
-    window.addEventListener('dark-mode-changed', handleDarkModeChange)
-    return () => window.removeEventListener('dark-mode-changed', handleDarkModeChange)
-  }, [currentTheme])
-
-  // Функция для получения цвета текста для каждой палитры
-  const getThemeColor = (key: string, theme: {
-    name: string;
-    light: Record<string, string>;
-    dark: Record<string, string>;
-  }) => {
-    try {
-      if (!theme || !theme.light || !theme.dark) {
-        console.warn(`Theme data for "${key}" is incomplete`);
-        return '0 0% 0%'; // Черный по умолчанию
-      }
-
-      const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains("dark");
-      const colors = isDark ? theme.dark : theme.light;
-
-      if (!colors || !colors.text) {
-        console.warn(`Text color for theme "${key}" in ${isDark ? 'dark' : 'light'} mode is undefined`);
-        return isDark ? '0 0% 100%' : '0 0% 0%'; // Белый для темной темы, черный для светлой
-      }
-
-      return colors.text;
-    } catch (error) {
-      console.error(`Error getting theme color for "${key}": ${error}`);
-      return '0 0% 0%'; // Черный по умолчанию
-    }
-  };
+  /* Palette button swatch color:
+     - mono-light: black swatch  (white bg → opposite = black)
+     - mono-dark:  white swatch  (black bg → opposite = white)
+     - all others: their accent color */
+  const swatchHsl = (key: string): string => {
+    const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+    if (key === 'monochrome') return isDark ? '0 0% 96%' : '0 0% 6%'
+    return themes[key]?.accent ?? '0 0% 50%'
+  }
 
   return (
     <DropdownMenu>
@@ -296,35 +157,36 @@ export function ThemeSelector() {
           variant="ghost"
           size="icon"
           className="theme-toggle"
-          style={{zIndex: 99999, position: 'relative'}}
+          style={{ zIndex: 99999, position: 'relative' }}
+          title="Color palette"
         >
-          <Palette data-theme-icon="inactive" className="h-4 w-4" />
+          <Palette
+            className="h-4 w-4"
+            style={{ color: `hsl(${swatchHsl(currentTheme)})` }}
+          />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="z-[9999]"
-        sideOffset={5}
-      >
-        {Object.entries(themes).map(([key, theme]) => (
-          <DropdownMenuItem
-            key={key}
-            onClick={() => applyTheme(key)}
-            className={currentTheme === key ? "bg-secondary" : ""}
-            style={{
-              color: `hsl(${getThemeColor(key, theme)})`,
-              fontWeight: currentTheme === key ? 'bold' : 'normal'
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: `hsl(${getThemeColor(key, theme)})` }}
-              />
-              {theme.name}
-            </div>
-          </DropdownMenuItem>
-        ))}
+      <DropdownMenuContent align="end" className="z-[9999] min-w-[160px]" sideOffset={5}>
+        {Object.entries(themes).map(([key, theme]) => {
+          const swatch = swatchHsl(key)
+          const isActive = currentTheme === key
+          return (
+            <DropdownMenuItem
+              key={key}
+              onClick={() => applyTheme(key)}
+              className={isActive ? 'bg-secondary font-semibold' : ''}
+            >
+              <div className="flex items-center gap-2.5 w-full">
+                <span
+                  className="inline-block w-3 h-3 rounded-full ring-1 ring-inset ring-black/10 flex-shrink-0"
+                  style={{ backgroundColor: `hsl(${swatch})` }}
+                />
+                <span style={{ color: `hsl(${swatch})` }}>{theme.name}</span>
+                {isActive && <span className="ml-auto text-[10px] opacity-60">✓</span>}
+              </div>
+            </DropdownMenuItem>
+          )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   )
