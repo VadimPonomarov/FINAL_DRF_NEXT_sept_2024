@@ -189,9 +189,22 @@ const nextConfig = {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     
     return [
+      // Proxy specific Django endpoints only (exclude Next.js internal routes)
       {
-        source: '/api/((?!auth/|redis(?:$|/)|redis-test(?:$|/)|backend-health(?:$|/)).*)',
-        destination: `${backendUrl}/api/$1`,
+        source: '/api/users/:path*',
+        destination: `${backendUrl}/api/users/:path*`,
+      },
+      {
+        source: '/api/auth/login',
+        destination: `${backendUrl}/api/auth/login`,
+      },
+      {
+        source: '/api/auth/refresh',  
+        destination: `${backendUrl}/api/auth/refresh`,
+      },
+      {
+        source: '/api/auth/logout',
+        destination: `${backendUrl}/api/auth/logout`,
       },
       {
         source: '/admin/:path*',
