@@ -7,8 +7,8 @@
   "outputDirectory": "frontend/.next",
   "regions": ["iad1"],
   "env": {
-    "NEXTAUTH_URL": "https://your-app.vercel.app",
-    "NEXT_PUBLIC_BACKEND_URL": "https://your-backend-url.railway.app",
+    "NEXTAUTH_URL": "https://autoria-clone.vercel.app",
+    "NEXT_PUBLIC_BACKEND_URL": "https://autoria-web-production.up.railway.app",
     "NODE_ENV": "production"
   },
   "build": {
