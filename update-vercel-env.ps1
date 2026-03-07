@@ -8,7 +8,8 @@ $env_pairs = @(
   @("NEXT_PUBLIC_FLOWER_URL",         "https://autoria-flower-production.up.railway.app"),
   @("NEXT_PUBLIC_REDIS_INSIGHT_URL",  "https://autoria-redis-insight-production.up.railway.app"),
   @("NEXT_PUBLIC_RABBITMQ_URL",       "https://autoria-rabbitmq-production.up.railway.app"),
-  @("NEXTAUTH_URL",                   "https://autoria-clone.vercel.app")
+  @("NEXTAUTH_URL",                   "https://autoria-clone.vercel.app"),
+  @("REDIS_URL",                      "redis://default:VvVebClumAXXhCFWJgTShzQPYcXZFvCJ@junction.proxy.rlwy.net:25906")
 )
 
 foreach ($pair in $env_pairs) {
