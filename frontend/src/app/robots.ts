@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/api/', '/admin/'],
     },
-    sitemap: 'https://autoria-clone.vercel.app/sitemap.xml',
+    sitemap: `${process.env.NEXTAUTH_URL || 'https://autoria-clone.vercel.app'}/sitemap.xml`,
   };
 }

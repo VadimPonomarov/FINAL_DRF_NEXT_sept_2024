@@ -30,11 +30,11 @@ export const metadata: Metadata = {
   keywords: ['автомобілі', 'авто', 'продаж авто', 'купити авто', 'маркетплейс', 'AutoRia'],
   authors: [{ name: 'AutoRia' }],
   creator: 'AutoRia',
-  metadataBase: new URL('https://autoria-clone.vercel.app'),
+  metadataBase: new URL(process.env.NEXTAUTH_URL || 'https://autoria-clone.vercel.app'),
   openGraph: {
     type: 'website',
     locale: 'uk_UA',
-    url: 'https://autoria-clone.vercel.app',
+    url: process.env.NEXTAUTH_URL || 'https://autoria-clone.vercel.app',
     siteName: 'AutoRia',
     title: 'AutoRia — Автомобільний маркетплейс',
     description: 'Купівля та продаж автомобілів. Найбільший маркетплейс оголошень про авто.',

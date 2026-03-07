@@ -77,7 +77,7 @@ const DocsPage = () => {
             <div className="text-sm text-muted-foreground">
               <p>Alternative options:</p>
               <a
-                href={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://91.98.238.47:8000'}/api/doc/`}
+                href={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/api/doc/`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
