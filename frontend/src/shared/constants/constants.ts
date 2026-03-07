@@ -102,7 +102,7 @@ export const API_ENDPOINTS = {
     auth: {
         login: "/api/auth/login",
         refresh: "/api/auth/refresh",
-        register: "/api/users/create"
+        register: "/api/users/create/"
     },
     users: {
         profile: "/api/users/profile",

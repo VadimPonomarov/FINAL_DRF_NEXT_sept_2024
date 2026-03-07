@@ -7,8 +7,10 @@ import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 // Specific routes (e.g., /api/auth/*, /api/redis, etc.) take precedence by filesystem routing.
 
 async function proxy(request: NextRequest) {
+  const RAILWAY = 'https://autoria-web-production.up.railway.app';
   // Use server-side BACKEND_URL when available. Avoid using NEXT_PUBLIC_* here.
-  const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const candidate = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+  const rawBase = (!candidate || candidate.includes('autoria-api.vercel.app')) ? RAILWAY : candidate;
   // Normalize base: remove trailing slashes and trailing /api
   const baseNoSlash = rawBase.replace(/\/+$/, '');
   const base = baseNoSlash.replace(/\/(api)\/?$/i, '');

@@ -13,14 +13,16 @@ export class ApiError extends Error {
     }
 }
 
+const RAILWAY_BACKEND = 'https://autoria-web-production.up.railway.app';
+
 export const apiAuthService = {
     register: async (data: Pick<IRegistration, 'email' | 'password'>): Promise<IRegistrationResponse> => {
         try {
-            // Используем правильный URL для регистрации
-            const registerUrl = `${API_URLS[AuthProvider.MyBackendDocs]}${API_ENDPOINTS.auth.register}`;
+            // Call Railway directly (CORS enabled) — avoids broken autoria-api.vercel.app proxy
+            const registerUrl = `${RAILWAY_BACKEND}${API_ENDPOINTS.auth.register}`;
             console.log("Sending registration request to:", registerUrl);
             console.log("With data:", { email: data.email, password: "***" });
-            
+
             const response = await fetch(registerUrl, {
                 method: 'POST',
                 headers: {
@@ -28,8 +30,6 @@ export const apiAuthService = {
                     'Accept': 'application/json',
                 },
                 body: JSON.stringify(data),
-                // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
-                // credentials: 'include' вызывает CORS ошибку с Access-Control-Allow-Origin: *
                 mode: 'cors',
                 cache: 'no-store'
             });
