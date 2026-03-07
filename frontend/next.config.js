@@ -190,7 +190,7 @@ const nextConfig = {
     
     return [
       {
-        source: '/api/((?!auth/).*)',
+        source: '/api/((?!auth/|redis(?:$|/)|redis-test(?:$|/)|backend-health(?:$|/)).*)',
         destination: `${backendUrl}/api/$1`,
       },
       {
