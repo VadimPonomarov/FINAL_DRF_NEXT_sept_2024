@@ -237,8 +237,7 @@ volumes/
 pg/
 pg/data/
 
-# Redis data directory
-redis/
+# Redis data directory (root-level only, NOT frontend API routes)`n/redis/
 
 
 
