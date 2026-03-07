@@ -19,7 +19,6 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '.railway.app',
     '.up.railway.app',
-    'autoria-web-production.up.railway.app',
 ]
 
 # Application definition

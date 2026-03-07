@@ -17,8 +17,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = [
     '.onrender.com',
-    'autoria-backend.onrender.com',
-    'autoria-clone.vercel.app',
+    '.vercel.app',
     'localhost',
     '127.0.0.1',
 ]
@@ -118,11 +117,12 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS settings
+# CORS settings — comma-separated list in env var
 CORS_ALLOWED_ORIGINS = [
-    "https://autoria-clone.vercel.app",
+    o.strip()
+    for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+    if o.strip()
 ]
-
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = False
 
