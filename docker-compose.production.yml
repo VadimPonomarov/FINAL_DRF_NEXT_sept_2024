@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  nginx-proxy:
+    build:
+      context: ./nginx
+      dockerfile: production.Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - redis-proxy
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - NGINX_HOST=your-domain.com  # Заменить на реальный домен
+    volumes:
+      - ./nginx/ssl:/etc/letsencrypt  # Для SSL сертификатов
+      - ./nginx/logs:/var/log/nginx
+
+  # Redis TCP proxy для Vercel (чтобы избежать CORS и сетевых проблем)
+  redis-proxy:
+    image: alpine/socat
+    command: >
+      sh -c "
+      socat TCP4-LISTEN:6379,fork,reuseaddr TCP4:junction.proxy.rlwy.net:25906 &
+      socat TCP4-LISTEN:6380,fork,reuseaddr TCP4:91.98.238.47:6379 &
+      wait
+      "
+    ports:
+      - "6379:6379"  # Railway Redis proxy
+      - "6380:6380"  # Railway Redis direct (если понадобится)
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  nginx-logs:
+  ssl-certs:
