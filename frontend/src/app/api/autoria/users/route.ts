@@ -10,11 +10,12 @@ export async function GET(request: NextRequest) {
   try {
     logger.info('[AutoRia Users API - proxy] Getting users...');
 
-    // ВАЖНО: В Server-side API routes используем BACKEND_URL (без NEXT_PUBLIC_)
-    // Если NEXT_PUBLIC_BACKEND_URL относительный ("/api"), используем локальный backend
-    const raw = process.env.BACKEND_URL
+    const RAILWAY = 'https://autoria-web-production.up.railway.app';
+    const candidate = process.env.BACKEND_URL
       || (process.env.NEXT_PUBLIC_BACKEND_URL?.startsWith('http') ? process.env.NEXT_PUBLIC_BACKEND_URL : undefined)
-      || 'http://localhost:8000';
+      || '';
+    // Ignore old broken Vercel Python backend — use Railway PostgreSQL
+    const raw = (!candidate || candidate.includes('autoria-api.vercel.app')) ? RAILWAY : candidate;
     logger.info('[AutoRia Users API - proxy] Raw backend URL:', raw);
 
     // Аккуратно собираем URL, чтобы избежать двойного "/api"

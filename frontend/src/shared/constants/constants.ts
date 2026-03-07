@@ -9,10 +9,14 @@ export enum ApiDomain {
     Internal = "internal"   // Внутренний API (Next.js)
 }
 
+const RAILWAY_BACKEND = "https://autoria-web-production.up.railway.app";
+
 // Упрощенная функция для получения Backend URL
 const getBackendUrl = (): string => {
-    // Простая логика: используем переменную окружения или fallback
-    return process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    const url = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "";
+    // Old Vercel Python backend is broken — redirect to Railway PostgreSQL backend
+    if (!url || url.includes("autoria-api.vercel.app")) return RAILWAY_BACKEND;
+    return url;
 };
 
 // Inline constants (replaced @/config/constants)
