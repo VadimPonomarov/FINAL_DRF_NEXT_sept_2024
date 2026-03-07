@@ -41,7 +41,7 @@ if _WN not in MIDDLEWARE:
     _SI = next((i for i, m in enumerate(MIDDLEWARE) if 'SecurityMiddleware' in m), 0)
     MIDDLEWARE.insert(_SI + 1, _WN)
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # ── Database (inline env_detector — avoids core.utils import) ─────────────────
 _db_url = os.environ.get('DATABASE_URL', '')
