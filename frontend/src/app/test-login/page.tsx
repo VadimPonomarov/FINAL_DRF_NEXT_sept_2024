@@ -1,18 +1,30 @@
 'use client';
 
 import { useState } from 'react';
+import React from 'react';
 import { fetchAuth } from '@/app/api/helpers';
+import { IBackendAuthCredentials, AuthResponse } from '@/shared/types/auth.interfaces';
 
-interface LoginFormData {
-  email: string;
-  password: string;
-}
+interface LoginFormData extends IBackendAuthCredentials {}
 
 interface TokenData {
   access: string;
   refresh: string;
   userId?: string;
   email?: string;
+}
+
+interface RedisApiResponse {
+  exists: boolean;
+  value?: string;
+  message?: string;
+}
+
+interface RedisSimpleResponse {
+  success: boolean;
+  message?: string;
+  redis_url?: string;
+  timestamp?: string;
 }
 
 export default function TestLoginPage() {
@@ -37,8 +49,12 @@ export default function TestLoginPage() {
     try {
       const response = await fetch('/api/redis-simple');
       if (response.ok) {
+        const data: RedisSimpleResponse = await response.json();
         setRedisStatus('healthy');
         addLog('✅ Redis is healthy');
+        if (data.redis_url) {
+          addLog(`📡 Redis URL: ${data.redis_url}`);
+        }
       } else {
         setRedisStatus('error');
         addLog(`❌ Redis error: HTTP ${response.status}`);
@@ -70,7 +86,11 @@ export default function TestLoginPage() {
       const authResult = await fetchAuth(formData);
 
       if (authResult.error) {
-        throw new Error(authResult.error.message || 'Login failed');
+        throw new Error(
+          typeof authResult.error === 'string' 
+            ? authResult.error 
+            : authResult.error.message || 'Login failed'
+        );
       }
 
       addLog('✅ Login successful');
@@ -88,7 +108,7 @@ export default function TestLoginPage() {
         access: authResult.access!,
         refresh: authResult.refresh!,
         userId: authResult.user?.id?.toString(),
-        email: formData.email
+        email: authResult.user?.email || formData.email
       };
       
       setTokens(tokenData);
@@ -98,7 +118,7 @@ export default function TestLoginPage() {
       try {
         const verifyResponse = await fetch('/api/redis?key=backend_auth');
         if (verifyResponse.ok) {
-          const verifyData = await verifyResponse.json();
+          const verifyData: RedisApiResponse = await verifyResponse.json();
           if (verifyData.exists && verifyData.value) {
             const savedTokens = JSON.parse(verifyData.value);
             addLog('✅ Tokens retrieved from Redis successfully');
@@ -168,7 +188,7 @@ export default function TestLoginPage() {
         // Проверяем обновленные токены
         const verifyResponse = await fetch('/api/redis?key=backend_auth');
         if (verifyResponse.ok) {
-          const verifyData = await verifyResponse.json();
+          const verifyData: RedisApiResponse = await verifyResponse.json();
           if (verifyData.exists && verifyData.value) {
             const updatedTokens = JSON.parse(verifyData.value);
             setTokens({
