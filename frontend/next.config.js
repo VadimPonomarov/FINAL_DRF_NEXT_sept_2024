@@ -161,11 +161,11 @@ const nextConfig = {
     minimumCacheTTL: 31536000, // 1 year
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    domains: ['localhost', 'image.pollinations.ai', 'autoria-backend.onrender.com', '91.98.238.47'],
+    domains: ['localhost', 'image.pollinations.ai'],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.onrender.com',
+        hostname: '**.railway.app',
       },
       {
         protocol: 'https',
@@ -176,9 +176,8 @@ const nextConfig = {
         hostname: '**.vercel.app',
       },
       {
-        protocol: 'http',
-        hostname: '91.98.238.47',
-        port: '8000',
+        protocol: 'https',
+        hostname: '**.onrender.com',
       },
     ],
     // Turn off image optimization in development to speed up dev server
