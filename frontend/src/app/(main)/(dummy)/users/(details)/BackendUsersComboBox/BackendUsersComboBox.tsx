@@ -48,18 +48,26 @@ const BackendUsersComboBox: FC<IProps> = ({ reset }) => {
         queryKey: ["backend-users"],
         queryFn: async () => {
             console.log('[BackendUsersComboBox] Fetching public users list...');
-            const startTime = Date.now();
+            const RAILWAY = 'https://autoria-web-production.up.railway.app';
 
-            const response = await fetch("/api/autoria/users");
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+            // Try Railway directly first (CORS enabled) — avoids broken Vercel proxy
+            try {
+                const r = await fetch(`${RAILWAY}/api/users/public/list/`, { cache: 'no-store' });
+                if (r.ok) {
+                    const d = await r.json();
+                    console.log('[BackendUsersComboBox] Railway direct:', d.count, 'users');
+                    return d as IBackendUsersResponse;
+                }
+            } catch (_) {
+                console.warn('[BackendUsersComboBox] Railway direct failed, trying proxy...');
             }
+
+            // Fallback: Next.js proxy
+            const response = await fetch("/api/autoria/users");
+            if (!response.ok) throw new Error('Network response was not ok');
             const result = await response.json();
-
-            const endTime = Date.now();
-            console.log(`[BackendUsersComboBox] Fetched ${result.data?.count || 0} users in ${endTime - startTime}ms`);
-
-            return result.data; // API возвращает { success: true, data: { results: [], count: number } }
+            if (!result.success) throw new Error(result.error || 'Backend error');
+            return result.data as IBackendUsersResponse;
         },
         staleTime: 5 * 60 * 1000, // 5 минут
         retry: 1,
