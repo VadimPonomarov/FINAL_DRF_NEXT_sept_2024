@@ -1,5 +1,6 @@
 import logging
 import os
+from urllib.parse import urlparse as _urlparse
 import pika
 from typing import Dict, Any, Optional, Literal
 from pika import ConnectionParameters, BasicProperties
@@ -28,18 +29,19 @@ class EmailService:
             # Получаем URL RabbitMQ через Service Discovery
             rabbitmq_url = get_service_url('rabbitmq')
 
-            # Парсим URL для извлечения хоста
-            if rabbitmq_url and rabbitmq_url.startswith('amqp://'):
-                # Формат: amqp://host:port
-                url_parts = rabbitmq_url.replace('amqp://', '').split(':')
-                host = url_parts[0]
-                port = int(url_parts[1]) if len(url_parts) > 1 else 5672
-                logger.info(f"[DISCOVERY] Service Discovery: Using RabbitMQ host: {host}, port: {port}")
+            if rabbitmq_url and '://' in rabbitmq_url:
+                _p = _urlparse(rabbitmq_url)
+                host = _p.hostname or 'localhost'
+                port = _p.port or 5672
+                vhost = (_p.path.lstrip('/') or '/') if _p.path else '/'
+                user = _p.username or 'guest'
+                password = _p.password or 'guest'
+                logger.info(f"[DISCOVERY] RabbitMQ: host={host}, port={port}")
                 return ConnectionParameters(
                     host=host,
                     port=port,
-                    virtual_host='/',
-                    credentials=pika.PlainCredentials('guest', 'guest')
+                    virtual_host=f'/{vhost}' if vhost != '/' else '/',
+                    credentials=pika.PlainCredentials(user, password)
                 )
             else:
                 logger.warning(f"[WARNING] Service Discovery: Unexpected RabbitMQ URL format: {rabbitmq_url}")
