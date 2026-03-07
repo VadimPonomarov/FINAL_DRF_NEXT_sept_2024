@@ -6,6 +6,7 @@ import { IItem } from "@/components/All/ComboBox/interfaces";
 import { IBackendAuthCredentials } from "@/shared/types/auth.interfaces";
 import { UseFormReset } from "react-hook-form";
 import { useI18n } from "@/contexts/I18nContext";
+import { backendUrl } from "@/lib/backend-url";
 
 interface IBackendUser {
     id: number;
@@ -47,27 +48,10 @@ const BackendUsersComboBox: FC<IProps> = ({ reset }) => {
     const { data, isLoading, error } = useQuery<IBackendUsersResponse>({
         queryKey: ["backend-users"],
         queryFn: async () => {
-            console.log('[BackendUsersComboBox] Fetching public users list...');
-            const RAILWAY = 'https://autoria-web-production.up.railway.app';
-
-            // Try Railway directly first (CORS enabled) — avoids broken Vercel proxy
-            try {
-                const r = await fetch(`${RAILWAY}/api/users/public/list/`, { cache: 'no-store' });
-                if (r.ok) {
-                    const d = await r.json();
-                    console.log('[BackendUsersComboBox] Railway direct:', d.count, 'users');
-                    return d as IBackendUsersResponse;
-                }
-            } catch (_) {
-                console.warn('[BackendUsersComboBox] Railway direct failed, trying proxy...');
-            }
-
-            // Fallback: Next.js proxy
-            const response = await fetch("/api/autoria/users");
-            if (!response.ok) throw new Error('Network response was not ok');
-            const result = await response.json();
-            if (!result.success) throw new Error(result.error || 'Backend error');
-            return result.data as IBackendUsersResponse;
+            const url = backendUrl('/api/users/public/list/');
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`Backend responded ${response.status}`);
+            return response.json() as Promise<IBackendUsersResponse>;
         },
         staleTime: 5 * 60 * 1000, // 5 минут
         retry: 1,

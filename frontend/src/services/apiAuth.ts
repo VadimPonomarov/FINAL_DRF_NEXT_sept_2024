@@ -1,6 +1,7 @@
 import { IRegistration } from "@/shared/types/auth.interfaces";
 import { IUser } from "@/shared/types/users.interfaces";
-import { API_URLS, API_ENDPOINTS, AuthProvider } from "@/shared/constants/constants";
+import { API_ENDPOINTS } from "@/shared/constants/constants";
+import { backendUrl } from "@/lib/backend-url";
 
 interface IRegistrationResponse {
     user: IUser;
@@ -13,13 +14,10 @@ export class ApiError extends Error {
     }
 }
 
-const RAILWAY_BACKEND = 'https://autoria-web-production.up.railway.app';
-
 export const apiAuthService = {
     register: async (data: Pick<IRegistration, 'email' | 'password'>): Promise<IRegistrationResponse> => {
         try {
-            // Call Railway directly (CORS enabled) — avoids broken autoria-api.vercel.app proxy
-            const registerUrl = `${RAILWAY_BACKEND}${API_ENDPOINTS.auth.register}`;
+            const registerUrl = backendUrl(API_ENDPOINTS.auth.register);
             console.log("Sending registration request to:", registerUrl);
             console.log("With data:", { email: data.email, password: "***" });
 

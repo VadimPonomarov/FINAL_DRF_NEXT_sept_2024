@@ -9,15 +9,8 @@ export enum ApiDomain {
     Internal = "internal"   // Внутренний API (Next.js)
 }
 
-const RAILWAY_BACKEND = "https://autoria-web-production.up.railway.app";
-
-// Упрощенная функция для получения Backend URL
-const getBackendUrl = (): string => {
-    const url = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "";
-    // Old Vercel Python backend is broken — redirect to Railway PostgreSQL backend
-    if (!url || url.includes("autoria-api.vercel.app")) return RAILWAY_BACKEND;
-    return url;
-};
+const getBackendUrl = (): string =>
+    process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:8000';
 
 // Inline constants (replaced @/config/constants)
 const PROTOCOLS = {
@@ -77,11 +70,11 @@ if (AUTH_CONFIG.GOOGLE_CLIENT_SECRET) {
 }
 
 export const BaseUrl = {
-    Backend: process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autoria-web-production.up.railway.app',
+    Backend: process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:8000',
     Dummy: EXTERNAL_SERVICES.DUMMY_JSON,
-    Flower: process.env.NEXT_PUBLIC_FLOWER_URL || 'https://autoria-flower-production.up.railway.app',
-    RedisInsight: process.env.NEXT_PUBLIC_REDIS_INSIGHT_URL || 'https://autoria-redis-insight-production.up.railway.app',
-    RabbitMQ: process.env.NEXT_PUBLIC_RABBITMQ_URL || 'https://autoria-rabbitmq-production.up.railway.app',
+    Flower: process.env.NEXT_PUBLIC_FLOWER_URL || 'http://localhost:5555',
+    RedisInsight: process.env.NEXT_PUBLIC_REDIS_INSIGHT_URL || 'http://localhost:8001',
+    RabbitMQ: process.env.NEXT_PUBLIC_RABBITMQ_URL || 'http://localhost:15672',
     // Внутренний API Next.js
     Internal: typeof window !== 'undefined'
         ? window.location.origin  // В браузере используем текущий origin

@@ -19,7 +19,10 @@ class EncryptionService:
 
     def __init__(self):
         self._fernet = None
-        self._initialize_encryption()
+
+    def _ensure_initialized(self):
+        if self._fernet is None:
+            self._initialize_encryption()
 
     def _initialize_encryption(self):
         """Инициализирует систему шифрования"""
@@ -60,6 +63,7 @@ class EncryptionService:
         Returns:
             Зашифрованная строка в base64
         """
+        self._ensure_initialized()
         try:
             if not data:
                 return ""
@@ -81,6 +85,7 @@ class EncryptionService:
         Returns:
             Расшифрованная строка
         """
+        self._ensure_initialized()
         try:
             if not encrypted_data:
                 return ""
