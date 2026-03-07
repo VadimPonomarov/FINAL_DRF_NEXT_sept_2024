@@ -118,19 +118,6 @@ if _db_url and not _db_url.startswith('${{'):
         DATABASES['default'].setdefault('OPTIONS', {})['connect_timeout'] = 10
     except Exception as _e:
         print(f"[settings_railway] DATABASE_URL parse failed ({_e}), using SQLite fallback")
-elif os.environ.get('PGHOST'):
-    # Fallback: construct from individual Railway PG* env vars
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': os.environ['PGHOST'],
-        'PORT': os.environ.get('PGPORT', '5432'),
-        'NAME': os.environ.get('PGDATABASE', 'railway'),
-        'USER': os.environ.get('PGUSER', 'postgres'),
-        'PASSWORD': os.environ.get('PGPASSWORD', ''),
-        'OPTIONS': {'connect_timeout': 10},
-        'CONN_MAX_AGE': 0,
-    }
-    print(f"[settings_railway] Using PostgreSQL via PGHOST: {os.environ['PGHOST']}")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
