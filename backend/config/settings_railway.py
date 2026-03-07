@@ -109,7 +109,8 @@ SESSION_COOKIE_AGE = 86400
 # Redis connection details (used by ServiceRegistry and cache)
 _redis_parsed = _urlparse(_redis_url) if _redis_url else None
 REDIS_HOST = (_redis_parsed.hostname if _redis_parsed else None) or os.environ.get('REDIS_HOST', 'autoria-redis.railway.internal')
-REDIS_PORT = int(_redis_parsed.port or 6379) if _redis_parsed else int(os.environ.get('REDIS_PORT', 6379))
+_redis_port_raw = os.environ.get('REDIS_PORT', '') or '6379'
+REDIS_PORT = int(_redis_parsed.port or 6379) if _redis_parsed else int(_redis_port_raw or 6379)
 REDIS_DB = 0
 REDIS_URL = _redis_url or f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
 
