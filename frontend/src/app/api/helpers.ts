@@ -43,29 +43,7 @@ function normalizeBackendBase(url: string): string {
     }
 }
 
-export async function apiGetRedis(key: string): Promise<string | null> {
-    try {
-        const res = await fetch(`${__frontendBaseUrl}/api/redis?key=${encodeURIComponent(key)}`, { cache: 'no-store' });
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data?.exists ? (data.value as string) : null;
-    } catch {
-        return null;
-    }
-}
-
-export async function apiSetRedis(key: string, value: string, ttl?: number): Promise<boolean> {
-    try {
-        const res = await fetch(`${__frontendBaseUrl}/api/redis`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key, value, ttl })
-        });
-        return res.ok;
-    } catch {
-        return false;
-    }
-}
+// Redis functions removed - now using cookies and sessions only
 
 // Centralized error handler with improved retry logic
 const handleFetchErrors = async (response: Response, key: string = "backend_auth") => {
