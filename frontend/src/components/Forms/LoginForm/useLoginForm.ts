@@ -18,47 +18,7 @@ import { redirectManager } from "@/shared/utils/auth/redirectManager";
 
 import { backendSchema, dummySchema } from "./index.joi";
 
-// Import debug functions for development
-if (process.env.NODE_ENV === 'development') {
-  // Token verification utility was removed as unused
-}
-
-// Function to verify tokens are saved in Redis
-const verifyTokensInRedis = async (provider: AuthProvider): Promise<boolean> => {
-  try {
-    const redisKey = provider === AuthProvider.Dummy ? 'dummy_auth' : 'backend_auth';
-    console.log(`[TokenVerification] Checking tokens in Redis with key: ${redisKey}`);
-
-    const response = await fetch(`/api/redis?key=${encodeURIComponent(redisKey)}`);
-
-    if (!response.ok) {
-      console.error(`[TokenVerification] Redis API error: ${response.status}`);
-      return false;
-    }
-
-    const data = await response.json();
-
-    if (!data.exists || !data.value) {
-      console.error('[TokenVerification] No tokens found in Redis');
-      return false;
-    }
-
-    const tokenData = JSON.parse(data.value);
-    console.log('[TokenVerification] Token data structure:', {
-      hasAccess: !!tokenData.access,
-      hasRefresh: !!tokenData.refresh,
-      provider: tokenData.provider,
-      keys: Object.keys(tokenData)
-    });
-
-    // Check for required tokens based on provider
-    // Both providers now use 'access' and 'refresh' keys in Redis
-    return !!(tokenData.access && tokenData.refresh);
-  } catch (error) {
-    console.error('[TokenVerification] Error verifying tokens:', error);
-    return false;
-  }
-};
+// Redis removed - now using cookies and sessions only
 
 export const useLoginForm = () => {
   const t = useTranslation();
