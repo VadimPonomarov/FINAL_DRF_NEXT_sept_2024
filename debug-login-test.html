@@ -57,6 +57,12 @@
         </div>
 
         <div class="test-section">
+            <h3>🎯 Тест 3: Эмуляция веб-формы</h3>
+            <button onclick="testWebFormEmulation()" style="background: #ff6b35;">Эмулировать веб-форму fetchAuth</button>
+            <p><small>Тестирует точно такой же запрос как делает React компонент</small></p>
+        </div>
+
+        <div class="test-section">
             <h3>🏃‍♂️ Быстрый тест</h3>
             <button onclick="runAllTests()" style="background: #28a745; font-size: 16px;">Запустить все тесты</button>
         </div>
@@ -159,37 +165,63 @@
             setStatus('Тестируем логин...', 'warning');
 
             try {
-                // Тест 1: Frontend Login API
-                log('Шаг 1: Тестируем /api/auth/login (frontend)', 'info');
+                // Тест 1: Frontend Login API (эмулируем ТОЧНО как веб-форма)
+                log('Шаг 1: Тестируем /api/auth/login (эмуляция веб-формы)', 'info');
                 
-                const loginResponse = await fetch(`${FRONTEND_URL}/api/auth/login`, {
+                // Эмулируем точно такой же запрос как делает веб-форма
+                const loginResponse = await fetch('/api/auth/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        // Добавляем те же заголовки что может отправлять браузер
+                        'Accept': 'application/json, text/plain, */*',
+                        'Cache-Control': 'no-store'
+                    },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'same-origin' // Важно для cookies
                 });
 
-                const loginData = await loginResponse.json();
+                log(`Response status: ${loginResponse.status} ${loginResponse.statusText}`, 'info');
+                
+                let loginData;
+                try {
+                    loginData = await loginResponse.json();
+                } catch (e) {
+                    const textData = await loginResponse.text();
+                    log(`Response is not JSON: ${textData}`, 'error');
+                    throw new Error(`Non-JSON response: ${textData}`);
+                }
+                
+                log(`Full response: ${JSON.stringify(loginData)}`, loginResponse.ok ? 'success' : 'error');
                 
                 if (!loginResponse.ok) {
                     throw new Error(`Frontend login failed: ${loginResponse.status} - ${JSON.stringify(loginData)}`);
                 }
 
-                log(`Frontend login успешен: ${JSON.stringify(loginData)}`, 'success');
+                log(`Frontend login успешен!`, 'success');
 
                 // Тест 2: Проверяем что токены есть
                 log('Шаг 2: Проверяем токены через /api/auth/token', 'info');
                 
-                const tokenResponse = await fetch(`${FRONTEND_URL}/api/auth/token`);
+                const tokenResponse = await fetch('/api/auth/token', {
+                    credentials: 'same-origin'
+                });
                 const tokenData = await tokenResponse.json();
                 
                 log(`Token check: ${JSON.stringify(tokenData)}`, tokenData.access ? 'success' : 'warning');
+
+                // Тест 3: Проверяем cookies в браузере
+                log('Шаг 3: Проверяем cookies в браузере', 'info');
+                const cookies = document.cookie;
+                log(`Browser cookies: ${cookies}`, 'info');
 
                 // Результат
                 document.getElementById('login-result').innerHTML = `
                     <div class="status success">
                         <strong>✅ Логин успешен!</strong><br>
                         <small>Login Response: ${JSON.stringify(loginData)}<br>
-                        Token Check: ${JSON.stringify(tokenData)}</small>
+                        Token Check: ${JSON.stringify(tokenData)}<br>
+                        Cookies: ${cookies}</small>
                     </div>
                 `;
                 
@@ -206,6 +238,54 @@
                 `;
                 
                 setStatus('Логин тест провалился', 'error');
+            }
+        }
+
+        // Новая функция для тестирования того же что делает веб-форма
+        async function testWebFormEmulation() {
+            log('🎯 Эмулируем точно такой же запрос как делает веб-форма...', 'info');
+            
+            const credentials = {
+                email: 'admin@autoria.com',
+                password: '12345678'
+            };
+
+            try {
+                // Эмулируем функцию fetchAuth из helpers.ts
+                log('Вызываем fetchAuth эмуляцию...', 'info');
+                
+                const endpoint = '/api/auth/login';
+                log(`Endpoint: ${endpoint}`, 'info');
+                
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(credentials),
+                    cache: "no-store",
+                });
+
+                log(`fetchAuth response status: ${response.status}`, response.ok ? 'success' : 'error');
+
+                if (!response.ok) {
+                    let bodyText = '';
+                    try { bodyText = await response.text(); } catch {}
+                    log(`fetchAuth error body: ${bodyText}`, 'error');
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                log(`fetchAuth success data: ${JSON.stringify(data)}`, 'success');
+
+                // Проверяем токены
+                const tokenCheck = await fetch('/api/auth/token');
+                const tokenData = await tokenCheck.json();
+                log(`Token verification: ${JSON.stringify(tokenData)}`, 'info');
+
+                setStatus('Веб-форма эмуляция УСПЕШНА!', 'success');
+                
+            } catch (error) {
+                log(`Веб-форма эмуляция ПРОВАЛИЛАСЬ: ${error.message}`, 'error');
+                setStatus('Веб-форма эмуляция провалилась', 'error');
             }
         }
 
