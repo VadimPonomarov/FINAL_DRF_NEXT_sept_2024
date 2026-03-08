@@ -20,21 +20,17 @@ const AuthAlert: React.FC = () => {
       }
 
       try {
-        // Проверяем провайдер
-        const providerResponse = await fetch('/api/redis?key=auth_provider');
-        const providerData = await providerResponse.json();
+        // Check provider via /api/auth/token
+        const tokenResp = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
+        const tokenData = tokenResp.ok ? await tokenResp.json() : null;
         
-        if (!providerData.exists || providerData.value !== 'backend') {
+        if (!tokenData?.access) {
           setAlertMessage('Для доступа к AutoRia необходимо переключиться на Backend аутентификацию');
           setShowAlert(true);
           return;
         }
 
-        // Проверяем наличие backend токенов
-        const redisResponse = await fetch('/api/redis?key=backend_auth');
-        const redisData = await redisResponse.json();
-        
-        if (!redisData.exists || !redisData.value) {
+        if (!tokenData?.access) {
           setAlertMessage('Для доступа к AutoRia необходимо войти в систему с Backend аутентификацией');
           setShowAlert(true);
           return;

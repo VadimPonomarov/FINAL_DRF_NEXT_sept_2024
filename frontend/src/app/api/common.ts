@@ -19,7 +19,7 @@ const __frontendBaseUrl = __isServer
  */
 async function apiGetRedis(key: string): Promise<string | null> {
   try {
-    const res = await fetch(`${__frontendBaseUrl}/api/redis?key=${encodeURIComponent(key)}`, { cache: 'no-store' });
+    const res = await fetch('/api/auth/token')}`, { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
     return data?.exists ? (data.value as string) : null;
@@ -33,10 +33,7 @@ async function apiGetRedis(key: string): Promise<string | null> {
  */
 async function apiSetRedis(key: string, value: string): Promise<boolean> {
   try {
-    const res = await fetch(`${__frontendBaseUrl}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, value })
+    const res = await fetch('/api/auth/token')
     });
     return res.ok;
   } catch {

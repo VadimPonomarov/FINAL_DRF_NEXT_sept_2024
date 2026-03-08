@@ -256,9 +256,8 @@ export const useChatWebSocket = ({
         // Если не требуется принудительное обновление, получаем текущий токен из Redis
         let response;
         try {
-          console.log("[DEBUG] Attempting to fetch from Redis API");
-          console.log("[DEBUG] Request URL: /api/redis?key=backend_auth");
-          response = await fetch("/api/redis?key=backend_auth");
+          console.log("[DEBUG] Fetching tokens from cookies API");
+          response = await fetch("/api/auth/token", { cache: "no-store", credentials: "include" });
           console.log("[DEBUG] Redis API response status:", response.status);
           console.log("[DEBUG] Redis API response ok:", response.ok);
           console.log("[DEBUG] Redis API response headers:", Object.fromEntries(response.headers.entries()));

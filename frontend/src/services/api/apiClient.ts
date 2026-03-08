@@ -52,17 +52,11 @@ class ApiClient {
    */
   private async getTokens(): Promise<{ access?: string; refresh?: string } | null> {
     try {
-      const response = await fetch('/api/redis?key=backend_auth');
+      const response = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
       if (!response.ok) return null;
-
       const data = await response.json();
-      if (!data?.value) return null;
-
-      const authData = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-      return {
-        access: authData.access,
-        refresh: authData.refresh
-      };
+      if (!data?.access) return null;
+      return { access: data.access, refresh: data.refresh };
     } catch (error) {
       console.error('[ApiClient] Error getting tokens:', error);
       return null;

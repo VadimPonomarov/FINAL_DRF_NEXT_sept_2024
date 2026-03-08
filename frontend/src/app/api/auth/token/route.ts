@@ -56,127 +56,41 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * API route для сохранения токенов в Redis
- * Поддерживает оба провайдера: Backend и Dummy
+ * Save tokens to httpOnly cookies
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { access, refresh, provider } = body;
+    const { access, refresh } = body;
 
-    if (!access || !refresh) {
-      return NextResponse.json(
-        { error: 'Missing access or refresh token' },
-        { status: 400 }
-      );
+    if (!access) {
+      return NextResponse.json({ error: 'Missing access token' }, { status: 400 });
     }
 
-    console.log(`[Token API] Saving tokens for provider: ${provider || 'backend'}`);
-
-    // Определяем ключ для сохранения
-    const authKey = provider === 'dummy' ? 'dummy_auth' : 'backend_auth';
-
-    // Сохраняем токены в Redis
-    const tokenData = {
-      access,
-      refresh,
-      refreshAttempts: 0
-    };
-
-    const redisResponse = await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key: authKey,
-        value: JSON.stringify(tokenData)
-      })
-    });
-
-    if (!redisResponse.ok) {
-      console.error(`[Token API] Failed to save tokens to Redis for key: ${authKey}`);
-      return NextResponse.json(
-        { error: 'Failed to save tokens to Redis' },
-        { status: 500 }
-      );
+    const response = NextResponse.json({ success: true, message: 'Tokens saved' });
+    response.cookies.set('access_token', access, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 });
+    if (refresh) {
+      response.cookies.set('refresh_token', refresh, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30 });
     }
-
-    // Сохраняем провайдер в Redis
-    const providerResponse = await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key: 'auth_provider',
-        value: provider || 'backend'
-      })
-    });
-
-    if (!providerResponse.ok) {
-      console.warn('[Token API] Failed to save provider to Redis');
-    }
-
-    console.log(`[Token API] Successfully saved tokens for provider: ${provider || 'backend'}`);
-
-    return NextResponse.json({
-      success: true,
-      provider: provider || 'backend',
-      message: 'Tokens saved successfully'
-    });
-
+    return response;
   } catch (error) {
     console.error('[Token API] Error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to save tokens' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to save tokens' }, { status: 500 });
   }
 }
 
 /**
- * API route для удаления токенов из Redis
+ * Clear tokens from cookies
  */
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
-    console.log('[Token API] Deleting tokens from Redis...');
-
-    // Определяем текущий провайдер
-    const providerResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=auth_provider`);
-    let authKey = 'backend_auth'; // default
-
-    if (providerResponse.ok) {
-      const providerData = await providerResponse.json();
-      if (providerData.exists && providerData.value === 'dummy') {
-        authKey = 'dummy_auth';
-      }
-    }
-
-    // Удаляем токены из Redis
-    const redisResponse = await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: authKey })
-    });
-
-    if (!redisResponse.ok) {
-      console.error(`[Token API] Failed to delete tokens from Redis for key: ${authKey}`);
-      return NextResponse.json(
-        { error: 'Failed to delete tokens from Redis' },
-        { status: 500 }
-      );
-    }
-
-    console.log(`[Token API] Successfully deleted tokens for key: ${authKey}`);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Tokens deleted successfully'
-    });
-
+    const response = NextResponse.json({ success: true, message: 'Tokens cleared' });
+    response.cookies.delete('access_token');
+    response.cookies.delete('refresh_token');
+    return response;
   } catch (error) {
     console.error('[Token API] Error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to delete tokens' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to clear tokens' }, { status: 500 });
   }
 }
 

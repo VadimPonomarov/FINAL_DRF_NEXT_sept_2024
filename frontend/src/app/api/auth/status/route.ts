@@ -12,12 +12,12 @@ export async function GET(request: NextRequest) {
 
     console.log('[Auth Status API] NextAuth session:', hasNextAuthSession ? 'exists' : 'missing');
 
-    // 2. Проверяем backend токены в Redis
-    const redisResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=backend_auth`);
-    const redisData = await redisResponse.json();
-    const hasBackendTokens = redisData.exists && redisData.value;
+    // 2. Check backend tokens from cookies
+    const accessToken = request.cookies.get('access_token')?.value;
+    const refreshToken = request.cookies.get('refresh_token')?.value;
+    const hasBackendTokens = !!(accessToken && accessToken.length > 0);
 
-    console.log('[Auth Status API] Backend tokens in Redis:', hasBackendTokens ? 'exists' : 'missing');
+    console.log('[Auth Status API] Backend tokens in cookies:', hasBackendTokens ? 'exists' : 'missing');
 
     let backendTokensValid = false;
     let backendError = null;
@@ -34,39 +34,21 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    if (hasBackendTokens) {
-      // 3. Проверяем валидность backend токенов
+    if (hasBackendTokens && accessToken) {
+      // 3. Validate token against backend
       try {
-        const authData = JSON.parse(redisData.value);
-        
-        // Проверяем структуру токенов
-        if (authData.access && authData.refresh) {
-          // Тестируем токены на простом API endpoint
-          const backendBase = normalizeBackendBase(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
-          const testResponse = await fetch(`${backendBase}/api/ads/statistics/`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${authData.access}`,
-              'Content-Type': 'application/json',
-            },
-            signal: AbortSignal.timeout(5000) // 5 секунд таймаут
-          });
-
-          backendTokensValid = testResponse.ok;
-          
-          if (!testResponse.ok) {
-            backendError = `Backend API returned ${testResponse.status}`;
-            console.log('[Auth Status API] Backend tokens invalid:', backendError);
-          } else {
-            console.log('[Auth Status API] Backend tokens valid');
-          }
-        } else {
-          backendError = 'Incomplete token structure';
-          console.log('[Auth Status API] Incomplete backend tokens');
+        const backendBase = normalizeBackendBase(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
+        const testResponse = await fetch(`${backendBase}/api/ads/statistics/`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(5000)
+        });
+        backendTokensValid = testResponse.ok;
+        if (!testResponse.ok) {
+          backendError = `Backend API returned ${testResponse.status}`;
         }
       } catch (error: any) {
         backendError = error.message || 'Token validation failed';
-        console.log('[Auth Status API] Error validating backend tokens:', backendError);
       }
     }
 

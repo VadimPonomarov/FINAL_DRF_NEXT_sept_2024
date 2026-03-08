@@ -45,18 +45,7 @@ export async function POST(request: NextRequest) {
     console.log('[Test Google OAuth] Backend auth successful');
     
     // Save tokens to Redis
-    const redisResponse = await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        key: 'backend_auth',
-        value: JSON.stringify({
-          access: authData.access,
-          refresh: authData.refresh,
-          refreshAttempts: 0
-        }),
+    const redisResponse = await fetch('/api/auth/token'),
       }),
     });
     

@@ -18,7 +18,7 @@ export class ServerAuthManager {
    */
   private static async getAuthProvider(request: NextRequest): Promise<'backend' | 'dummy'> {
     try {
-      const providerResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=auth_provider`);
+      // provider check removed - using cookies
       if (providerResponse.ok) {
         const providerData = await providerResponse.json();
         if (providerData.exists && providerData.value === 'dummy') {
@@ -115,14 +115,7 @@ export class ServerAuthManager {
       console.log('[ServerAuth] Storing refreshed tokens with key:', authKey);
 
       // Persist back to Redis for consistency (route already does it, but double-ensure)
-      await fetch(`${request.nextUrl.origin}/api/redis`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          key: authKey,
-          value: JSON.stringify({ access, refresh: newRefresh }),
-        }),
-      });
+      // Redis call removed
 
       console.log('[ServerAuth] Token refreshed and stored in Redis via internal route');
       return access;
@@ -287,15 +280,7 @@ export class ServerAuthManager {
    */
   static async clearTokens(request: NextRequest): Promise<void> {
     try {
-      await fetch(`${request.nextUrl.origin}/api/redis`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          key: 'backend_auth',
-        }),
-      });
+      // Redis call removed
       console.log('[ServerAuth] Tokens cleared from Redis');
     } catch (error) {
       console.error('[ServerAuth] Error clearing tokens:', error);

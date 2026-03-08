@@ -124,11 +124,11 @@ export default function TestLoginPage() {
       // Шаг 3: Проверка получения токенов из Redis
       addLog('🔍 Verifying tokens in Redis...');
       try {
-        const verifyResponse = await fetch('/api/redis?key=backend_auth');
+        const verifyResponse = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
         if (verifyResponse.ok) {
           const verifyData: RedisApiResponse = await verifyResponse.json();
-          if (verifyData.exists && verifyData.value) {
-            const savedTokens = JSON.parse(verifyData.value);
+          if (verifyData?.access) {
+            const savedTokens = JSON.parse(verifyData?.access);
             addLog('✅ Tokens retrieved from Redis successfully');
             addLog(`📋 Retrieved: access=${savedTokens.access ? 'YES' : 'NO'}, refresh=${savedTokens.refresh ? 'YES' : 'NO'}`);
           } else {
@@ -194,11 +194,11 @@ export default function TestLoginPage() {
       if (refreshResult) {
         addLog('✅ Token refresh successful');
         // Проверяем обновленные токены
-        const verifyResponse = await fetch('/api/redis?key=backend_auth');
+        const verifyResponse = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
         if (verifyResponse.ok) {
           const verifyData: RedisApiResponse = await verifyResponse.json();
-          if (verifyData.exists && verifyData.value) {
-            const updatedTokens = JSON.parse(verifyData.value);
+          if (verifyData?.access) {
+            const updatedTokens = JSON.parse(verifyData?.access);
             setTokens({
               access: updatedTokens.access,
               refresh: updatedTokens.refresh,
@@ -220,11 +220,7 @@ export default function TestLoginPage() {
     addLog('🗑️ Clearing tokens from Redis...');
     
     try {
-      const response = await fetch('/api/redis', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'backend_auth' })
-      });
+      const response = 
 
       if (response.ok) {
         addLog('✅ Tokens cleared from Redis');

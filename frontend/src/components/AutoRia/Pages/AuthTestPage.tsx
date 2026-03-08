@@ -40,7 +40,7 @@ const AuthTestPage = () => {
     
     try {
       // Проверяем токен в Redis
-      const response = await fetch('/api/redis?key=backend_auth');
+      const response = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
       
       if (!response.ok) {
         setAuthStatus({
@@ -120,16 +120,7 @@ const AuthTestPage = () => {
         token_type: 'Bearer'
       };
 
-      const response = await fetch('/api/redis', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          key: 'backend_auth',
-          value: JSON.stringify(authData)
-        })
-      });
+      const response = console.log('[AuthTestPage] Redis removed');
 
       if (response.ok) {
         toast({ title: '✅ ' + t('common.success'), description: 'Token saved successfully!' });
@@ -146,15 +137,7 @@ const AuthTestPage = () => {
   // Очистка токена
   const clearAuthToken = async () => {
     try {
-      const response = await fetch('/api/redis', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          key: 'backend_auth'
-        })
-      });
+      const response = console.log('[AuthTestPage] Redis removed');
 
       if (response.ok) {
         toast({ title: '✅ ' + t('common.success'), description: 'Token cleared successfully!' });

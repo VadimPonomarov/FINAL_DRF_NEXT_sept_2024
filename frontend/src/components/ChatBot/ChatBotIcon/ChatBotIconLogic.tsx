@@ -50,10 +50,10 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
         // Иначе запрашиваем данные из Redis
         const checkAuthProvider = async () => {
           try {
-            const response = await fetch('/api/redis?key=auth_provider');
+            const response = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
             if (response.ok) {
               const data = await response.json();
-              if (data && data.value) {
+              if (data && data.access) {
                 console.log('Auth provider found in Redis after change:', data.value);
                 setCurrentAuthProvider(data.value);
                 return;
@@ -77,10 +77,10 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
       const checkBackendAuth = async () => {
         try {
           // Пытаемся получить данные из Redis
-          const response = await fetch('/api/redis?key=backend_auth');
+          const response = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
           if (response.ok) {
             const data = await response.json();
-            if (data && data.value) {
+            if (data && data.access) {
               console.log('Backend auth found in Redis after auth data change');
               setHasBackendAuth(true);
               return;
@@ -289,10 +289,10 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
     const checkBackendAuth = async () => {
       try {
         // Проверяем только Redis - токены НЕ хранятся в localStorage
-        const response = await fetch('/api/redis?key=backend_auth');
+        const response = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
-          if (data && data.value) {
+          if (data && data.access) {
             console.log('Backend auth found in Redis');
             setHasBackendAuth(true);
             return;
@@ -319,10 +319,10 @@ export const useChatBotIconLogic = (/* eslint-disable-next-line @typescript-esli
     const checkAuthProvider = async () => {
       try {
         // Пытаемся получить данные из Redis
-        const response = await fetch('/api/redis?key=auth_provider');
+        const response = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
-          if (data && data.value) {
+          if (data && data.access) {
             console.log('Auth provider found in Redis:', data.value);
             setCurrentAuthProvider(data.value);
             return;

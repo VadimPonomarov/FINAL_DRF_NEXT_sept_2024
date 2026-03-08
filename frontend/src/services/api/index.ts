@@ -77,19 +77,7 @@ export const authApi = {
     try {
       await apiClient.post('/api/auth/logout');
       
-      // Очищаем токены в Redis
-      await fetch('/api/redis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          key: 'backend_auth',
-          value: JSON.stringify({
-            access: '',
-            refresh: '',
-            refreshAttempts: 0
-          })
-        })
-      });
+
       
       return true;
     } catch (error) {

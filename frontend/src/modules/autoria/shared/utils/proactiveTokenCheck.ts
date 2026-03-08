@@ -41,10 +41,7 @@ async function getTokensFromRedis(): Promise<TokenData | null> {
       : process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
     // Сначала определяем провайдер
-    const providerResp = await fetch(`${origin}/api/redis?key=auth_provider`, {
-      cache: 'no-store',
-      credentials: 'include'
-    });
+    const tokenResp = await fetch(`${origin}/api/auth/token`, { cache: 'no-store', credentials: 'include' });
 
     let authKey = 'backend_auth';
     if (providerResp.ok) {
@@ -55,10 +52,7 @@ async function getTokensFromRedis(): Promise<TokenData | null> {
     }
 
     // Получаем токены
-    const response = await fetch(`${origin}/api/redis?key=${authKey}`, {
-      cache: 'no-store',
-      credentials: 'include'
-    });
+    
 
     if (!response.ok) {
       console.log('[proactiveTokenCheck] No tokens in Redis');

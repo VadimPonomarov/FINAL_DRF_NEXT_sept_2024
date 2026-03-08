@@ -80,13 +80,6 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
             duration: 5000,
           });
 
-          // Очищаємо недійсні токени
-          if (statusData.hasBackendTokens && !statusData.backendTokensValid) {
-            await fetch('/api/redis', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ key: 'backend_auth', value: null })
-            });
           }
 
           // Перенаправляємо на login
