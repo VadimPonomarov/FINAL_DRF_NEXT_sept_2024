@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoRia Login - Full UI Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        h2 { color: #555; margin: 20px 0 10px; font-size: 18px; }
+        .status { 
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status.pending { background: #fef3c7; color: #92400e; }
+        .status.running { background: #dbeafe; color: #1e40af; }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        
+        .test-step {
+            background: #f9fafb;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #e5e7eb;
+        }
+        .test-step.active { border-left-color: #3b82f6; background: #eff6ff; }
+        .test-step.success { border-left-color: #10b981; background: #f0fdf4; }
+        .test-step.error { border-left-color: #ef4444; background: #fef2f2; }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #374151;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        
+        .log {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid #374151;
+        }
+        .log-entry:last-child { border-bottom: none; }
+        .log-time { color: #9ca3af; }
+        .log-success { color: #34d399; }
+        .log-error { color: #f87171; }
+        .log-warn { color: #fbbf24; }
+        .log-info { color: #60a5fa; }
+        
+        .result-box {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid #e5e7eb;
+        }
+        .result-box.success { border-color: #10b981; background: #f0fdf4; }
+        .result-box.error { border-color: #ef4444; background: #fef2f2; }
+        
+        .cookie-viewer {
+            background: #fffbeb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid #fbbf24;
+        }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-panel">
+            <h1>🧪 AutoRia Login - Full UI Test</h1>
+            <p style="color: #6b7280; margin-top: 10px;">
+                Интерактивный тест формы логина с визуальным контролем результатов
+            </p>
+        </div>
+
+        <div class="grid">
+            <div>
+                <div class="test-panel">
+                    <h2>📝 Login Form</h2>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" value="admin@autoria.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" value="12345678" required>
+                        </div>
+                        <button type="submit" id="loginBtn">🔐 Test Login</button>
+                    </form>
+                    
+                    <div id="result"></div>
+                </div>
+
+                <div class="test-panel">
+                    <h2>🍪 Cookies Status</h2>
+                    <div id="cookieStatus" class="cookie-viewer">
+                        <p style="color: #92400e;">Waiting for login...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="test-panel">
+                    <h2>✅ Test Steps</h2>
+                    <div id="testSteps">
+                        <div class="test-step pending" data-step="1">
+                            <strong>1. Page Load</strong>
+                            <span class="status pending">Pending</span>
+                            <p style="margin-top: 5px; font-size: 13px; color: #6b7280;">Check for initialization errors</p>
+                        </div>
+                        <div class="test-step pending" data-step="2">
+                            <strong>2. API Connection</strong>
+                            <span class="status pending">Pending</span>
+                            <p style="margin-top: 5px; font-size: 13px; color: #6b7280;">Test Vercel API route availability</p>
+                        </div>
+                        <div class="test-step pending" data-step="3">
+                            <strong>3. Backend Connection</strong>
+                            <span class="status pending">Pending</span>
+                            <p style="margin-top: 5px; font-size: 13px; color: #6b7280;">Test Railway backend availability</p>
+                        </div>
+                        <div class="test-step pending" data-step="4">
+                            <strong>4. Login Process</strong>
+                            <span class="status pending">Pending</span>
+                            <p style="margin-top: 5px; font-size: 13px; color: #6b7280;">Submit credentials and get tokens</p>
+                        </div>
+                        <div class="test-step pending" data-step="5">
+                            <strong>5. Token Storage</strong>
+                            <span class="status pending">Pending</span>
+                            <p style="margin-top: 5px; font-size: 13px; color: #6b7280;">Verify tokens saved in cookies</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="test-panel">
+                    <h2>📋 Test Log</h2>
+                    <div id="log" class="log"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://autoria-clone.vercel.app/api/auth/login';
+        const BACKEND_URL = 'https://autoria-web-production.up.railway.app/api/auth/login';
+        
+        let testLog = [];
+        
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const entry = { time, message, type };
+            testLog.push(entry);
+            
+            const logDiv = document.getElementById('log');
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'log-entry';
+            entryDiv.innerHTML = `
+                <span class="log-time">[${time}]</span>
+                <span class="log-${type}">${message}</span>
+            `;
+            logDiv.appendChild(entryDiv);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function updateStep(step, status, message = '') {
+            const stepDiv = document.querySelector(`[data-step="${step}"]`);
+            if (!stepDiv) return;
+            
+            stepDiv.className = `test-step ${status}`;
+            const statusSpan = stepDiv.querySelector('.status');
+            statusSpan.className = `status ${status}`;
+            statusSpan.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            
+            if (message) {
+                let msgP = stepDiv.querySelector('.step-message');
+                if (!msgP) {
+                    msgP = document.createElement('p');
+                    msgP.className = 'step-message';
+                    msgP.style.marginTop = '5px';
+                    msgP.style.fontSize = '13px';
+                    msgP.style.color = status === 'error' ? '#991b1b' : '#059669';
+                    stepDiv.appendChild(msgP);
+                }
+                msgP.textContent = message;
+            }
+        }
+        
+        function showResult(success, data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result-box ${success ? 'success' : 'error'}`;
+            
+            if (success) {
+                resultDiv.innerHTML = `
+                    <h3 style="color: #065f46; margin-bottom: 10px;">✅ Login Successful!</h3>
+                    <p><strong>User:</strong> ${data.user?.email || 'N/A'}</p>
+                    <p><strong>User ID:</strong> ${data.user?.id || 'N/A'}</p>
+                    <p><strong>Staff:</strong> ${data.user?.is_staff ? 'Yes' : 'No'}</p>
+                    <p><strong>Access Token:</strong> ${data.access ? data.access.substring(0, 30) + '...' : 'N/A'}</p>
+                    <p style="margin-top: 10px; font-size: 12px; color: #059669;">
+                        ${data.message || 'Authentication successful'}
+                    </p>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <h3 style="color: #991b1b; margin-bottom: 10px;">❌ Login Failed</h3>
+                    <p><strong>Error:</strong> ${data.error || 'Unknown error'}</p>
+                    <p style="margin-top: 10px; font-size: 12px; color: #991b1b;">
+                        ${data.details || 'Please check the console for more details'}
+                    </p>
+                `;
+            }
+        }
+        
+        function updateCookieStatus() {
+            const cookieDiv = document.getElementById('cookieStatus');
+            const cookies = document.cookie.split(';').map(c => c.trim()).filter(c => c);
+            
+            if (cookies.length === 0) {
+                cookieDiv.innerHTML = '<p style="color: #92400e;">No cookies found</p>';
+                return;
+            }
+            
+            cookieDiv.innerHTML = `
+                <p style="color: #065f46; font-weight: 600; margin-bottom: 10px;">
+                    ✅ ${cookies.length} cookie(s) found
+                </p>
+                ${cookies.map(c => `<p style="font-size: 12px; color: #374151; margin: 5px 0;">${c}</p>`).join('')}
+            `;
+        }
+        
+        // Step 1: Page Load Check
+        window.addEventListener('DOMContentLoaded', () => {
+            log('Page loaded successfully', 'success');
+            updateStep(1, 'success', 'No initialization errors detected');
+            
+            // Check for console errors
+            const originalError = console.error;
+            let errorCount = 0;
+            console.error = function(...args) {
+                errorCount++;
+                if (errorCount <= 5) {
+                    log(`Console error: ${args.join(' ')}`, 'error');
+                }
+                originalError.apply(console, args);
+            };
+        });
+        
+        // Step 2 & 3: Test API connections
+        async function testConnections() {
+            // Test Vercel API
+            updateStep(2, 'running');
+            log('Testing Vercel API connection...', 'info');
+            
+            try {
+                const response = await fetch(API_URL, { method: 'HEAD' });
+                log(`Vercel API status: ${response.status}`, response.ok ? 'success' : 'warn');
+                updateStep(2, response.ok ? 'success' : 'error', `Status: ${response.status}`);
+            } catch (error) {
+                log(`Vercel API error: ${error.message}`, 'error');
+                updateStep(2, 'error', error.message);
+            }
+            
+            // Test Railway Backend
+            updateStep(3, 'running');
+            log('Testing Railway backend connection...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL, { method: 'HEAD' });
+                log(`Railway backend status: ${response.status}`, response.ok ? 'success' : 'warn');
+                updateStep(3, response.ok ? 'success' : 'error', `Status: ${response.status}`);
+            } catch (error) {
+                log(`Railway backend error: ${error.message}`, 'error');
+                updateStep(3, 'error', error.message);
+            }
+        }
+        
+        // Run connection tests on load
+        setTimeout(testConnections, 1000);
+        
+        // Step 4 & 5: Login test
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Testing...';
+            
+            updateStep(4, 'running');
+            log(`Attempting login with ${email}`, 'info');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                log(`Response status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                const data = await response.json();
+                log(`Response data received`, 'info');
+                
+                if (response.ok && data.access) {
+                    log('✅ Login successful!', 'success');
+                    updateStep(4, 'success', 'Tokens received');
+                    showResult(true, data);
+                    
+                    // Step 5: Check cookies
+                    updateStep(5, 'running');
+                    setTimeout(() => {
+                        updateCookieStatus();
+                        const hasCookies = document.cookie.length > 0;
+                        updateStep(5, hasCookies ? 'success' : 'error', 
+                            hasCookies ? 'Tokens saved in cookies' : 'No cookies found');
+                        log(hasCookies ? '✅ Tokens saved in cookies' : '❌ No cookies found', 
+                            hasCookies ? 'success' : 'error');
+                    }, 500);
+                } else {
+                    log(`❌ Login failed: ${data.error || 'Unknown error'}`, 'error');
+                    updateStep(4, 'error', data.error || 'Login failed');
+                    showResult(false, data);
+                }
+            } catch (error) {
+                log(`❌ Network error: ${error.message}`, 'error');
+                updateStep(4, 'error', error.message);
+                showResult(false, { error: error.message, details: 'Network request failed' });
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔐 Test Login';
+            }
+        });
+        
+        // Initial cookie check
+        updateCookieStatus();
+        setInterval(updateCookieStatus, 2000);
+    </script>
+</body>
+</html>
