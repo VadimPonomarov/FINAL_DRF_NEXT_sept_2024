@@ -1,68 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import '@/lib/env-loader'; // Загружаем переменные окружения во время выполнения
+import { getServerSession } from 'next-auth';
+import '@/lib/env-loader';
 
 /**
- * API route для получения токенов из Redis
- * Поддерживает оба провайдера: Backend и Dummy
+ * API route для получения токенов из cookies/session
+ * Больше не использует Redis - только httpOnly cookies + session
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('[Token API] Getting tokens from Redis...');
+    console.log('[Token API] Getting tokens from cookies/session...');
 
-    // Определяем текущий провайдер
-    const providerResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=auth_provider`);
-    let authKey = 'backend_auth'; // default
-    let provider = 'backend';
+    // Получаем provider из localStorage (client-side) или default
+    const provider = 'backend'; // Default provider
 
-    if (providerResponse.ok) {
-      const providerData = await providerResponse.json();
-      if (providerData.exists && providerData.value === 'dummy') {
-        authKey = 'dummy_auth';
-        provider = 'dummy';
-        console.log('[Token API] Using Dummy provider');
-      } else {
-        console.log('[Token API] Using Backend provider');
-      }
-    }
-
-    // Получаем токены из Redis
-    const redisResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=${authKey}`);
+    // Проверяем токены в cookies
+    const cookies = request.cookies;
+    const accessToken = cookies.get('access_token')?.value;
+    const refreshToken = cookies.get('refresh_token')?.value;
     
-    if (!redisResponse.ok) {
-      console.debug(`[Token API] No tokens in Redis for key: ${authKey}`);
-      return NextResponse.json(
-        { access: null, refresh: null, user: null, provider },
-        { status: 200 }
-      );
-    }
-
-    const redisData = await redisResponse.json();
+    // Получаем session из NextAuth
+    const session = await getServerSession();
     
-    if (!redisData.exists || !redisData.value) {
-      console.debug(`[Token API] No tokens in Redis for key: ${authKey}`);
-      return NextResponse.json(
-        { access: null, refresh: null, user: null, provider },
-        { status: 200 }
-      );
+    if (!accessToken && !refreshToken) {
+      console.debug('[Token API] No tokens found in cookies');
+      return NextResponse.json({
+        access: null,
+        refresh: null,
+        user: session?.user || null,
+        provider
+      });
     }
 
-    // Парсим токены
-    const tokenData = typeof redisData.value === 'string' 
-      ? JSON.parse(redisData.value) 
-      : redisData.value;
-
-    console.log(`[Token API] Successfully retrieved tokens for provider: ${provider}`, {
-      hasUser: !!tokenData.user,
-      userEmail: tokenData.user?.email,
-      isSuperuser: tokenData.user?.is_superuser
+    console.log('[Token API] Successfully retrieved tokens from cookies', {
+      hasAccess: !!accessToken,
+      hasRefresh: !!refreshToken,
+      hasUser: !!session?.user,
+      userEmail: session?.user?.email
     });
 
     return NextResponse.json({
-      access: tokenData.access,
-      refresh: tokenData.refresh,
-      user: tokenData.user || null,
+      access: accessToken || null,
+      refresh: refreshToken || null,
+      user: session?.user || null,
       provider,
-      refreshAttempts: tokenData.refreshAttempts || 0
+      refreshAttempts: 0
     });
 
   } catch (error) {

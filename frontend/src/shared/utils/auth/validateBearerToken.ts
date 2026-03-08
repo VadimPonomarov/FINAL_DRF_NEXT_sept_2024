@@ -7,8 +7,8 @@ export async function validateBearerToken(): Promise<boolean> {
   try {
     console.log('[validateBearerToken] Checking backend token validity...');
     
-    // Проверяем наличие backend токенов в Redis
-    const response = await fetch('/api/redis?key=backend_auth', {
+    // Проверяем наличие backend токенов в cookies
+    const response = await fetch('/api/auth/token', {
       method: 'GET',
       cache: 'no-store',
     });

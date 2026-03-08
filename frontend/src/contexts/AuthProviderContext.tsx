@@ -118,22 +118,14 @@ export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
         const isDocker = process.env.NEXT_PUBLIC_IS_DOCKER === 'true';
         console.log(`[AuthProvider] Environment: ${isDocker ? 'Docker' : 'Local'}`);
 
-        const response = await fetch(`/api/redis?key=auth_provider`);
-
-        if (!response.ok) {
-          console.warn(`[AuthProvider] Redis API returned ${response.status}: ${response.statusText}`);
-          console.log("[AuthProvider] Using default provider:", AuthProviderEnum.MyBackendDocs);
-          return;
-        }
-
-        const data = await response.json();
-        console.log("[AuthProvider] Redis response:", data);
-
-        if (data.value && Object.values(AuthProviderEnum).includes(data.value)) {
-          setProviderState(data.value as AuthProviderEnum);
-          console.log("[AuthProvider] Successfully loaded provider from Redis:", data.value);
+        // Get provider from localStorage instead of Redis
+        const savedProvider = localStorage.getItem('auth_provider');
+        
+        if (savedProvider && Object.values(AuthProviderEnum).includes(savedProvider)) {
+          setProviderState(savedProvider as AuthProviderEnum);
+          console.log("[AuthProvider] Successfully loaded provider from localStorage:", savedProvider);
         } else {
-          console.log("[AuthProvider] No valid provider found in Redis, keeping default:", AuthProviderEnum.MyBackendDocs);
+          console.log("[AuthProvider] No valid provider found in localStorage, using default:", AuthProviderEnum.MyBackendDocs);
         }
       } catch (error) {
         console.error("[AuthProvider] Error fetching initial auth provider:", error);
@@ -159,51 +151,16 @@ export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
         duration: TOAST_DURATION.MEDIUM,
       });
 
-      const response = await fetch("/api/redis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          key: "auth_provider",
-          value: newProvider,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[AuthProvider] Redis API error: ${response.status} ${response.statusText}`, errorText);
-        
-        // Update state immediately for better UX, even if Redis fails
-        setProviderState(newProvider);
-        console.log("[AuthProvider] Updated provider locally despite Redis error");
-
-        // Убираем toast для лучшего UX - пользователь не должен видеть технические ошибки
-        // toast({
-        //   variant: "destructive",
-        //   title: "Provider Change Warning",
-        //   description: "Provider changed locally, but may not persist across sessions",
-        //   duration: TOAST_DURATION.ERROR,
-        // });
-
-        // Don't throw error to prevent UI from breaking
-        return;
-      }
-
-      const responseData = await response.json();
-      console.log("[AuthProvider] Redis save response:", responseData);
-
-      // Update state immediately for better UX
+      // Save provider to localStorage instead of Redis
+      localStorage.setItem('auth_provider', newProvider);
+      
+      // Update state immediately
       setProviderState(newProvider);
       console.log("[AuthProvider] Auth provider changed to:", newProvider);
 
-      // Show appropriate success message based on storage type
-      const storageType = responseData.storage || 'unknown';
-      const successMessage = storageType === 'redis' 
-        ? `Auth provider changed to ${newProvider}`
-        : `Auth provider changed to ${newProvider} (saved locally)`;
-
       toast({
         title: "Success",
-        description: successMessage,
+        description: `Auth provider changed to ${newProvider}`,
         duration: TOAST_DURATION.MEDIUM,
       });
 

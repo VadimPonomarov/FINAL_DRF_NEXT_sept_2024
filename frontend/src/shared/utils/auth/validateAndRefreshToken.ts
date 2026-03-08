@@ -26,8 +26,8 @@ export interface TokenValidationResult {
  */
 async function checkTokensExist(): Promise<boolean> {
   try {
-    console.log('[checkTokensExist] 🔍 Checking for tokens in Redis...');
-    const response = await fetch('/api/redis?key=backend_auth', {
+    console.log('[checkTokensExist] 🔍 Checking for tokens in cookies...');
+    const response = await fetch('/api/auth/token', {
       method: 'GET',
       cache: 'no-store',
     });

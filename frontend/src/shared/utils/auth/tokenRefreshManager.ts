@@ -168,17 +168,14 @@ class TokenRefreshManager {
    */
   async shouldRefreshToken(): Promise<boolean> {
     try {
-      const response = await fetch('/api/redis?key=backend_auth');
+      const response = await fetch('/api/auth/token');
       if (!response.ok) return true;
 
-      const data = await response.json();
-      if (!data?.value) return true;
-
-      const authData = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-      if (!authData?.access) return true;
+      const tokenData = await response.json();
+      if (!tokenData?.access) return true;
 
       // Проверяем истечение токена
-      return this._isTokenExpired(authData.access);
+      return this._isTokenExpired(tokenData.access);
     } catch (error) {
       console.error('[TokenRefreshManager] Error checking token:', error);
       return true;

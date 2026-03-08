@@ -22,23 +22,23 @@ export interface UserInfo {
  */
 export const getCurrentUserInfo = async (): Promise<UserInfo | null> => {
   try {
-    console.log('[UserInfo] Getting current user info from Redis...');
+    console.log('[UserInfo] Getting current user info from session/cookies...');
     
-    const response = await fetch('/api/redis?key=me');
+    const response = await fetch('/api/auth/token');
     
     if (!response.ok) {
-      console.log('[UserInfo] No user info found in Redis');
+      console.log('[UserInfo] No user info found in session');
       return null;
     }
 
-    const redisData = await response.json();
+    const tokenData = await response.json();
     
-    if (!redisData.exists || !redisData.value) {
-      console.log('[UserInfo] No user data exists in Redis');
+    if (!tokenData.user) {
+      console.log('[UserInfo] No user data exists in session');
       return null;
     }
 
-    const userInfo: UserInfo = JSON.parse(redisData.value);
+    const userInfo: UserInfo = tokenData.user;
     console.log('[UserInfo] User info retrieved:', {
       id: userInfo.id,
       email: userInfo.email,
