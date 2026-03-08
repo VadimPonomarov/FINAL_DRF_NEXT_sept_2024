@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { setRefreshTokenCookie, setAuthProviderCookie, COOKIE_NAMES } from '@/lib/cookie-utils';
+import { setAccessTokenCookie, setRefreshTokenCookie, setAuthProviderCookie, COOKIE_NAMES } from '@/lib/cookie-utils';
 
 // Generate unique session ID
 function generateSessionId(): string {
@@ -99,15 +99,19 @@ export async function POST(request: NextRequest) {
     // Save tokens using NextAuth session instead of Redis
     console.log(`[Login API] Login successful, tokens will be managed by NextAuth session`);
 
-    // Save refresh token in HTTP-only cookie (more secure)
+    // Save both access and refresh tokens in HTTP-only cookies (more secure)
     const response = NextResponse.json({
       access: data.access,
       user: data.user,
       message: 'Login successful'
     });
 
+    // Save tokens in httpOnly cookies
+    setAccessTokenCookie(response, data.access);
     setRefreshTokenCookie(response, data.refresh);
     setAuthProviderCookie(response, 'backend');
+    
+    console.log('[Login API] Tokens saved in httpOnly cookies successfully');
 
     return response;
 

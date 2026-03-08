@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 
 export const COOKIE_NAMES = {
+  ACCESS_TOKEN: 'access_token',
   REFRESH_TOKEN: 'refresh_token',
   AUTH_PROVIDER: 'auth_provider'
 } as const;
@@ -18,6 +19,16 @@ export const COOKIE_OPTIONS = {
 };
 
 /**
+ * Set access token in HTTP-only cookie
+ */
+export function setAccessTokenCookie(response: NextResponse, accessToken: string): void {
+  response.cookies.set(COOKIE_NAMES.ACCESS_TOKEN, accessToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 12 * 60 * 60 // 12 hours for access token
+  });
+}
+
+/**
  * Set refresh token in HTTP-only cookie
  */
 export function setRefreshTokenCookie(response: NextResponse, refreshToken: string): void {
@@ -29,6 +40,13 @@ export function setRefreshTokenCookie(response: NextResponse, refreshToken: stri
  */
 export function setAuthProviderCookie(response: NextResponse, provider: string): void {
   response.cookies.set(COOKIE_NAMES.AUTH_PROVIDER, provider, COOKIE_OPTIONS);
+}
+
+/**
+ * Get access token from request cookies
+ */
+export function getAccessTokenFromRequest(request: NextRequest): string | undefined {
+  return request.cookies.get(COOKIE_NAMES.ACCESS_TOKEN)?.value;
 }
 
 /**
@@ -49,6 +67,7 @@ export function getAuthProviderFromRequest(request: NextRequest): string | undef
  * Clear auth cookies
  */
 export function clearAuthCookies(response: NextResponse): void {
+  response.cookies.delete(COOKIE_NAMES.ACCESS_TOKEN);
   response.cookies.delete(COOKIE_NAMES.REFRESH_TOKEN);
   response.cookies.delete(COOKIE_NAMES.AUTH_PROVIDER);
 }
