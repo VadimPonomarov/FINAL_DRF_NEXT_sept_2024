@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
     // Save both access and refresh tokens in HTTP-only cookies (more secure)
     const response = NextResponse.json({
       access: data.access,
+      refresh: data.refresh,
       user: data.user,
       message: 'Login successful'
     });
