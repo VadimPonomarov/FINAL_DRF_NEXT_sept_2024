@@ -86,25 +86,10 @@ const RootProvider: FC<IProps> = ({ children }) => {
     setMounted(true);
   }, []);
 
-  // Preload critical data on app startup
+  // NOTE: Reference data preloading removed - it requires authentication
+  // Data will be loaded lazily when needed after user authentication
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        console.log('[RootProvider] 🚀 Starting app initialization...');
-
-        // Preload critical data
-        await Promise.all([
-          preloadCriticalReferenceData(),
-          fetchBrandsWithCache(),
-        ]);
-
-        console.log('[RootProvider] ✅ App initialization completed');
-      } catch (error) {
-        console.error('[RootProvider] ❌ App initialization failed:', error);
-      }
-    };
-
-    initializeApp();
+    console.log('[RootProvider] ✅ App initialized - reference data will load after authentication');
   }, []);
 
   return (

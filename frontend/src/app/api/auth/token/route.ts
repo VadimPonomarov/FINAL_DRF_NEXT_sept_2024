@@ -29,20 +29,20 @@ export async function GET(request: NextRequest) {
     const redisResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=${authKey}`);
     
     if (!redisResponse.ok) {
-      console.error(`[Token API] Failed to get tokens from Redis for key: ${authKey}`);
+      console.debug(`[Token API] No tokens in Redis for key: ${authKey}`);
       return NextResponse.json(
-        { error: 'No tokens found in Redis', provider },
-        { status: 404 }
+        { access: null, refresh: null, user: null, provider },
+        { status: 200 }
       );
     }
 
     const redisData = await redisResponse.json();
     
     if (!redisData.exists || !redisData.value) {
-      console.error(`[Token API] No tokens found in Redis for key: ${authKey}`);
+      console.debug(`[Token API] No tokens in Redis for key: ${authKey}`);
       return NextResponse.json(
-        { error: 'No tokens found in Redis', provider },
-        { status: 404 }
+        { access: null, refresh: null, user: null, provider },
+        { status: 200 }
       );
     }
 
