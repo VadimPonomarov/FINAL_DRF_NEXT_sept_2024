@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 
+async function hasCookieToken(): Promise<boolean> {
+  try {
+    const r = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
+    const d = r.ok ? await r.json() : null;
+    return !!(d?.access);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Hook for lazy data loading - only after authentication and session presence
  * Prevents 401/403 errors on page initialization before user is authenticated
@@ -27,21 +37,15 @@ export function useAuthenticatedFetch<T>(
     }
 
     // If auth is required, wait for session to be loaded
-    if (requireAuth) {
-      // Still loading session
-      if (status === 'loading') {
-        return;
-      }
-
-      // No session and auth is required - don't fetch
-      if (status === 'unauthenticated' || !session) {
-        console.log('[useAuthenticatedFetch] Skipping fetch - no authentication');
-        return;
-      }
-    }
+    if (requireAuth && status === 'loading') return;
 
     // Fetch data
     const fetchData = async () => {
+      // Check auth: NextAuth session OR cookie token
+      if (requireAuth) {
+        const isAuthed = !!session || await hasCookieToken();
+        if (!isAuthed) return;
+      }
       setIsLoading(true);
       setError(null);
 

@@ -27,19 +27,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const isLoading = status === "loading";
 
-  const checkUserStatus = useCallback(() => {
-    // Priority 1: Next-Auth Session
+  const checkUserStatus = useCallback(async () => {
+    // Priority 1: NextAuth Session
     if (session?.user) {
       setUser(session.user as User);
       setIsAuthenticated(true);
       return;
     }
 
-    // Priority 2: Custom Backend Auth from Redis (NOT localStorage)
-    // Токены хранятся только в Redis, не в localStorage
-    // Проверка наличия токенов происходит через BackendTokenPresenceGate
+    // Priority 2: access_token cookie (form login without NextAuth session)
+    if (typeof window !== 'undefined') {
+      try {
+        const resp = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
+        const tokenData = resp.ok ? await resp.json() : null;
+        if (tokenData?.access) {
+          setIsAuthenticated(true);
+          // keep existing user state if already set, else null
+          return;
+        }
+      } catch {
+        // ignore fetch errors
+      }
+    }
 
-    // If no valid auth found
     setUser(null);
     setIsAuthenticated(false);
   }, [session]);
@@ -48,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!isLoading) {
       checkUserStatus();
     }
-  }, [session, status, isLoading]); // Убираем checkUserStatus из зависимостей
+  }, [session, status, isLoading]);
 
   const logout = useCallback(async () => {
     setIsAuthenticated(false);

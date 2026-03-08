@@ -5,23 +5,18 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import { useI18n } from '@/contexts/I18nContext';
 import {
   FullUserDataService,
   UserProfileService,
-  UserAccountService,
-  UserAddressService,
-  UserContactService
+  UserAccountService
 } from '@/services/userProfileService';
 import {
   FullUserProfileData,
   ProfileUpdateData,
-  AccountUpdateData,
-  RawAddressUpdateData,
-  ContactUpdateData,
-  BackendRawAddress,
-  BackendAccountContact
+  AccountUpdateData
 } from '@/shared/types/backend-user';
 
 // Query keys для правильного кешування
@@ -43,6 +38,16 @@ export const useUserProfileDataCached = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { t } = useI18n();
+  const [hasCookieToken, setHasCookieToken] = useState(false);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (session) { setHasCookieToken(true); return; }
+    fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setHasCookieToken(!!(d?.access)))
+      .catch(() => setHasCookieToken(false));
+  }, [session, status]);
 
   // Основний запит даних користувача з кешуванням
   const {
@@ -73,7 +78,7 @@ export const useUserProfileDataCached = () => {
       
       return data;
     },
-    enabled: status === 'authenticated' && !!session, // Запитуємо тільки якщо авторизований
+    enabled: (status === 'authenticated' && !!session) || hasCookieToken, // NextAuth session OR cookie token
     staleTime: 1 * 60 * 1000, // 1 хвилина - дані свіжі
     gcTime: 10 * 60 * 1000, // 10 хвилин - зберігати в кеші
     refetchOnWindowFocus: false, // Не перезапитувати при фокусі вікна

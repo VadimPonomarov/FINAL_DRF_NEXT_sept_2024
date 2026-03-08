@@ -608,31 +608,35 @@ export const useUserProfileData = () => {
     }
   }, [toast]);
 
-  // Загружаем данные только если пользователь авторизован
+  // Load data only when authenticated: NextAuth session OR access_token cookie (form login)
   useEffect(() => {
-    // Проверяем, что сессия загружена и пользователь авторизован
     if (status === 'loading') {
-      // Сессия еще загружается, ждем
       if (DEBUG) console.log('[useUserProfileData] Session loading, waiting...');
       return;
     }
 
-    if (status === 'unauthenticated' || !session) {
-      // Пользователь не авторизован, очищаем данные
-      if (DEBUG) console.log('[useUserProfileData] User not authenticated, clearing data');
-      setState({
-        loading: false,
-        error: null,
-        data: null,
-        updating: false,
-        updateError: null
-      });
+    // NextAuth session present — authenticated
+    if (session) {
+      if (DEBUG) console.log('[useUserProfileData] NextAuth session found, loading data...');
+      loadUserData();
       return;
     }
 
-    // Пользователь авторизован, загружаем данные
-    if (DEBUG) console.log('[useUserProfileData] User authenticated, loading data...');
-    loadUserData();
+    // No NextAuth session — check cookie-based auth (form login via httpOnly cookie)
+    fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(tokenData => {
+        if (tokenData?.access) {
+          if (DEBUG) console.log('[useUserProfileData] Cookie token found, loading data...');
+          loadUserData();
+        } else {
+          if (DEBUG) console.log('[useUserProfileData] No auth, skipping data load');
+          setState({ loading: false, error: null, data: null, updating: false, updateError: null });
+        }
+      })
+      .catch(() => {
+        setState({ loading: false, error: null, data: null, updating: false, updateError: null });
+      });
   }, [status, session, loadUserData, DEBUG]);
 
   // Очистка данных при signout
