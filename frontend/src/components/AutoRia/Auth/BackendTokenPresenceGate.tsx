@@ -42,96 +42,34 @@ export default function BackendTokenPresenceGate({ children }: { children: React
    * КРИТИЧНО: Контент НЕ показывается, пока токены не валидны
    */
   const checkBackendTokens = useCallback(async () => {
-    // Предотвращаем множественные редиректы
-    if (redirectingRef.current) {
-      console.log('[BackendTokenPresenceGate] Redirect already in progress, skipping check');
-      return;
-    }
+    if (redirectingRef.current) return;
 
     try {
-      console.log('[BackendTokenPresenceGate] 🔒 Рівень 2: валідація токенів з автооновленням...');
-      console.log('[BackendTokenPresenceGate] Current path:', pathname);
+      console.log('[BackendTokenPresenceGate] Checking backend tokens via cookies...');
 
-      // КРИТИЧНО: Сначала проверяем наличие токенов напрямую через Redis API
-      // Это быстрая проверка, которая не зависит от других систем
-      const redisCheck = await fetch('/api/redis?key=backend_auth', {
+      // Check tokens from httpOnly cookies via /api/auth/token
+      const tokenResponse = await fetch('/api/auth/token', {
         method: 'GET',
         cache: 'no-store',
+        credentials: 'include',
       });
 
-      if (!redisCheck.ok) {
-        console.error('[BackendTokenPresenceGate] ❌ Redis check failed:', redisCheck.status);
-        throw new Error('Redis check failed');
-      }
-
-      const redisData = await redisCheck.json();
-      
-      // КРИТИЧНО: Строгая проверка наличия и валидности токенов
-      const hasTokens = redisData?.exists === true && 
-                       redisData?.value && 
-                       typeof redisData.value === 'string' && 
-                       redisData.value.trim().length > 0;
+      const tokenData = tokenResponse.ok ? await tokenResponse.json() : null;
+      const hasTokens = !!(tokenData?.access && typeof tokenData.access === 'string' && tokenData.access.length > 0);
 
       if (!hasTokens) {
-        console.error('[BackendTokenPresenceGate] ❌ Токени відсутні в Redis');
-        console.error('[BackendTokenPresenceGate] 🚫 БЛОКИРОВКА ДОСТУПА - редирект на /login');
-        
+        console.error('[BackendTokenPresenceGate] No tokens in cookies - redirecting to /login');
         redirectingRef.current = true;
         setIsLoading(false);
         setIsAuthorized(false);
-
         const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
         const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
-        
-        console.log('[BackendTokenPresenceGate] Redirecting to:', loginUrl);
         if (typeof window !== 'undefined') {
           window.location.replace(loginUrl);
         }
         return;
       }
 
-      // Дополнительная проверка: валидация структуры токенов
-      try {
-        const parsed = JSON.parse(redisData.value);
-        const hasAccessToken = parsed?.access && typeof parsed.access === 'string' && parsed.access.trim().length > 0;
-        const hasRefreshToken = parsed?.refresh && typeof parsed.refresh === 'string' && parsed.refresh.trim().length > 0;
-        
-        if (!hasAccessToken || !hasRefreshToken) {
-          console.error('[BackendTokenPresenceGate] ❌ Токени в Redis мають невалідну структуру:', { hasAccess: hasAccessToken, hasRefresh: hasRefreshToken });
-          console.error('[BackendTokenPresenceGate] 🚫 БЛОКИРОВКА ДОСТУПА - редирект на /login');
-          
-          redirectingRef.current = true;
-          setIsLoading(false);
-          setIsAuthorized(false);
-
-          const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-          const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
-          
-          console.log('[BackendTokenPresenceGate] Redirecting to (invalid structure):', loginUrl);
-          if (typeof window !== 'undefined') {
-            window.location.replace(loginUrl);
-          }
-          return;
-        }
-      } catch (parseError) {
-        console.error('[BackendTokenPresenceGate] ❌ Помилка парсингу токенів з Redis:', parseError);
-        console.error('[BackendTokenPresenceGate] 🚫 БЛОКИРОВКА ДОСТУПА - редирект на /login');
-        
-        redirectingRef.current = true;
-        setIsLoading(false);
-        setIsAuthorized(false);
-
-        const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-        const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
-        
-        console.log('[BackendTokenPresenceGate] Redirecting to (parse error):', loginUrl);
-        if (typeof window !== 'undefined') {
-          window.location.replace(loginUrl);
-        }
-        return;
-      }
-
-      // Если токены есть в Redis, используем полную валидацию
       const result = await validateAndRefreshToken();
 
       if (result.isValid) {

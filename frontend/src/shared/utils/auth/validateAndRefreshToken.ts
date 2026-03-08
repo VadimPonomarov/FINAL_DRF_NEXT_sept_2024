@@ -26,53 +26,18 @@ export interface TokenValidationResult {
  */
 async function checkTokensExist(): Promise<boolean> {
   try {
-    console.log('[checkTokensExist] 🔍 Checking for tokens in cookies...');
     const response = await fetch('/api/auth/token', {
       method: 'GET',
       cache: 'no-store',
+      credentials: 'include',
     });
-
-    if (!response.ok) {
-      // При любых ошибках Redis считаем что токенов НЕТ
-      // Это безопаснее чем пропускать без проверки
-      console.error('[checkTokensExist] ❌ Redis returned error:', response.status);
-      return false;
-    }
-
+    if (!response.ok) return false;
     const data = await response.json();
-    console.log('[checkTokensExist] Redis response:', { exists: data?.exists, hasValue: !!data?.value, valueLength: data?.value?.length });
-    
-    // КРИТИЧНО: Строгая проверка - токены должны существовать И иметь валидное значение
-    const hasTokens = data?.exists === true && 
-                     data?.value && 
-                     typeof data.value === 'string' && 
-                     data.value.trim().length > 0;
-    
-    // Дополнительная проверка: пытаемся распарсить JSON, чтобы убедиться что это валидные токены
-    if (hasTokens) {
-      try {
-        const parsed = JSON.parse(data.value);
-        const hasAccessToken = parsed?.access && typeof parsed.access === 'string' && parsed.access.trim().length > 0;
-        const hasRefreshToken = parsed?.refresh && typeof parsed.refresh === 'string' && parsed.refresh.trim().length > 0;
-        
-        if (!hasAccessToken || !hasRefreshToken) {
-          console.error('[checkTokensExist] ❌ Tokens exist but invalid structure:', { hasAccess: hasAccessToken, hasRefresh: hasRefreshToken });
-          return false;
-        }
-        
-        console.log('[checkTokensExist] ✅ Valid tokens found in Redis');
-        return true;
-      } catch (parseError) {
-        console.error('[checkTokensExist] ❌ Failed to parse token data:', parseError);
-        return false;
-      }
-    }
-    
-    console.log('[checkTokensExist] ❌ No valid tokens found in Redis');
-    return false;
+    const hasAccess = !!(data?.access && typeof data.access === 'string' && data.access.trim().length > 0);
+    console.log('[checkTokensExist] Tokens in cookies:', hasAccess);
+    return hasAccess;
   } catch (error) {
-    // При сетевых ошибках также считаем что токенов НЕТ
-    console.error('[checkTokensExist] ❌ Network error:', error);
+    console.error('[checkTokensExist] Error:', error);
     return false;
   }
 }
@@ -164,55 +129,26 @@ export async function refreshToken(): Promise<boolean> {
  * Реальная валидация токенов происходит в API interceptor при получении 401.
  */
 export async function validateAndRefreshToken(): Promise<TokenValidationResult> {
-  console.log('[validateAndRefreshToken] Starting session check...');
+  console.log('[validateAndRefreshToken] Checking tokens in cookies...');
 
-  // Шаг 1: Проверяем наличие токенов в Redis
+  // Tokens are stored in httpOnly cookies - if access token exists, user is authenticated
   const tokensExist = await checkTokensExist();
-  console.log(`[validateAndRefreshToken] Tokens exist in Redis: ${tokensExist}`);
-  
+  console.log('[validateAndRefreshToken] Tokens in cookies:', tokensExist);
+
   if (!tokensExist) {
-    console.log('[validateAndRefreshToken] ❌ No tokens found, redirect needed');
     return {
       isValid: false,
       needsRedirect: true,
       redirectTo: '/login',
-      message: 'No tokens found'
+      message: 'No tokens found in cookies'
     };
   }
 
-  // Шаг 2: Проверяем auth сессию (не валидацию токена!)
-  const sessionValid = await checkAuthSession();
-  console.log(`[validateAndRefreshToken] Auth session valid: ${sessionValid}`);
-  
-  if (sessionValid) {
-    console.log('[validateAndRefreshToken] ✅ Session valid');
-    return {
-      isValid: true,
-      needsRedirect: false,
-    };
-  }
-
-  // Шаг 3: Сессия невалидна, пробуем refresh
-  console.log('[validateAndRefreshToken] Session invalid, attempting refresh...');
-  const refreshSuccess = await refreshToken().catch(() => false);
-  console.log(`[validateAndRefreshToken] Refresh result: ${refreshSuccess}`);
-  
-  if (refreshSuccess) {
-    console.log('[validateAndRefreshToken] ✅ Token refreshed successfully');
-    return {
-      isValid: true,
-      needsRedirect: false,
-      message: 'Token refreshed'
-    };
-  }
-
-  // Шаг 4: Refresh не удался
-  console.log('[validateAndRefreshToken] ❌ Refresh failed, redirect needed');
+  // Token exists in cookie - user is authenticated
   return {
-    isValid: false,
-    needsRedirect: true,
-    redirectTo: '/login',
-    message: 'Session and refresh failed'
+    isValid: true,
+    needsRedirect: false,
+    message: 'Token found in cookies'
   };
 }
 
