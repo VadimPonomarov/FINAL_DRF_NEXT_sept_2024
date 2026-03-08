@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signIn as nextAuthSignIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { fetchAuth } from "@/app/api/helpers";
 import { AuthProvider } from "@/shared/constants/constants";
@@ -223,6 +223,12 @@ export const useLoginForm = () => {
         });
 
         login(userForLogin, authResponse.access, authResponse.refresh);
+
+        // Create NextAuth session so middleware can verify auth (Level 1)
+        // CredentialsProvider requires only email - no password validation needed
+        nextAuthSignIn('credentials', { email: userForLogin.email, redirect: false })
+          .then(() => console.log('[LoginForm] NextAuth session created'))
+          .catch((e) => console.warn('[LoginForm] NextAuth session creation failed (non-critical):', e));
 
         console.log('[LoginForm] Tokens saved in httpOnly cookies');
 
