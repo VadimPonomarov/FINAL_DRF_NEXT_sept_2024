@@ -224,62 +224,23 @@ export const useLoginForm = () => {
 
         login(userForLogin, authResponse.access, authResponse.refresh);
 
-        // Check if tokens were actually saved to Redis during fetchAuth
-        const redisSaveSuccess = authResponse?.redisSaveSuccess;
-        console.log(`[LoginForm] Redis save success from fetchAuth: ${redisSaveSuccess}`);
+        console.log('[LoginForm] Tokens saved in httpOnly cookies');
 
-        if (redisSaveSuccess) {
-          console.log('[LoginForm] ✅ Tokens confirmed saved to Redis by fetchAuth');
+        toast({
+          title: t('auth.loginSuccessTitle', 'Authentication Successful'),
+          description: t('auth.loginSuccess', 'You have successfully signed in'),
+          duration: 2000,
+          variant: "default",
+        });
 
-          toast({
-            title: t('auth.loginSuccessTitle', 'Authentication Successful'),
-            description: t('auth.loginSuccess', 'You have successfully signed in'),
-            duration: 2000,
-            variant: "default",
-          });
+        setMessage("Authentication successful!");
 
-          setMessage("Authentication successful!");
+        const redirectUrl = rawCallbackUrl || callbackUrl || '/';
+        console.log('[Auth] Redirecting to: ' + redirectUrl);
 
-          // Определяем URL для редиректа
-          const redirectUrl = rawCallbackUrl || callbackUrl || '/';
-          console.log(`[Auth] Redirecting to: ${redirectUrl}`);
-
-          // Используем window.location.href для полной перезагрузки
-          setTimeout(() => {
-            window.location.href = redirectUrl;
-          }, 1500);
-        } else {
-          console.error('[LoginForm] ❌ Tokens were NOT saved to Redis');
-
-          toast({
-            title: t('auth.tokensNotSavedTitle', 'Authentication Failed'),
-            description: t('auth.tokensNotSaved', 'Tokens were not saved properly'),
-            duration: 4000,
-            variant: "destructive",
-          });
-
-          setError("Authentication failed: tokens not saved to Redis");
-
-          // Попробуем редирект даже при проблемах с Redis, но с задержкой
-          console.log('[Auth] Attempting fallback redirect despite Redis issues...');
-
-          redirectManager.smartRedirect({
-            callbackUrl: rawCallbackUrl,
-            provider: provider,
-            fallbackUrl: '/',
-            delay: 3000 // Больше времени для отображения ошибки
-          }).then((result) => {
-            if (result.success) {
-              console.log(`[Auth] Fallback redirect successful via ${result.method} to: ${result.redirectUrl}`);
-            } else {
-              console.error(`[Auth] Fallback redirect failed:`, result.error);
-              router.push('/');
-            }
-          }).catch((error) => {
-            console.error(`[Auth] Fallback smart redirect error:`, error);
-            router.push('/');
-          });
-        }
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 1500);
       } else {
         console.error('[Auth] ❌ Missing required authentication data in response');
         console.error('[Auth] Response data details:', {
