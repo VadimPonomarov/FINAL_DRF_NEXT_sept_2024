@@ -20,43 +20,17 @@ export async function POST(request: NextRequest) {
   try {
     console.log('[Login API] Starting backend authentication...');
 
-    // Parse request body robustly (always read raw text once)
-    let email = '' as string;
-    let password = '' as string;
+    // Simple and reliable JSON parsing
+    let email = '';
+    let password = '';
+    
     try {
-      const contentType = request.headers.get('content-type') || '';
-      const raw = await request.text();
-      console.log('[Login API] Incoming body length:', raw?.length || 0, 'content-type:', contentType);
-      if (contentType.includes('application/json')) {
-        try {
-          const parsed = JSON.parse(raw || '{}');
-          email = parsed?.email || '';
-          password = parsed?.password || '';
-        } catch (e) {
-          console.error('[Login API] JSON parse failed, will try URLSearchParams. Raw:', raw);
-          const params = new URLSearchParams(raw || '');
-          email = params.get('email') || '';
-          password = params.get('password') || '';
-        }
-      } else if (contentType.includes('application/x-www-form-urlencoded')) {
-        const params = new URLSearchParams(raw || '');
-        email = params.get('email') || '';
-        password = params.get('password') || '';
-      } else {
-        // Try JSON first, then URLSearchParams
-        try {
-          const parsed = JSON.parse(raw || '{}');
-          email = parsed?.email || '';
-          password = parsed?.password || '';
-        } catch {
-          const params = new URLSearchParams(raw || '');
-          email = params.get('email') || '';
-          password = params.get('password') || '';
-        }
-      }
-      console.log('[Login API] Parsed fields present:', { hasEmail: !!email, hasPassword: !!password });
-    } catch (e) {
-      console.error('[Login API] Body parse error:', e);
+      const body = await request.json();
+      email = body?.email || '';
+      password = body?.password || '';
+      console.log('[Login API] Parsed credentials:', { hasEmail: !!email, hasPassword: !!password });
+    } catch (error) {
+      console.error('[Login API] JSON parse error:', error);
     }
 
     if (!email || !password) {
