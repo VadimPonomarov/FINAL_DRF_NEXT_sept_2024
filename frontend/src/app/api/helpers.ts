@@ -46,35 +46,45 @@ function normalizeBackendBase(url: string): string {
 // Redis functions removed - now using cookies and sessions only
 
 // Centralized error handler with improved retry logic
-const handleFetchErrors = async (response: Response, key: string = "backend_auth") => {
+// Only logs 401/403 errors, ignores others during initialization
+const handleFetchErrors = async (response: Response, key: string = "backend_auth", skipRedirect: boolean = false) => {
     if (!response.ok) {
-        const errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
-        console.error(errorMessage);
+        // Only log auth-related errors (401/403), ignore others during initialization
+        if (response.status === 401 || response.status === 403) {
+            console.warn(`[Auth Error ${response.status}] ${response.statusText}`);
+        }
 
         switch (response.status) {
             case 401: {
-                console.log("[handleFetchErrors] Error 401: Token not valid. Attempting to refresh...");
+                // Don't redirect if skipRedirect is true (during initialization)
+                if (skipRedirect) {
+                    return null;
+                }
+                
+                console.log("[handleFetchErrors] Attempting token refresh...");
                 const refreshResult = await fetchRefresh(key);
                 if (!refreshResult) {
-                    console.log("[handleFetchErrors] Refresh failed after all attempts, redirecting to login...");
+                    console.log("[handleFetchErrors] Refresh failed, redirecting to login...");
                     return performRedirect("/login");
                 }
-                console.log("[handleFetchErrors] Refresh successful, returning null to trigger retry");
-                // Return null to trigger a retry with new token (caller must handle retry limit)
+                console.log("[handleFetchErrors] Refresh successful");
                 return null;
             }
 
             case 403:
-                console.log("Error 403: Access denied. Redirecting...");
+                if (skipRedirect) {
+                    return null;
+                }
+                console.warn("[handleFetchErrors] Access denied");
                 return performRedirect("/login");
 
             case 404:
-                console.log("Error 404: Resource not found. Redirecting...");
-                return performRedirect("/error");
+                // Silently ignore 404 during initialization
+                return null;
 
             default:
-                console.log(`Error ${response.status} occurred. Redirecting...`);
-                return performRedirect("/error");
+                // Silently ignore other errors during initialization
+                return null;
         }
     }
 
