@@ -283,10 +283,10 @@ export const useLoginForm = () => {
       } else {
         console.error('[Auth] ❌ Missing required authentication data in response');
         console.error('[Auth] Response data details:', {
-          responseData: response.data,
-          user: response.data?.user,
-          access: response.data?.access,
-          refresh: response.data?.refresh
+          responseData: authResponse,
+          user: authResponse?.user,
+          access: authResponse?.access,
+          refresh: authResponse?.refresh
         });
         setError("Authentication failed: Invalid response from server");
 
