@@ -1,104 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getRefreshTokenFromRequest, getAuthProviderFromRequest, setRefreshTokenCookie, clearAuthCookies } from '@/lib/cookie-utils';
 
 /**
  * API route для обновления токенов аутентификации
  * Поддерживает оба провайдера: Backend и Dummy
  * 
+ * Новая схема:
+ * - Refresh token хранится в HTTP-only cookies (безопасно)
+ * - Access token возвращается клиенту (без Redis)
+ * 
  * Workflow:
- * 1. Определяет текущий провайдер (backend/dummy)
- * 2. Получает refresh token из Redis
- * 3. Вызывает соответствующий backend endpoint для refresh
- * 4. Сохраняет новые токены в Redis
- * 5. Возвращает новые токены клиенту
+ * 1. Получает refresh token из cookies
+ * 2. Вызывает backend endpoint для refresh
+ * 3. Возвращает новый access token клиенту
+ * 4. Обновляет refresh token cookie если нужно
  */
 export async function POST(request: NextRequest) {
   try {
     console.log('[Refresh API] Starting token refresh...');
 
-    // Определяем текущий провайдер
-    const providerResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=auth_provider`);
-    let authKey = 'backend_auth'; // default
-    let provider = 'backend';
-    // Resolve and sanitize backend base URL
-    const rawBackend = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    // remove trailing slashes and trailing /api, to avoid /api/api duplication
-    let backendUrl = rawBackend.replace(/\/+$/,'').replace(/\/api$/i,'');
-
-    if (providerResponse.ok) {
-      const providerData = await providerResponse.json();
-      if (providerData.exists && providerData.value === 'dummy') {
-        authKey = 'dummy_auth';
-        provider = 'dummy';
-        backendUrl = process.env.NEXT_PUBLIC_DUMMY_BACKEND_URL || 'http://localhost:8001';
-        console.log('[Refresh API] Using Dummy provider');
-      } else {
-        console.log('[Refresh API] Using Backend provider');
-      }
-    }
-
-    // Получаем текущие токены из Redis
-    const redisResponse = await fetch(`${request.nextUrl.origin}/api/redis?key=${authKey}`);
-    
-    if (!redisResponse.ok) {
-      console.error(`[Refresh API] Failed to get tokens from Redis for key: ${authKey}`);
-      return NextResponse.json(
-        { error: 'No tokens found in Redis', provider },
-        { status: 404 }
-      );
-    }
-
-    const redisData = await redisResponse.json();
-    
-    if (!redisData.exists || !redisData.value) {
-      console.error(`[Refresh API] No tokens found in Redis for key: ${authKey}`);
-      return NextResponse.json(
-        { error: 'No tokens found in Redis', provider },
-        { status: 404 }
-      );
-    }
-
-    // Парсим токены
-    const tokenData = typeof redisData.value === 'string' 
-      ? JSON.parse(redisData.value) 
-      : redisData.value;
-
-    const { refresh: refreshToken, refreshAttempts = 0 } = tokenData;
+    // Получаем refresh token из HTTP-only cookies
+    const refreshToken = getRefreshTokenFromRequest(request);
+    const authProvider = getAuthProviderFromRequest(request) || 'backend';
 
     if (!refreshToken) {
-      console.error(`[Refresh API] No refresh token found in Redis for key: ${authKey}`);
+      console.error('[Refresh API] No refresh token found in cookies');
       return NextResponse.json(
-        { error: 'No refresh token found', provider },
-        { status: 404 }
+        { error: 'No refresh token available', provider: authProvider },
+        { status: 401 }
       );
     }
 
-    // Проверяем количество попыток refresh
-    const maxAttempts = 3;
-    if (refreshAttempts >= maxAttempts) {
-      console.error(`[Refresh API] Max refresh attempts (${maxAttempts}) reached for ${authKey}`);
-      return NextResponse.json(
-        { error: 'Max refresh attempts reached', provider, refreshAttempts },
-        { status: 429 }
-      );
+    // Для dummy provider используем специальный endpoint
+    if (authProvider === 'dummy') {
+      console.log('[Refresh API] Redirecting to dummy refresh endpoint');
+      const dummyResponse = await fetch(`${request.nextUrl.origin}/api/auth/refresh/dummy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store'
+      });
+
+      // Копируем ответ от dummy endpoint
+      const dummyData = await dummyResponse.json();
+      return NextResponse.json(dummyData, { status: dummyResponse.status });
     }
 
-    // Увеличиваем счетчик попыток
-    const newAttempts = refreshAttempts + 1;
-    console.log(`[Refresh API] Token refresh attempt ${newAttempts}/${maxAttempts} for ${authKey}`);
+    // Определяем backend URL
+    let backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    
+    if (authProvider === 'dummy') {
+      backendUrl = process.env.NEXT_PUBLIC_DUMMY_BACKEND_URL || 'http://localhost:8001';
+      console.log('[Refresh API] Using Dummy provider');
+    } else {
+      console.log('[Refresh API] Using Backend provider');
+    }
 
-    // Сохраняем увеличенный счетчик попыток
-    await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key: authKey,
-        value: JSON.stringify({
-          ...tokenData,
-          refreshAttempts: newAttempts,
-          lastRefreshTime: Date.now()
-        })
-      })
-    });
+    // Очищаем URL от дублирования /api
+    backendUrl = backendUrl.replace(/\/+$/,'').replace(/\/api$/i,'');
 
     // Вызываем backend endpoint для refresh
     console.log(`[Refresh API] Calling ${backendUrl}/api/auth/refresh`);
@@ -115,30 +73,18 @@ export async function POST(request: NextRequest) {
       const errorText = await backendResponse.text();
       console.error(`[Refresh API] Backend refresh failed: ${backendResponse.status}`, errorText);
       
-      // Сохраняем информацию о неудачной попытке
-      await fetch(`${request.nextUrl.origin}/api/redis`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          key: authKey,
-          value: JSON.stringify({
-            ...tokenData,
-            refreshAttempts: newAttempts,
-            lastRefreshFailed: true,
-            lastRefreshTime: Date.now()
-          })
-        })
-      });
-
-      return NextResponse.json(
+      // Clear cookies on refresh failure
+      const errorResponse = NextResponse.json(
         { 
           error: 'Token refresh failed', 
-          provider, 
-          refreshAttempts: newAttempts,
+          provider: authProvider,
           details: errorText 
         },
         { status: backendResponse.status }
       );
+      clearAuthCookies(errorResponse);
+
+      return errorResponse;
     }
 
     const data = await backendResponse.json();
@@ -146,47 +92,27 @@ export async function POST(request: NextRequest) {
     if (!data.access) {
       console.error('[Refresh API] No access token in backend response');
       return NextResponse.json(
-        { error: 'No access token in response', provider },
+        { error: 'No access token in response', provider: authProvider },
         { status: 500 }
       );
     }
 
-    // Сохраняем новые токены в Redis с сброшенным счетчиком попыток
-    const newTokenData = {
-      access: data.access,
-      refresh: data.refresh || refreshToken, // Используем новый refresh или старый, если не ротируется
-      refreshAttempts: 0, // Сбрасываем счетчик при успехе
-      lastRefreshFailed: false,
-      lastRefreshTime: Date.now()
-    };
+    console.log(`[Refresh API] ✅ Token refresh successful for ${authProvider}`);
 
-    const saveResponse = await fetch(`${request.nextUrl.origin}/api/redis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key: authKey,
-        value: JSON.stringify(newTokenData)
-      })
-    });
-
-    if (!saveResponse.ok) {
-      console.error(`[Refresh API] Failed to save refreshed tokens to Redis for key: ${authKey}`);
-      return NextResponse.json(
-        { error: 'Failed to save tokens to Redis', provider },
-        { status: 500 }
-      );
-    }
-
-    console.log(`[Refresh API] ✅ Token refresh successful for ${authKey}, attempts reset to 0`);
-
-    return NextResponse.json({
+    // Возвращаем новый access token
+    const response = NextResponse.json({
       success: true,
       access: data.access,
-      refresh: data.refresh || refreshToken,
-      provider,
-      tokensVerified: true,
+      provider: authProvider,
       message: 'Token refreshed successfully'
     });
+
+    // Обновляем refresh token cookie если пришел новый
+    if (data.refresh) {
+      setRefreshTokenCookie(response, data.refresh);
+    }
+
+    return response;
 
   } catch (error) {
     console.error('[Refresh API] Error:', error);
