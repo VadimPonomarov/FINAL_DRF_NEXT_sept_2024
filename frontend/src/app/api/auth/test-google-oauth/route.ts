@@ -44,20 +44,7 @@ export async function POST(request: NextRequest) {
     const authData = await backendResponse.json();
     console.log('[Test Google OAuth] Backend auth successful');
     
-    // Save tokens to Redis
-    const redisResponse = await fetch('/api/auth/token'),
-      }),
-    });
-    
-    console.log('[Test Google OAuth] Redis save status:', redisResponse.status);
-    
-    if (!redisResponse.ok) {
-      console.error('[Test Google OAuth] Failed to save to Redis');
-      return NextResponse.json(
-        { error: 'Failed to save tokens to Redis' },
-        { status: 500 }
-      );
-    }
+    // Tokens are saved via httpOnly cookies by /api/auth/login route
     
     console.log('[Test Google OAuth] Test completed successfully');
     

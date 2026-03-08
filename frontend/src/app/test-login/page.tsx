@@ -220,10 +220,10 @@ export default function TestLoginPage() {
     addLog('🗑️ Clearing tokens from Redis...');
     
     try {
-      const response = 
+      const response = await fetch('/api/auth/token', { method: 'DELETE', credentials: 'include' });
 
       if (response.ok) {
-        addLog('✅ Tokens cleared from Redis');
+        addLog('✅ Tokens cleared');
         setTokens(null);
       } else {
         addLog(`❌ Failed to clear tokens: HTTP ${response.status}`);

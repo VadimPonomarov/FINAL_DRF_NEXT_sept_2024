@@ -14,32 +14,6 @@ const __frontendBaseUrl = __isServer
   ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' ? 'http://frontend:3000' : 'http://localhost:3000') 
   : '';
 
-/**
- * Helper to get data from Redis via API
- */
-async function apiGetRedis(key: string): Promise<string | null> {
-  try {
-    const res = await fetch('/api/auth/token')}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.exists ? (data.value as string) : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Helper to set data in Redis via API
- */
-async function apiSetRedis(key: string, value: string): Promise<boolean> {
-  try {
-    const res = await fetch('/api/auth/token')
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Options for fetchWithDomain
