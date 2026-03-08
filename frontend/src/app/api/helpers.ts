@@ -301,109 +301,7 @@ export const fetchAuth = async (
 
     const data = await response.json();
 
-    // Сохраняем токены и user data в Redis с обнулением счетчика попыток
-    const redisKey = isUsingDummyAuth ? "dummy_auth" : "backend_auth";
-    const tokenData = isUsingDummyAuth
-      ? {
-          access: data.accessToken,
-          refresh: data.refreshToken,
-          user: data.user || null,
-          refreshAttempts: 0
-        }
-      : {
-          access: data.access,
-          refresh: data.refresh,
-          user: data.user || null,
-          refreshAttempts: 0
-        };
-    
-    console.log('[fetchAuth] Token data to save:', {
-      hasAccess: !!tokenData.access,
-      hasRefresh: !!tokenData.refresh,
-      hasUser: !!tokenData.user,
-      userEmail: tokenData.user?.email,
-      isSuperuser: tokenData.user?.is_superuser
-    });
-
-    console.log(`[fetchAuth] Saving tokens to Redis with key: ${redisKey}`);
-
-    // Get absolute URL for Redis API (server-side needs absolute URLs)
-    const isServerSide = typeof window === 'undefined';
-    const baseUrl = isServerSide
-      ? (process.env.NEXT_PUBLIC_IS_DOCKER === 'true' 
-          ? 'http://frontend:3000' 
-          : process.env.NEXTAUTH_URL || 'http://localhost:3000')
-      : ''; // На клиенте используем относительный URL
-    const redisUrl = `${baseUrl}/api/redis`;
-    console.log(`[fetchAuth] Using Redis URL: ${redisUrl} (server: ${isServerSide})`);
-
-    // Сохраняем провайдер в Redis
-    const providerKey = "auth_provider";
-    const providerValue = isUsingDummyAuth ? AuthProvider.Dummy : AuthProvider.MyBackendDocs;
-    console.log(`[fetchAuth] Saving provider to Redis: ${providerValue}`);
-
-    const providerResponse = await fetch(redisUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        key: providerKey,
-        value: providerValue
-      }),
-    });
-
-    if (!providerResponse.ok) {
-      console.error(`[fetchAuth] Failed to save provider to Redis: ${providerResponse.status}`);
-    } else {
-      console.log(`[fetchAuth] ✅ Provider saved to Redis successfully`);
-    }
-
-    // Сохраняем токены в Redis
-    const redisResponse = await fetch(redisUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        key: redisKey,
-        value: JSON.stringify(tokenData)
-      }),
-    });
-
-    console.log(`[fetchAuth] Redis save response status: ${redisResponse.status}`);
-    let redisSaveSuccess = false;
-
-    if (!redisResponse.ok) {
-      console.error(`[fetchAuth] Failed to save tokens to Redis: ${redisResponse.status} ${redisResponse.statusText}`);
-      try {
-        const errorData = await redisResponse.json();
-        console.error(`[fetchAuth] Redis error data:`, errorData);
-      } catch (e) {
-        console.error(`[fetchAuth] Could not parse Redis error response`);
-      }
-    } else {
-      console.log(`[fetchAuth] ✅ Redis API returned success`);
-
-      // Verify tokens were actually saved by reading them back
-      console.log(`[fetchAuth] Verifying tokens were actually saved...`);
-      try {
-        const verifyUrl = `${baseUrl}/api/redis?key=${encodeURIComponent(redisKey)}`;
-        console.log(`[fetchAuth] Using verify URL: ${verifyUrl}`);
-
-        const verifyResponse = await fetch(verifyUrl);
-        if (verifyResponse.ok) {
-          const verifyData = await verifyResponse.json();
-          if (verifyData.exists && verifyData.value) {
-            const savedTokenData = JSON.parse(verifyData.value);
-            redisSaveSuccess = !!(savedTokenData.access && savedTokenData.refresh);
-            console.log(`[fetchAuth] Token verification result: ${redisSaveSuccess}`);
-          } else {
-            console.error(`[fetchAuth] Verification failed: tokens not found in Redis`);
-          }
-        } else {
-          console.error(`[fetchAuth] Verification failed: Redis API error ${verifyResponse.status}`);
-        }
-      } catch (verifyError) {
-        console.error(`[fetchAuth] Verification failed with error:`, verifyError);
-      }
-    }
+    console.log('[fetchAuth] Login successful, tokens saved in cookies by API route');
 
     // Возвращаем объект, соответствующий типу AuthResponse
     return {
@@ -414,8 +312,7 @@ export const fetchAuth = async (
             id: data.id,
             email: data.email || `${data.username}@dummy.com`
           }
-        : data.user,
-      redisSaveSuccess: data.sessionSaveSuccess || data.redisSaveSuccess // Используем флаг из ответа API
+        : data.user
     };
   } catch (error) {
     console.error('[fetchAuth] Error occurred:', error);
