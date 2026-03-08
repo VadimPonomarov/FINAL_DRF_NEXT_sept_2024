@@ -99,6 +99,19 @@ export const fetchData = async (
     retryCount = 0
 ): Promise<any> => {
     try {
+        // Check if we have authentication cookies before making requests
+        // This prevents 401 errors on page initialization
+        const hasCookies = typeof document !== 'undefined' && 
+                          (document.cookie.includes('next-auth') || 
+                           document.cookie.includes('access') ||
+                           document.cookie.includes('refresh'));
+        
+        if (!hasCookies && typeof window !== 'undefined') {
+            // Silently return null if not authenticated on client side
+            console.debug('[fetchData] Skipping request - no authentication cookies');
+            return null;
+        }
+
         const urlSearchParams = new URLSearchParams(params).toString();
         const headers = await getAuthorizationHeaders();
         const url = `${endpoint}${urlSearchParams ? `?${urlSearchParams}` : ''}`;
@@ -114,7 +127,7 @@ export const fetchData = async (
             authProvider = providerData.provider || AuthProvider.MyBackendDocs;
           }
         } catch (error) {
-          console.warn('[fetchData] Failed to get auth provider from API, using default');
+          console.debug('[fetchData] Failed to get auth provider, using default');
         }
         
         const tokenKey = authProvider === AuthProvider.Dummy ? "dummy_auth" : "backend_auth";
@@ -125,7 +138,7 @@ export const fetchData = async (
             cache: 'no-store' // Важно для серверных компонентов
         });
 
-        const result = await handleFetchErrors(response, tokenKey);
+        const result = await handleFetchErrors(response, tokenKey, !hasCookies);
 
         // If token refresh was needed and successful, retry the request once
         if (!result && response.status === 401 && retryCount === 0) {
@@ -135,13 +148,13 @@ export const fetchData = async (
 
         // If we still get 401 after refresh, don't retry again
         if (!result && response.status === 401 && retryCount > 0) {
-            console.error('[fetchData] Still got 401 after token refresh, stopping retry to prevent infinite loop');
-            return performRedirect("/login");
+            console.debug('[fetchData] Still got 401 after token refresh');
+            return null; // Return null instead of redirect during initialization
         }
 
         return result;
     } catch (error) {
-        console.error("Error executing request:", error);
+        console.debug("Error executing request:", error);
         return null;
     }
 };
