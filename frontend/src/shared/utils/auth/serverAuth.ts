@@ -159,28 +159,33 @@ export class ServerAuthManager {
     url: string,
     options: AuthenticatedFetchOptions = {}
   ): Promise<Response> {
-    // Get tokens from Redis
-    let tokens = await this.getTokensFromRedis(request);
-    if (!tokens) {
+    // Read tokens directly from request cookies (httpOnly cookies set by /api/auth/login)
+    let accessToken = request.cookies.get('access_token')?.value;
+    const refreshToken = request.cookies.get('refresh_token')?.value;
+    
+    if (!accessToken) {
       throw new Error('No authentication tokens available');
     }
 
     // Check if access token is expired and refresh if needed
-    if (this.isTokenExpired(tokens.access)) {
+    if (this.isTokenExpired(accessToken)) {
       console.log('[ServerAuth] Access token expired, refreshing...');
-      const newAccessToken = await this.refreshToken(request, tokens.refresh);
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+      const newAccessToken = await this.refreshToken(request, refreshToken);
       
       if (!newAccessToken) {
         throw new Error('Failed to refresh access token');
       }
       
-      tokens.access = newAccessToken;
+      accessToken = newAccessToken;
     }
 
     // Make the authenticated request
     const isFormData = (options as any)?.body instanceof FormData;
     const headers: Record<string, string> = {
-      'Authorization': `Bearer ${tokens.access}`,
+      'Authorization': `Bearer ${accessToken}`,
       ...(options.headers || {} as Record<string, string>),
     };
     // Set JSON content-type only when not sending FormData and when not provided explicitly
@@ -227,15 +232,13 @@ export class ServerAuthManager {
    */
   static async isAuthenticated(request: NextRequest): Promise<boolean> {
     console.log('[ServerAuth] 🔍 Checking authentication...');
-    const tokens = await this.getTokensFromRedis(request);
-    console.log('[ServerAuth] 🔍 Tokens found:', tokens !== null);
-
-    if (tokens) {
-      console.log('[ServerAuth] 🔍 Access token exists:', !!tokens.access);
-      console.log('[ServerAuth] 🔍 Refresh token exists:', !!tokens.refresh);
-    }
-
-    return tokens !== null;
+    
+    // Read access_token directly from request cookies (httpOnly cookie set by /api/auth/login)
+    const accessToken = request.cookies.get('access_token')?.value;
+    const hasToken = !!accessToken;
+    
+    console.log('[ServerAuth] 🔍 Access token in cookie:', hasToken);
+    return hasToken;
   }
 
   /**

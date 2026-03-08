@@ -1,13 +1,4 @@
-"""
-Full auth flow test:
-1. Check /api/auth/token before login (should return null tokens)
-2. Login via /api/auth/login
-3. Check /api/auth/token after login (should return access token)
-4. Access protected endpoint /api/user/profile with token
-5. Access /api/auth/status
-"""
 import requests
-import json
 
 BASE = "https://autoria-clone.vercel.app"
 CREDS = {"email": "admin@autoria.com", "password": "12345678"}

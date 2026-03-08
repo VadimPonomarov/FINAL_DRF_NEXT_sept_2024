@@ -107,7 +107,7 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
     const token = await getToken({ req, secret: nextAuthSecret });
     console.log('[Middleware L1] getToken result:', token ? `email: ${token.email}` : 'No token');
 
-    if (!token || !token.email) {
+    if (!token) {
       console.log('[Middleware L1] No auth found (no cookie, no NextAuth token) - redirecting to signin');
       const signinUrl = new URL('/api/auth/signin', req.url);
       signinUrl.searchParams.set('callbackUrl', req.url);
