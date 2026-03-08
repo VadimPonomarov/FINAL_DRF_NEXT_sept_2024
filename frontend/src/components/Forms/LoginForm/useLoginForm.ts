@@ -173,62 +173,48 @@ export const useLoginForm = () => {
       // Используем универсальную функцию fetchAuth из helpers.ts
       const authResponse = await fetchAuth(data as IDummyAuth | IBackendAuthCredentials);
 
-      // Преобразуем ответ в ожидаемый формат
-      const response = {
-        data: authResponse.error ? undefined : authResponse,
-        error: authResponse.error?.message || (authResponse.error ? 'Authentication failed' : undefined),
-        status: authResponse.error ? 500 : 200,
-        message: authResponse.error ? 'Authentication failed' : 'Authentication successful'
-      };
+      console.log('[LoginForm] fetchAuth returned:', authResponse);
 
-      console.log('[LoginForm] Raw response from fetchAuth:', {
-        hasError: !!response.error,
-        hasData: !!response.data,
-        status: response.status,
-        message: response.message,
-        errorType: typeof response.error,
-        dataKeys: response.data ? Object.keys(response.data) : [],
-        authResponseKeys: authResponse ? Object.keys(authResponse) : [],
-        redisSaveSuccess: authResponse?.redisSaveSuccess
-      });
-
-      if (response.error) {
-        throw new Error(typeof response.error === 'string'
-          ? response.error
-          : 'Authentication failed');
+      // fetchAuth возвращает AuthResponse напрямую: {access, refresh, user} или {error}
+      // Не нужно дополнительное обертывание
+      if (authResponse.error) {
+        throw new Error(authResponse.error.message || 'Authentication failed');
       }
 
-      if (!response.data) {
-        throw new Error('No data received from authentication');
+      // Проверяем что получили необходимые данные
+      if (!authResponse.access || !authResponse.user) {
+        console.error('[LoginForm] Invalid response structure:', authResponse);
+        throw new Error('Invalid response from server - missing tokens or user data');
       }
+
 
       // Успешная аутентификация
       console.log('[Auth] ✅ Authentication successful');
 
       // Update authentication state immediately with response data
       console.log('[LoginForm] Checking response data:', {
-        hasUser: !!response.data.user,
-        hasAccess: !!response.data.access,
-        hasRefresh: !!response.data.refresh,
-        userType: typeof response.data.user,
-        accessType: typeof response.data.access,
-        refreshType: typeof response.data.refresh,
-        userKeys: response.data.user ? Object.keys(response.data.user) : [],
-        accessLength: response.data.access ? response.data.access.length : 0,
-        refreshLength: response.data.refresh ? response.data.refresh.length : 0
+        hasUser: !!authResponse.user,
+        hasAccess: !!authResponse.access,
+        hasRefresh: !!authResponse.refresh,
+        userType: typeof authResponse.user,
+        accessType: typeof authResponse.access,
+        refreshType: typeof authResponse.refresh,
+        userKeys: authResponse.user ? Object.keys(authResponse.user) : [],
+        accessLength: authResponse.access ? authResponse.access.length : 0,
+        refreshLength: authResponse.refresh ? authResponse.refresh.length : 0
       });
 
-      if (response.data.user && response.data.access && response.data.refresh) {
+      if (authResponse.user && authResponse.access && authResponse.refresh) {
         console.log('[LoginForm] ✅ All required data present, calling login()');
 
         // Ensure user object matches the expected User interface with all backend fields
         const userForLogin: User = {
-          id: response.data.user.id,
-          email: response.data.user.email,
-          first_name: response.data.user.first_name || '',
-          last_name: response.data.user.last_name || '',
-          role: response.data.user.role || 'user',
-          is_superuser: response.data.user.is_superuser || false
+          id: authResponse.user.id,
+          email: authResponse.user.email,
+          first_name: authResponse.user.first_name || '',
+          last_name: authResponse.user.last_name || '',
+          role: authResponse.user.role || 'user',
+          is_superuser: authResponse.user.is_superuser || false
         };
 
         console.log('[LoginForm] User data for login:', {
@@ -236,7 +222,7 @@ export const useLoginForm = () => {
           isSuperuser: userForLogin.is_superuser
         });
 
-        login(userForLogin, response.data.access, response.data.refresh);
+        login(userForLogin, authResponse.access, authResponse.refresh);
 
         // Check if tokens were actually saved to Redis during fetchAuth
         const redisSaveSuccess = authResponse?.redisSaveSuccess;
