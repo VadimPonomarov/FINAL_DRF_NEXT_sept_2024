@@ -2,7 +2,7 @@
 import { FC, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import { useRouter, usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { cleanupAuth } from '@/lib/auth/cleanupAuth';
 import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield } from 'lucide-react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
@@ -23,6 +23,9 @@ export const MenuMain: FC = () => {
   const { data: session, status } = useSession();
   const [currentProvider, setCurrentProvider] = useState<AuthProvider>(provider);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Сервисы, которые не поддерживают iframe из-за CORS ограничений
+  const iframeBlockedServices: string[] = [];
 
   // Debug logging (dev only)
   useEffect(() => {
@@ -185,31 +188,6 @@ export const MenuMain: FC = () => {
         tooltip: "Flower monitoring"
       },
       {
-        path: "/redis-insight",
-        label: (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="group flex items-center gap-2">
-                  <FaDatabase
-                    size={18}
-                    className="text-foreground group-hover:text-accent-foreground transition-colors"
-                  />
-                  <span className="text-sm">Redis</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Redis Insight</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ),
-        disabled: !isAuthenticated,
-        index: 5,
-        provider: AuthProvider.MyBackendDocs,
-        tooltip: "Redis Insight"
-      },
-      {
         path: "/rabbitmq",
         label: (
           <TooltipProvider>
@@ -230,7 +208,7 @@ export const MenuMain: FC = () => {
           </TooltipProvider>
         ),
         disabled: !isAuthenticated,
-        index: 6,
+        index: 5,
         provider: AuthProvider.MyBackendDocs,
         tooltip: "RabbitMQ"
       },
@@ -255,7 +233,7 @@ export const MenuMain: FC = () => {
           </TooltipProvider>
         ),
         disabled: !isAuthenticated,
-        index: 7,
+        index: 6,
         provider: AuthProvider.MyBackendDocs,
         tooltip: "AutoRia - система объявлений"
       },
@@ -388,9 +366,6 @@ export const MenuMain: FC = () => {
                 e.preventDefault();
                 setMobileMenuOpen(false);
 
-                // Сервисы, которые не поддерживают iframe из-за CORS ограничений
-                const iframeBlockedServices = ['/redis-insight'];
-
                 if (item.cb) {
                   try {
                     if (typeof item.cb === 'function') {
@@ -403,7 +378,7 @@ export const MenuMain: FC = () => {
                   }
                 } else if (item.path) {
                   if (iframeBlockedServices.includes(item.path)) {
-                    // Redis Insight открываем в новой вкладке из-за CORS ограничений
+                    // Сервисы, открываемые в новой вкладке из-за CORS ограничений
                     window.open(item.path, '_blank', 'noopener,noreferrer');
                   } else {
                     // Другие сервисы - используем Next.js роутинг для iframe

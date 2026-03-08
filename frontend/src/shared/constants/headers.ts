@@ -1,4 +1,5 @@
 import { HEADERS } from "@/shared/constants/constants";
+import { getAccessToken } from "@/lib/token-utils";
 
 /**
  * Проверяет, истёк ли JWT токен
@@ -18,36 +19,21 @@ export const getAuthorizationHeaders = async (baseUrlOverride?: string): Promise
   try {
     const baseUrl = baseUrlOverride || process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-    // Add timeout to prevent hanging
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const redisUrl = `${baseUrl}/api/redis?key=backend_auth`;
-
     let accessToken: string | undefined;
     try {
-      const response = await fetch(redisUrl, { signal: controller.signal, cache: 'no-store' });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const responseData = await response.json();
-        const { value: authData } = responseData || {};
-        if (authData) {
-          const parsedData = typeof authData === 'string' ? JSON.parse(authData) : authData;
-          accessToken = parsedData?.access || parsedData?.token || parsedData?.access_token;
-          
-          // ПРОАКТИВНАЯ ПРОВЕРКА: если токен истёк, обновляем его СРАЗУ
-          if (accessToken && isTokenExpired(accessToken)) {
-            console.log('[getAuthorizationHeaders] Access token expired, refreshing proactively...');
-            const refreshResp = await fetch(`${baseUrl}/api/auth/refresh`, { method: 'POST', cache: 'no-store' });
-            if (refreshResp.ok) {
-              const refreshData = await refreshResp.json().catch(() => ({} as any));
-              accessToken = refreshData?.access;
-              console.log('[getAuthorizationHeaders] Token refreshed successfully');
-            } else {
-              console.warn('[getAuthorizationHeaders] Token refresh failed:', refreshResp.status);
-            }
-          }
+      // Получаем access token из сессии через API
+      accessToken = await getAccessToken('backend_auth');
+      
+      // ПРОАКТИВНАЯ ПРОВЕРКА: если токен истёк, обновляем его СРАЗУ
+      if (accessToken && isTokenExpired(accessToken)) {
+        console.log('[getAuthorizationHeaders] Access token expired, refreshing proactively...');
+        const refreshResp = await fetch(`${baseUrl}/api/auth/refresh`, { method: 'POST', cache: 'no-store' });
+        if (refreshResp.ok) {
+          const refreshData = await refreshResp.json().catch(() => ({} as any));
+          accessToken = refreshData?.access;
+          console.log('[getAuthorizationHeaders] Token refreshed successfully');
+        } else {
+          console.warn('[getAuthorizationHeaders] Token refresh failed:', refreshResp.status);
         }
       }
 
@@ -60,7 +46,6 @@ export const getAuthorizationHeaders = async (baseUrlOverride?: string): Promise
         }
       }
     } catch (_err) {
-      clearTimeout(timeoutId);
       // ignore; fall back to default headers below
     }
 

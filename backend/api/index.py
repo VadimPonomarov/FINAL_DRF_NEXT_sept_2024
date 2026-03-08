@@ -30,7 +30,7 @@ def _setup():
                 # Create superuser
                 admin = User.objects.create_superuser(
                     email='admin@autoria.com',
-                    password='admin123',
+                    password='12345678',
                     first_name='Admin',
                     last_name='User'
                 )

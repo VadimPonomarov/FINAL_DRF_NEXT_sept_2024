@@ -1,13 +1,12 @@
 import { API_URLS, AuthProvider } from "@/shared/constants/constants";
 import { getAuthorizationHeaders } from "@/shared/constants/headers";
-
 import { redirect } from "next/navigation";
 import { IDummyAuth } from "@/shared/types/dummy.interfaces";
 import {
     IBackendAuthCredentials,
     AuthResponse
 } from "@/shared/types/auth.interfaces";
-import { resolveServiceUrl } from "@/shared/utils/api/serviceUrlResolver";
+import { apiGetSession, apiSetSession } from "../../lib/session-api";
 
 // Use Redis only via API to avoid bundling Node 'net' in client
 const __isServer = typeof window === 'undefined';
@@ -44,7 +43,7 @@ function normalizeBackendBase(url: string): string {
     }
 }
 
-async function apiGetRedis(key: string): Promise<string | null> {
+export async function apiGetRedis(key: string): Promise<string | null> {
     try {
         const res = await fetch(`${__frontendBaseUrl}/api/redis?key=${encodeURIComponent(key)}`, { cache: 'no-store' });
         if (!res.ok) return null;
@@ -55,12 +54,12 @@ async function apiGetRedis(key: string): Promise<string | null> {
     }
 }
 
-async function apiSetRedis(key: string, value: string): Promise<boolean> {
+export async function apiSetRedis(key: string, value: string, ttl?: number): Promise<boolean> {
     try {
         const res = await fetch(`${__frontendBaseUrl}/api/redis`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key, value })
+            body: JSON.stringify({ key, value, ttl })
         });
         return res.ok;
     } catch {
@@ -116,8 +115,20 @@ export const fetchData = async (
         const headers = await getAuthorizationHeaders();
         const url = `${endpoint}${urlSearchParams ? `?${urlSearchParams}` : ''}`;
 
-        // Определяем ключ для токенов
-        const authProvider = (await apiGetRedis("auth_provider")) || AuthProvider.MyBackendDocs;
+        // Определяем ключ для токенов - используем сессию вместо Redis для auth provider
+        // В новой схеме auth provider хранится в cookies, но для совместимости проверяем оба источника
+        let authProvider = AuthProvider.MyBackendDocs;
+        try {
+          // Пытаемся получить auth provider из API endpoint (который читает cookies)
+          const providerResponse = await fetch(`${__frontendBaseUrl}/api/auth/provider`, { cache: 'no-store' });
+          if (providerResponse.ok) {
+            const providerData = await providerResponse.json();
+            authProvider = providerData.provider || AuthProvider.MyBackendDocs;
+          }
+        } catch (error) {
+          console.warn('[fetchData] Failed to get auth provider from API, using default');
+        }
+        
         const tokenKey = authProvider === AuthProvider.Dummy ? "dummy_auth" : "backend_auth";
 
         const response = await fetch(url, {
@@ -147,114 +158,58 @@ export const fetchData = async (
     }
 };
 
-// Function for refreshing tokens with retry logic
+// Function for refreshing tokens - теперь вызывает API endpoint
 export const fetchRefresh = async (
   key: string = "backend_auth",
   maxAttempts: number = 3
 ): Promise<boolean> => {
   try {
-    // Используем универсальный резолвер с приоритетной системой
-    // 1. Redis Service Registry -> 2. Environment -> 3. Defaults
-    const baseUrl = await resolveServiceUrl('backend', '', async (key: string) => {
-      return await apiGetRedis(key.replace('service_registry:', ''));
-    });
-
-    const redisData = await apiGetRedis(key);
-    if (!redisData) {
-      console.error(`Refresh token not found in Redis for ${key}`);
-      return false;
-    }
-
-    const redisDataString = typeof redisData === 'string' ? redisData : JSON.stringify(redisData);
-    const parsedData = JSON.parse(redisDataString);
-    const { refresh, refreshAttempts = 0, lastRefreshFailed = false, lastRefreshTime = 0 } = parsedData;
-
-    if (!refresh) {
-      console.error("No refresh token found in Redis data");
-      return false;
-    }
-
-    // Если последний refresh был неудачным менее 60 секунд назад, не пытаемся снова
-    const now = Date.now();
-    if (lastRefreshFailed && (now - lastRefreshTime) < 60000) {
-      console.error(`[fetchRefresh] Last refresh failed ${Math.round((now - lastRefreshTime) / 1000)}s ago, waiting before retry`);
-      return false;
-    }
-
-    // Проверяем, не превысили ли мы максимальное количество попыток
-    if (refreshAttempts >= maxAttempts) {
-      console.error(`[fetchRefresh] Max refresh attempts (${maxAttempts}) reached for ${key}`);
-      // Очищаем токены из Redis при превышении лимита попыток
-      await apiSetRedis(key, JSON.stringify({
-        refreshAttempts: maxAttempts,
-        lastRefreshFailed: true,
-        lastRefreshTime: now
-      }));
-      return false;
-    }
-
-    // Увеличиваем счетчик попыток
-    const newAttempts = refreshAttempts + 1;
-    console.log(`[fetchRefresh] Token refresh attempt ${newAttempts}/${maxAttempts} for ${key}`);
-
-    // Сохраняем увеличенный счетчик попыток
-    await apiSetRedis(key, JSON.stringify({
-      ...parsedData,
-      refreshAttempts: newAttempts,
-      lastRefreshTime: now
-    }));
-
-    const response = await fetch(`${baseUrl}/api/auth/refresh`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ refresh }),
-      // НЕ используем credentials: 'include', так как мы используем Bearer токены в заголовках
+    console.log(`[fetchRefresh] Starting token refresh for ${key}`);
+    
+    // Вызываем API endpoint для refresh
+    const refreshUrl = `${__frontendBaseUrl}/api/auth/refresh`;
+    const response = await fetch(refreshUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       cache: 'no-store'
     });
 
     if (!response.ok) {
-      console.error(`[fetchRefresh] Failed to refresh token. Status: ${response.status}, Attempt: ${newAttempts}/${maxAttempts}`);
-
-      // Сохраняем информацию о неудачной попытке
-      await apiSetRedis(key, JSON.stringify({
-        ...parsedData,
-        refreshAttempts: newAttempts,
-        lastRefreshFailed: true,
-        lastRefreshTime: now
-      }));
-
-      // Если это последняя попытка, логируем это
-      if (newAttempts >= maxAttempts) {
-        console.error(`[fetchRefresh] All ${maxAttempts} refresh attempts failed for ${key}, blocking retries for 60s`);
+      console.error(`[fetchRefresh] API refresh failed: ${response.status}`);
+      
+      // Если 401 или 429, значит токен невалидный или слишком много попыток
+      if (response.status === 401 || response.status === 429) {
+        return false;
       }
-
+      
+      // Для других ошибок можно попробовать повторить
       return false;
     }
 
     const data = await response.json();
-
-    // При успешном обновлении сбрасываем счетчик попыток и флаги
-    await apiSetRedis(key, JSON.stringify({
-      access: data.access,
-      refresh: data.refresh,
-      refreshAttempts: 0, // Сбрасываем счетчик при успехе
-      lastRefreshFailed: false, // Сбрасываем флаг неудачи
-      lastRefreshTime: now
-    }));
-
-    console.log(`[fetchRefresh] Token refresh successful for ${key}, attempts reset to 0`);
-    return true;
+    console.log('[fetchRefresh] ✅ Token refresh successful via API');
+    
+    return data.success || false;
   } catch (error) {
-    console.error("Error during token refresh:", error);
+    console.error('[fetchRefresh] Error during token refresh:', error);
     return false;
   }
 };
 
 // Helper functions for various requests
 export const fetchUsers = async (params?: Record<string, string>) => {
-  const authProvider = await apiGetRedis("auth_provider") || AuthProvider.MyBackendDocs;
+  // Получаем auth provider из cookies через API
+  let authProvider = AuthProvider.MyBackendDocs;
+  try {
+    const providerResponse = await fetch(`${__frontendBaseUrl}/api/auth/provider`, { cache: 'no-store' });
+    if (providerResponse.ok) {
+      const providerData = await providerResponse.json();
+      authProvider = providerData.provider || AuthProvider.MyBackendDocs;
+    }
+  } catch (error) {
+    console.warn('[fetchUsers] Failed to get auth provider, using default');
+  }
+  
   const endpoint = authProvider === AuthProvider.Dummy ? '/users' : '/api/users/';
   const response = await fetchData(endpoint, "/users", params);
 
@@ -276,13 +231,35 @@ export const fetchUsers = async (params?: Record<string, string>) => {
 };
 
 export const fetchRecipes = async (params?: Record<string, string>) => {
-  const authProvider = await apiGetRedis("auth_provider") || AuthProvider.MyBackendDocs;
+  // Получаем auth provider из cookies через API
+  let authProvider = AuthProvider.MyBackendDocs;
+  try {
+    const providerResponse = await fetch(`${__frontendBaseUrl}/api/auth/provider`, { cache: 'no-store' });
+    if (providerResponse.ok) {
+      const providerData = await providerResponse.json();
+      authProvider = providerData.provider || AuthProvider.MyBackendDocs;
+    }
+  } catch (error) {
+    console.warn('[fetchRecipes] Failed to get auth provider, using default');
+  }
+  
   const endpoint = authProvider === AuthProvider.Dummy ? '/recipes' : '/api/recipes/';
   return fetchData(endpoint, "/recipes", params);
 };
 
 export const fetchRecipeById = async (id: string) => {
-  const authProvider = await apiGetRedis("auth_provider") || AuthProvider.MyBackendDocs;
+  // Получаем auth provider из cookies через API
+  let authProvider = AuthProvider.MyBackendDocs;
+  try {
+    const providerResponse = await fetch(`${__frontendBaseUrl}/api/auth/provider`, { cache: 'no-store' });
+    if (providerResponse.ok) {
+      const providerData = await providerResponse.json();
+      authProvider = providerData.provider || AuthProvider.MyBackendDocs;
+    }
+  } catch (error) {
+    console.warn('[fetchRecipeById] Failed to get auth provider, using default');
+  }
+  
   const endpoint = authProvider === AuthProvider.Dummy ? `/recipes/${id}` : `/api/recipes/${id}/`;
   return fetchData(endpoint);
 };
@@ -306,7 +283,7 @@ export const fetchAuth = async (
     // Формируем endpoint с использованием Service Registry для backend
     let endpoint: string;
     if (isUsingDummyAuth) {
-      endpoint = `${API_URLS[AuthProvider.Dummy]}/auth/login`;
+      endpoint = `/api/auth/login/dummy`;
     } else {
       // Для клиента всегда используем прокси Next.js, чтобы избежать проблем домена/порта
       if (typeof window !== 'undefined') {
@@ -447,10 +424,10 @@ export const fetchAuth = async (
       user: isUsingDummyAuth
         ? {
             id: data.id,
-            email: data.email
+            email: data.email || `${data.username}@dummy.com`
           }
         : data.user,
-      redisSaveSuccess: redisSaveSuccess // Добавляем информацию о сохранении в Redis
+      redisSaveSuccess: data.sessionSaveSuccess || data.redisSaveSuccess // Используем флаг из ответа API
     };
   } catch (error) {
     console.error('[fetchAuth] Error occurred:', error);

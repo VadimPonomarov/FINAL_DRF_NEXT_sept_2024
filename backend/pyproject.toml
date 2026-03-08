@@ -25,6 +25,7 @@ django-ninja = "^1.4.3"
 
 # Database
 psycopg2 = "^2.9.10"
+dj-database-url = "^2.1.0"
 
 # Data Analysis & Visualization
 pandas = "^2.1.4"

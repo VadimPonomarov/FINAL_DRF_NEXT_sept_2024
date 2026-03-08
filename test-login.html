@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Test - Railway Backend</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .user-buttons { margin: 20px 0; }
+        .user-btn { margin: 5px; padding: 10px; cursor: pointer; }
+        #result { margin-top: 20px; padding: 10px; background: #f5f5f5; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Login Test - Railway Backend</h1>
+    
+    <div class="user-buttons">
+        <h3>Quick Test Users:</h3>
+        <button class="user-btn" onclick="fillUser('admin@autoria.com')">Admin User</button>
+        <button class="user-btn" onclick="fillUser('pvs.versia@gmail.com')">PVS Versia</button>
+        <button class="user-btn" onclick="fillUser('manager@autoria.com')">Manager</button>
+        <button class="user-btn" onclick="fillUser('buyer1@gmail.com')">Buyer 1</button>
+        <button class="user-btn" onclick="fillUser('test.user@example.com')">Test User</button>
+    </div>
+    
+    <form id="loginForm">
+        <div>
+            <label>Email: <input type="email" id="email" value="admin@autoria.com" size="30"></label>
+        </div>
+        <div>
+            <label>Password: <input type="password" id="password" value="12345678" size="30"></label>
+        </div>
+        <div>
+            <label>Backend URL: <input type="text" id="backendUrl" value="https://autoria-web-production.up.railway.app" size="40"></label>
+        </div>
+        <button type="submit">Login</button>
+        <button type="button" onclick="testTokenRefresh()">Test Token Refresh</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        function fillUser(email) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = '12345678'; // Correct password from seeding
+        }
+
+        let accessToken = '';
+        let refreshToken = '';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const backendUrl = document.getElementById('backendUrl').value;
+            const result = document.getElementById('result');
+            
+            try {
+                console.log('Attempting login to:', `${backendUrl}/api/auth/login`);
+                
+                const response = await fetch(`${backendUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                result.innerHTML = `
+                    <h3>Response Status: ${response.status}</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                if (response.ok && data.access) {
+                    accessToken = data.access;
+                    refreshToken = data.refresh;
+                    
+                    result.innerHTML += '<p class="success">✅ Login successful! Token received.</p>';
+                    result.innerHTML += `<p>Access Token: ${accessToken.substring(0, 50)}...</p>`;
+                    result.innerHTML += `<p>Refresh Token: ${refreshToken ? refreshToken.substring(0, 50) + '...' : 'N/A'}</p>`;
+                    result.innerHTML += `<p>User: ${JSON.stringify(data.user, null, 2)}</p>`;
+                    
+                    // Store tokens in localStorage for testing
+                    localStorage.setItem('access_token', accessToken);
+                    localStorage.setItem('refresh_token', refreshToken || '');
+                    
+                    // Test protected endpoint
+                    await testProtectedEndpoint(backendUrl);
+                } else {
+                    result.innerHTML += '<p class="error">❌ Login failed</p>';
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                result.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        });
+
+        async function testProtectedEndpoint(backendUrl) {
+            const result = document.getElementById('result');
+            
+            try {
+                // Test a public endpoint that requires authentication
+                const response = await fetch(`${backendUrl}/api/users/profile/`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    }
+                });
+                
+                const data = await response.json();
+                result.innerHTML += `<h3>Protected Endpoint Test (/api/users/profile/):</h3>`;
+                result.innerHTML += `<p>Status: ${response.status}</p>`;
+                result.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML += `<p class="error">Protected endpoint error: ${error.message}</p>`;
+            }
+        }
+
+        async function testTokenRefresh() {
+            const result = document.getElementById('result');
+            const backendUrl = document.getElementById('backendUrl').value;
+            const storedRefresh = localStorage.getItem('refresh_token');
+            
+            if (!storedRefresh) {
+                result.innerHTML = '<p class="error">No refresh token stored. Please login first.</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${backendUrl}/api/auth/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ refresh: storedRefresh }),
+                });
+                
+                const data = await response.json();
+                result.innerHTML += `<h3>Token Refresh Test:</h3>`;
+                result.innerHTML += `<p>Status: ${response.status}</p>`;
+                result.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
+                if (response.ok && data.access) {
+                    accessToken = data.access;
+                    localStorage.setItem('access_token', accessToken);
+                    result.innerHTML += '<p class="success">✅ Token refresh successful!</p>';
+                }
+            } catch (error) {
+                result.innerHTML += `<p class="error">Token refresh error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

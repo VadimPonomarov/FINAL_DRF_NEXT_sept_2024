@@ -1,12 +1,15 @@
 /**
  * API endpoint для LOGOUT (выход из backend)
- * Очищает ТОЛЬКО Redis токены, оставляет NextAuth сессию
- * После logout пользователь должен пойти на /login для получения новых токенов
+ * Новая схема:
+ * - Очищает HTTP-only cookies (refresh token, auth provider)
+ * - Очищает Redis сессию (access token)
+ * - Оставляет NextAuth сессию если нужно
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '@/configs/auth';
+import { clearAuthCookies } from '@/lib/cookie-utils';
 
 async function deleteRedisKeys(nextUrl: NextRequest['nextUrl'], keys: string[]) {
   await Promise.all(
@@ -32,12 +35,10 @@ async function deleteRedisKeys(nextUrl: NextRequest['nextUrl'], keys: string[]) 
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('[API /auth/logout] LOGOUT: Clearing backend tokens (keeping NextAuth session)');
+    console.log('[API /auth/logout] LOGOUT: Clearing cookies and session data');
 
     // Получаем сессию пользователя
     const session = await getServerSession(authConfig);
-
-    // Очищаем Redis даже если сессии нет (на случай если токены остались)
     const userEmail = session?.user?.email;
     
     if (userEmail) {
@@ -71,11 +72,16 @@ export async function POST(request: NextRequest) {
       await deleteRedisKeys(request.nextUrl, ['backend_auth', 'dummy_auth']);
     }
 
-    // Возвращаем успех БЕЗ удаления cookies NextAuth (сессия сохраняется)
-    return NextResponse.json({
+    // Создаем ответ с очищенными cookies
+    const response = NextResponse.json({
       success: true,
-      message: 'Backend tokens cleared, NextAuth session preserved',
+      message: 'Backend tokens and cookies cleared, NextAuth session preserved',
     });
+
+    // Очищаем HTTP-only cookies
+    clearAuthCookies(response);
+
+    return response;
   } catch (error) {
     console.error('[API /auth/logout] ❌ Logout error:', error);
     return NextResponse.json(

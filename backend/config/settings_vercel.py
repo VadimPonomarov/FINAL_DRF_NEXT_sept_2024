@@ -2,9 +2,7 @@
 Vercel serverless settings.
 
 Inherits base settings from config.settings and overrides only
-Vercel-specific values. Always uses SQLite in /tmp (ephemeral,
-seeded on cold start) — external databases are not reachable from
-Vercel serverless functions.
+Vercel-specific values. Uses Railway PostgreSQL for external access.
 """
 import os
 from pathlib import Path
@@ -20,14 +18,23 @@ ALLOWED_HOSTS = ['.vercel.app', '.onrender.com', 'localhost', '127.0.0.1', '*']
 # ── URL conf ───────────────────────────────────────────────────────────────────
 ROOT_URLCONF = 'config.urls_vercel'
 
-# ── Database: always SQLite in /tmp ────────────────────────────────────────────
-# External DBs (Railway PG, etc.) are unreachable from Vercel serverless.
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': Path('/tmp') / 'autoria.db3',
+# ── Database: Railway PostgreSQL (external) ─────────────────────────────────────
+# Use Railway PostgreSQL for Vercel serverless functions
+import dj_database_url
+
+# Try Railway PostgreSQL URL from environment, fallback to SQLite
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
     }
-}
+else:
+    # Fallback to SQLite if no DATABASE_URL provided
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': Path('/tmp') / 'autoria.db3',
+        }
+    }
 
 # ── Cache ──────────────────────────────────────────────────────────────────────
 CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}

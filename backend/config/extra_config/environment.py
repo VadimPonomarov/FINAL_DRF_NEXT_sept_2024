@@ -25,17 +25,17 @@ def load_environment():
         BASE_DIR / ".env"                           # 4. Backend-специфичные
     ]
 
-    print("🔧 Loading Django environment...")
+    print("Loading Django environment...")
 
     # Загружаем файлы по порядку (без ветвлений!)
     for i, env_file in enumerate(env_files, 1):
         if env_file.exists():
             load_dotenv(env_file, override=True)
-            print(f"  {i}. ✅ {env_file.relative_to(ROOT_DIR)}")
+            print(f"  {i}. [OK] {env_file.relative_to(ROOT_DIR)}")
         else:
-            print(f"  {i}. ⚠️ {env_file.relative_to(ROOT_DIR)} (not found)")
+            print(f"  {i}. [MISSING] {env_file.relative_to(ROOT_DIR)} (not found)")
 
-    print("🎉 Django environment loaded!")
+    print("Django environment loaded!")
 
 # Load environment variables when module is imported
 load_environment()
