@@ -85,40 +85,39 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
 //
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
-    console.log(`[Middleware L1] Checking NextAuth session for Autoria access`);
-    
-    // КРИТИЧНО: використовуємо NEXTAUTH_SECRET з AUTH_CONFIG (з розшифруванням)
+    // Check httpOnly access_token cookie first (set by form login)
+    const accessToken = req.cookies.get('access_token')?.value;
+    if (accessToken && accessToken.length > 10) {
+      console.log('[Middleware L1] access_token cookie found - allowing access');
+      return NextResponse.next();
+    }
+
+    // Fall back to NextAuth JWT check (set by OAuth/NextAuth login)
     const { AUTH_CONFIG } = await import('@/shared/constants/constants');
     const nextAuthSecret = AUTH_CONFIG.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET;
-    
+
     if (!nextAuthSecret) {
-      console.error('[Middleware L1] ❌ NEXTAUTH_SECRET not found! Check environment variables.');
+      console.error('[Middleware L1] NEXTAUTH_SECRET not found');
       const signinUrl = new URL('/api/auth/signin', req.url);
       signinUrl.searchParams.set('callbackUrl', req.url);
       signinUrl.searchParams.set('error', 'configuration_error');
       return NextResponse.redirect(signinUrl);
     }
-    
+
     const token = await getToken({ req, secret: nextAuthSecret });
+    console.log('[Middleware L1] getToken result:', token ? `email: ${token.email}` : 'No token');
 
-    console.log(`[Middleware L1] getToken result:`, token ? 'Token exists' : 'No token', token ? `email: ${token.email}` : '');
-
-    // Якщо немає сесії NextAuth — редирект на signin
     if (!token || !token.email) {
-      console.log(`[Middleware L1] ❌ No NextAuth session - redirecting to signin`);
+      console.log('[Middleware L1] No auth found (no cookie, no NextAuth token) - redirecting to signin');
       const signinUrl = new URL('/api/auth/signin', req.url);
       signinUrl.searchParams.set('callbackUrl', req.url);
       return NextResponse.redirect(signinUrl);
     }
 
-    // Сесія NextAuth існує — надаємо доступ
-    // BackendTokenPresenceGate у Layout (рівень 2) перевірить наявність backend-токенів
-    // та зробить редирект на /login за потреби
-    console.log(`[Middleware L1] ✅ NextAuth session valid (email: ${token.email}) - passing to L2 (BackendTokenPresenceGate)`);
-
+    console.log('[Middleware L1] NextAuth session valid - allowing access');
     return NextResponse.next();
   } catch (error) {
-    console.error('[Middleware L1] ❌ Error checking NextAuth session:', error);
+    console.error('[Middleware L1] Error checking auth:', error);
     const signinUrl = new URL('/api/auth/signin', req.url);
     signinUrl.searchParams.set('callbackUrl', req.url);
     return NextResponse.redirect(signinUrl);
