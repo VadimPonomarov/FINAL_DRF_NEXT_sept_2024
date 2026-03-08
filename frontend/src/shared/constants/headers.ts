@@ -1,5 +1,6 @@
 import { HEADERS } from "@/shared/constants/constants";
 import { getAccessToken } from "@/lib/token-utils";
+import type { NextRequest } from 'next/server';
 
 /**
  * Проверяет, истёк ли JWT токен
@@ -15,14 +16,21 @@ function isTokenExpired(token: string, bufferSeconds: number = 300): boolean {
 }
 
 // Optional baseUrlOverride lets API routes pass request.nextUrl.origin for reliability
-export const getAuthorizationHeaders = async (baseUrlOverride?: string): Promise<Record<string, string>> => {
+// Optional req: if passed, reads access_token cookie directly (server-side routes)
+export const getAuthorizationHeaders = async (baseUrlOverride?: string, req?: NextRequest): Promise<Record<string, string>> => {
   try {
     const baseUrl = baseUrlOverride || process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
     let accessToken: string | undefined;
     try {
-      // Получаем access token из сессии через API
-      accessToken = await getAccessToken('backend_auth');
+      // Priority 1: read directly from request cookies (server-side API routes)
+      if (req) {
+        accessToken = req.cookies.get('access_token')?.value || undefined;
+      }
+      // Priority 2: fall back to session/cookie API chain
+      if (!accessToken) {
+        accessToken = await getAccessToken('backend_auth') || undefined;
+      }
       
       // ПРОАКТИВНАЯ ПРОВЕРКА: если токен истёк, обновляем его СРАЗУ
       if (accessToken && isTokenExpired(accessToken)) {

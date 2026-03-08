@@ -16,7 +16,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     // Get auth headers (reads token from Redis if available)
-    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin, request);
 
     const resp = await fetch(url, {
       method: 'PATCH',

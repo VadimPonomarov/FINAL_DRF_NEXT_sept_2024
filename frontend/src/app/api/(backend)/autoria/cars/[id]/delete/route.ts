@@ -21,7 +21,7 @@ export async function DELETE(
     console.log('[Delete Car API] 📤 Proxying to:', apiUrl);
 
     // Получаем заголовки авторизации — используем origin
-    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin, request);
 
     // Делаем запрос к Django backend
     const backendResponse = await fetch(apiUrl, {

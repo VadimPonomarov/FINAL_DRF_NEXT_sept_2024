@@ -79,8 +79,8 @@ async function handleRequest(
     const url = `${backendOrigin}/${path}${request.nextUrl.search}`;
     console.log(`[Proxy API] Proxying to: ${url}`);
 
-    // Get authorization headers
-    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
+    // Get authorization headers - reads access_token cookie from request directly
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin, request);
 
     // Prepare request options
     const requestOptions: RequestInit = {

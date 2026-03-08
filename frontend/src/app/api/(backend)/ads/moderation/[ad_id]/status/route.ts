@@ -18,7 +18,7 @@ export async function PATCH(
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     const apiUrl = `${backendUrl}/api/ads/admin/${ad_id}/status/update/`;
 
-    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin, request);
 
     const backendResponse = await fetch(apiUrl, {
       method: 'PATCH',

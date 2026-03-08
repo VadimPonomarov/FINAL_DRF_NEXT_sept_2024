@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     const apiUrl = `${backendUrl}/api/ads/analytics/track/`;
 
-    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin, request);
 
     const backendResponse = await fetch(apiUrl, {
       method: 'POST',

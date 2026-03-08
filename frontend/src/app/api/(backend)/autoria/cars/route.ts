@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Получаем заголовки авторизации — используем origin, чтобы корректно достучаться до /api/redis
-    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin, request);
 
     // Если запрошены персональные фильтры (избранное/мои) и нет авторизации — вернем 401,
     // чтобы фронт мог показать понятный тост вместо пустой выдачи

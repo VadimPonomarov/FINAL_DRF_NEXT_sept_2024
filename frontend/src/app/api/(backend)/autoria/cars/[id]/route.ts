@@ -20,7 +20,7 @@ export async function GET(
     const apiUrl = `${backendUrl}/api/ads/cars/${carId}`;
 
     // Получаем заголовки авторизации — используем origin, чтобы корректно достучаться до /api/redis
-    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin, request);
 
     // Делаем запрос к backend
     const backendResponse = await fetch(apiUrl, {
@@ -95,7 +95,7 @@ export async function DELETE(
     const id = resolvedParams.id;
     const backendUrl = process.env.IS_DOCKER === 'true' ? 'http://app:8000' : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
     const apiUrl = `${backendUrl}/api/ads/cars/${id}/delete`;
-    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin, request);
 
     const backendResponse = await fetch(apiUrl, { method: 'DELETE', headers: authHeaders });
     if (!backendResponse.ok) {

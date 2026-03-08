@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
     const apiUrl = `${backendUrl}/api/ads/favorites/toggle/`;
 
     // Получаем заголовки авторизации (пользователь определяется по токену)
-    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin);
+    const authHeaders = await getAuthorizationHeaders(request.nextUrl.origin, request);
     console.log('[Favorites Toggle API] Using auth headers for user identification', { origin: request.nextUrl.origin });
 
     // Делаем запрос к backend
