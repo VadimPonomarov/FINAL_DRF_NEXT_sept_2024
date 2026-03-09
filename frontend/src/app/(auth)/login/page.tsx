@@ -34,40 +34,12 @@ const LoginPage: FC = () => {
     // Check if running in Docker
     const isDocker = process.env.NEXT_PUBLIC_IS_DOCKER === 'true';
 
-    // Проверка ТОЛЬКО NextAuth сессии
-    // Страница /login требует сессию NextAuth для получения backend токенов
+    // /login is the public entry point — always show the form
+    // Do NOT redirect unauthenticated users: this page IS for unauthenticated users
     useEffect(() => {
-        if (status === 'loading') {
-            return;
-        }
-
-        if (status === 'unauthenticated' || !session) {
-            // Избегаем циклов: если пришли с ошибкой/алертом или уже недавно редиректили на signin — не редиректим автоматически
-            const hasAuthMessage = Boolean(error || alert);
-            let throttled = false;
-            try {
-                const now = Date.now();
-                const last = Number(window.sessionStorage.getItem('auth:lastSigninRedirectTs') || '0');
-                throttled = now - last < 10000; // 10s throttle
-                if (!throttled) {
-                    window.sessionStorage.setItem('auth:lastSigninRedirectTs', String(now));
-                }
-            } catch {}
-
-            if (!hasAuthMessage && !throttled) {
-                console.log('[LoginPage] ❌ No NextAuth session, redirecting to signin (throttled ok)');
-                router.replace(`/api/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl || '/login')}`);
-                return;
-            }
-
-            console.warn('[LoginPage] Skipping auto-redirect to signin (hasAuthMessage or throttled)');
-            setIsCheckingAuth(false);
-            return;
-        }
-
-        console.log('[LoginPage] ✅ NextAuth session valid');
+        if (status === 'loading') return;
         setIsCheckingAuth(false);
-    }, [status, session, router, callbackUrl]);
+    }, [status]);
 
     // Show toast notifications for messages
     useEffect(() => {

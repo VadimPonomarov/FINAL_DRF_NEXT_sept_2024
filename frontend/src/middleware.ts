@@ -33,45 +33,6 @@ const PUBLIC_PATHS = [
   '/api/auth/error',
 ];
 
-// Функція для перевірки внутрішньої сесії NextAuth за допомогою getToken
-async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
-  try {
-    console.log(`[Middleware] Checking NextAuth session with getToken`);
-    // КРИТИЧНО: Используем NEXTAUTH_SECRET из AUTH_CONFIG (с дешифрованием)
-    const { AUTH_CONFIG } = await import('@/shared/constants/constants');
-    const nextAuthSecret = AUTH_CONFIG.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET;
-    
-    if (!nextAuthSecret) {
-      console.error('[Middleware] ❌ NEXTAUTH_SECRET not found! Check environment variables.');
-      const signinUrl = new URL('/api/auth/signin', req.url);
-      signinUrl.searchParams.set('callbackUrl', req.url);
-      signinUrl.searchParams.set('error', 'configuration_error');
-      return NextResponse.redirect(signinUrl);
-    }
-
-    // Use NextAuth's getToken to check session
-    const token = await getToken({ req, secret: nextAuthSecret });
-
-    // If no token, redirect to signin
-    if (!token) {
-      console.log(`[Middleware] No valid NextAuth session - redirecting to signin with callback`);
-      // Create signin URL with callbackUrl parameter
-      const signinUrl = new URL('/api/auth/signin', req.url);
-      signinUrl.searchParams.set('callbackUrl', req.url);
-      return NextResponse.redirect(signinUrl);
-    }
-
-    console.log(`[Middleware] Valid NextAuth session found - allowing access`);
-    return NextResponse.next();
-  } catch (error) {
-    console.error(`[Middleware] Error checking NextAuth session:`, error);
-    // Create signin URL with callbackUrl parameter
-    const signinUrl = new URL('/api/auth/signin', req.url);
-    signinUrl.searchParams.set('callbackUrl', req.url);
-    return NextResponse.redirect(signinUrl);
-  }
-}
-
 // РІВЕНЬ 1 (з 2): Middleware — перевірка NextAuth сесії
 // ════════════════════════════════════════════════════════════════════════
 // Дворівнева система валідації для AutoRia:
@@ -83,48 +44,36 @@ async function checkInternalAuth(req: NextRequest): Promise<NextResponse> {
 // - signOut = удаляет сессию + токены → middleware блокирует
 // - logout = удаляет только токены → middleware пропускает → BackendTokenPresenceGate блокирует
 //
+// РІВЕНЬ 1: Перевіряємо тільки наявність NextAuth сесії
+// Токени (access_token, refresh_token) — для зовнішніх API, не для middleware
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
-    // Check httpOnly access_token cookie first (set by form login)
-    const accessToken = req.cookies.get('access_token')?.value;
-    const allCookies = req.cookies.getAll().map(c => c.name).join(', ');
-    console.log('[Middleware L1] All cookies:', allCookies || 'NONE');
-    console.log('[Middleware L1] access_token cookie:', accessToken ? `present (${accessToken.substring(0, 20)}...)` : 'MISSING');
-    
-    if (accessToken && accessToken.length > 10) {
-      console.log('[Middleware L1] access_token cookie found - allowing access');
-      return NextResponse.next();
-    }
-
-    // Fall back to NextAuth JWT check (set by OAuth/NextAuth login)
     const { AUTH_CONFIG } = await import('@/shared/constants/constants');
     const nextAuthSecret = AUTH_CONFIG.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET;
 
     if (!nextAuthSecret) {
-      console.error('[Middleware L1] NEXTAUTH_SECRET not found');
-      const signinUrl = new URL('/api/auth/signin', req.url);
-      signinUrl.searchParams.set('callbackUrl', req.url);
-      signinUrl.searchParams.set('error', 'configuration_error');
-      return NextResponse.redirect(signinUrl);
+      console.error('[Middleware] NEXTAUTH_SECRET not found');
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('callbackUrl', req.url);
+      return NextResponse.redirect(loginUrl);
     }
 
     const token = await getToken({ req, secret: nextAuthSecret });
-    console.log('[Middleware L1] getToken result:', token ? `email: ${token.email}` : 'No token');
 
     if (!token) {
-      console.log('[Middleware L1] No auth found (no cookie, no NextAuth token) - redirecting to signin');
-      const signinUrl = new URL('/api/auth/signin', req.url);
-      signinUrl.searchParams.set('callbackUrl', req.url);
-      return NextResponse.redirect(signinUrl);
+      console.log('[Middleware] No NextAuth session - redirecting to /login');
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('callbackUrl', req.url);
+      return NextResponse.redirect(loginUrl);
     }
 
-    console.log('[Middleware L1] NextAuth session valid - allowing access');
+    console.log(`[Middleware] NextAuth session valid: ${token.email}`);
     return NextResponse.next();
   } catch (error) {
-    console.error('[Middleware L1] Error checking auth:', error);
-    const signinUrl = new URL('/api/auth/signin', req.url);
-    signinUrl.searchParams.set('callbackUrl', req.url);
-    return NextResponse.redirect(signinUrl);
+    console.error('[Middleware] Error checking NextAuth session:', error);
+    const loginUrl = new URL('/login', req.url);
+    loginUrl.searchParams.set('callbackUrl', req.url);
+    return NextResponse.redirect(loginUrl);
   }
 }
 
@@ -197,7 +146,7 @@ export default async function middleware(req: NextRequest) {
   // Защищаем другие защищенные страницы
   const requiresAuth = ['/profile', '/settings'].some(path => pathname.startsWith(path));
   if (requiresAuth && isHtmlPage) {
-    return await checkInternalAuth(req);
+    return await checkBackendAuth(req);
   }
 
   // Обробляємо i18n для окремих шляхів

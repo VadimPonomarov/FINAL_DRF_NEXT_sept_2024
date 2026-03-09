@@ -105,17 +105,17 @@ export const useLoginForm = () => {
 
   // Add effect to clear errors when form fields change
   useEffect(() => {
-    const backendSubscription = backendForm.watch(() => {
+    const backendUnsubscribe = backendForm.watch(() => {
       if (error) setError("");
     });
 
-    const dummySubscription = dummyForm.watch(() => {
+    const dummyUnsubscribe = dummyForm.watch(() => {
       if (error) setError("");
     });
 
     return () => {
-      backendSubscription.unsubscribe();
-      dummySubscription.unsubscribe();
+      backendUnsubscribe();
+      dummyUnsubscribe();
     };
   }, [backendForm, dummyForm, error]);
 
