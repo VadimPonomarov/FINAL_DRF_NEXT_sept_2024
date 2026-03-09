@@ -5,17 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Globe, ChevronUp, ChevronDown } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
+import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/shared/constants/constants';
 
 const FixedLanguageSwitch: React.FC = () => {
   const { locale, setLocale, availableLocales, t } = useI18n();
   const { provider } = useAuthProvider();
+  const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const currentLocale = availableLocales.find(l => l.code === locale);
 
   // Скрываем переключатель языка для Dummy провайдера
-  if (provider === AuthProvider.Dummy) {
+  // Скрываем на странице логина чтобы избежать дублирования
+  if (provider === AuthProvider.Dummy || pathname === '/login') {
     return null;
   }
 
@@ -45,7 +48,7 @@ const FixedLanguageSwitch: React.FC = () => {
                   variant={locale === localeOption.code ? "default" : "ghost"}
                   size="sm"
                   onClick={() => {
-                    setLocale(localeOption.code);
+                    setLocale(localeOption.code as any);
                     setIsExpanded(false);
                   }}
                   className={`h-8 px-3 justify-start text-xs font-medium transition-all duration-200 ${
@@ -55,7 +58,7 @@ const FixedLanguageSwitch: React.FC = () => {
                   }`}
                 >
                   <span className="mr-2">{localeOption.flag}</span>
-                  <span className="mr-2">{localeOption.code.toUpperCase()}</span>
+                  <span className="mr-2">{localeOption.code!.toUpperCase()}</span>
                   <span className="text-xs opacity-75">{localeOption.nativeName}</span>
                 </Button>
               ))}
