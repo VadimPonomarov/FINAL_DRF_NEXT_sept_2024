@@ -249,7 +249,7 @@ const BackendUsersComboBox: FC<IProps> = ({ reset }) => {
             >
                 {sections.map((section, idx) => (
                   <SelectGroup key={idx}>
-                    {section.label && <SelectLabel className="sticky top-0 bg-white z-10 px-2 py-1.5 text-xs font-semibold text-gray-600 border-b">{section.label}</SelectLabel>}
+                    {section.label && <SelectLabel className="bg-white px-2 py-1.5 text-xs font-semibold text-gray-600 border-b">{section.label}</SelectLabel>}
                     {section.items.map((item) => (
                       <SelectItem
                         key={item.id}

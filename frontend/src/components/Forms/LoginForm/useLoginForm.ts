@@ -242,14 +242,22 @@ export const useLoginForm = () => {
         // CredentialsProvider requires only email - no password validation needed
         console.log('[LoginForm] Creating NextAuth session before redirect...');
         try {
-          await nextAuthSignIn('credentials', { email: userForLogin.email, redirect: false });
-          console.log('[LoginForm] ✅ NextAuth session created');
+          const signInResult = await nextAuthSignIn('credentials', { 
+            email: userForLogin.email, 
+            redirect: false 
+          });
+          
+          if (signInResult?.error) {
+            console.warn('[LoginForm] NextAuth session creation failed:', signInResult.error);
+          } else {
+            console.log('[LoginForm] ✅ NextAuth session created');
+          }
         } catch (e) {
-          console.warn('[LoginForm] NextAuth session creation failed:', e);
+          console.warn('[LoginForm] NextAuth session creation error:', e);
         }
 
         // Small delay to ensure session cookie is set in browser
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise<void>(resolve => setTimeout(resolve, 300));
         
         console.log('[LoginForm] Redirecting now to:', redirectUrl);
         window.location.href = redirectUrl;
