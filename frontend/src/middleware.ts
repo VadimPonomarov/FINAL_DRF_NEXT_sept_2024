@@ -87,6 +87,10 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
     // Check httpOnly access_token cookie first (set by form login)
     const accessToken = req.cookies.get('access_token')?.value;
+    const allCookies = req.cookies.getAll().map(c => c.name).join(', ');
+    console.log('[Middleware L1] All cookies:', allCookies || 'NONE');
+    console.log('[Middleware L1] access_token cookie:', accessToken ? `present (${accessToken.substring(0, 20)}...)` : 'MISSING');
+    
     if (accessToken && accessToken.length > 10) {
       console.log('[Middleware L1] access_token cookie found - allowing access');
       return NextResponse.next();

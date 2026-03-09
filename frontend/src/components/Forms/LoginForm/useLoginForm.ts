@@ -224,12 +224,6 @@ export const useLoginForm = () => {
 
         login(userForLogin, authResponse.access, authResponse.refresh);
 
-        // Create NextAuth session so middleware can verify auth (Level 1)
-        // CredentialsProvider requires only email - no password validation needed
-        nextAuthSignIn('credentials', { email: userForLogin.email, redirect: false })
-          .then(() => console.log('[LoginForm] NextAuth session created'))
-          .catch((e) => console.warn('[LoginForm] NextAuth session creation failed (non-critical):', e));
-
         console.log('[LoginForm] Tokens saved in httpOnly cookies');
 
         toast({
@@ -242,11 +236,23 @@ export const useLoginForm = () => {
         setMessage("Authentication successful!");
 
         const redirectUrl = rawCallbackUrl || callbackUrl || '/';
-        console.log('[Auth] Redirecting to: ' + redirectUrl);
+        console.log('[Auth] Will redirect to: ' + redirectUrl);
 
-        setTimeout(() => {
-          window.location.href = redirectUrl;
-        }, 1500);
+        // CRITICAL: Create NextAuth session BEFORE redirect so middleware allows access
+        // CredentialsProvider requires only email - no password validation needed
+        console.log('[LoginForm] Creating NextAuth session before redirect...');
+        try {
+          await nextAuthSignIn('credentials', { email: userForLogin.email, redirect: false });
+          console.log('[LoginForm] ✅ NextAuth session created');
+        } catch (e) {
+          console.warn('[LoginForm] NextAuth session creation failed:', e);
+        }
+
+        // Small delay to ensure session cookie is set in browser
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        console.log('[LoginForm] Redirecting now to:', redirectUrl);
+        window.location.href = redirectUrl;
       } else {
         console.error('[Auth] ❌ Missing required authentication data in response');
         console.error('[Auth] Response data details:', {
