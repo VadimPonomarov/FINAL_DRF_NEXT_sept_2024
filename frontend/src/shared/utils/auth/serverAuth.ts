@@ -205,7 +205,7 @@ export class ServerAuthManager {
     if (response.status === 401) {
       console.log('[ServerAuth] Got 401, attempting token refresh...');
       
-      const newAccessToken = await this.refreshToken(request, tokens.refresh);
+      const newAccessToken = await this.refreshToken(request, refreshToken || '');
       if (!newAccessToken) {
         throw new Error('Authentication failed - unable to refresh token');
       }

@@ -124,7 +124,12 @@ export async function fetchWithDomain<T = any>(
 
     // Handle errors
     if (!response.ok) {
-      logger.error(`[fetchWithDomain] Error: ${response.status} ${response.statusText}`);
+      const isAuthError = response.status === 401 || response.status === 403;
+      if (isAuthError && !redirectOnError) {
+        logger.debug(`[fetchWithDomain] Auth error (${response.status}) - not redirecting`);
+      } else {
+        logger.error(`[fetchWithDomain] Error: ${response.status} ${response.statusText}`);
+      }
 
       if (redirectOnError) {
         if (response.status === 401 || response.status === 403) {

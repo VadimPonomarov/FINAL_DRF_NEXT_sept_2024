@@ -3,7 +3,7 @@
  * Обеспечивает синхронизацию с бэкендом и управление состоянием
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import { useI18n } from '@/contexts/I18nContext';
@@ -608,36 +608,52 @@ export const useUserProfileData = () => {
     }
   }, [toast]);
 
+  // Keep ref to latest loadUserData to avoid re-triggering effect when callback identity changes
+  const loadUserDataRef = useRef(loadUserData);
+  useEffect(() => { loadUserDataRef.current = loadUserData; }, [loadUserData]);
+
+  // Guard: prevent duplicate loads when status/session flicker
+  const loadCalledRef = useRef(false);
+
   // Load data only when authenticated: NextAuth session OR access_token cookie (form login)
   useEffect(() => {
+    loadCalledRef.current = false;
+
     if (status === 'loading') {
       if (DEBUG) console.log('[useUserProfileData] Session loading, waiting...');
       return;
     }
 
+    if (loadCalledRef.current) return;
+
     // NextAuth session present — authenticated
     if (session) {
       if (DEBUG) console.log('[useUserProfileData] NextAuth session found, loading data...');
-      loadUserData();
+      loadCalledRef.current = true;
+      loadUserDataRef.current();
       return;
     }
 
     // No NextAuth session — check cookie-based auth (form login via httpOnly cookie)
+    let cancelled = false;
     fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
       .then(tokenData => {
+        if (cancelled) return;
         if (tokenData?.access) {
           if (DEBUG) console.log('[useUserProfileData] Cookie token found, loading data...');
-          loadUserData();
+          loadCalledRef.current = true;
+          loadUserDataRef.current();
         } else {
           if (DEBUG) console.log('[useUserProfileData] No auth, skipping data load');
           setState({ loading: false, error: null, data: null, updating: false, updateError: null });
         }
       })
       .catch(() => {
-        setState({ loading: false, error: null, data: null, updating: false, updateError: null });
+        if (!cancelled) setState({ loading: false, error: null, data: null, updating: false, updateError: null });
       });
-  }, [status, session, loadUserData, DEBUG]);
+    return () => { cancelled = true; };
+  }, [status, session, DEBUG]);
 
   // Очистка данных при signout
   useEffect(() => {
