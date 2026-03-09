@@ -15,7 +15,7 @@ export interface I18nConfig {
 }
 
 export interface LocaleConfig {
-  code?: string; // Optional code field for extended locale configs
+  code: Locale; // Code field is now required and properly typed
   name: string;
   nativeName: string;
   flag: string;
@@ -29,7 +29,7 @@ export interface LocaleConfig {
   };
 }
 
-export type TranslationFunction = (key: string, params?: Record<string, any>) => string;
+export type TranslationFunction = (key: string, paramsOrFallback?: Record<string, any> | string) => string;
 
 // Get supported locales in the current environment
 function getSupportedLocales(): string[] {
@@ -45,7 +45,7 @@ function getSupportedLocales(): string[] {
 // Filter locales to only include those supported by the environment
 const allLocales = ['en', 'uk', 'ru'];
 const supportedLocales = getSupportedLocales().filter(locale =>
-  allLocales.includes(locale.split('-')[0])
+  allLocales.includes(locale?.split('-')[0] || '')
 );
 
 // Ensure we have at least one valid locale
@@ -137,7 +137,7 @@ export function getCurrentLocale(): Locale {
   }
 
   const browserLang = navigator.language.split('-')[0];
-  if (isValidLocale(browserLang)) {
+  if (browserLang && isValidLocale(browserLang)) {
     return browserLang as Locale;
   }
 
@@ -178,6 +178,7 @@ export function setStoredLocale(locale: Locale): void {
 export function getLocaleConfig(locale: Locale): LocaleConfig {
   const configs: Record<Locale, LocaleConfig> = {
     uk: {
+      code: 'uk',
       name: 'Ukrainian',
       nativeName: 'Українська',
       flag: '🇺🇦',
@@ -191,6 +192,7 @@ export function getLocaleConfig(locale: Locale): LocaleConfig {
       },
     },
     en: {
+      code: 'en',
       name: 'English',
       nativeName: 'English',
       flag: '🇺🇸',
@@ -204,6 +206,7 @@ export function getLocaleConfig(locale: Locale): LocaleConfig {
       },
     },
     ru: {
+      code: 'ru',
       name: 'Russian',
       nativeName: 'Русский',
       flag: '🇷🇺',
