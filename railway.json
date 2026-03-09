@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "sh -c 'python manage.py migrate --noinput; python manage.py collectstatic --noinput; nohup python manage.py init_project_data --force --skip-migrations > /tmp/seed.log 2>&1 & gunicorn config.wsgi_simple:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --access-logfile -'",
+    "startCommand": "sh -c 'python manage.py migrate --noinput; python manage.py collectstatic --noinput; nohup sh -c \"python manage.py init_project_data --force --skip-migrations && python manage.py fix_ad_images\" > /tmp/seed.log 2>&1 & gunicorn config.wsgi_simple:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --access-logfile -'",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3,
     "healthcheckPath": "/health/",
