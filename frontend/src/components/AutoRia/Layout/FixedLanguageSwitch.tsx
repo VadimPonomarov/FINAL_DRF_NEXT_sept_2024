@@ -2,26 +2,14 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Globe2, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { useAuthProvider } from '@/contexts/AuthProviderContext';
-import { usePathname } from 'next/navigation';
-import { AuthProvider } from '@/shared/constants/constants';
 
 const FixedLanguageSwitch: React.FC = () => {
   const { locale, setLocale, availableLocales, t } = useI18n();
-  const { provider } = useAuthProvider();
-  const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const currentLocale = availableLocales.find(l => l.code === locale);
-
-  // Скрываем переключатель языка:
-  // - Для Dummy провайдера
-  // - На странице логина
-  if (provider === AuthProvider.Dummy || pathname === '/login') {
-    return null;
-  }
 
   return (
     <div className="fixed bottom-4 left-4 z-[120]">

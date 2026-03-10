@@ -7,6 +7,7 @@ import { ChatBotIcon } from "@/components/ChatBot/ChatBotIcon";
 import { Toaster } from "@/components/ui/toaster";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { logger } from "@/shared/utils/logger";
+import FixedLanguageSwitch from "@/components/AutoRia/Layout/FixedLanguageSwitch";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         <main className="w-full min-h-[calc(100vh-50px)] pt-[60px] pb-4">
           {children}
         </main>
+        <FixedLanguageSwitch />
         <ChatBotIcon />
         <Toaster />
       </RootProvider>

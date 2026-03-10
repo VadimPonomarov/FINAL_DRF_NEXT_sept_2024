@@ -180,7 +180,7 @@ const AutoRiaMainPage = () => {
 
     setIsGenerating(true);
     try {
-      const response = await fetch('/api/autoria/test-ads/cleanup', {
+      const response = await fetch('/api/autoria/test-ads/clear', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
