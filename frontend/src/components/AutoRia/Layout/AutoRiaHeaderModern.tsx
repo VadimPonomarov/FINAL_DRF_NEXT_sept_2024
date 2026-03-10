@@ -154,7 +154,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
 
         {/* Right Section */}
         <div className="flex items-center gap-2">
-          {/* Language Selector */}
+          {/* Language Selector - Desktop and Mobile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-9 w-9 rounded-lg p-0">
@@ -179,27 +179,27 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Theme Toggle */}
+          {/* Theme Toggle - Desktop Only */}
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleDarkMode}
-            className="h-9 w-9 rounded-lg p-0"
+            className="hidden md:flex h-9 w-9 rounded-lg p-0"
           >
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span className="sr-only">Toggle theme</span>
           </Button>
 
-          {/* User Menu */}
+          {/* User Menu - Desktop Only */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-9 rounded-lg px-3">
+              <Button variant="ghost" size="sm" className="hidden md:flex h-9 rounded-lg px-3">
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                     <User className="h-4 w-4 text-primary" />
                   </div>
-                  <span className="hidden sm:block text-sm font-medium">
+                  <span className="hidden lg:block text-sm font-medium">
                     {redisAuth?.user?.email?.split('@')[0] || 'User'}
                   </span>
                 </div>
