@@ -419,14 +419,14 @@ export const MenuMain: FC = () => {
   }, [currentProvider, session]);
 
   return (
-    <div className="relative mb-4">
+    <div className="relative mb-8">
       {/* Desktop menu */}
       <div className="hidden md:block">
         <MenuComponent items={menuItems} />
       </div>
       
       {/* Language Selector - Desktop - Bottom Left */}
-      <div className="hidden md:block absolute left-4 bottom-0 z-[99999]">
+      <div className="hidden md:block absolute left-4 bottom-4 z-[99999]">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="flex items-center gap-1">

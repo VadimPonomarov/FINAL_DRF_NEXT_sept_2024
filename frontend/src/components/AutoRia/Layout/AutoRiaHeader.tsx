@@ -193,32 +193,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
             ))}
           </nav>
 
-          {/* Right Side - Language Selector Only */}
-          <div className="flex items-center gap-3">
-            {/* Language Selector - Desktop and Mobile */}
-            <div className="block">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex items-center gap-1">
-                    <Globe2 className="h-4 w-4" />
-                    <span className="text-xs">{currentLocale?.flag || '🌍'}</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {availableLocales.map((localeOption) => (
-                    <DropdownMenuItem
-                      key={localeOption.code}
-                      onClick={() => setLocale(localeOption.code as any)}
-                      className={locale === localeOption.code ? 'bg-accent' : ''}
-                    >
-                      {localeOption.flag} {localeOption.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
           </div>
-        </div>
       </div>
     </header>
   );
