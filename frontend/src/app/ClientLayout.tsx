@@ -7,11 +7,8 @@ import { ChatBotIcon } from "@/components/ChatBot/ChatBotIcon";
 import { Toaster } from "@/components/ui/toaster";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { logger } from "@/shared/utils/logger";
-import { usePathname } from "next/navigation";
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isAutoRiaPage = pathname?.startsWith('/autoria');
   useEffect(() => {
     // Handle global errors
     const handleError = (event: ErrorEvent) => {
@@ -38,13 +35,11 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* MenuMain тільки для не-AutoRia сторінок */}
-      {!isAutoRiaPage && (
-        <header className="header-container h-[50px]">
-          <MenuMain/>
-        </header>
-      )}
-      <main className={isAutoRiaPage ? "w-full min-h-screen" : "w-full min-h-[calc(100vh-50px)] pt-[60px] pb-4"}>
+      {/* MenuMain - головне меню (завжди показується) */}
+      <header className="header-container h-[50px]">
+        <MenuMain/>
+      </header>
+      <main className="w-full min-h-[calc(100vh-50px)] pt-[60px] pb-4">
         {children}
       </main>
       <ChatBotIcon />
