@@ -407,7 +407,8 @@ export const MenuMain: FC = () => {
               window.location.href = '/api/auth/signin';
             }
           },
-          tooltip: "Sign out"
+          tooltip: "Sign out",
+          index: 101
         }
       ];
     }
