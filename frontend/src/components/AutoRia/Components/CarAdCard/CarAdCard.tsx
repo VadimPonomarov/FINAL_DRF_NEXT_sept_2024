@@ -209,7 +209,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       toast({
         variant: 'default',
         title: t('notifications.phoneShown'),
-        description: ad.seller?.phone || t('notifications.phoneNumber'),
+        description: ad.user?.phone || t('notifications.phoneNumber'),
         duration: 5000
       });
     } catch (error) {
@@ -264,10 +264,10 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
         
         {/* 🏷️ Бейджи */}
         <div className="absolute top-2 left-2 flex gap-2">
-          {ad.isUrgent && (
+          {ad.is_urgent && (
             <Badge className="bg-red-500 text-white">🔥 Срочно</Badge>
           )}
-          {ad.isPremium && (
+          {ad.is_premium && (
             <Badge className="bg-gold-500 text-white">💎 Премиум</Badge>
           )}
         </div>
@@ -290,7 +290,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
         {/* 👁️ Просмотры */}
         <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
           <Eye className="h-3 w-3" />
-          {ad.view_count || 0}
+          {ad.views_count || 0}
         </div>
       </div>
 
@@ -312,9 +312,9 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
               {ad.mark_name}
             </Badge>
           )}
-          {ad.model && (
+          {ad.model_name && (
             <Badge variant="outline" className="font-semibold">
-              {ad.model}
+              {ad.model_name}
             </Badge>
           )}
         </div>
@@ -410,7 +410,7 @@ export default React.memo(CarAdCard, (prevProps, nextProps) => {
     'is_favorite',
     'favorites_count',
     'phone_views_count',
-    'view_count',
+    'views_count',
     'title',
     'price',
     'price_usd',

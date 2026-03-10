@@ -19,13 +19,13 @@ export async function POST(request: NextRequest) {
       return new NextResponse(text, { status: direct.status, headers: { 'Content-Type': direct.headers.get('Content-Type') || 'application/json' } });
     }
 
-    // Fallback: delete per id
+    // Fallback: delete per id using correct backend endpoint
     const deleted: number[] = [];
     const failed: number[] = [];
     for (const id of ids) {
       const resp = await ServerAuthManager.authenticatedFetch(
         request,
-        `${backendUrl}/api/ads/${id}/`,
+        `${backendUrl}/api/ads/cars/${id}/delete`,
         { method: 'DELETE' }
       );
       (resp.ok ? deleted : failed).push(id);

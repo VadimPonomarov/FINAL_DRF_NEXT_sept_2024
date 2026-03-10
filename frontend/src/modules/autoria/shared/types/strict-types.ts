@@ -221,6 +221,7 @@ export interface CarAd {
   // Технические характеристики
   year?: number;
   mileage?: number;
+  mileage_km?: number;
   engine_volume?: number;
   engine_power?: number;
   fuel_type?: string;
@@ -236,9 +237,30 @@ export interface CarAd {
   number_of_doors?: number;
   number_of_seats?: number;
   
+  // Динамические поля (для совместимости с различными источниками данных)
+  dynamic_fields?: {
+    year?: number;
+    mileage?: number;
+    mileage_km?: number;
+    fuel_type?: string;
+    transmission?: string;
+    engine_volume?: number;
+    engine_power?: number;
+    drive_type?: string;
+    body_type?: string;
+    color?: string;
+    steering_wheel?: string;
+    condition?: string;
+    [key: string]: any;
+  };
+  
   // Цена
   price: number;
   currency: Currency;
+  // Дополнительные поля цены (рассчитываются на backend)
+  price_usd?: number;
+  price_eur?: number;
+  price_uah?: number;
   
   // Местоположение
   region: number | Region;
@@ -271,11 +293,16 @@ export interface CarAd {
   views_count?: number;
   favorites_count?: number;
   
+  // Статусы пользователя
+  is_favorite?: boolean;
+  phone_views_count?: number;
+  
   // Дополнительные статусы
   is_validated?: boolean;
   exchange_status?: string;
   is_urgent?: boolean;
   is_highlighted?: boolean;
+  is_premium?: boolean;
 }
 
 // ============================================================================

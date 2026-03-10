@@ -248,7 +248,7 @@ export class CarAdsService {
     const results = await Promise.allSettled(ids.map(id => this.deleteCarAd(id)));
     const deleted: number[] = [];
     const failed: number[] = [];
-    results.forEach((r, idx) => (r.status === 'fulfilled' ? deleted : failed).push(ids[idx]));
+    results.forEach((r, idx) => (r.status === 'fulfilled' ? deleted : failed).push(ids[idx]!));
     return { deleted, failed };
   }
 
@@ -257,7 +257,12 @@ export class CarAdsService {
     console.log('[CarAdsService] bulkDeleteMyAdsByStatus called with status:', status);
     
     // Загружаем мои объявления с этим статусом
-    const pageData = await this.getMyCarAds({ page: 1, limit: 1000, status });
+    // Если status === 'all', не передаём параметр — вернутся все объявления
+    const params: { page: number; limit: number; status?: string } = { page: 1, limit: 1000 };
+    if (status && status !== 'all') {
+      params.status = status;
+    }
+    const pageData = await this.getMyCarAds(params);
     const ads = pageData.results || [];
     console.log('[CarAdsService] Found ads to delete:', ads.length);
     

@@ -123,6 +123,10 @@ export class ServerAuthManager {
   private static isTokenExpired(token: string): boolean {
     try {
       const base64Url = token.split('.')[1];
+      if (!base64Url) {
+        console.error('[ServerAuth] Invalid token format - missing payload');
+        return true;
+      }
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       // Use Buffer in Node.js; fallback to atob when available (edge/runtime)
       let jsonPayload: string;
@@ -259,6 +263,10 @@ export class ServerAuthManager {
     try {
       // Decode the access token to get user ID
       const base64Url = tokens.access.split('.')[1];
+      if (!base64Url) {
+        console.error('[ServerAuth] Invalid token format - missing payload');
+        return null;
+      }
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
 
       // Use Buffer in Node.js; fallback to atob when available (edge/runtime)
