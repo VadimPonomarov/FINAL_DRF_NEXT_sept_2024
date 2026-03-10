@@ -4,7 +4,9 @@
     "types": [
       "node",
       "react",
-      "@types/react"
+      "@types/react",
+      "react/next",
+      "react/jsx-runtime"
     ],
     "lib": [
       "dom",

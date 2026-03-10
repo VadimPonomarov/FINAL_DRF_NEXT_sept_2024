@@ -13,8 +13,10 @@ import { ThemeControls } from '@/components/ui/theme-controls';
 import GlobalProviderToggle from '@/components/All/GlobalProviderToggle/GlobalProviderToggle';
 import { FaBook, FaSignOutAlt, FaNetworkWired, FaCar } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 
-export const MenuMain: FC = (): JSX.Element => {
+export const MenuMain: FC = () => {
   const { provider } = useAuthProvider();
   const router = useRouter();
   // const router = useRouter();
@@ -24,7 +26,7 @@ export const MenuMain: FC = (): JSX.Element => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
-  const menuTimeoutRef = useRef<NodeJS.Timeout>();
+  const menuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Сервисы, которые не поддерживают iframe из-за CORS ограничений
   const iframeBlockedServices: string[] = [];
@@ -89,6 +91,10 @@ export const MenuMain: FC = (): JSX.Element => {
       }
     };
   }, [mobileMenuOpen]);
+
+  const handleLogout = async () => {
+    await cleanupAuth('/api/auth/signin');
+  };
 
   // Listen for auth provider changes
   useEffect(() => {
@@ -417,25 +423,39 @@ export const MenuMain: FC = (): JSX.Element => {
           <GlobalProviderToggle />
           <ThemeControls />
           {session && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <DropdownMenuPrimitive.Root>
+              <DropdownMenuPrimitive.Trigger asChild>
                 <Button variant="ghost" size="sm" className="flex items-center gap-2 h-8 px-2">
                   <User className="h-4 w-4" />
                   <span className="text-sm font-medium">{session.user?.email?.split('@')[0] || 'User'}</span>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => router.push('/profile')}>
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/settings')}>
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenuPrimitive.Trigger>
+              <DropdownMenuPrimitive.Portal>
+                <DropdownMenuPrimitive.Content 
+                  align="end"
+                  className="z-[9999] min-w-[8rem] overflow-hidden rounded-md border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 shadow-md p-1"
+                >
+                  <DropdownMenuPrimitive.Item 
+                    onClick={() => router.push('/profile')}
+                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Profile
+                  </DropdownMenuPrimitive.Item>
+                  <DropdownMenuPrimitive.Item 
+                    onClick={() => router.push('/settings')}
+                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Settings
+                  </DropdownMenuPrimitive.Item>
+                  <DropdownMenuPrimitive.Item 
+                    onClick={handleLogout}
+                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Logout
+                  </DropdownMenuPrimitive.Item>
+                </DropdownMenuPrimitive.Content>
+              </DropdownMenuPrimitive.Portal>
+            </DropdownMenuPrimitive.Root>
           )}
         </div>
       </div>
