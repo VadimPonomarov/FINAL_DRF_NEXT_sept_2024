@@ -1,14 +1,21 @@
 "use client";
 
 import React from 'react';
-import FixedLanguageSwitch from '@/components/AutoRia/Layout/FixedLanguageSwitch';
+import { ThemeControls } from '@/components/ui/theme-controls';
+import GlobalProviderToggle from '@/components/All/GlobalProviderToggle/GlobalProviderToggle';
 
 /**
- * Language selector - fixed bottom-left position
- * Theme toggle and User menu are now in MenuMain (desktop header)
+ * Fixed top-right controls - DESKTOP ONLY
+ * Mobile: ці контроли в burger menu
+ * Desktop: завжди видимі top-right
  */
 const TopRightControls: React.FC = () => {
-  return <FixedLanguageSwitch />;
+  return (
+    <div className="hidden md:flex fixed top-4 right-4 z-[130] flex-col items-end gap-2">
+      <GlobalProviderToggle />
+      <ThemeControls />
+    </div>
+  );
 };
 
 export default TopRightControls;

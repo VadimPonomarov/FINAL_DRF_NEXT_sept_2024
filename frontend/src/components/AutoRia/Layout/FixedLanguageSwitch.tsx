@@ -16,8 +16,9 @@ const FixedLanguageSwitch: React.FC = () => {
 
   const currentLocale = availableLocales.find(l => l.code === locale);
 
-  // Скрываем переключатель языка для Dummy провайдера
-  // Скрываем на странице логина чтобы избежать дублирования
+  // Скрываем переключатель языка:
+  // - Для Dummy провайдера
+  // - На странице логина
   if (provider === AuthProvider.Dummy || pathname === '/login') {
     return null;
   }

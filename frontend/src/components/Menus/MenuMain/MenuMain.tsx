@@ -4,12 +4,13 @@ import { useRouter } from 'next/navigation';
 // import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { cleanupAuth } from '@/lib/auth/cleanupAuth';
-import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield, ChevronDown, User, Globe2 } from 'lucide-react';
+import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield, ChevronDown, User } from 'lucide-react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/shared/constants/constants';
 import { IMenuItem } from '@/components/All/MenuComponent/menu.interfaces';
 import MenuComponent from '@/components/All/MenuComponent/MenuComponent';
 import { ThemeControls } from '@/components/ui/theme-controls';
+import GlobalProviderToggle from '@/components/All/GlobalProviderToggle/GlobalProviderToggle';
 import { FaBook, FaSignOutAlt, FaNetworkWired, FaCar } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MagicBackButton } from '@/components/ui/magicBackButton';
@@ -417,32 +418,35 @@ export const MenuMain: FC = (): JSX.Element => {
     <div className="relative mb-8">
       {/* Desktop menu */}
       <div className="hidden md:flex items-center gap-4">
+        <MagicBackButton variant="ghost" className="w-5 h-5" />
         <MenuComponent items={menuItems} />
-        
-        {/* Theme Controls */}
-        <div className="ml-auto">
-          <ThemeControls />
-        </div>
         
         {/* User Menu */}
         {session && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="text-sm">{session.user?.email?.split('@')[0] || 'User'}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => router.push('/profile')}>
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/settings')}>
-                Settings
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm">{session.user?.email?.split('@')[0] || 'User'}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  Settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
+      </div>
+      
+      {/* Mobile: Back button - Fixed positioned on the left */}
+      <div className="md:hidden fixed left-4 top-4 z-[80]">
+        <MagicBackButton variant="ghost" className="w-8 h-8 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-200 dark:border-gray-700" />
       </div>
       
       {/* Mobile burger - Fixed positioned on the right */}
@@ -472,9 +476,18 @@ export const MenuMain: FC = (): JSX.Element => {
           />
           {/* Menu content */}
           <div className="md:hidden fixed right-4 top-20 z-[95] w-72 max-w-[80vw] bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-lg animate-fade-in flex flex-col max-h-[70vh] overflow-hidden">
-            <div className="p-2 border-b border-gray-200 dark:border-gray-700">
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-400 px-3 py-1">Меню</div>
+            {/* Mobile Controls Section */}
+            <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Settings</div>
+                <div className="flex items-center gap-2">
+                  <GlobalProviderToggle />
+                  <ThemeControls />
+                </div>
+              </div>
             </div>
+            
+            {/* Menu Items */}
             <div className="flex-1 overflow-y-auto">
               {menuItems.map((item) => {
                 if (item.disabled) return null;

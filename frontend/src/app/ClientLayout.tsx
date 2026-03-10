@@ -7,7 +7,7 @@ import {MagicBackButton} from "@/components/ui/magicBackButton";
 import { ChatBotIcon } from "@/components/ChatBot/ChatBotIcon";
 import { Toaster } from "@/components/ui/toaster";
 import TopRightControls from "@/components/All/TopRightControls/TopRightControls";
-import GlobalProviderToggle from "@/components/All/GlobalProviderToggle/GlobalProviderToggle";
+import FixedLanguageSwitch from "@/components/AutoRia/Layout/FixedLanguageSwitch";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { logger } from "@/shared/utils/logger";
 
@@ -40,22 +40,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     <ErrorBoundary fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Something went wrong. Please refresh the page.</div>}>
       <RootProvider>
       <header className="header-container h-[50px]">
-        <div className="relative">
-          {/* Desktop MagicBackButton */}
-          <div className="absolute top-1/2 -translate-y-1/2 translate-y-1 left-[10px] z-[80] hidden md:block">
-            <MagicBackButton variant="ghost" className="w-5 h-5" />
-          </div>
-          {/* Mobile MagicBackButton */}
-          <div className="md:hidden fixed left-4 top-4 z-[80]">
-            <MagicBackButton variant="ghost" className="w-8 h-8 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-200 dark:border-gray-700" />
-          </div>
-          <MenuMain/>
-        </div>
+        <MenuMain/>
       </header>
-      {/* Global Provider Toggle - показывается на всех страницах для авторизованных пользователей */}
-      <GlobalProviderToggle />
-      {/* Language Selector - bottom left, managed by FixedLanguageSwitch in TopRightControls */}
+      
+      {/* Fixed Controls - Desktop only (mobile має їх в burger menu) */}
       <TopRightControls />
+      
+      {/* Language Selector - bottom left, всі платформи */}
+      <FixedLanguageSwitch />
       <main className="w-full min-h-[calc(100vh-50px)] pt-[60px] pb-4">
         {children}
       </main>

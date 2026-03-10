@@ -28,6 +28,11 @@ export default function BackendTokenPresenceGate({ children }: { children: React
   const [isAuthorized, setIsAuthorized] = useState(false);
   const redirectingRef = useRef(false);
 
+  // ТИМЧАСОВО ВІДКЛЮЧЕНО для діагностики
+  console.log('[BackendTokenPresenceGate DISABLED] Allowing all pages:', pathname);
+  return <>{children}</>;
+
+  /* ОРИГІНАЛЬНИЙ КОД - ВІДКЛЮЧЕНО
   // ИСКЛЮЧЕНИЕ: Search страница не требует backend токенов
   const isSearchPage = pathname?.startsWith('/autoria/search');
   
@@ -36,6 +41,7 @@ export default function BackendTokenPresenceGate({ children }: { children: React
     console.log('[BackendTokenPresenceGate] Search page - skipping backend token check');
     return <>{children}</>;
   }
+  */
 
   /**
    * Перевірка backend-токенів з автооновленням (рівень 2)
