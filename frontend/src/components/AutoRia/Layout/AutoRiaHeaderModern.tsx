@@ -157,43 +157,8 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
           ))}
         </nav>
 
-        {/* Right Section - User Menu */}
+        {/* Right Section - Mobile Menu Toggle Only */}
         <div className="flex items-center gap-2">
-          {/* User Menu - Desktop Only */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="hidden md:flex h-9 rounded-lg px-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
-                    <User className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="hidden lg:block text-sm font-medium">
-                    {redisAuth?.user?.email?.split('@')[0] || 'User'}
-                  </span>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[180px]">
-              <DropdownMenuItem asChild>
-                <Link href="/autoria/profile" className="flex cursor-pointer items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span>Profile</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/autoria/settings" className="flex cursor-pointer items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  <span>Settings</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex cursor-pointer items-center gap-2 text-red-600">
-                <X className="h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* Mobile Menu Toggle */}
           <Button
             variant="ghost"
