@@ -236,29 +236,33 @@ export class CarAdsService {
     return { deleted, failed };
   }
 
-  // Массовое удаление по статусу — загружаем ВСЕ объявления постранично и удаляем
+  // Массовое удаление по статусу — загружаем ВСЕ объявления и удаляем
+  // ВАЖНО: Всегда запрашиваем page=1, так как после удаления объявления сдвигаются
   static async bulkDeleteMyAdsByStatus(status: string): Promise<{ deleted: number; failed: number }> {
     console.log('[CarAdsService] bulkDeleteMyAdsByStatus called with status:', status);
     
     let totalDeleted = 0;
     let totalFailed = 0;
-    let page = 1;
-    const pageSize = 100; // Размер страницы для загрузки
-    let hasMore = true;
+    const pageSize = 100;
+    const maxIterations = 100; // Защита от бесконечного цикла
+    let iteration = 0;
     
-    // Цикл по всем страницам пока есть объявления
-    while (hasMore) {
-      const params: { page: number; limit: number; status?: string } = { page, limit: pageSize };
+    // Цикл пока есть объявления (всегда page=1, так как после удаления они сдвигаются)
+    while (iteration < maxIterations) {
+      iteration++;
+      
+      const params: { page: number; limit: number; status?: string } = { page: 1, limit: pageSize };
       if (status && status !== 'all') {
         params.status = status;
       }
       
       const pageData = await this.getMyCarAds(params);
       const ads = pageData.results || [];
-      console.log(`[CarAdsService] Page ${page}: found ${ads.length} ads to delete`);
+      console.log(`[CarAdsService] Iteration ${iteration}: found ${ads.length} ads to delete`);
       
+      // Если нет объявлений - выходим
       if (ads.length === 0) {
-        hasMore = false;
+        console.log('[CarAdsService] No more ads to delete, exiting loop');
         break;
       }
       
@@ -267,15 +271,13 @@ export class CarAdsService {
       totalDeleted += deleted.length;
       totalFailed += failed.length;
       
-      console.log(`[CarAdsService] Page ${page} result: deleted=${deleted.length}, failed=${failed.length}`);
+      console.log(`[CarAdsService] Iteration ${iteration} result: deleted=${deleted.length}, failed=${failed.length}`);
       
-      // Если удалили меньше чем загрузили или нет следующей страницы - выходим
-      // Но так как мы удаляем, нужно продолжать с page=1 пока есть объявления
-      // После удаления объявления сдвигаются, поэтому всегда берём первую страницу
-      if (!pageData.next && ads.length < pageSize) {
-        hasMore = false;
+      // Если ничего не удалили - выходим (защита от бесконечного цикла)
+      if (deleted.length === 0) {
+        console.log('[CarAdsService] No ads deleted in this iteration, exiting to prevent infinite loop');
+        break;
       }
-      // Не увеличиваем page, так как после удаления объявления сдвигаются
     }
     
     console.log('[CarAdsService] Total deletion result:', { deleted: totalDeleted, failed: totalFailed });
