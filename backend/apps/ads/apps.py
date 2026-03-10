@@ -53,6 +53,12 @@ class AdsConfig(AppConfig):
 
     def _should_run_seeds(self) -> bool:
         """Check if seeds should be run."""
+        # CRITICAL: Never run seeds in production environments
+        is_production = os.getenv('RAILWAY_ENVIRONMENT') == 'production' or os.getenv('ENVIRONMENT') == 'production'
+        if is_production:
+            print("[PRODUCTION] Seeds disabled in production environment")
+            return False
+        
         # Don't run during migrations or other management commands
         import sys
         if 'manage.py' in sys.argv and len(sys.argv) > 1:
