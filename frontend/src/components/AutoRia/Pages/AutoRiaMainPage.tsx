@@ -188,10 +188,11 @@ const AutoRiaMainPage = () => {
         variant: "default",
       });
     } catch (error) {
-      console.error('Error cleaning up ads:', error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.error('Error cleaning up ads:', errMsg);
       toast({
         title: "❌ Помилка видалення",
-        description: t('autoria.testAds.errorDeleting') || String(error),
+        description: errMsg,
         variant: "destructive",
       });
     } finally {

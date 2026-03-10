@@ -157,9 +157,19 @@ export class ServerAuthManager {
     // Read tokens directly from request cookies (httpOnly cookies set by /api/auth/login)
     let accessToken = request.cookies.get('access_token')?.value;
     const refreshToken = request.cookies.get('refresh_token')?.value;
-    
+
+    // If access token is missing but refresh token exists, try to refresh
+    if (!accessToken && refreshToken) {
+      console.log('[ServerAuth] access_token missing, trying refresh...');
+      const newAccessToken = await this.refreshToken(request, refreshToken);
+      if (newAccessToken) {
+        accessToken = newAccessToken;
+        console.log('[ServerAuth] ✅ Token refreshed successfully');
+      }
+    }
+
     if (!accessToken) {
-      throw new Error('No authentication tokens available');
+      throw new Error('No authentication tokens available. Please login again.');
     }
 
     // Check if access token is expired and refresh if needed
