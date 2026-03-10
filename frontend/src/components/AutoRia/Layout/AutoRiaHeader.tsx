@@ -193,15 +193,15 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
             ))}
           </nav>
 
-          {/* Right Side - Mobile Menu */}
+          {/* Right Side - Language Selector Only */}
           <div className="flex items-center gap-3">
-            {/* Mobile Language Selector */}
-            <div className="md:hidden">
+            {/* Language Selector - Desktop and Mobile */}
+            <div className="block">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-1">
                     <Globe2 className="h-4 w-4" />
-                    <span className="text-xs">{currentLocale?.flag || 'ЁЯМР'}</span>
+                    <span className="text-xs">{currentLocale?.flag || '🌍'}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -217,58 +217,6 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden">
-              <Button variant="outline" size="sm">
-                <Car className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        <div className="lg:hidden border-t border-slate-200 dark:border-gray-700 py-2">
-          <div className="flex items-center justify-between overflow-x-auto">
-            {navigationItems.slice(0, 4).map((item) => (
-              <Link key={item.id} href={item.href}>
-                <Button
-                  variant={currentPage === item.id ? "default" : "ghost"}
-                  size="sm"
-                  className="flex flex-col items-center gap-1 min-w-[60px] h-auto py-2 px-3 rounded-md transition-all"
-                >
-                  {item.icon}
-                  <span className="text-xs">{item.label.split(' ')[0]}</span>
-                  {/* @ts-ignore */}
-                  {item.badge}
-                </Button>
-              </Link>
-            ))}
-
-            {/* Mobile Language Selector in Navigation */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex flex-col items-center gap-1 min-w-[60px] h-auto py-2"
-                >
-                  <Globe2 className="h-4 w-4" />
-                  <span className="text-xs">{currentLocale?.flag || 'ЁЯМР'}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {availableLocales.map((localeOption) => (
-                  <DropdownMenuItem
-                    key={localeOption.code}
-                    onClick={() => setLocale(localeOption.code as any)}
-                    className={locale === localeOption.code ? 'bg-accent' : ''}
-                  >
-                    {localeOption.flag} {localeOption.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
       </div>

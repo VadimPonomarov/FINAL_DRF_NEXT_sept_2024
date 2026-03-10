@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from "next/server";
 import { getToken } from 'next-auth/jwt';
+import { AUTH_CONFIG } from '@/shared/constants/constants';
 
 // Підтримувані локалі
 const locales = ['en', 'ru', 'uk'];
@@ -48,7 +49,6 @@ const PUBLIC_PATHS = [
 // Токени (access_token, refresh_token) — для зовнішніх API, не для middleware
 async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
   try {
-    const { AUTH_CONFIG } = await import('@/shared/constants/constants');
     const nextAuthSecret = AUTH_CONFIG.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET;
 
     if (!nextAuthSecret) {
@@ -130,8 +130,30 @@ export default async function middleware(req: NextRequest) {
 
   // КРИТИЧНО: Защищаем все страницы AutoRia (рівень 1: перевірка сесії NextAuth)
   // БЕЗ сессии NextAuth доступ к AutoRia ЗАПРЕЩЕН
+  // ИСКЛЮЧЕНИЕ: /autoria/search - только проверка NextAuth сессии
   if (pathname.startsWith('/autoria') && isHtmlPage) {
     console.log(`[Middleware] 🔒 AutoRia page access attempt: ${pathname}`);
+    
+    // Для search страницы - только проверка NextAuth сессии
+    if (pathname.startsWith('/autoria/search')) {
+      console.log(`[Middleware] Search page - checking NextAuth session only`);
+      const token = await getToken({ 
+        req, 
+        secret: process.env.NEXTAUTH_SECRET || AUTH_CONFIG.NEXTAUTH_SECRET 
+      });
+      
+      if (!token) {
+        console.log('[Middleware] No NextAuth session for search - redirecting to signin');
+        const loginUrl = new URL('/api/auth/signin', req.url);
+        loginUrl.searchParams.set('callbackUrl', req.url);
+        return NextResponse.redirect(loginUrl);
+      }
+      
+      console.log('[Middleware] ✅ Search page access allowed (NextAuth session only)');
+      return NextResponse.next();
+    }
+    
+    // Для остальных AutoRia страниц - полная проверка
     const authResponse = await checkBackendAuth(req);
     // Если редирект - возвращаем его немедленно
     if (authResponse.status === 307 || authResponse.status === 308) {

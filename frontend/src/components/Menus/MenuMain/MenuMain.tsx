@@ -1,19 +1,18 @@
 "use client";
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 // import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { cleanupAuth } from '@/lib/auth/cleanupAuth';
-import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield } from 'lucide-react';
+import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield, ChevronDown } from 'lucide-react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/shared/constants/constants';
 import { IMenuItem } from '@/components/All/MenuComponent/menu.interfaces';
 import MenuComponent from '@/components/All/MenuComponent/MenuComponent';
 import { ThemeControls } from '@/components/ui/theme-controls';
-import { FaBook, FaSignOutAlt, FaServer, FaDatabase, FaNetworkWired, FaCar } from 'react-icons/fa';
+import { FaBook, FaSignOutAlt, FaNetworkWired, FaCar } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MagicBackButton } from '@/components/ui/magicBackButton';
-import AuthBadge from '@/components/All/AuthBadge/AuthBadge';
 
 export const MenuMain: FC = () => {
   const { provider } = useAuthProvider();
@@ -23,6 +22,9 @@ export const MenuMain: FC = () => {
   const { data: session, status } = useSession();
   const [currentProvider, setCurrentProvider] = useState<AuthProvider>(provider);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const menuTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Сервисы, которые не поддерживают iframe из-за CORS ограничений
   const iframeBlockedServices: string[] = [];
@@ -40,6 +42,53 @@ export const MenuMain: FC = () => {
   useEffect(() => {
     setCurrentProvider(provider);
   }, [provider]);
+
+  // Handle scroll behavior for mobile menu
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Hide menu when scrolling down, show when scrolling up
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Auto-close menu on scroll
+  useEffect(() => {
+    const handleScrollAutoClose = () => {
+      if (mobileMenuOpen) {
+        // Clear existing timeout
+        if (menuTimeoutRef.current) {
+          clearTimeout(menuTimeoutRef.current);
+        }
+        
+        // Set new timeout to close menu
+        menuTimeoutRef.current = setTimeout(() => {
+          setMobileMenuOpen(false);
+        }, 1500); // Close after 1.5 seconds of scroll inactivity
+      }
+    };
+
+    if (mobileMenuOpen) {
+      window.addEventListener('scroll', handleScrollAutoClose, { passive: true });
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScrollAutoClose);
+      if (menuTimeoutRef.current) {
+        clearTimeout(menuTimeoutRef.current);
+      }
+    };
+  }, [mobileMenuOpen]);
 
   // Listen for auth provider changes
   useEffect(() => {
@@ -344,67 +393,88 @@ export const MenuMain: FC = () => {
       <div className="hidden md:block">
         <MenuComponent items={menuItems} />
       </div>
-      {/* Mobile burger + MagicBackButton */}
-      <div className="md:hidden absolute left-4 top-1/2 -translate-y-1/2 translate-y-1 z-[1002] flex items-center gap-2">
-        <MagicBackButton variant="ghost" className="w-5 h-5" />
+      {/* Mobile burger - Fixed positioned on the right */}
+      <div className={`md:hidden fixed right-4 top-4 z-[1002] transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-20'}`}>
         <button
-          className="p-2 rounded focus:outline-none focus:ring-2 focus:ring-accent"
+          className="relative p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:shadow-xl transition-all duration-200 group"
           onClick={() => setMobileMenuOpen((v) => !v)}
           aria-label={mobileMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
         >
-          {mobileMenuOpen ? <CloseIcon size={28} /> : <BurgerIcon size={28} />}
+          {mobileMenuOpen ? (
+            <CloseIcon size={24} className="text-gray-700 dark:text-gray-300 group-hover:text-red-500 transition-colors" />
+          ) : (
+            <div className="relative">
+              <FaCar size={20} className="text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors" />
+              <ChevronDown size={12} className="absolute -bottom-1 -right-1 text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+            </div>
+          )}
         </button>
       </div>
-      {/* Выпадающее меню */}
+      {/* Выпадающее меню - More ergonomic for mobile */}
       {mobileMenuOpen && (
         <>
-          <div className="absolute left-0 top-12 z-50 w-screen bg-white dark:bg-zinc-900 shadow-lg border-b border-zinc-200 dark:border-zinc-800 animate-fade-in flex flex-col">
-            {menuItems.map((item) => {
-              if (item.disabled) return null;
-              
-              const handleClick = (e: React.MouseEvent) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
+          {/* Backdrop */}
+          <div 
+            className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-fade-in"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Menu content */}
+          <div className="md:hidden fixed right-4 top-20 z-50 w-72 max-w-[80vw] bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-lg animate-fade-in flex flex-col max-h-[70vh] overflow-hidden">
+            <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400 px-3 py-1">Меню</div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {menuItems.map((item) => {
+                if (item.disabled) return null;
+                
+                const handleClick = (e: React.MouseEvent) => {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
 
-                if (item.cb) {
-                  try {
-                    if (typeof item.cb === 'function') {
-                      item.cb();
-                    } else {
-                      console.error('Mobile menu callback is not a function:', item.cb);
+                  if (item.cb) {
+                    try {
+                      if (typeof item.cb === 'function') {
+                        item.cb();
+                      } else {
+                        console.error('Mobile menu callback is not a function:', item.cb);
+                      }
+                    } catch (error) {
+                      console.error('Error executing mobile menu callback:', error);
                     }
-                  } catch (error) {
-                    console.error('Error executing mobile menu callback:', error);
+                  } else if (item.path) {
+                    if (iframeBlockedServices.includes(item.path)) {
+                      // Сервисы, открываемые в новой вкладке из-за CORS ограничений
+                      window.open(item.path, '_blank', 'noopener,noreferrer');
+                    } else {
+                      // Другие сервисы - используем Next.js роутинг для iframe
+                      router.push(item.path);
+                    }
                   }
-                } else if (item.path) {
-                  if (iframeBlockedServices.includes(item.path)) {
-                    // Сервисы, открываемые в новой вкладке из-за CORS ограничений
-                    window.open(item.path, '_blank', 'noopener,noreferrer');
-                  } else {
-                    // Другие сервисы - используем Next.js роутинг для iframe
-                    router.push(item.path);
-                  }
-                }
-              };
+                };
 
-              return (
-                <a
-                  key={item.path || `item-${item.index}`}
-                  href={iframeBlockedServices.includes(item.path) ? item.path : '#'}
-                  className="px-6 py-4 text-lg border-b border-zinc-100 dark:border-zinc-800 transition-colors cursor-pointer hover:opacity-90 hover:underline hover:underline-offset-4"
-                  onClick={handleClick}
-                >
-                  {typeof item.label === 'string' ? item.label : <span className="flex items-center gap-2">{item.label}</span>}
-                </a>
-              );
-            })}
+                return (
+                  <a
+                    key={item.path || `item-${item.index}`}
+                    href={iframeBlockedServices.includes(item.path) ? item.path : '#'}
+                    className="flex items-center gap-3 px-4 py-3 text-sm border-b border-gray-100 dark:border-gray-700 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 last:border-b-0"
+                    onClick={handleClick}
+                  >
+                    {typeof item.label === 'string' ? (
+                      <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
+                    ) : (
+                      <span className="flex items-center gap-3 text-gray-700 dark:text-gray-300">{item.label}</span>
+                    )}
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </>
       )}
 
-      {/* Theme Controls - позиционируем левее, чтобы не накладывались на другие элементы */}
-      <div className="absolute right-[120px] top-1/2 -translate-y-1/2 z-[99999] flex items-center gap-2">
-        <ThemeControls />
+      {/* Mobile MagicBackButton - Fixed positioned on the left */}
+      <div className="md:hidden fixed left-4 top-4 z-[1001]">
+        <MagicBackButton variant="ghost" className="w-8 h-8 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-200 dark:border-gray-700" />
       </div>
     </div>
   );
