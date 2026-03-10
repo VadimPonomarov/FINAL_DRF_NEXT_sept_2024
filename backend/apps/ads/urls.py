@@ -21,7 +21,8 @@ from .views.reference_views import (
 from .views.favorites_toggle_view import toggle_favorite, check_favorite, FavoritesListView
 from .views.statistics_view import (
     PlatformAnalyticsView, QuickStatsView, DailyReportView,
-    AnalyticsTaskStatusView
+    AnalyticsTaskStatusView,
+    diagnostic_info
 )
 
 urlpatterns = [
@@ -98,6 +99,11 @@ urlpatterns = [
     path('reference/regions/', RegionListView.as_view(), name='regions-list'),
     path('reference/cities/', CityListView.as_view(), name='cities-list'),
     path('reference/cities/by-region', cities_by_region, name='cities-by-region'),
+
+    # =============================================================================
+    # ДИАГНОСТИКА И ДЕБАГ
+    # =============================================================================
+    path('diagnostic/', diagnostic_info, name='diagnostic-info'),
 
     # =============================================================================
     # АНАЛИТИКА И ТРЕКИНГ

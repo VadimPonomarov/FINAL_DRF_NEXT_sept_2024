@@ -343,7 +343,6 @@ const generateAndSaveImages = async (
   }
 };
 
-// Main server function
 export async function createTestAdsServer(
   requestOrToken: NextRequest | string,
   count: number,
