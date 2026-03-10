@@ -217,7 +217,15 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     }
   };
 
-  const imageUrl = useMemo(() => resolveAdImageUrl(ad.images), [ad.images]);
+  const imageUrl = useMemo(() => {
+    const resolved = resolveAdImageUrl(ad.images);
+    console.log(`🖼️ [CarAdCard ${ad.id}] Image resolution:`, {
+      raw_images: ad.images,
+      resolved_url: resolved,
+      images_count: Array.isArray(ad.images) ? ad.images.length : 'not array'
+    });
+    return resolved;
+  }, [ad.images, ad.id]);
 
   // Handle card click to navigate to ad details
   const handleCardClick = (e: React.MouseEvent) => {

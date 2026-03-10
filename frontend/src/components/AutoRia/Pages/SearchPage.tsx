@@ -40,6 +40,7 @@ import { CurrencySelector } from '@/components/AutoRia/CurrencySelector/Currency
 import { usePriceConverter } from '@/modules/autoria/shared/hooks/usePriceConverter';
 import CarAdCard from '@/components/AutoRia/Components/CarAdCard';
 import CarAdListItem from '@/components/AutoRia/Components/CarAdListItem';
+import { Pagination } from '@/components/AutoRia/Components/Pagination/Pagination';
 
 // Расширенный тип для автомобиля с ценами в разных валютах
 interface SearchCarAd extends CarAd {
@@ -1509,45 +1510,13 @@ const SearchPage = () => {
 
             {/* Пагинация */}
             {activeTab === 'results' && !loading && searchResults.length > 0 && (filters.page_size || 20) !== 0 && totalCount > (filters.page_size || 20) && (
-              <div className="flex justify-center items-center gap-4 mt-8 mb-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (currentPage > 1) {
-                      handlePageChange(currentPage - 1);
-                    }
-                  }}
-                  disabled={currentPage <= 1 || paginationLoading}
-                  className="flex items-center gap-2"
-                >
-                  {paginationLoading ? '⏳' : '←'} {t('autoria.prev') || 'Prev'}
-                </Button>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600">
-                    {t('page', 'Page')} {currentPage} / {(filters.page_size || 20) === 0 ? 1 : Math.ceil(totalCount / (filters.page_size || 20))}
-                  </span>
-                  {paginationLoading && (
-                    <span className="text-xs text-blue-500 animate-pulse">
-                      {t('loading.pleaseWait')}
-                    </span>
-                  )}
-                </div>
-
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const pageSize = filters.page_size || 20;
-                    if (pageSize !== 0 && currentPage < Math.ceil(totalCount / pageSize)) {
-                      handlePageChange(currentPage + 1);
-                    }
-                  }}
-                  disabled={(filters.page_size || 20) === 0 || currentPage >= Math.ceil(totalCount / (filters.page_size || 20)) || paginationLoading}
-                  className="flex items-center gap-2"
-                >
-                  {t('autoria.next') || 'Next'} {paginationLoading ? '⏳' : '→'}
-                </Button>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalCount / (filters.page_size || 20))}
+                onPageChange={handlePageChange}
+                loading={paginationLoading}
+                className="mt-8 mb-4"
+              />
             )}
           </div>
         </div>
