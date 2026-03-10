@@ -52,10 +52,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <MenuMain/>
         </div>
       </header>
-      {/* Top Right Controls - Auth + Language */}
-      <TopRightControls />
       {/* Global Provider Toggle - показывается на всех страницах для авторизованных пользователей */}
       <GlobalProviderToggle />
+      {/* Language Selector - bottom left, managed by FixedLanguageSwitch in TopRightControls */}
+      <TopRightControls />
       <main className="w-full min-h-[calc(100vh-50px)] pt-[60px] pb-4">
         {children}
       </main>

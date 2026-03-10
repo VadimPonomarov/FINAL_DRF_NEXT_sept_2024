@@ -416,8 +416,33 @@ export const MenuMain: FC = (): JSX.Element => {
   return (
     <div className="relative mb-8">
       {/* Desktop menu */}
-      <div className="hidden md:block">
+      <div className="hidden md:flex items-center gap-4">
         <MenuComponent items={menuItems} />
+        
+        {/* Theme Controls */}
+        <div className="ml-auto">
+          <ThemeControls />
+        </div>
+        
+        {/* User Menu */}
+        {session && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span className="text-sm">{session.user?.email?.split('@')[0] || 'User'}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push('/profile')}>
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
+                Settings
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       
       {/* Mobile burger - Fixed positioned on the right */}

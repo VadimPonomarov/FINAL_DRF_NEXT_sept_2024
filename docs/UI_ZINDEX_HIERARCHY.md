@@ -41,14 +41,16 @@ This document defines the z-index layering system used throughout the applicatio
 ### Global Layout (ClientLayout.tsx)
 ```
 ├── MagicBackButton (z-80)
-│   ├── Desktop: absolute in header
+│   ├── Desktop: absolute in header left-10
 │   └── Mobile: fixed left-4 top-4
 ├── MenuMain (relative mb-8)
-│   ├── Desktop: MenuComponent
+│   ├── Desktop: flex items-center gap-4
+│   │   ├── MenuComponent (navigation items)
+│   │   ├── ThemeControls (ml-auto)
+│   │   └── User Menu (dropdown with Profile/Settings)
 │   └── Mobile: Burger button (z-100) + Menu (z-90/95)
-└── TopRightControls
-    ├── FixedLanguageSwitch (z-120)
-    └── User Badges (z-110)
+└── FixedLanguageSwitch (z-120)
+    └── Position: fixed bottom-4 left-4
 ```
 
 ### AutoRia Pages (AutoRiaLayout.tsx)
@@ -78,11 +80,9 @@ This document defines the z-index layering system used throughout the applicatio
 ## Mobile Considerations
 
 ### Fixed Elements Positioning
-- **Left side**: MagicBackButton (top-4 left-4)
-- **Right side**: 
-  - Burger menu button (top-4 right-4)
-  - Language switcher (top-20 right-4)
-  - User badges (top-60 right-50, only on non-AutoRia pages)
+- **Top-left**: MagicBackButton (top-4 left-4, z-80)
+- **Top-right**: Burger menu button (top-4 right-4, z-100)
+- **Bottom-left**: Language switcher (bottom-4 left-4, z-120)
 
 ### Scroll Behavior
 - Mobile burger button hides when scrolling down (>100px)
