@@ -58,7 +58,7 @@ urlpatterns = [
     path("api/auth/", include(auth_urls)),
     path("api/ads/", include(ads_urls)),
     path("api/currency/", include('apps.currency.urls')),
-    path("api/chat/", include('apps.chat.urls')),
+    path("api/chat/", include(chat_urls)),
     
     # Public reference endpoints (for frontend)
     path("api/public/reference/", include('apps.ads.urls.reference_urls')),
