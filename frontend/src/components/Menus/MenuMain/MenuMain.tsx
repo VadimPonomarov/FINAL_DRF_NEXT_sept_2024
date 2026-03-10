@@ -13,14 +13,6 @@ import { ThemeControls } from '@/components/ui/theme-controls';
 import GlobalProviderToggle from '@/components/All/GlobalProviderToggle/GlobalProviderToggle';
 import { FaBook, FaSignOutAlt, FaNetworkWired, FaCar } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MagicBackButton } from '@/components/ui/magicBackButton';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 export const MenuMain: FC = (): JSX.Element => {
   const { provider } = useAuthProvider();
@@ -417,19 +409,21 @@ export const MenuMain: FC = (): JSX.Element => {
   return (
     <div className="relative mb-4">
       {/* Desktop menu */}
-      <div className="hidden md:flex items-center gap-4">
-        <MenuComponent items={menuItems} />
-        
-        {/* Right side controls */}
-        <div className="ml-auto flex items-center gap-3">
-          <GlobalProviderToggle />
-          <ThemeControls />
-          {session && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <User className="h-4 w-4" />
-              <span className="text-sm font-medium">{session.user?.email?.split('@')[0] || 'User'}</span>
-            </div>
-          )}
+      <div className="hidden md:block">
+        <div className="flex items-center justify-between gap-4">
+          <MenuComponent items={menuItems} />
+          
+          {/* Right side controls */}
+          <div className="flex items-center gap-3">
+            <GlobalProviderToggle />
+            <ThemeControls />
+            {session && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <User className="h-4 w-4" />
+                <span className="text-sm font-medium">{session.user?.email?.split('@')[0] || 'User'}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
