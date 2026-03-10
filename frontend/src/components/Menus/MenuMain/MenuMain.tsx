@@ -409,35 +409,35 @@ export const MenuMain: FC = (): JSX.Element => {
   return (
     <div className="relative mb-4 min-h-[50px]">
       {/* Desktop menu */}
-      <div className="hidden md:block relative">
+      <div className="hidden md:block">
         <MenuComponent items={menuItems} />
-        
-        {/* Right side controls - absolute positioned */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-3">
-          <GlobalProviderToggle />
-          <ThemeControls />
-          {session && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span className="text-sm font-medium">{session.user?.email?.split('@')[0] || 'User'}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => router.push('/profile')}>
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/settings')}>
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+      </div>
+
+      {/* Desktop controls - fixed top-right, above menubar z-[200] */}
+      <div className="hidden md:flex fixed top-2 right-4 z-[210] items-center gap-2">
+        <GlobalProviderToggle />
+        <ThemeControls />
+        {session && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center gap-2 h-8 px-2">
+                <User className="h-4 w-4" />
+                <span className="text-sm font-medium">{session.user?.email?.split('@')[0] || 'User'}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push('/profile')}>
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       
       
