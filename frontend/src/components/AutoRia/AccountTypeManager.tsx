@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AccountService } from '@/services/autoria/account.service';
 import { CarAdsService } from '@/services/autoria/carAds.service';
 import NewResizableWrapper from '@/components/All/ResizableWrapper/NewResizableWrapper';

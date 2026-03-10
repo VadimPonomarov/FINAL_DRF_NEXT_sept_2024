@@ -8,25 +8,36 @@ import FixedLanguageSwitch from '@/components/AutoRia/Layout/FixedLanguageSwitch
 
 /**
  * Компонент для управления элементами в правом верхнем углу
- * Всегда показываем оба бейджа (email сессии + AutoRia пользователь)
+ * Desktop: справа с отступом 50px
+ * Mobile: под свитчером провайдеров, компактный горизонтальный layout
  */
 const TopRightControls: React.FC = () => {
   const pathname = usePathname();
 
   return (
     <>
-      {/* Контейнер для бейджей - справа с отступом 50px от viewport */}
+      {/* Desktop: вертикальный layout справа */}
       <div 
-        className="fixed flex flex-col items-end gap-2 pointer-events-none"
+        className="fixed hidden md:flex flex-col items-end gap-2 pointer-events-none"
         style={{ top: '60px', right: '50px', zIndex: 99999999 }}
       >
-        {/* Email бейдж - белый/серый */}
         <div className="pointer-events-auto">
           <AuthBadge />
         </div>
-        {/* AutoRia пользователь - желтый/серый 
-            Показываем всегда, компонент сам решит показывать или нет на основе авторизации */}
         <div className="pointer-events-auto">
+          <AutoRiaUserBadge />
+        </div>
+      </div>
+
+      {/* Mobile: горизонтальный компактный layout под header */}
+      <div 
+        className="fixed md:hidden flex items-center gap-2 pointer-events-none"
+        style={{ top: '55px', left: '10px', zIndex: 99999998 }}
+      >
+        <div className="pointer-events-auto scale-90 origin-left">
+          <AuthBadge />
+        </div>
+        <div className="pointer-events-auto scale-90 origin-left">
           <AutoRiaUserBadge />
         </div>
       </div>

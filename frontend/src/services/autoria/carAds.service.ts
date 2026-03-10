@@ -236,28 +236,50 @@ export class CarAdsService {
     return { deleted, failed };
   }
 
-  // Массовое удаление по статусу — загружаем объявления и удаляем по одному
+  // Массовое удаление по статусу — загружаем ВСЕ объявления постранично и удаляем
   static async bulkDeleteMyAdsByStatus(status: string): Promise<{ deleted: number; failed: number }> {
     console.log('[CarAdsService] bulkDeleteMyAdsByStatus called with status:', status);
     
-    // Загружаем мои объявления с этим статусом
-    // Если status === 'all', не передаём параметр — вернутся все объявления
-    const params: { page: number; limit: number; status?: string } = { page: 1, limit: 1000 };
-    if (status && status !== 'all') {
-      params.status = status;
-    }
-    const pageData = await this.getMyCarAds(params);
-    const ads = pageData.results || [];
-    console.log('[CarAdsService] Found ads to delete:', ads.length);
+    let totalDeleted = 0;
+    let totalFailed = 0;
+    let page = 1;
+    const pageSize = 100; // Размер страницы для загрузки
+    let hasMore = true;
     
-    if (ads.length === 0) {
-      return { deleted: 0, failed: 0 };
+    // Цикл по всем страницам пока есть объявления
+    while (hasMore) {
+      const params: { page: number; limit: number; status?: string } = { page, limit: pageSize };
+      if (status && status !== 'all') {
+        params.status = status;
+      }
+      
+      const pageData = await this.getMyCarAds(params);
+      const ads = pageData.results || [];
+      console.log(`[CarAdsService] Page ${page}: found ${ads.length} ads to delete`);
+      
+      if (ads.length === 0) {
+        hasMore = false;
+        break;
+      }
+      
+      const ids = ads.map(a => a.id as unknown as number);
+      const { deleted, failed } = await this.bulkDeleteMyAds(ids);
+      totalDeleted += deleted.length;
+      totalFailed += failed.length;
+      
+      console.log(`[CarAdsService] Page ${page} result: deleted=${deleted.length}, failed=${failed.length}`);
+      
+      // Если удалили меньше чем загрузили или нет следующей страницы - выходим
+      // Но так как мы удаляем, нужно продолжать с page=1 пока есть объявления
+      // После удаления объявления сдвигаются, поэтому всегда берём первую страницу
+      if (!pageData.next && ads.length < pageSize) {
+        hasMore = false;
+      }
+      // Не увеличиваем page, так как после удаления объявления сдвигаются
     }
     
-    const ids = ads.map(a => a.id as unknown as number);
-    const { deleted, failed } = await this.bulkDeleteMyAds(ids);
-    console.log('[CarAdsService] Deletion result:', { deleted: deleted.length, failed: failed.length });
-    return { deleted: deleted.length, failed: failed.length };
+    console.log('[CarAdsService] Total deletion result:', { deleted: totalDeleted, failed: totalFailed });
+    return { deleted: totalDeleted, failed: totalFailed };
   }
 
   // Обновление статуса объявления владельцем (owner endpoint принимает только статус)
