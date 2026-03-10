@@ -141,13 +141,13 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-2 lg:gap-3">
           {allNavigation.map((item) => (
             <Link key={item.id} href={item.href}>
               <Button
                 variant={currentPage === item.id ? "default" : "ghost"}
                 size="sm"
-                className="relative h-9 items-center gap-2 rounded-lg px-3 font-medium transition-all duration-200 hover:bg-accent/50"
+                className="relative h-9 items-center gap-1.5 rounded-lg px-2 lg:px-3 font-medium transition-all duration-200 hover:bg-accent/50 text-xs lg:text-sm"
               >
                 {item.icon}
                 <span className="hidden lg:inline">{item.label}</span>
