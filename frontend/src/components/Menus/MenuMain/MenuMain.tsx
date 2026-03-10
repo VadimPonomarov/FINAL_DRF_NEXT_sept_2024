@@ -393,6 +393,11 @@ export const MenuMain: FC = () => {
       <div className="hidden md:block">
         <MenuComponent items={menuItems} />
       </div>
+      
+      {/* Theme Controls - Desktop */}
+      <div className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-[99999]">
+        <ThemeControls />
+      </div>
       {/* Mobile burger - Fixed positioned on the right */}
       <div className={`md:hidden fixed right-4 top-4 z-[1002] transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-20'}`}>
         <button
