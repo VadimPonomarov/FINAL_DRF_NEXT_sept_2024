@@ -25,6 +25,7 @@ import TestAdsGenerationModal from '@/components/AutoRia/Components/TestAdsGener
 import PlatformStatsWidget from '@/components/AutoRia/Statistics/PlatformStatsWidget';
 import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 import { ensureInitialTestAdsSeed } from '@/shared/init/ensureInitialSeed';
+import { CarAdsService } from '@/services/autoria/carAds.service';
 
 const AutoRiaMainPage = () => {
   const { t, formatNumber } = useI18n();
@@ -170,7 +171,7 @@ const AutoRiaMainPage = () => {
 
 
 
-  // Функция очистки всех объявлений
+  // Функция очистки всех объявлений — прямой вызов CarAdsService с клиента
   const clearAllAds = useCallback(async () => {
     if (isGenerating) return;
 
@@ -180,28 +181,17 @@ const AutoRiaMainPage = () => {
 
     setIsGenerating(true);
     try {
-      const response = await fetch('/api/autoria/test-ads/clear', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+      const result = await CarAdsService.bulkDeleteMyAdsByStatus('all');
+      toast({
+        title: "✅ Оголошення видалено!",
+        description: t('autoria.testAds.successDeleted', { count: result.deleted }) || `Видалено: ${result.deleted}`,
+        variant: "default",
       });
-
-      if (response.ok) {
-        const result = await response.json();
-        toast({
-          title: "✅ Объявления удалены!",
-          description: t('autoria.testAds.successDeleted', { count: result.deleted }),
-          variant: "default",
-        });
-      } else {
-        throw new Error('Failed to cleanup ads');
-      }
     } catch (error) {
       console.error('Error cleaning up ads:', error);
       toast({
-        title: "❌ Ошибка удаления",
-        description: t('autoria.testAds.errorDeleting'),
+        title: "❌ Помилка видалення",
+        description: t('autoria.testAds.errorDeleting') || String(error),
         variant: "destructive",
       });
     } finally {
