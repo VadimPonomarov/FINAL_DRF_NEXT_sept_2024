@@ -27,7 +27,16 @@ const normalizeMediaPath = (value: string): string | null => {
     return trimmed;
   }
 
+  // Якщо це повний URL з Railway backend - проксюємо через /api/media/
   if (isAbsoluteUrl(trimmed)) {
+    // Перевіряємо, чи це URL з нашого backend
+    if (trimmed.includes('/media/')) {
+      const mediaMatch = trimmed.match(/\/media\/(.+)$/);
+      if (mediaMatch) {
+        return `/api/media/${mediaMatch[1]}`;
+      }
+    }
+    // Інші абсолютні URL (наприклад, CDN) повертаємо як є
     return trimmed;
   }
 
