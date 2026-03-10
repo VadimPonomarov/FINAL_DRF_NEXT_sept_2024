@@ -31,7 +31,7 @@ const BACKEND_URL = RAW_BACKEND_BASE.replace(/\/+$/, '').replace(/\/(api)\/?$/i,
 const CREATE_AD_TIMEOUT_MS = 30000;
 const IMAGE_GEN_TIMEOUT_MS = 60000;
 const IMAGE_SAVE_TIMEOUT_MS = 15000;
-const MAX_ADS_LIMIT = 3;
+const MAX_ADS_LIMIT = 10;
 
 // Seeding control - prevent simultaneous generations
 const GENERATION_LOCK_KEY = 'test_ads_generation_in_progress';

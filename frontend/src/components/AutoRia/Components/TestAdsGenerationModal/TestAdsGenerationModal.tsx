@@ -101,7 +101,7 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
   };
 
   const handleCountChange = (newCount: number) => {
-    if (newCount >= 1 && newCount <= 50) {  // Увеличиваем лимит до 50
+    if (newCount >= 1 && newCount <= 10) {  // Лимит 10 объявлений
       setCount(newCount);
     }
   };
@@ -110,7 +110,7 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
     if (selectedTypes.length === 0) {
       return;
     }
-    if (count < 1 || count > 50) {  // Обновляем валидацию
+    if (count < 1 || count > 10) {  // Лимит 10 объявлений
       return;
     }
     
@@ -156,7 +156,7 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
                 <Input
                   type="number"
                   min="1"
-                  max="50"
+                  max="10"
                   value={count}
                   onChange={(e) => handleCountChange(parseInt(e.target.value) || 1)}
                   className="w-20 text-center"
@@ -264,7 +264,7 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
           </Button>
           <Button
             onClick={handleGenerate}
-            disabled={selectedTypes.length === 0 || count < 1 || count > 50 || isLoading}
+            disabled={selectedTypes.length === 0 || count < 1 || count > 10 || isLoading}
             className="bg-green-600 hover:bg-green-700"
           >
             {isLoading ? (
