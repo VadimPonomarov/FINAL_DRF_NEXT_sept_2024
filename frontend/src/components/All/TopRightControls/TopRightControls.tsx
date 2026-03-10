@@ -29,15 +29,15 @@ const TopRightControls: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile: компактный layout под header, не перекрывая меню */}
+      {/* Mobile: компактный layout справа под provider toggle */}
       <div 
         className="fixed md:hidden flex items-center gap-1.5 pointer-events-none"
-        style={{ top: '50px', left: '50px', zIndex: 99999998 }}
+        style={{ top: '50px', right: '10px', zIndex: 99999998 }}
       >
-        <div className="pointer-events-auto scale-[0.85] origin-left">
+        <div className="pointer-events-auto scale-[0.85] origin-right">
           <AuthBadge />
         </div>
-        <div className="pointer-events-auto scale-[0.85] origin-left">
+        <div className="pointer-events-auto scale-[0.85] origin-right">
           <AutoRiaUserBadge />
         </div>
       </div>

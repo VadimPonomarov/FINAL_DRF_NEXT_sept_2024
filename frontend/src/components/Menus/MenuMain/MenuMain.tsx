@@ -461,8 +461,8 @@ export const MenuMain: FC = () => {
       </div>
       
       
-      {/* Mobile burger - Fixed positioned on the right */}
-      <div className={`md:hidden fixed right-4 top-4 z-[100] transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-20'}`}>
+      {/* Mobile burger - Fixed positioned on the LEFT to avoid overlap with provider toggle */}
+      <div className={`md:hidden fixed left-4 top-4 z-[100] transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-20'}`}>
         <button
           className="relative p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:shadow-xl transition-all duration-200 group"
           onClick={() => setMobileMenuOpen((v) => !v)}
@@ -486,8 +486,8 @@ export const MenuMain: FC = () => {
             className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-[90] animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
           />
-          {/* Menu content */}
-          <div className="md:hidden fixed right-4 top-20 z-[95] w-72 max-w-[80vw] bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-lg animate-fade-in flex flex-col max-h-[70vh] overflow-hidden">
+          {/* Menu content - positioned on the LEFT to match burger button */}
+          <div className="md:hidden fixed left-4 top-20 z-[95] w-72 max-w-[80vw] bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-lg animate-fade-in flex flex-col max-h-[70vh] overflow-hidden">
             {/* Mobile Controls Section */}
             <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
               <div className="flex items-center justify-between gap-3">
