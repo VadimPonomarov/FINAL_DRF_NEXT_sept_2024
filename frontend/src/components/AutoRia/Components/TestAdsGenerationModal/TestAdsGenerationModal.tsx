@@ -26,6 +26,16 @@ import {
   Plus,
   Minus
 } from 'lucide-react';
+import {
+  MAX_ADS_COUNT,
+  MIN_ADS_COUNT,
+  DEFAULT_ADS_COUNT,
+} from '@/shared/constants/testAds.constants';
+import {
+  BASIC_IMAGE_TYPES,
+  DEFAULT_IMAGE_TYPES,
+  IMAGE_TYPE_IDS,
+} from '@/shared/constants/imageGeneration.constants';
 
 interface ImageType {
   id: string;
@@ -48,8 +58,8 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
   isLoading = false
 }) => {
   const { t } = useI18n();
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(['front', 'side']);
-  const [count, setCount] = useState(3);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([...DEFAULT_IMAGE_TYPES]);
+  const [count, setCount] = useState(DEFAULT_ADS_COUNT);
 
   const imageTypes: ImageType[] = [
     {
@@ -101,7 +111,7 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
   };
 
   const handleCountChange = (newCount: number) => {
-    if (newCount >= 1 && newCount <= 10) {  // Лимит 10 объявлений
+    if (newCount >= MIN_ADS_COUNT && newCount <= MAX_ADS_COUNT) {
       setCount(newCount);
     }
   };
@@ -110,7 +120,7 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
     if (selectedTypes.length === 0) {
       return;
     }
-    if (count < 1 || count > 10) {  // Лимит 10 объявлений
+    if (count < MIN_ADS_COUNT || count > MAX_ADS_COUNT) {
       return;
     }
     
@@ -118,8 +128,8 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
   };
 
   const handleCancel = () => {
-    setSelectedTypes(['front', 'side']);
-    setCount(3);
+    setSelectedTypes([...DEFAULT_IMAGE_TYPES]);
+    setCount(DEFAULT_ADS_COUNT);
     onClose();
   };
 
@@ -147,7 +157,7 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => handleCountChange(count - 1)}
-                disabled={count <= 1}
+                disabled={count <= MIN_ADS_COUNT}
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -155,8 +165,8 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
               <div className="flex items-center space-x-2">
                 <Input
                   type="number"
-                  min="1"
-                  max="10"
+                  min={MIN_ADS_COUNT}
+                  max={MAX_ADS_COUNT}
                   value={count}
                   onChange={(e) => handleCountChange(parseInt(e.target.value) || 1)}
                   className="w-20 text-center"
@@ -168,12 +178,12 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => handleCountChange(count + 1)}
-                disabled={count >= 10}
+                disabled={count >= MAX_ADS_COUNT}
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-gray-500">Від 1 до 10 оголошень</p>
+            <p className="text-xs text-gray-500">Від {MIN_ADS_COUNT} до {MAX_ADS_COUNT} оголошень</p>
           </div>
 
           {/* Типы изображений */}
@@ -264,7 +274,7 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
           </Button>
           <Button
             onClick={handleGenerate}
-            disabled={selectedTypes.length === 0 || count < 1 || count > 10 || isLoading}
+            disabled={selectedTypes.length === 0 || count < MIN_ADS_COUNT || count > MAX_ADS_COUNT || isLoading}
             className="bg-green-600 hover:bg-green-700"
           >
             {isLoading ? (

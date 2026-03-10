@@ -4,6 +4,22 @@ import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 import { mapFormDataToApiData } from '@/modules/autoria/shared/utils/carAdDataMapper';
 import type { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import type { AutoRiaUser } from '@/services/autoria/users.service';
+import {
+  MAX_ADS_COUNT,
+  MIN_ADS_COUNT,
+  DEFAULT_ADS_COUNT,
+  CREATE_AD_TIMEOUT_MS,
+  IMAGE_GEN_TIMEOUT_MS,
+  IMAGE_SAVE_TIMEOUT_MS,
+  BATCH_SIZE,
+  BATCH_DELAY_MS,
+  GENERATION_LOCK_KEY,
+  GENERATION_LOCK_TIMEOUT_MS,
+} from '@/shared/constants/testAds.constants';
+import {
+  DEFAULT_IMAGE_TYPES,
+  POLLINATIONS_CONFIG,
+} from '@/shared/constants/imageGeneration.constants';
 
 // Types
 type HeadersRecord = Record<string, string>;
@@ -28,14 +44,6 @@ interface GenerationResult {
 // 3) Strip a trailing /api if someone accidentally included it in env
 const RAW_BACKEND_BASE = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 const BACKEND_URL = RAW_BACKEND_BASE.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
-const CREATE_AD_TIMEOUT_MS = 30000;
-const IMAGE_GEN_TIMEOUT_MS = 60000;
-const IMAGE_SAVE_TIMEOUT_MS = 15000;
-const MAX_ADS_LIMIT = 10;
-
-// Seeding control - prevent simultaneous generations
-const GENERATION_LOCK_KEY = 'test_ads_generation_in_progress';
-const GENERATION_LOCK_TIMEOUT = 300000; // 5 minutes
 
 // Utility functions
 const mergeHeaders = (...headerSets: Array<HeadersInit | undefined>): HeadersRecord => {
@@ -384,9 +392,9 @@ export async function createTestAdsServer(
   console.log(`🚀 Creating ${count} test ads on server...`);
 
   // Validate input
-  const validatedCount = Math.min(Math.max(1, count), MAX_ADS_LIMIT);
+  const validatedCount = Math.min(Math.max(MIN_ADS_COUNT, count), MAX_ADS_COUNT);
   if (validatedCount !== count) {
-    console.warn(`⚠️ [TestAds] Count adjusted from ${count} to ${validatedCount} (max: ${MAX_ADS_LIMIT})`);
+    console.warn(`⚠️ [TestAds] Count adjusted from ${count} to ${validatedCount} (max: ${MAX_ADS_COUNT})`);
   }
 
   const authFetch = createAuthFetch(requestOrToken);
@@ -480,7 +488,6 @@ export async function createTestAdsServer(
   }
 
   // Create ads in parallel batches to optimize performance
-  const BATCH_SIZE = 3; // Process 3 ads simultaneously
   const batches: number[][] = [];
   
   // Split ads into batches - STRICT VALIDATION
@@ -583,15 +590,15 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   const body = await request.json();
   console.log('🚀 [TestAds] Request body:', body);
-  const { count = 1, includeImages = true, imageTypes = ['front'] } = body;
+  const { count = DEFAULT_ADS_COUNT, includeImages = true, imageTypes = DEFAULT_IMAGE_TYPES } = body;
 
   // Validate parameters
-  if (typeof count !== 'number' || count < 1 || count > MAX_ADS_LIMIT) {
+  if (typeof count !== 'number' || count < MIN_ADS_COUNT || count > MAX_ADS_COUNT) {
     return NextResponse.json(
       { 
         success: false, 
         error: 'INVALID_COUNT',
-        message: `Count must be between 1 and ${MAX_ADS_LIMIT}` 
+        message: `Count must be between ${MIN_ADS_COUNT} and ${MAX_ADS_COUNT}` 
       },
       { status: 400 }
     );
