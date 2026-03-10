@@ -33,6 +33,10 @@ const IMAGE_GEN_TIMEOUT_MS = 60000;
 const IMAGE_SAVE_TIMEOUT_MS = 15000;
 const MAX_ADS_LIMIT = 3;
 
+// Seeding control - prevent simultaneous generations
+const GENERATION_LOCK_KEY = 'test_ads_generation_in_progress';
+const GENERATION_LOCK_TIMEOUT = 300000; // 5 minutes
+
 // Utility functions
 const mergeHeaders = (...headerSets: Array<HeadersInit | undefined>): HeadersRecord => {
   const result: HeadersRecord = {};
@@ -386,6 +390,134 @@ export async function createTestAdsServer(
   }
 
   const authFetch = createAuthFetch(requestOrToken);
+
+  // Check if generation is already in progress (seeding control)
+  console.log('🔒 [TestAds] Checking generation lock...');
+  
+  try {
+    const lockResponse = await authFetch(`${BACKEND_URL}/api/ads/generation-status/`, {
+      method: 'GET',
+    });
+
+    if (lockResponse.ok) {
+      const lockData = await lockResponse.json();
+      
+      if (lockData.generation_in_progress) {
+        console.warn(`🚫 [TestAds] Generation already in progress since ${lockData.started_at}`);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'GENERATION_IN_PROGRESS',
+            message: 'Test ads generation is already in progress. Please wait for completion.',
+            details: {
+              started_at: lockData.started_at,
+              estimated_completion: lockData.estimated_completion,
+              current_progress: lockData.current_progress
+            }
+          },
+          { status: 429 } // Too Many Requests
+        );
+      }
+      
+      console.log('✅ [TestAds] No active generation, proceeding...');
+    }
+  } catch (error) {
+    console.warn('⚠️ [TestAds] Could not check generation status:', error);
+    // Continue with generation - will handle conflicts at backend level
+  }
+
+  // Set generation lock
+  console.log('🔒 [TestAds] Setting generation lock...');
+  
+  try {
+    const lockSetResponse = await authFetch(`${BACKEND_URL}/api/ads/set-generation-lock/`, {
+      method: 'POST',
+      body: JSON.stringify({
+        lock_key: GENERATION_LOCK_KEY,
+        timeout: GENERATION_LOCK_TIMEOUT,
+        requested_count: validatedCount
+      })
+    });
+
+    if (!lockSetResponse.ok) {
+      console.warn('⚠️ [TestAds] Could not set generation lock, proceeding anyway');
+    } else {
+      const lockResult = await lockSetResponse.json();
+      console.log(`✅ [TestAds] Generation lock set: ${lockResult.lock_id}`);
+    }
+  } catch (error) {
+    console.warn('⚠️ [TestAds] Error setting generation lock:', error);
+  }
+
+  // Check account limits before creating ads
+  console.log('🔍 [TestAds] Checking account limits...');
+  
+  try {
+    const limitsResponse = await authFetch(`${BACKEND_URL}/api/ads/check-limits/`, {
+      method: 'GET',
+    });
+
+    if (!limitsResponse.ok) {
+      console.warn('⚠️ [TestAds] Could not check account limits, proceeding with caution');
+    } else {
+      const limitsData = await limitsResponse.json();
+      
+      if (!limitsData.allowed) {
+        console.warn(`🚫 [TestAds] Account limit exceeded: ${limitsData.reason}`);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'ACCOUNT_LIMIT_EXCEEDED',
+            message: limitsData.reason,
+            details: {
+              current_ads: limitsData.current_ads,
+              max_ads: limitsData.max_ads,
+              account_type: limitsData.account_type,
+              upgrade_message: limitsData.upgrade_message,
+              upgrade_url: limitsData.upgrade_url
+            }
+          },
+          { status: 429 } // Too Many Requests
+        );
+      }
+      
+      // Additional check: ensure we don't exceed limits with batch creation
+      if (limitsData.max_ads !== null) {
+        const totalAfterCreation = limitsData.current_ads + validatedCount;
+        if (totalAfterCreation > limitsData.max_ads) {
+          const maxAllowed = Math.max(0, limitsData.max_ads - limitsData.current_ads);
+          console.warn(`🚫 [TestAds] Batch creation would exceed limits. Adjusting from ${validatedCount} to ${maxAllowed}`);
+          
+          if (maxAllowed === 0) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: 'ACCOUNT_LIMIT_EXCEEDED',
+                message: `Cannot create any ads. Account already has ${limitsData.current_ads}/${limitsData.max_ads} ads.`,
+                details: {
+                  current_ads: limitsData.current_ads,
+                  max_ads: limitsData.max_ads,
+                  account_type: limitsData.account_type,
+                  requested: validatedCount,
+                  allowed: maxAllowed
+                }
+              },
+              { status: 429 }
+            );
+          }
+          
+          // Adjust count to fit within limits
+          validatedCount = maxAllowed;
+        }
+      }
+      
+      console.log(`✅ [TestAds] Account limits check passed: ${limitsData.reason}`);
+      console.log(`📊 [TestAds] Will create ${validatedCount} ads (current: ${limitsData.current_ads}, max: ${limitsData.max_ads || 'unlimited'})`);
+    }
+  } catch (error) {
+    console.warn('⚠️ [TestAds] Error checking account limits:', error);
+    // Continue with generation - backend will enforce limits anyway
+  }
   onProgress?.(0, `Начинаем создание ${validatedCount} объявлений...`);
 
   const results: GenerationResult[] = [];
@@ -487,6 +619,26 @@ export async function createTestAdsServer(
     adsWithImages: totalAdsWithImages,
     adsWithoutImages: created - totalAdsWithImages
   });
+
+  // Clear generation lock
+  console.log('🔓 [TestAds] Clearing generation lock...');
+  
+  try {
+    const lockClearResponse = await authFetch(`${BACKEND_URL}/api/ads/clear-generation-lock/`, {
+      method: 'POST',
+      body: JSON.stringify({
+        lock_key: GENERATION_LOCK_KEY
+      })
+    });
+
+    if (lockClearResponse.ok) {
+      console.log('✅ [TestAds] Generation lock cleared');
+    } else {
+      console.warn('⚠️ [TestAds] Could not clear generation lock');
+    }
+  } catch (error) {
+    console.warn('⚠️ [TestAds] Error clearing generation lock:', error);
+  }
 
   onProgress?.(100, `Завершено! Создано ${created} объявлений с ${totalImages} изображениями`);
 
