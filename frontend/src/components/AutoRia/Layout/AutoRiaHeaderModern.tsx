@@ -32,6 +32,15 @@ interface AutoRiaHeaderProps {
   currentPage?: string;
 }
 
+interface NavigationItem {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  id: string;
+  priority: number;
+  badge?: React.ReactNode;
+}
+
 const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   const { t, locale, setLocale, availableLocales } = useI18n();
   const { redisAuth } = useRedisAuth();
@@ -47,7 +56,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   const currentLocale = availableLocales.find(l => l.code === locale);
 
   // Core navigation items
-  const coreNavigation = [
+  const coreNavigation: NavigationItem[] = [
     {
       href: '/autoria',
       label: t('navigation.home'),
@@ -72,7 +81,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   ];
 
   // Premium features
-  const premiumNavigation = [
+  const premiumNavigation: NavigationItem[] = [
     {
       href: '/autoria/analytics',
       label: t('navigation.analytics'),
@@ -84,7 +93,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   ];
 
   // Admin features
-  const adminNavigation = [
+  const adminNavigation: NavigationItem[] = [
     {
       href: '/autoria/moderation',
       label: 'Модерація',
@@ -96,7 +105,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   ];
 
   // Combine navigation based on permissions
-  const allNavigation = [
+  const allNavigation: NavigationItem[] = [
     ...coreNavigation,
     ...(isPremiumUser ? premiumNavigation : []),
     ...(isSuperUser ? adminNavigation : []),
@@ -119,8 +128,8 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
         <div className="flex items-center gap-4">
           <Link href="/autoria" className="flex items-center gap-3 transition-transform hover:scale-[1.02]">
             <div className="relative">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
-                <Car className="h-6 w-6 text-primary-foreground" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl">
+                <Car className="h-8 w-8 text-foreground drop-shadow-sm" />
               </div>
               <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-background"></div>
             </div>

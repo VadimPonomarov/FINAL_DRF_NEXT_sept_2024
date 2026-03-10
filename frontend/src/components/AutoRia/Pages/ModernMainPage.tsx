@@ -10,19 +10,16 @@ import {
   Search,
   User,
   TrendingUp,
-  Shield,
   Zap,
   Star,
-  ArrowRight,
-  Globe2,
   Heart,
   MapPin,
   Calendar,
   Filter,
   ChevronRight,
-  BarChart3,
   Settings,
-  Bell
+  Bell,
+  DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 import { useI18n } from '@/contexts/I18nContext';

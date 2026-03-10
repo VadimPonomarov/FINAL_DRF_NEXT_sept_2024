@@ -1,194 +1,90 @@
 import { NextResponse } from "next/server";
-import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from "next/server";
 import { getToken } from 'next-auth/jwt';
-import { AUTH_CONFIG } from '@/shared/constants/constants';
 
-// Підтримувані локалі
-const locales = ['en', 'ru', 'uk'];
-const defaultLocale = 'en';
-
-// Створюємо middleware для інтернаціоналізації
-const intlMiddleware = createIntlMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'as-needed'
-});
-
-// Захищені шляхи, які потребують повної двухетапної авторизації
-// Уровень 1: NextAuth session
-// Уровень 2: Backend tokens (access + refresh в Redis)
-const PROTECTED_PATHS = [
-  '/',          // Home page - требует авторизации
-  '/autoria',   // Все страницы AutoRia
-  '/profile',   // Страница профиля
-  '/settings',  // Настройки
-];
-
-// Публичные страницы (доступны без авторизации)
+// Публичные пути - всегда доступны без авторизации
 const PUBLIC_PATHS = [
   '/login',
   '/register',
-  '/api/auth/signin',
-  '/api/auth/callback',
-  '/api/auth/error',
+  '/api/',
 ];
 
-// РІВЕНЬ 1 (з 2): Middleware — перевірка NextAuth сесії
-// ════════════════════════════════════════════════════════════════════════
-// Дворівнева система валідації для AutoRia:
-// 1. [ЦЕЙ РІВЕНЬ] Middleware: NextAuth session → /api/auth/signin, якщо немає
-// 2. [Рівень 2] BackendTokenPresenceGate (HOC у Layout): backend-токени → /login, якщо немає
-// ════════════════════════════════════════════════════════════════════════
-//
-// ВАЖЛИВО: 
-// - signOut = удаляет сессию + токены → middleware блокирует → /api/auth/signin
-// - logout = удаляет только токены → middleware пропускает → BackendTokenPresenceGate блокирует → /login
-//
-// РІВЕНЬ 1: Перевіряємо тільки наявність NextAuth сесії
-// Токени (access_token, refresh_token) — для зовнішніх API, не для middleware
-async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
-  try {
-    const nextAuthSecret = AUTH_CONFIG.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET;
+// Защищённые пути - требуют NextAuth сессии
+const PROTECTED_PREFIXES = [
+  '/autoria',
+  '/profile',
+  '/settings',
+  '/docs',
+  '/flower',
+  '/rabbitmq',
+  '/users',
+  '/recipes',
+];
 
-    if (!nextAuthSecret) {
-      console.error('[Middleware] NEXTAUTH_SECRET not found');
-      const loginUrl = new URL('/api/auth/signin', req.url);
-      loginUrl.searchParams.set('callbackUrl', req.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    const token = await getToken({ req, secret: nextAuthSecret });
-
-    if (!token) {
-      console.log('[Middleware] No NextAuth session - redirecting to /api/auth/signin');
-      const loginUrl = new URL('/api/auth/signin', req.url);
-      loginUrl.searchParams.set('callbackUrl', req.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    console.log(`[Middleware] NextAuth session valid: ${token.email}`);
-    return NextResponse.next();
-  } catch (error) {
-    console.error('[Middleware] Error checking NextAuth session:', error);
-    const loginUrl = new URL('/api/auth/signin', req.url);
-    loginUrl.searchParams.set('callbackUrl', req.url);
-    return NextResponse.redirect(loginUrl);
-  }
-}
-
-// Основна функція middleware
+// Middleware: проверяет ТОЛЬКО наличие NextAuth сессии.
+// Токены (access/refresh) принадлежат внешним API и здесь НЕ проверяются.
 export default async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-  console.log(`[Middleware] Processing: ${pathname}`);
 
-  // Пропускаємо статичні файли
-  const isStatic = (
+  // Пропускаем статические файлы и ресурсы
+  if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/static/') ||
-    pathname.startsWith('/favicon') ||
-    /\.(png|jpg|jpeg|svg|ico|css|js)$/.test(pathname)
-  );
-  if (isStatic) return NextResponse.next();
+    /\.(png|jpg|jpeg|svg|ico|css|js|webp|woff|woff2|map)$/.test(pathname)
+  ) {
+    return NextResponse.next();
+  }
 
-  // ВАЖЛИВО: Пропускаємо ВСІ API-маршрути без перевірок (включно з /api/autoria/*)
-  // API routes защищаются на уровне API handlers
+  // Пропускаем все API маршруты без проверки (защита на уровне handlers)
   if (pathname.startsWith('/api/')) {
-    console.log('[Middleware] API route, allowing without auth checks');
     return NextResponse.next();
   }
 
-  // Проверяем публичные страницы - пропускаем без проверок
-  const isPublicPath = PUBLIC_PATHS.some(path => pathname.startsWith(path));
-  if (isPublicPath) {
-    console.log('[Middleware] Public path, allowing access');
+  // Пропускаем публичные страницы
+  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Прибираємо мовний префікс із захищених шляхів
-  const localeMatch = locales.find(locale => pathname.startsWith(`/${locale}/`));
-  if (localeMatch) {
-    const cleanPath = pathname.replace(`/${localeMatch}`, '');
-    const protectedPaths = ['/autoria', '/docs', '/api', '/login', '/register'];
-    if (protectedPaths.some(path => cleanPath.startsWith(path))) {
-      // Preserve original search params to keep callbackUrl and avoid auth loops
-      const url = new URL(req.url);
-      const redirectUrl = new URL(cleanPath + url.search, url.origin);
-      return NextResponse.redirect(redirectUrl);
-    }
+  // Определяем, нужна ли защита для данного пути
+  const isHomePage = pathname === '/';
+  const isProtected = isHomePage || PROTECTED_PREFIXES.some(
+    p => pathname === p || pathname.startsWith(p + '/')
+  );
+
+  if (!isProtected) {
+    return NextResponse.next();
   }
 
-  // Проверяем, требует ли страница защиты
-  const accept = req.headers.get('accept') || '';
-  const isHtmlPage = accept.includes('text/html');
-  
-  // Защищаем HOME страницу - требует полной авторизации
-  if (pathname === '/' && isHtmlPage) {
-    console.log('[Middleware] Home page access, checking auth...');
-    return await checkBackendAuth(req);
-  }
+  // Проверяем NextAuth сессию.
+  // ВАЖНО: используем process.env.NEXTAUTH_SECRET напрямую — AUTH_CONFIG
+  // использует Node.js crypto и несовместим с Edge runtime.
+  try {
+    const token = await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
-  // КРИТИЧНО: Защищаем все страницы AutoRia (рівень 1: перевірка сесії NextAuth)
-  // БЕЗ сессии NextAuth доступ к AutoRia ЗАПРЕЩЕН
-  // ИСКЛЮЧЕНИЕ: /autoria/search - только проверка NextAuth сессии
-  if (pathname.startsWith('/autoria') && isHtmlPage) {
-    console.log(`[Middleware] 🔒 AutoRia page access attempt: ${pathname}`);
-    
-    // Для search страницы - только проверка NextAuth сессии
-    if (pathname.startsWith('/autoria/search')) {
-      console.log(`[Middleware] Search page - checking NextAuth session only`);
-      const token = await getToken({ 
-        req, 
-        secret: process.env.NEXTAUTH_SECRET || AUTH_CONFIG.NEXTAUTH_SECRET 
-      });
-      
-      if (!token) {
-        console.log('[Middleware] No NextAuth session for search - redirecting to signin');
-        const loginUrl = new URL('/api/auth/signin', req.url);
-        loginUrl.searchParams.set('callbackUrl', req.url);
-        return NextResponse.redirect(loginUrl);
-      }
-      
-      console.log('[Middleware] ✅ Search page access allowed (NextAuth session only)');
+    if (token) {
+      // Сессия есть — пропускаем запрос
       return NextResponse.next();
     }
-    
-    // Для остальных AutoRia страниц - полная проверка
-    const authResponse = await checkBackendAuth(req);
-    // Если редирект - возвращаем его немедленно
-    if (authResponse.status === 307 || authResponse.status === 308) {
-      console.log(`[Middleware] 🚫 Blocking AutoRia access - redirecting to signin`);
-      return authResponse;
-    }
-    // Если доступ разрешен - пропускаем дальше
-    console.log(`[Middleware] ✅ AutoRia access allowed (NextAuth session valid)`);
-    return authResponse;
-  }
 
-  // Защищаем другие защищенные страницы
-  const requiresAuth = ['/profile', '/settings'].some(path => pathname.startsWith(path));
-  if (requiresAuth && isHtmlPage) {
-    return await checkBackendAuth(req);
-  }
+    // Сессии нет — редиректим на страницу входа
+    // callbackUrl = только pathname+search (без origin), чтобы избежать вложенных callbackUrl
+    const callbackPath = pathname + req.nextUrl.search;
+    const signinUrl = new URL('/api/auth/signin', req.url);
+    signinUrl.searchParams.set('callbackUrl', callbackPath);
+    return NextResponse.redirect(signinUrl);
 
-  // Обробляємо i18n для окремих шляхів
-  const i18nPaths = ['/help', '/about'];
-  const excludeFromI18n = ['/autoria', '/api', '/login', '/register', '/docs'];
-  
-  const needsI18n = i18nPaths.some(path => pathname.startsWith(path));
-  const shouldExclude = excludeFromI18n.some(path => pathname.startsWith(path));
-  const missingLocale = locales.every(locale => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`);
-  
-  if (needsI18n && !shouldExclude && missingLocale) {
-    return intlMiddleware(req);
+  } catch {
+    // При ошибке getToken — пропускаем запрос (fail-open).
+    // Редирект здесь создал бы бесконечный цикл при транзиентных ошибках Edge.
+    return NextResponse.next();
   }
-  
-  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    // Перевіряємо всі шляхи, окрім статичних файлів
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

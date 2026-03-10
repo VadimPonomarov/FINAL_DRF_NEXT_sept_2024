@@ -28,6 +28,15 @@ export default function BackendTokenPresenceGate({ children }: { children: React
   const [isAuthorized, setIsAuthorized] = useState(false);
   const redirectingRef = useRef(false);
 
+  // ИСКЛЮЧЕНИЕ: Search страница не требует backend токенов
+  const isSearchPage = pathname?.startsWith('/autoria/search');
+  
+  if (isSearchPage) {
+    // Для search страницы сразу показываем контент - middleware уже проверил NextAuth сессию
+    console.log('[BackendTokenPresenceGate] Search page - skipping backend token check');
+    return <>{children}</>;
+  }
+
   /**
    * Перевірка backend-токенів з автооновленням (рівень 2)
    * Middleware вже перевірив сесію NextAuth (рівень 1)

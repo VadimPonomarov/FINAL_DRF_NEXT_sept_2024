@@ -41,8 +41,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <RootProvider>
       <header className="header-container h-[50px]">
         <div className="relative">
-          <div className="absolute top-1/2 -translate-y-1/2 translate-y-1 left-[10px] z-[1001] hidden md:block">
-            <MagicBackButton variant="ghost" className="w-5 h-5 z-[1001]" />
+          {/* Desktop MagicBackButton */}
+          <div className="absolute top-1/2 -translate-y-1/2 translate-y-1 left-[10px] z-[80] hidden md:block">
+            <MagicBackButton variant="ghost" className="w-5 h-5" />
+          </div>
+          {/* Mobile MagicBackButton */}
+          <div className="md:hidden fixed left-4 top-4 z-[80]">
+            <MagicBackButton variant="ghost" className="w-8 h-8 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-200 dark:border-gray-700" />
           </div>
           <MenuMain/>
         </div>

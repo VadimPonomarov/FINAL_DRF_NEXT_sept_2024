@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export const MenuMain: FC = () => {
+export const MenuMain: FC = (): JSX.Element => {
   const { provider } = useAuthProvider();
   const router = useRouter();
   // const router = useRouter();
@@ -183,11 +183,6 @@ export const MenuMain: FC = () => {
         index: 99,
         tooltip: "Authentication"
       });
-    }
-
-    // If no provider is selected, show only basic common items
-    if (!hasSelectedProvider) {
-      return commonItems.sort((a, b) => a.index - b.index);
     }
 
     // Menu items for MyBackendDocs provider
@@ -397,27 +392,26 @@ export const MenuMain: FC = () => {
         ),
         disabled: false,
         index: 101,
+        tooltip: "Sign out",
         cb: async function() {
           console.log('Logout callback called');
-            try {
-              console.log('Calling full cleanupAuth (Redis + NextAuth + storage)');
-              await cleanupAuth('/api/auth/signin');
-            } catch (error) {
-              console.error('Error during cleanupAuth, fallback redirect to signin:', error);
-              window.location.href = '/api/auth/signin';
-            }
-          },
-          tooltip: "Sign out",
-          index: 101
+          try {
+            console.log('Calling full cleanupAuth (Redis + NextAuth + storage)');
+            await cleanupAuth('/api/auth/signin');
+          } catch (error) {
+            console.error('Error during cleanupAuth, fallback redirect to signin:', error);
+            window.location.href = '/api/auth/signin';
+          }
         }
-      ];
+      });
     }
 
-    console.log("Final menu items for provider", currentProvider, ":",
+    const providerName = currentProvider;
+    console.log("Final menu items for provider", providerName, ":",
       allItems.map(item => typeof item.label === 'string' ? item.label : 'icon'));
 
     return allItems.sort((a, b) => a.index - b.index);
-  }, [currentProvider, session]);
+  }, [currentProvider, session, status]);
 
   return (
     <div className="relative mb-8">
@@ -426,24 +420,8 @@ export const MenuMain: FC = () => {
         <MenuComponent items={menuItems} />
       </div>
       
-      {/* Language Selector - Desktop - Bottom Left */}
-      <div className="hidden md:block absolute left-4 bottom-4 z-[99999]">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              <Globe2 className="h-4 w-4" />
-              <span className="text-xs">🌍</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>English</DropdownMenuItem>
-            <DropdownMenuItem>Українська</DropdownMenuItem>
-            <DropdownMenuItem>Русский</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
       {/* Mobile burger - Fixed positioned on the right */}
-      <div className={`md:hidden fixed right-4 top-4 z-[1002] transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-20'}`}>
+      <div className={`md:hidden fixed right-4 top-4 z-[100] transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-20'}`}>
         <button
           className="relative p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:shadow-xl transition-all duration-200 group"
           onClick={() => setMobileMenuOpen((v) => !v)}
@@ -464,11 +442,11 @@ export const MenuMain: FC = () => {
         <>
           {/* Backdrop */}
           <div 
-            className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-fade-in"
+            className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-[90] animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Menu content */}
-          <div className="md:hidden fixed right-4 top-20 z-50 w-72 max-w-[80vw] bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-lg animate-fade-in flex flex-col max-h-[70vh] overflow-hidden">
+          <div className="md:hidden fixed right-4 top-20 z-[95] w-72 max-w-[80vw] bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-lg animate-fade-in flex flex-col max-h-[70vh] overflow-hidden">
             <div className="p-2 border-b border-gray-200 dark:border-gray-700">
               <div className="text-sm font-medium text-gray-600 dark:text-gray-400 px-3 py-1">Меню</div>
             </div>
@@ -521,10 +499,6 @@ export const MenuMain: FC = () => {
         </>
       )}
 
-      {/* Mobile MagicBackButton - Fixed positioned on the left */}
-      <div className="md:hidden fixed left-4 top-4 z-[1001]">
-        <MagicBackButton variant="ghost" className="w-8 h-8 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-200 dark:border-gray-700" />
-      </div>
     </div>
   );
 };

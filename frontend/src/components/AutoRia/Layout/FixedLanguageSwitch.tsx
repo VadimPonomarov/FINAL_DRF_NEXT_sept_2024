@@ -23,7 +23,7 @@ const FixedLanguageSwitch: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-16 left-4 z-[9999]">
+    <div className="fixed top-20 right-4 z-[120]">
       <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden transition-all">
         {isExpanded ? (
           // Развернутый вид

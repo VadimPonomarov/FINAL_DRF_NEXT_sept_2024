@@ -2,7 +2,6 @@
 
 import React, {ReactNode} from 'react';
 import AutoRiaHeader from './AutoRiaHeaderModern';
-import FixedLanguageSwitch from './FixedLanguageSwitch';
 import { RedisAuthProvider } from '@/contexts/RedisAuthContext';
 import { AlertDialogProvider } from '@/components/ui/alert-dialog-helper';
 import { useCurrentPage } from '@/modules/autoria/layout/useCurrentPage';
@@ -32,7 +31,6 @@ const AutoRiaLayout: React.FC<AutoRiaLayoutProps> = ({children}) => {
                             </main>
                         </div>
                     </div>
-                    <FixedLanguageSwitch />
                 </div>
             </AlertDialogProvider>
         </RedisAuthProvider>

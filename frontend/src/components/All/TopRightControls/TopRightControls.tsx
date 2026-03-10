@@ -8,31 +8,38 @@ import FixedLanguageSwitch from '@/components/AutoRia/Layout/FixedLanguageSwitch
 
 /**
  * Компонент для управления элементами в правом верхнем углу
- * Всегда показываем оба бейджа (email сессии + AutoRia пользователь)
+ * Использует условный рендеринг для desktop/mobile чтобы избежать дублирования
  */
 const TopRightControls: React.FC = () => {
   const pathname = usePathname();
 
+  // Определяем, находимся ли мы на AutoRia страницах
+  const isAutoRiaPage = pathname?.startsWith('/autoria');
+  
+  // Показываем бейджи только на не-AutoRia страницах
+  const shouldShowBadges = !isAutoRiaPage;
+
   return (
     <>
-      {/* Контейнер для бейджей - справа с отступом 50px от viewport */}
-      <div 
-        className="fixed flex flex-col items-end gap-2 pointer-events-none"
-        style={{ top: '60px', right: '50px', zIndex: 99999999 }}
-      >
-        {/* Email бейдж - белый/серый */}
-        <div className="pointer-events-auto">
-          <AuthBadge />
-        </div>
-        {/* AutoRia пользователь - желтый/серый 
-            Показываем всегда, компонент сам решит показывать или нет на основе авторизации */}
-        <div className="pointer-events-auto">
-          <AutoRiaUserBadge />
-        </div>
-      </div>
-
-      {/* Language Selector - manages its own position */}
+      {/* Language Selector - показываем всегда, управляет своей позицией */}
       <FixedLanguageSwitch />
+      
+      {/* Бейджи пользователей - только на не-AutoRia страницах */}
+      {shouldShowBadges && (
+        <div 
+          className="fixed flex flex-col items-end gap-2 pointer-events-none z-[110]"
+          style={{ top: '60px', right: '50px' }}
+        >
+          {/* Email бейдж - белый/серый */}
+          <div className="pointer-events-auto">
+            <AuthBadge />
+          </div>
+          {/* AutoRia пользователь - желтый/серый */}
+          <div className="pointer-events-auto">
+            <AutoRiaUserBadge />
+          </div>
+        </div>
+      )}
     </>
   );
 };
