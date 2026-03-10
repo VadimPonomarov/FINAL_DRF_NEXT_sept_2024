@@ -28,20 +28,11 @@ export default function BackendTokenPresenceGate({ children }: { children: React
   const [isAuthorized, setIsAuthorized] = useState(false);
   const redirectingRef = useRef(false);
 
-  // ТИМЧАСОВО ВІДКЛЮЧЕНО для діагностики
-  console.log('[BackendTokenPresenceGate DISABLED] Allowing all pages:', pathname);
-  return <>{children}</>;
-
-  /* ОРИГІНАЛЬНИЙ КОД - ВІДКЛЮЧЕНО
   // ИСКЛЮЧЕНИЕ: Search страница не требует backend токенов
-  const isSearchPage = pathname?.startsWith('/autoria/search');
-  
-  if (isSearchPage) {
-    // Для search страницы сразу показываем контент - middleware уже проверил NextAuth сессию
-    console.log('[BackendTokenPresenceGate] Search page - skipping backend token check');
+  // Middleware уже проверил NextAuth сессию (уровень 1)
+  if (pathname?.startsWith('/autoria/search')) {
     return <>{children}</>;
   }
-  */
 
   /**
    * Перевірка backend-токенів з автооновленням (рівень 2)
@@ -116,24 +107,11 @@ export default function BackendTokenPresenceGate({ children }: { children: React
       }
 
     } catch (error) {
-      console.error('[BackendTokenPresenceGate] ❌ Помилка під час валідації:', error);
-      // У разі помилки — також виконуємо редирект, оскільки це може вказувати на проблеми з токенами
-      console.error('[BackendTokenPresenceGate] 🚫 БЛОКИРОВКА ДОСТУПА через помилку валідації');
-      
-      redirectingRef.current = true;
+      // Fail-open: мережева або тимчасова помилка не повинна кидати користувача на /login
+      // Тільки явна відсутність токенів → редирект
+      console.error('[BackendTokenPresenceGate] ❌ Помилка під час валідації (fail-open):', error);
       setIsLoading(false);
-      setIsAuthorized(false);
-
-      const currentPath = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
-      const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
-      
-      console.log('[BackendTokenPresenceGate] Redirecting to (error):', loginUrl);
-      // Используем window.location.replace для немедленного редиректа (не добавляет в историю)
-      if (typeof window !== 'undefined') {
-        window.location.replace(loginUrl);
-      } else {
-        router.push(loginUrl);
-      }
+      setIsAuthorized(true); // Дозволяємо доступ при мережевих помилках
     }
   }, [pathname, searchParams, router]);
 

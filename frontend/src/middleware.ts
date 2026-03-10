@@ -21,18 +21,11 @@ const PROTECTED_PREFIXES = [
   '/recipes',
 ];
 
-// ТИМЧАСОВО ВІДКЛЮЧЕНО для діагностики редиректів
 // Middleware: проверяет ТОЛЬКО наличие NextAuth сессии.
 // Токены (access/refresh) принадлежат внешним API и здесь НЕ проверяются.
 export default async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-  
-  console.log(`[Middleware DISABLED] Allowing all requests: ${pathname}`);
-  
-  // ТИМЧАСОВО: пропускаємо ВСІ запити без перевірок
-  return NextResponse.next();
 
-  /* ОРИГІНАЛЬНИЙ КОД - ВІДКЛЮЧЕНО
   // Пропускаем статические файлы и ресурсы
   if (
     pathname.startsWith('/_next/') ||
@@ -72,11 +65,10 @@ export default async function middleware(req: NextRequest) {
     });
 
     if (token) {
-      // Сессия есть — пропускаем запрос
       return NextResponse.next();
     }
 
-    // Сессии нет — редиректим на страницу входа
+    // Сессии нет — редиректим на страницу входа NextAuth
     // callbackUrl = только pathname+search (без origin), чтобы избежать вложенных callbackUrl
     const callbackPath = pathname + req.nextUrl.search;
     const signinUrl = new URL('/api/auth/signin', req.url);
@@ -88,7 +80,6 @@ export default async function middleware(req: NextRequest) {
     // Редирект здесь создал бы бесконечный цикл при транзиентных ошибках Edge.
     return NextResponse.next();
   }
-  */
 }
 
 export const config = {
