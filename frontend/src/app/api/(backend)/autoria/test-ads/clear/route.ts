@@ -9,11 +9,25 @@ export async function DELETE(request: NextRequest) {
 
     // Получаем все объявления пользователя
     console.log('📋 Fetching user ads...');
-    const userAds = await CarAdsService.getMyCarAds({
-      page: 1,
-      limit: 1000, // Получаем все объявления
-      status: 'all'
-    });
+    let userAds;
+    try {
+      userAds = await CarAdsService.getMyCarAds({
+        page: 1,
+        limit: 1000, // Получаем все объявления
+        status: 'all'
+      });
+    } catch (authError) {
+      console.error('❌ Authentication error:', authError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Authentication required',
+          message: 'Please login to delete test ads',
+          duration: `${((Date.now() - startTime) / 1000).toFixed(1)}s`
+        },
+        { status: 401 }
+      );
+    }
 
     console.log(`📊 Found ${userAds.results?.length || 0} user ads`);
 

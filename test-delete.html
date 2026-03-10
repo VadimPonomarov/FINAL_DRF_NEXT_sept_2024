@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Delete API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #b91c1c;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест API видалення оголошень</h1>
+    
+    <div>
+        <h3>Крок 1: Перевірка кількості тестових оголошень</h3>
+        <button onclick="checkTestAds()">📊 Перевірити</button>
+    </div>
+
+    <div>
+        <h3>Крок 2: Видалення всіх тестових оголошень</h3>
+        <button onclick="deleteTestAds()">🗑️ Видалити все</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const API_URL = 'https://autoria-clone.vercel.app';
+        const resultDiv = document.getElementById('result');
+
+        function showResult(data, isError = false) {
+            resultDiv.className = isError ? 'error' : 'success';
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function checkTestAds() {
+            resultDiv.textContent = '⏳ Завантаження...';
+            try {
+                const response = await fetch(`${API_URL}/api/autoria/test-ads/clear`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                showResult({
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data
+                }, !response.ok);
+            } catch (error) {
+                showResult({
+                    error: error.message,
+                    stack: error.stack
+                }, true);
+            }
+        }
+
+        async function deleteTestAds() {
+            if (!confirm('Ви впевнені, що хочете видалити всі тестові оголошення?')) {
+                return;
+            }
+
+            resultDiv.textContent = '⏳ Видалення...';
+            try {
+                const response = await fetch(`${API_URL}/api/autoria/test-ads/clear`, {
+                    method: 'DELETE',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                showResult({
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data
+                }, !response.ok);
+            } catch (error) {
+                showResult({
+                    error: error.message,
+                    stack: error.stack
+                }, true);
+            }
+        }
+    </script>
+</body>
+</html>
