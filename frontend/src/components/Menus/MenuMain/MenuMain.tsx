@@ -420,8 +420,8 @@ export const MenuMain: FC = (): JSX.Element => {
         <MenuComponent items={menuItems} />
       </div>
       
-      {/* Theme Controls - Desktop - Bottom Left */}
-      <div className="hidden md:block fixed left-4 bottom-4 z-[120]">
+      {/* Theme Controls - Fixed Bottom Left (Desktop + Mobile) */}
+      <div className="fixed left-4 bottom-20 md:bottom-4 z-[120]">
         <ThemeControls />
       </div>
       
