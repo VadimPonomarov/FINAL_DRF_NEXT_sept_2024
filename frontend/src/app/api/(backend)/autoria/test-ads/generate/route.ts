@@ -264,29 +264,52 @@ const generateAndSaveImages = async (
 
     const { controller, timeoutId } = createTimeoutController(IMAGE_GEN_TIMEOUT_MS);
 
-    const genResp = await authFetch(`${BACKEND_URL}/api/chat/generate-car-images-mock/`, {
-      method: 'POST',
-      body: JSON.stringify({
-        car_data: carData,
-        angles: imageTypes,
-        style: 'realistic',
-        use_mock_algorithm: true,
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!genResp.ok) {
-      console.warn(`⚠️ [TestAds] Image generation failed for ad ${createdAd.id}`);
-      return 0;
-    }
-
-    const genData = await genResp.json();
+    let genResp: Response;
+    let genData: any;
     
-    if (!genData.success || !Array.isArray(genData.images) || genData.images.length === 0) {
-      console.warn(`⚠️ [TestAds] No images generated for ad ${createdAd.id}`);
-      return 0;
+    try {
+      genResp = await authFetch(`${BACKEND_URL}/api/chat/generate-car-images-mock/`, {
+        method: 'POST',
+        body: JSON.stringify({
+          car_data: carData,
+          angles: imageTypes,
+          style: 'realistic',
+          use_mock_algorithm: true,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!genResp.ok) {
+        throw new Error(`Backend returned ${genResp.status}`);
+      }
+
+      genData = await genResp.json();
+      
+      if (!genData.success || !Array.isArray(genData.images) || genData.images.length === 0) {
+        throw new Error('No images generated from backend');
+      }
+      
+    } catch (error) {
+      console.warn(`⚠️ [TestAds] Backend image generation failed for ad ${createdAd.id}:`, error);
+      console.log(`🔄 [TestAds] Using fallback image generation...`);
+      
+      // TEMPORARY FALLBACK: Generate placeholder images using Pollinations.ai directly
+      const fallbackImages = imageTypes.map((angle, idx) => ({
+        url: `https://image.pollinations.ai/prompt/${encodeURIComponent(`${carData.brand} ${carData.model} ${carData.color} ${carData.year} ${angle} view, realistic car photo, high quality`)}?width=800&height=600&seed=${createdAd.id}_${idx}`,
+        angle: angle,
+        is_fallback: true
+      }));
+      
+      genData = {
+        success: true,
+        images: fallbackImages,
+        total_generated: fallbackImages.length,
+        method: 'fallback'
+      };
+      
+      console.log(`📸 [TestAds] Generated ${fallbackImages.length} fallback images for ad ${createdAd.id}`);
     }
 
     console.log(`📸 [TestAds] Saving ${genData.images.length} images for ad ${createdAd.id}...`);
