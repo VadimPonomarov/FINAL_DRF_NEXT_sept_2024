@@ -407,23 +407,36 @@ export const MenuMain: FC = (): JSX.Element => {
   }, [currentProvider, session, status]);
 
   return (
-    <div className="relative mb-4">
+    <div className="relative mb-4 min-h-[50px]">
       {/* Desktop menu */}
-      <div className="hidden md:block">
-        <div className="flex items-center justify-between gap-4">
-          <MenuComponent items={menuItems} />
-          
-          {/* Right side controls */}
-          <div className="flex items-center gap-3">
-            <GlobalProviderToggle />
-            <ThemeControls />
-            {session && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <User className="h-4 w-4" />
-                <span className="text-sm font-medium">{session.user?.email?.split('@')[0] || 'User'}</span>
-              </div>
-            )}
-          </div>
+      <div className="hidden md:block relative">
+        <MenuComponent items={menuItems} />
+        
+        {/* Right side controls - absolute positioned */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-3">
+          <GlobalProviderToggle />
+          <ThemeControls />
+          {session && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm font-medium">{session.user?.email?.split('@')[0] || 'User'}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
       
