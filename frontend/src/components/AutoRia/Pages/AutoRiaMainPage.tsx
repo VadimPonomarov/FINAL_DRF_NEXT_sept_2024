@@ -184,25 +184,38 @@ const AutoRiaMainPage = () => {
 
 
 
-  // Функция очистки всех объявлений — прямой вызов CarAdsService с клиента
+  // Функция очистки ВСЕХ объявлений в БД (не только своих)
   const clearAllAds = useCallback(async () => {
     if (isGenerating) return;
 
     const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
-    const confirmed = await alertHelpers.confirmDelete(t('autoria.testAds.allTestAds') || 'всі тестові оголошення');
+    const confirmed = await alertHelpers.confirmDelete(t('autoria.testAds.allAdsInDatabase') || 'ВСІ оголошення в базі даних');
     if (!confirmed) return;
 
     setIsGenerating(true);
     try {
-      const result = await CarAdsService.bulkDeleteMyAdsByStatus('all');
-      toast({
-        title: "✅ Оголошення видалено!",
-        description: t('autoria.testAds.successDeleted', { count: result.deleted }) || `Видалено: ${result.deleted}`,
-        variant: "default",
+      // Используем cleanup-real endpoint который удаляет ВСЕ объявления в БД
+      const response = await fetch('/api/autoria/test-ads/cleanup-real', {
+        method: 'DELETE',
+        credentials: 'include'
       });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "✅ База даних очищена!",
+          description: `Видалено ${result.deleted} з ${result.total_found} оголошень`,
+          variant: "default",
+        });
+        // Перезагружаем страницу чтобы обновить счетчик статистики
+        window.location.reload();
+      } else {
+        throw new Error(result.error || 'Помилка видалення');
+      }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      console.error('Error cleaning up ads:', errMsg);
+      console.error('Error cleaning up all ads:', errMsg);
       toast({
         title: "❌ Помилка видалення",
         description: errMsg,
