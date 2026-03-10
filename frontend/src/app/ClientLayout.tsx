@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { logger } from "@/shared/utils/logger";
 
-function ClientLayoutContent({ children }: { children: React.ReactNode }) {
+export default function ClientLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Handle global errors
     const handleError = (event: ErrorEvent) => {
@@ -34,25 +34,16 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <>
-      {/* MenuMain - головне меню (завжди показується) */}
-      <header className="header-container h-[50px]">
-        <MenuMain/>
-      </header>
-      <main className="w-full min-h-[calc(100vh-50px)] pt-[60px] pb-4">
-        {children}
-      </main>
-      <ChatBotIcon />
-      <Toaster />
-    </>
-  );
-}
-
-export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  return (
     <ErrorBoundary fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Something went wrong. Please refresh the page.</div>}>
       <RootProvider>
-        <ClientLayoutContent>{children}</ClientLayoutContent>
+        <header className="header-container h-[50px]">
+          <MenuMain/>
+        </header>
+        <main className="w-full min-h-[calc(100vh-50px)] pt-[60px] pb-4">
+          {children}
+        </main>
+        <ChatBotIcon />
+        <Toaster />
       </RootProvider>
     </ErrorBoundary>
   );
