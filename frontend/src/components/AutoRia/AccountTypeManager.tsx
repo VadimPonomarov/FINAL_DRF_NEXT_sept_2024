@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { AccountService } from '@/services/autoria/account.service';
+import { CarAdsService } from '@/services/autoria/carAds.service';
 import NewResizableWrapper from '@/components/All/ResizableWrapper/NewResizableWrapper';
 
 interface User {
@@ -53,22 +54,12 @@ const AccountTypeManager: React.FC<AccountTypeManagerProps> = ({
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/autoria/test-ads/cleanup', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setSuccess(`✅ Успешно удалено ${result.deletedCount} тестовых объявлений`);
-      } else {
-        throw new Error('Ошибка при удалении тестовых объявлений');
-      }
+      // Используем CarAdsService для удаления всех объявлений
+      const result = await CarAdsService.bulkDeleteMyAdsByStatus('all');
+      setSuccess(`✅ Успішно видалено ${result.deleted} оголошень`);
     } catch (err: any) {
       console.error('Cleanup error:', err);
-      setError(`❌ Ошибка при очистке: ${err.message}`);
+      setError(`❌ Помилка при очищенні: ${err.message}`);
     } finally {
       setIsCleaningUp(false);
     }
