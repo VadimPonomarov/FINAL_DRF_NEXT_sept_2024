@@ -252,27 +252,22 @@ export class CarAdsService {
     return { deleted, failed };
   }
 
-  // Массовое удаление по статусу (если нет endpoint — выбираем мои объявления со статусом и удаляем)
+  // Массовое удаление по статусу — загружаем объявления и удаляем по одному
   static async bulkDeleteMyAdsByStatus(status: string): Promise<{ deleted: number; failed: number }> {
-    try {
-      const url = `/api/ads/bulk-delete?status=${encodeURIComponent(status)}`;
-      const response = await fetchWithAuth(url, { method: 'POST' });
-      if (response.ok) {
-        const data = await response.json().catch(() => ({}));
-        return {
-          deleted: Number(data?.deleted || 0),
-          failed: Number(data?.failed || 0)
-        };
-      }
-      console.warn('[CarAdsService] bulk-by-status endpoint not available, falling back to client bulk');
-    } catch (e) {
-      console.warn('[CarAdsService] bulk-by-status failed, fallback to client bulk:', e);
-    }
-
-    // Фолбэк: загрузить мои объявления с этим статусом и удалить по одному
+    console.log('[CarAdsService] bulkDeleteMyAdsByStatus called with status:', status);
+    
+    // Загружаем мои объявления с этим статусом
     const pageData = await this.getMyCarAds({ page: 1, limit: 1000, status });
-    const ids = (pageData.results || []).map(a => a.id as unknown as number);
+    const ads = pageData.results || [];
+    console.log('[CarAdsService] Found ads to delete:', ads.length);
+    
+    if (ads.length === 0) {
+      return { deleted: 0, failed: 0 };
+    }
+    
+    const ids = ads.map(a => a.id as unknown as number);
     const { deleted, failed } = await this.bulkDeleteMyAds(ids);
+    console.log('[CarAdsService] Deletion result:', { deleted: deleted.length, failed: failed.length });
     return { deleted: deleted.length, failed: failed.length };
   }
 

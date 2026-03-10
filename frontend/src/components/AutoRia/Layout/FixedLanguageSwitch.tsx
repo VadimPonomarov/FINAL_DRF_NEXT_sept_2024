@@ -12,7 +12,7 @@ const FixedLanguageSwitch: React.FC = () => {
   const currentLocale = availableLocales.find(l => l.code === locale);
 
   return (
-    <div className="fixed bottom-4 left-4 z-[120]">
+    <div className="fixed bottom-4 left-4 z-[1200]">
       <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden transition-all">
         {isExpanded ? (
           // Развернутый вид
