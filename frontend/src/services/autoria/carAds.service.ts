@@ -218,37 +218,21 @@ export class CarAdsService {
     console.log('[CarAdsService] Successfully deleted car ad');
   }
 
-  // Массовое удаление моих объявлений по списку ID (с фолбэком на поштучное удаление)
+  // Массовое удаление моих объявлений по списку ID (поштучное удаление через рабочий endpoint)
   static async bulkDeleteMyAds(ids: number[]): Promise<{ deleted: number[]; failed: number[] }> {
     if (!Array.isArray(ids) || ids.length === 0) {
       return { deleted: [], failed: [] };
     }
 
-    try {
-      const url = `/api/ads/bulk-delete`;
-      const response = await fetchWithAuth(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids })
-      });
-
-      if (response.ok) {
-        const data = await response.json().catch(() => ({}));
-        return {
-          deleted: data?.deleted_ids || ids,
-          failed: data?.failed_ids || []
-        };
-      }
-      // если бэкенд не поддерживает bulk — падаем в фолбэк
-      console.warn('[CarAdsService] bulk endpoint not available, falling back to per-item deletes');
-    } catch (e) {
-      console.warn('[CarAdsService] bulk delete failed, fallback to per-item:', e);
-    }
-
+    console.log('[CarAdsService] bulkDeleteMyAds: deleting', ids.length, 'ads');
+    
+    // Используем поштучное удаление через рабочий endpoint /api/autoria/cars/{id}
     const results = await Promise.allSettled(ids.map(id => this.deleteCarAd(id)));
     const deleted: number[] = [];
     const failed: number[] = [];
     results.forEach((r, idx) => (r.status === 'fulfilled' ? deleted : failed).push(ids[idx]!));
+    
+    console.log('[CarAdsService] bulkDeleteMyAds result:', { deleted: deleted.length, failed: failed.length });
     return { deleted, failed };
   }
 
