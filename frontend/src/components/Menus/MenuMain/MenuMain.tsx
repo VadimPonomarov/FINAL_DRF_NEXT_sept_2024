@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 // import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { cleanupAuth } from '@/lib/auth/cleanupAuth';
-import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield, ChevronDown } from 'lucide-react';
+import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield, ChevronDown, User } from 'lucide-react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/shared/constants/constants';
 import { IMenuItem } from '@/components/All/MenuComponent/menu.interfaces';
@@ -341,32 +341,57 @@ export const MenuMain: FC = () => {
       ...(currentProvider === AuthProvider.Dummy ? dummyItems : [])
     ];
 
-    // Add logout button for authenticated users
+    // Add user profile and logout for authenticated users
     if (isAuthenticated) {
-      allItems = [
-        ...allItems,
-        {
-          path: "#",
-          label: (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="group flex items-center justify-center">
-                    <FaSignOutAlt
-                      size={18}
-                      className="text-foreground group-hover:text-accent-foreground transition-colors"
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Sign out</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ),
-          disabled: false,
-          cb: async function() {
-            console.log('Logout callback called');
+      // Add user profile item
+      allItems.push({
+        path: "/profile",
+        label: (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="group flex items-center justify-center">
+                  <User
+                    size={18}
+                    className="text-foreground group-hover:text-accent-foreground transition-colors"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Profile</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ),
+        disabled: false,
+        index: 100,
+        tooltip: "User Profile"
+      });
+
+      // Add logout button
+      allItems.push({
+        path: "#",
+        label: (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="group flex items-center justify-center">
+                  <FaSignOutAlt
+                    size={18}
+                    className="text-foreground group-hover:text-accent-foreground transition-colors"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Sign out</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ),
+        disabled: false,
+        index: 101,
+        cb: async function() {
+          console.log('Logout callback called');
             try {
               console.log('Calling full cleanupAuth (Redis + NextAuth + storage)');
               await cleanupAuth('/api/auth/signin');
@@ -375,7 +400,6 @@ export const MenuMain: FC = () => {
               window.location.href = '/api/auth/signin';
             }
           },
-          index: 100,
           tooltip: "Sign out"
         }
       ];
@@ -394,8 +418,8 @@ export const MenuMain: FC = () => {
         <MenuComponent items={menuItems} />
       </div>
       
-      {/* Theme Controls - Desktop */}
-      <div className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-[99999]">
+      {/* Theme Controls - Desktop - Bottom Left */}
+      <div className="hidden md:block absolute left-4 bottom-0 z-[99999]">
         <ThemeControls />
       </div>
       {/* Mobile burger - Fixed positioned on the right */}
