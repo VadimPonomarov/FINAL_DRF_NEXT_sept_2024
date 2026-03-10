@@ -391,64 +391,6 @@ export async function createTestAdsServer(
 
   const authFetch = createAuthFetch(requestOrToken);
 
-  // Check if generation is already in progress (seeding control)
-  console.log('🔒 [TestAds] Checking generation lock...');
-  
-  try {
-    const lockResponse = await authFetch(`${BACKEND_URL}/api/ads/generation-status/`, {
-      method: 'GET',
-    });
-
-    if (lockResponse.ok) {
-      const lockData = await lockResponse.json();
-      
-      if (lockData.generation_in_progress) {
-        console.warn(`🚫 [TestAds] Generation already in progress since ${lockData.started_at}`);
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'GENERATION_IN_PROGRESS',
-            message: 'Test ads generation is already in progress. Please wait for completion.',
-            details: {
-              started_at: lockData.started_at,
-              estimated_completion: lockData.estimated_completion,
-              current_progress: lockData.current_progress
-            }
-          },
-          { status: 429 } // Too Many Requests
-        );
-      }
-      
-      console.log('✅ [TestAds] No active generation, proceeding...');
-    }
-  } catch (error) {
-    console.warn('⚠️ [TestAds] Could not check generation status:', error);
-    // Continue with generation - will handle conflicts at backend level
-  }
-
-  // Set generation lock
-  console.log('🔒 [TestAds] Setting generation lock...');
-  
-  try {
-    const lockSetResponse = await authFetch(`${BACKEND_URL}/api/ads/set-generation-lock/`, {
-      method: 'POST',
-      body: JSON.stringify({
-        lock_key: GENERATION_LOCK_KEY,
-        timeout: GENERATION_LOCK_TIMEOUT,
-        requested_count: validatedCount
-      })
-    });
-
-    if (!lockSetResponse.ok) {
-      console.warn('⚠️ [TestAds] Could not set generation lock, proceeding anyway');
-    } else {
-      const lockResult = await lockSetResponse.json();
-      console.log(`✅ [TestAds] Generation lock set: ${lockResult.lock_id}`);
-    }
-  } catch (error) {
-    console.warn('⚠️ [TestAds] Error setting generation lock:', error);
-  }
-
   // Check account limits before creating ads
   console.log('🔍 [TestAds] Checking account limits...');
   
@@ -541,12 +483,16 @@ export async function createTestAdsServer(
   const BATCH_SIZE = 3; // Process 3 ads simultaneously
   const batches: number[][] = [];
   
-  // Split ads into batches
+  // Split ads into batches - STRICT VALIDATION
+  console.log(`🔢 [TestAds] Creating exactly ${validatedCount} ads as requested`);
+  
   for (let i = 0; i < validatedCount; i += BATCH_SIZE) {
-    batches.push(Array.from({ length: Math.min(BATCH_SIZE, validatedCount - i) }, (_, idx) => i + idx));
+    const batchSize = Math.min(BATCH_SIZE, validatedCount - i);
+    const batchIndices = Array.from({ length: batchSize }, (_, idx) => i + idx);
+    batches.push(batchIndices);
   }
 
-  console.log(`📦 [TestAds] Processing ${validatedCount} ads in ${batches.length} batches of ${BATCH_SIZE}`);
+  console.log(`📦 [TestAds] Processing ${validatedCount} ads in ${batches.length} batches`);
 
   // Process batches sequentially, but ads within each batch in parallel
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
@@ -620,26 +566,6 @@ export async function createTestAdsServer(
     adsWithoutImages: created - totalAdsWithImages
   });
 
-  // Clear generation lock
-  console.log('🔓 [TestAds] Clearing generation lock...');
-  
-  try {
-    const lockClearResponse = await authFetch(`${BACKEND_URL}/api/ads/clear-generation-lock/`, {
-      method: 'POST',
-      body: JSON.stringify({
-        lock_key: GENERATION_LOCK_KEY
-      })
-    });
-
-    if (lockClearResponse.ok) {
-      console.log('✅ [TestAds] Generation lock cleared');
-    } else {
-      console.warn('⚠️ [TestAds] Could not clear generation lock');
-    }
-  } catch (error) {
-    console.warn('⚠️ [TestAds] Error clearing generation lock:', error);
-  }
-
   onProgress?.(100, `Завершено! Создано ${created} объявлений с ${totalImages} изображениями`);
 
   return {
@@ -657,7 +583,7 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   const body = await request.json();
   console.log('🚀 [TestAds] Request body:', body);
-  const { count = 3, includeImages = true, imageTypes = ['front', 'side'] } = body;
+  const { count = 1, includeImages = true, imageTypes = ['front'] } = body;
 
   // Validate parameters
   if (typeof count !== 'number' || count < 1 || count > MAX_ADS_LIMIT) {
