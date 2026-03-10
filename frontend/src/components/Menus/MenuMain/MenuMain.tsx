@@ -10,6 +10,7 @@ import { AuthProvider } from '@/shared/constants/constants';
 import { IMenuItem } from '@/components/All/MenuComponent/menu.interfaces';
 import MenuComponent from '@/components/All/MenuComponent/MenuComponent';
 import { ThemeControls } from '@/components/ui/theme-controls';
+import GlobalProviderToggle from '@/components/All/GlobalProviderToggle/GlobalProviderToggle';
 import { FaBook, FaSignOutAlt, FaNetworkWired, FaCar } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MagicBackButton } from '@/components/ui/magicBackButton';
@@ -416,13 +417,20 @@ export const MenuMain: FC = (): JSX.Element => {
   return (
     <div className="relative mb-4">
       {/* Desktop menu */}
-      <div className="hidden md:block">
+      <div className="hidden md:flex items-center gap-4">
         <MenuComponent items={menuItems} />
-      </div>
-      
-      {/* Theme Controls - Fixed Bottom Left (Desktop + Mobile) */}
-      <div className="fixed left-4 bottom-20 md:bottom-4 z-[120]">
-        <ThemeControls />
+        
+        {/* Right side controls */}
+        <div className="ml-auto flex items-center gap-3">
+          <GlobalProviderToggle />
+          <ThemeControls />
+          {session && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <User className="h-4 w-4" />
+              <span className="text-sm font-medium">{session.user?.email?.split('@')[0] || 'User'}</span>
+            </div>
+          )}
+        </div>
       </div>
       
       
@@ -453,6 +461,17 @@ export const MenuMain: FC = (): JSX.Element => {
           />
           {/* Menu content */}
           <div className="md:hidden fixed right-4 top-20 z-[95] w-72 max-w-[80vw] bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-lg animate-fade-in flex flex-col max-h-[70vh] overflow-hidden">
+            {/* Mobile Controls Section */}
+            <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Settings</div>
+                <div className="flex items-center gap-2">
+                  <GlobalProviderToggle />
+                  <ThemeControls />
+                </div>
+              </div>
+            </div>
+            
             {/* Menu Items */}
             <div className="flex-1 overflow-y-auto">
               {menuItems.map((item) => {
