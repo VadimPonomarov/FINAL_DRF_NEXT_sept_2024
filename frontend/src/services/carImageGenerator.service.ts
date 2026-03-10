@@ -67,6 +67,7 @@ const BRAND_CHARACTERISTICS = {
 };
 
 class CarImageGeneratorService {
+  private baseUrl: string = process.env.NEXT_PUBLIC_BACKEND_URL || '';
   // Используем несколько сервисов для генерации изображений
   private services = {
     // Основной сервис для автомобилей
@@ -573,20 +574,6 @@ class CarImageGeneratorService {
   /**
    * Получает заголовок для конкретного ракурса
    */
-  private getAngleTitle(angle: CarViewAngle, params: CarImageParams): string {
-    const carInfo = `${params.brand} ${params.model} ${params.year}`;
-
-    const angleTitles = {
-      front: `${carInfo} - Вид спереди`,
-      side: `${carInfo} - Боковой вид`,
-      rear: `${carInfo} - Вид сзади`,
-      interior: `${carInfo} - Салон`,
-      engine: `${carInfo} - Двигатель`,
-      dashboard: `${carInfo} - Панель приборов`
-    };
-
-    return angleTitles[angle] || `${carInfo} - ${angle}`;
-  }
 
   /**
    * Генерирует placeholder URL

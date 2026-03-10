@@ -166,49 +166,6 @@ export class AccountService {
   }
 
   /**
-   * Получает информацию о пользователе по ID
-   */
-  static async getUserById(userId: number): Promise<any> {
-    try {
-      console.log('🔑 Getting authorization headers...');
-      const headers = await getAuthorizationHeaders();
-
-      const url = `${this.BASE_URL}/api/users/admin/${userId}/`;
-      console.log('🌐 Making request to:', url);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-        },
-        cache: 'no-store'
-      });
-
-      console.log('📡 Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ HTTP error:', response.status, errorText);
-        if (response.status === 404) {
-          throw new Error(`User with ID ${userId} not found`);
-        }
-        if (response.status === 403) {
-          throw new Error(`Access denied. Admin rights required to get user details`);
-        }
-        throw new Error(`Failed to get user by ID: ${response.statusText} - ${errorText}`);
-      }
-
-      const user = await response.json();
-      console.log('✅ Found user:', { id: user.id, email: user.email });
-      return user;
-    } catch (error) {
-      console.error(`❌ Error getting user by ID ${userId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
    * Получает аккаунт пользователя по user ID
    */
   static async getAccountByUserId(userId: number): Promise<any> {

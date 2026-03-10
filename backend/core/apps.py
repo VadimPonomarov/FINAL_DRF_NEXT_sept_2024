@@ -21,11 +21,9 @@ class CoreConfig(AppConfig):
         # Consumer startup moved to manage.py for better control
         logger.info("[READY] Core app ready - consumer startup handled by manage.py")
 
-        # Register service in Redis Service Registry in background thread
-        # to avoid blocking Daphne/server startup if Redis is slow or unavailable
-        t = threading.Thread(target=self._register_service_in_redis, daemon=True)
-        t.start()
-
+        # Skip Redis service registration - Redis is no longer used
+        logger.info("[INFO] Redis service registration skipped - using httpOnly cookies")
+        
         # Auto-seed car reference data if empty (temporarily disabled)
         # self._auto_seed_car_references()
     
@@ -34,28 +32,28 @@ class CoreConfig(AppConfig):
         # Don't start during migrations
         import sys
         if 'migrate' in sys.argv or 'makemigrations' in sys.argv:
-            logger.info("🚫 Skipping consumer startup during migrations")
+            logger.info("[SKIP] Skipping consumer startup during migrations")
             return False
         
         # Don't start during collectstatic
         if 'collectstatic' in sys.argv:
-            logger.info("🚫 Skipping consumer startup during collectstatic")
+            logger.info("[SKIP] Skipping consumer startup during collectstatic")
             return False
         
         # Don't start during tests
         if 'test' in sys.argv or hasattr(settings, 'TESTING'):
-            logger.info("🚫 Skipping consumer startup during tests")
+            logger.info("[SKIP] Skipping consumer startup during tests")
             return False
         
         # Check if consumers are enabled in settings
         import os
         env_value = os.getenv('ENABLE_RABBITMQ_CONSUMERS', 'true')
         setting_value = getattr(settings, 'ENABLE_RABBITMQ_CONSUMERS', True)
-        logger.info(f"🔍 Environment ENABLE_RABBITMQ_CONSUMERS: {env_value}")
-        logger.info(f"🔍 Django setting ENABLE_RABBITMQ_CONSUMERS: {setting_value}")
+        logger.info(f"[INFO] Environment ENABLE_RABBITMQ_CONSUMERS: {env_value}")
+        logger.info(f"[INFO] Django setting ENABLE_RABBITMQ_CONSUMERS: {setting_value}")
 
         if not setting_value:
-            logger.info("🚫 RabbitMQ consumers disabled in settings")
+            logger.info("[SKIP] RabbitMQ consumers disabled in settings")
             return False
         
         # Check if we're in a management command that shouldn't start consumers
@@ -67,34 +65,10 @@ class CoreConfig(AppConfig):
         
         for cmd in management_commands_to_skip:
             if cmd in sys.argv:
-                logger.info(f"🚫 Skipping consumer startup during {cmd} command")
+                logger.info(f"[SKIP] Skipping consumer startup during {cmd} command")
                 return False
         
         return True
-
-    def _register_service_in_redis(self):
-        """Register Django service in Redis Service Registry."""
-        try:
-            # Only register if not in management commands that shouldn't register
-            import sys
-            skip_commands = [
-                'migrate', 'makemigrations', 'collectstatic', 'test',
-                'shell', 'shell_plus', 'dbshell', 'createsuperuser'
-            ]
-
-            for cmd in skip_commands:
-                if cmd in sys.argv:
-                    logger.info(f"[SKIP] Skipping service registration during {cmd} command")
-                    return
-
-            # Import and register service
-            from core.services.service_registry import register_current_service
-            register_current_service()
-            logger.info("[SUCCESS] Django service registered in Redis Service Registry")
-
-        except Exception as e:
-            logger.warning(f"[WARNING] Failed to register service in Redis: {e}")
-            # Don't fail startup if registration fails
 
     def _auto_seed_car_references(self):
         """Auto-seed car reference data if tables are empty."""

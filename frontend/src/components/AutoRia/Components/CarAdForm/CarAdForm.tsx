@@ -232,7 +232,7 @@ const CarAdForm: React.FC<CarAdFormProps> = ({
     } catch (error) {
       console.error('[CarAdForm] ❌ Error generating mock data:', error);
       const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
-      alertHelpers.error(`${t('common.error')}: ${error.message || error}`);
+      alertHelpers.error(`${t('common.error')}: ${(error instanceof Error ? error.message : String(error)) || error}`);
     }
   };
 
@@ -426,15 +426,7 @@ const CarAdForm: React.FC<CarAdFormProps> = ({
         </Card>
 
         {/* Автозаполнение только для режима создания */}
-        {mode === 'create' && (
-          <AutoFillButton
-            onAutoFill={applyAutoFill}
-            isAvailable={isAutoFillAvailable}
-            isLoading={userDataLoading}
-            summary={getAutoFillSummary()}
-            className="mb-6"
-          />
-        )}
+        {mode === 'create' && React.createElement(AutoFillButton as any, { onAutoFill: applyAutoFill, isAvailable: isAutoFillAvailable, isLoading: userDataLoading, summary: getAutoFillSummary(), className: 'mb-6' })}
 
         {/* Main Form */}
         <Card>
@@ -518,8 +510,8 @@ const CarAdForm: React.FC<CarAdFormProps> = ({
                       </label>
                       <input
                         type="number"
-                        value={formData.price || ''}
-                        onChange={(e) => handleFormDataChange('pricing', { price: parseFloat(e.target.value) || '' })}
+                        value={Number(formData.price) || 0}
+                        onChange={(e) => handleFormDataChange('pricing', { price: (parseFloat(e.target.value) || 0) as any })}
                         placeholder={t('enterPrice')}
                         className="w-full p-2 border border-gray-300 rounded-md"
                         min={0}
@@ -530,8 +522,8 @@ const CarAdForm: React.FC<CarAdFormProps> = ({
                         {t('currency')} <span className="text-red-500">*</span>
                       </label>
                       <select
-                        value={formData.currency || 'USD'}
-                        onChange={(e) => handleFormDataChange('pricing', { currency: e.target.value })}
+                        value={(formData.currency || 'USD') as any}
+                        onChange={(e) => handleFormDataChange('pricing', { currency: e.target.value as any })}
                         className="w-full p-2 border border-gray-300 rounded-md"
                       >
                         <option value="USD">USD</option>
@@ -553,7 +545,7 @@ const CarAdForm: React.FC<CarAdFormProps> = ({
 
               <TabsContent value="contact" className="p-6">
                 <AdContactsForm
-                  data={getTabData('contact')}
+                  data={getTabData('contact') as any}
                   onChange={(data) => handleFormDataChange('contact', data)}
                   errors={[]}
                   profileContacts={profileContacts}

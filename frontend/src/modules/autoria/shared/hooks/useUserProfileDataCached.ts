@@ -70,7 +70,7 @@ export const useUserProfileDataCached = () => {
           stats_enabled: false
         };
         
-        const createdAccount = await UserAccountService.updateUserAccount(defaultAccountData);
+        const createdAccount = await UserAccountService.updateUserAccount(defaultAccountData as any);
         if (createdAccount) {
           data.account = createdAccount;
         }
@@ -184,7 +184,8 @@ export const useUserProfileDataCached = () => {
     loading,
     error: error ? (error as Error).message : null,
     updating: updateProfileMutation.isPending || updateAccountMutation.isPending || uploadAvatarMutation.isPending,
-    updateError: null,
+    updateError: null as string | null,
+      //  null as string | null,
 
     // Методи профілю та акаунту
     loadUserData,

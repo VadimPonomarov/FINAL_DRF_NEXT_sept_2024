@@ -1,3 +1,4 @@
+type PageProps<P = Record<string, string>> = { params: P; searchParams?: Record<string, string | string[] | undefined>; };
 import {FC} from "react";
 import {Metadata} from "next";
 import {IRecipesResponse} from "@/shared/types/recipe.interfaces";
@@ -8,7 +9,6 @@ import { getAuthorizationHeaders } from "@/shared/constants/headers";
 
 import styles from "./index.module.css";
 
-import { PageProps } from 'next';
 
 type RecipesPageProps = PageProps;
 

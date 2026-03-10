@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userEmail = session.user.email;
+    const userEmail = (session.user as any).email;
     console.log('[API /auth/cleanup] Cleaning up for user:', userEmail);
 
     // Очищаем данные в Redis

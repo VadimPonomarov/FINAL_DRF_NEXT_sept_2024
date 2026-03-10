@@ -32,6 +32,9 @@ export interface AdContactsFormData {
   contact_name?: string; // Имя контактного лица
   additional_info?: string; // Дополнительная информация
   use_profile_contacts?: boolean; // Использовать контакты из профиля
+  region_name?: string;
+  city_name?: string;
+  [key: string]: any;
 }
 
 interface AdContactsFormProps {
@@ -109,7 +112,7 @@ const AdContactsForm: React.FC<AdContactsFormProps> = ({
         if (existingProfileContacts.length === 0) {
           const profileContactsToAdd = effectiveProfileContacts.map((contact, index) => ({
             ...contact,
-            id: undefined, // Убираем ID, так как это новые контакты для объявления
+            id: 0 as any || undefined, // Убираем ID, так как это новые контакты для объявления
             is_primary: index === 0 && currentContacts.length === 0, // Первый контакт основной только если нет других
             source: 'profile' // Помечаем как контакт из профиля
           }));

@@ -85,10 +85,10 @@ const AdDetailsModal: React.FC<AdDetailsModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5" />
-            {ad.title}
+            {typeof ad.title === 'object' ? JSON.stringify(ad.title) : String(ad.title ?? '')}
           </DialogTitle>
           <DialogDescription>
-            {t('autoria.moderation.adDetails')} #{ad.id}
+            {t('autoria.moderation.adDetails')} #{typeof ad.id === 'object' ? JSON.stringify(ad.id) : String(ad.id ?? '')}
           </DialogDescription>
         </DialogHeader>
 
@@ -107,17 +107,17 @@ const AdDetailsModal: React.FC<AdDetailsModalProps> = ({
                   <div className="flex items-center gap-2 text-sm">
                     <Car className="h-4 w-4 text-gray-500" />
                     <span className="font-medium">{t('autoria.moderation.brand')}:</span>
-                    <span>{ad.brand} {ad.model}</span>
+                    <span>{ad.brand} {typeof ad.model === 'object' ? JSON.stringify(ad.model) : String(ad.model ?? '')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-gray-500" />
                     <span className="font-medium">{t('autoria.moderation.year')}:</span>
-                    <span>{ad.year}</span>
+                    <span>{typeof ad.year === 'object' ? JSON.stringify(ad.year) : String(ad.year ?? '')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="h-4 w-4 text-gray-500" />
                     <span className="font-medium">{t('autoria.moderation.location')}:</span>
-                    <span>{ad.city}</span>
+                    <span>{typeof ad.city === 'object' ? JSON.stringify(ad.city) : String(ad.city ?? '')}</span>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -144,7 +144,7 @@ const AdDetailsModal: React.FC<AdDetailsModalProps> = ({
               <CardTitle>{t('autoria.moderation.description')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 whitespace-pre-wrap">{ad.description}</p>
+              <p className="text-gray-700 whitespace-pre-wrap">{typeof ad.description === 'object' ? JSON.stringify(ad.description) : String(ad.description ?? '')}</p>
             </CardContent>
           </Card>
 
@@ -186,19 +186,19 @@ const AdDetailsModal: React.FC<AdDetailsModalProps> = ({
                   {ad.fuel_type && (
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{t('autoria.moderation.fuelType')}:</span>
-                      <span>{ad.fuel_type}</span>
+                      <span>{typeof ad.fuel_type === 'object' ? JSON.stringify(ad.fuel_type) : String(ad.fuel_type ?? '')}</span>
                     </div>
                   )}
                   {ad.transmission && (
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{t('autoria.moderation.transmission')}:</span>
-                      <span>{ad.transmission}</span>
+                      <span>{typeof ad.transmission === 'object' ? JSON.stringify(ad.transmission) : String(ad.transmission ?? '')}</span>
                     </div>
                   )}
                   {ad.body_type && (
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{t('autoria.moderation.bodyType')}:</span>
-                      <span>{ad.body_type}</span>
+                      <span>{typeof ad.body_type === 'object' ? JSON.stringify(ad.body_type) : String(ad.body_type ?? '')}</span>
                     </div>
                   )}
                 </div>

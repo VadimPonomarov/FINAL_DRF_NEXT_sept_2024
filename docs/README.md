@@ -9,7 +9,8 @@
 ### Основні системи
 
 - [**Архітектура проекту**](./ARCHITECTURE.md) - загальна архітектура та компоненти системи
-- [**Система аутентифікації**](./authentication/README.md) - JWT токени, Redis, middleware
+- [**Система аутентифікації**](./authentication/README.md) - JWT токени, httpOnly cookies, middleware
+- [**Редиректи аутентифікації**](./AUTHENTICATION_REDIRECTS.md) - дворівнева система захисту
 - [**Система перекладів**](./translations/README.md) - багатомовність, валідація, автоматизація
 - [**Design System**](./design-system/README.md) - SCSS система стилізації, теми, компоненти
 
@@ -23,18 +24,18 @@
 ### Frontend
 
 - [**Next.js архітектура**](./frontend/ARCHITECTURE.md) - App Router, SSR, компоненти
-- [**State Management**](./frontend/STATE.md) - Redux, контекст, хуки
+- [**State Management**](./frontend/STATE.md) - контекст, хуки, API клієнти
 - [**Форми та валідація**](./frontend/FORMS.md) - react-hook-form, схеми
 
 ### Інтеграції
 
 - [**AutoRia API**](./integrations/AUTORIA.md) - інтеграція з зовнішнім API
-- [**Redis**](./integrations/REDIS.md) - кешування, сесії, токени
+- [**HttpOnly Cookies**](./integrations/COOKIES.md) - зберігання токенів, сесії
 - [**Docker**](./integrations/DOCKER.md) - контейнеризація, оркестрація
 
 ### Розробка
 
-- [**Налаштування середовища**](./development/SETUP.md) - встановлення, конфігурація
+- [**Налаштування середовища**](./ENVIRONMENT_SETUP.md) - встановлення, конфігурація
 - [**Гайд по розробці**](./development/GUIDELINES.md) - стандарти коду, best practices
 - [**Тестування**](./development/TESTING.md) - unit, integration, e2e тести
 - [**Деплой**](./development/DEPLOYMENT.md) - CI/CD, продакшн
@@ -76,14 +77,14 @@ python manage.py test          # Тести
 - **Framework**: Next.js 15 (App Router)
 - **UI**: React 19, TypeScript
 - **Стилі**: SCSS, Tailwind CSS
-- **State**: Redux Toolkit, React Query
+- **State**: React Context, API клієнти
 - **Форми**: React Hook Form, Zod
 - **Інтернаціоналізація**: next-intl
+- **Аутентифікація**: NextAuth + JWT (httpOnly cookies)
 
 ### Backend
 - **Framework**: Django 5, Django REST Framework
 - **База даних**: PostgreSQL
-- **Кешування**: Redis
 - **Асинхронність**: Celery, RabbitMQ
 - **WebSocket**: Django Channels
 - **Аутентифікація**: JWT (Simple JWT)
@@ -93,6 +94,7 @@ python manage.py test          # Тести
 - **Веб-сервер**: Nginx
 - **Reverse Proxy**: Nginx
 - **Оркестрація**: Docker Compose
+- **Продакшн**: Vercel (frontend), Railway (backend)
 
 ## Архітектурні принципи
 
@@ -116,7 +118,8 @@ Backend надає RESTful API, frontend споживає через fetch/axios
 ## Безпека
 
 - JWT токени з ротацією refresh токенів
-- Redis для зберігання токенів та сесій
+- HttpOnly cookies для зберігання токенів
+- NextAuth для управління сесіями
 - CORS налаштування для production
 - Middleware для захисту маршрутів
 - Валідація на frontend та backend
@@ -124,7 +127,7 @@ Backend надає RESTful API, frontend споживає через fetch/axios
 ## Продуктивність
 
 - Server-Side Rendering (SSR) в Next.js
-- Redis кешування API запитів
+- HttpOnly cookies для швидкого доступу до токенів
 - PostgreSQL індекси та оптимізація запитів
 - CDN для статичних файлів
 - Lazy loading компонентів
@@ -150,6 +153,6 @@ Responsive дизайн для всіх пристроїв:
 
 ---
 
-**Останнє оновлення**: Листопад 2024  
-**Версія документації**: 2.0  
-**Статус**: Актуально
+**Останнє оновлення**: Березень 2026  
+**Версія документації**: 3.0  
+**Статус**: Актуально (httpOnly cookies + NextAuth)

@@ -19,10 +19,10 @@ const AnalyticsPage = () => {
 
     // Проверяем тип аккаунта
     const accountType = userProfileData.account.account_type;
-    const isPremium = accountType === 'PREMIUM' || accountType === 'premium';
+    const isPremium = accountType === ('PREMIUM' as any) || accountType === 'premium';
 
     // Суперпользователи также имеют доступ к аналитике
-    const isSuperUser = userProfileData.profile?.is_superuser || false;
+    const isSuperUser = (userProfileData as any).profile?.is_superuser || false;
 
     return isPremium || isSuperUser;
   }, [userProfileData]);

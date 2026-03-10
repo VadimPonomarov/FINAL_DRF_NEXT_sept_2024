@@ -58,6 +58,9 @@ export interface BackendProfile {
   avatar: string | null; // URL загруженного файла аватара
   avatar_url: string | null; // URL сгенерированного аватара (приоритет над avatar)
   user: number; // ID пользователя
+  phone?: string;
+  bio?: string;
+  addresses?: BackendRawAddress[];
   created_at: string;
   updated_at: string;
 }
@@ -142,12 +145,14 @@ export interface UserUpdateData {
 
 // Ответ API при получении профиля (UserEditSerializer)
 export interface ProfileApiResponse {
-  id: number;
+  id?: number;
   email: string;
-  is_staff: boolean;
-  is_superuser: boolean;
+  is_staff?: boolean;
+  is_superuser?: boolean;
   is_active?: boolean;
   profile: BackendProfile | null;
+  data?: BackendUser;
+  [key: string]: any;
 }
 
 // Ответ API при получении аккаунта (AddsAccountSerializer)
@@ -164,7 +169,7 @@ export interface ApiError {
 }
 
 // Состояние загрузки данных
-export interface DataLoadingState<T> {
+export interface DataLoadingState<T = any> {
   loading: boolean;
   error: string | null;
   data: T | null;
@@ -198,6 +203,9 @@ export interface ProfileFormData {
   age: number | null;
   avatar: File | null;
   avatarUrl: string | null; // Текущий URL аватара
+  phone?: string;
+  bio?: string;
+  addresses?: AddressFormData[];
 
   // Метаданные (только для отображения)
   is_active: boolean;
@@ -235,14 +243,10 @@ export const backendUserToFormData = (user: BackendUser): ProfileFormData => {
     bio: user.profile?.bio || '',
     avatar: null, // Файл не может быть получен из API
     avatarUrl: user.profile?.avatar || null,
-    addresses: user.profile?.addresses?.map(addr => ({
+    addresses: user.profile?.addresses?.map((addr: any) => ({
       id: addr.id,
-      street: addr.street,
-      city: addr.city,
-      state: addr.state,
-      postal_code: addr.postal_code,
-      country: addr.country,
-      is_primary: addr.is_primary,
+      input_region: addr.input_region || addr.region || '',
+      input_locality: addr.input_locality || addr.locality || '',
       isNew: false,
     })) || [],
     is_active: user.is_active,
@@ -366,3 +370,6 @@ export const validateAvatarFile = (file: File): string[] => {
 
   return errors;
 };
+
+export type RawAccountAddress = BackendRawAddress;
+export type BackendAddress = BackendRawAddress;

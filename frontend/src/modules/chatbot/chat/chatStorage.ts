@@ -1,4 +1,4 @@
-import { ChatChunk, DateEntry, Message } from "@/modules/autoria/shared/utils/chatTypes";
+import { ChatChunk, DateEntry, Message } from "@/modules/chatbot/chat/chatTypes";
 
 // Расширенный тип DateEntry с полем chunks
 interface DateEntryWithChunks extends DateEntry {
@@ -147,7 +147,7 @@ export const getChunkById = (chunkId: string): ChatChunk | null => {
         content.includes('👋 hello,') ||
         (content.includes('hello,') && content.includes('ready to help')) ||
         content.includes('i\'m ready to help you') ||
-        content.match(/hello,\s+[\w.@]+!\s+i'm ready to help/i)
+        !!content.match(/hello,\s+[\w.@]+!\s+i'm ready to help/i)
       );
     };
 
@@ -155,7 +155,7 @@ export const getChunkById = (chunkId: string): ChatChunk | null => {
     const welcomeMessages = chunk.messages.filter(isWelcomeMessage);
     if (welcomeMessages.length > 1) {
       const firstWelcomeMessage = welcomeMessages[0];
-      chunk.messages = chunk.messages.filter(msg => {
+      chunk.messages = chunk.messages.filter((msg: any) => {
         if (isWelcomeMessage(msg)) {
           return msg.id === firstWelcomeMessage.id;
         }
@@ -229,7 +229,7 @@ export const saveChunk = (chunk: ChatChunk): void => {
         content.includes('👋 hello,') ||
         (content.includes('hello,') && content.includes('ready to help')) ||
         content.includes('i\'m ready to help you') ||
-        content.match(/hello,\s+[\w.@]+!\s+i'm ready to help/i)
+        !!content.match(/hello,\s+[\w.@]+!\s+i'm ready to help/i)
       );
     };
 
@@ -238,7 +238,7 @@ export const saveChunk = (chunk: ChatChunk): void => {
     console.log(`Found ${welcomeMessages.length} welcome messages in chunk`);
 
     // Фильтруем приветственные сообщения о загрузке истории
-    const historyGreetingMessages = chunk.messages.filter(msg => {
+    const historyGreetingMessages = chunk.messages.filter((msg: any) => {
       const msgContent = msg.content || msg.message || "";
       return msg.role === 'assistant' && msgContent.includes('Я загрузил историю чата');
     });
@@ -253,7 +253,7 @@ export const saveChunk = (chunk: ChatChunk): void => {
       const firstWelcomeMessage = welcomeMessages[0];
       console.log(`Keeping first welcome message ID: ${firstWelcomeMessage.id}`);
 
-      filteredMessages = filteredMessages.filter(msg => {
+      filteredMessages = filteredMessages.filter((msg: any) => {
         if (isWelcomeMessage(msg)) {
           return msg.id === firstWelcomeMessage.id;
         }
@@ -268,7 +268,7 @@ export const saveChunk = (chunk: ChatChunk): void => {
       const lastHistoryGreeting = historyGreetingMessages[historyGreetingMessages.length - 1];
       console.log(`Keeping last history greeting ID: ${lastHistoryGreeting.id}`);
 
-      filteredMessages = filteredMessages.filter(msg => {
+      filteredMessages = filteredMessages.filter((msg: any) => {
         const msgContent = msg.content || msg.message || "";
         const isHistoryGreeting = msg.role === 'assistant' && msgContent.includes('Я загрузил историю чата');
 
@@ -343,7 +343,7 @@ export const removeMessageFromChunk = (chunkId: string, messageId: string): bool
     }
 
     // Удаляем сообщение из чанка
-    chunk.messages = chunk.messages.filter(msg => msg.id !== messageId);
+    chunk.messages = chunk.messages.filter((msg: any) => msg.id !== messageId);
 
     // Сохраняем обновленный чанк
     saveChunk(chunk);

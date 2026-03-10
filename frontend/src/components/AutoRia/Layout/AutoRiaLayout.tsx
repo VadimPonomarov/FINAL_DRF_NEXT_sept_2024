@@ -1,7 +1,7 @@
 "use client";
 
 import React, {ReactNode} from 'react';
-import AutoRiaHeader from './AutoRiaHeader';
+import AutoRiaHeader from './AutoRiaHeaderModern';
 import FixedLanguageSwitch from './FixedLanguageSwitch';
 import { RedisAuthProvider } from '@/contexts/RedisAuthContext';
 import { AlertDialogProvider } from '@/components/ui/alert-dialog-helper';

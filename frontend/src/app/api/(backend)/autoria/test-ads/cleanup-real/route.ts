@@ -69,7 +69,7 @@ export async function DELETE(request: NextRequest) {
       console.log(`🗑️ Deleting batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(allAds.length/BATCH_SIZE)} (${batch.length} ads)`);
 
       // Создаем промисы для удаления текущего батча
-      const deletePromises = batch.map(async (ad) => {
+      const deletePromises = batch.map(async (ad: any) => {
         try {
           const deleteResponse = await fetch(`${backendUrl}/api/ads/cars/${ad.id}/delete`, {
             method: 'DELETE',
@@ -102,7 +102,7 @@ export async function DELETE(request: NextRequest) {
         } else if (result.status === 'fulfilled' && !result.value.success) {
           errors.push(result.value.error);
         } else {
-          errors.push(`Promise rejected: ${result.reason}`);
+          errors.push(`Promise rejected: ${(result as any).reason}`);
         }
       });
 

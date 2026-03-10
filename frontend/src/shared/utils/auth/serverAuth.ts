@@ -19,12 +19,7 @@ export class ServerAuthManager {
   private static async getAuthProvider(request: NextRequest): Promise<'backend' | 'dummy'> {
     try {
       // provider check removed - using cookies
-      if (providerResponse.ok) {
-        const providerData = await providerResponse.json();
-        if (providerData.exists && providerData.value === 'dummy') {
-          return 'dummy';
-        }
-      }
+      // Redis removed - always return default
     } catch (error) {
       console.error('[ServerAuth] Error getting provider:', error);
     }

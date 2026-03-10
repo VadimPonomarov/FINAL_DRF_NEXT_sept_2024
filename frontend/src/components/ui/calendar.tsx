@@ -96,7 +96,7 @@ function Calendar({
   // Группируем дни по неделям
   const weeks = React.useMemo(() => {
     const result = [];
-    let week = [];
+    let week: any[] = [];
 
     // Добавляем дни до начала месяца, если нужно
     if (showOutsideDays) {

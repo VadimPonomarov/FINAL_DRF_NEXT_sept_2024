@@ -148,13 +148,13 @@ export const useChat = ({ onAuthError, autoConnect = true }: UseChatProps = {}):
             console.log('[useChat] Received assistant message at', new Date().toISOString());
 
             // Проверяем, является ли это финальным сообщением (содержит полный ответ)
-            const isFinalMessage = processedMsg.type === 'message' &&
+            const isFinalMessage = (processedMsg.type as any) === 'message' &&
                                  processedMsg.message &&
                                  processedMsg.message.trim().length > 0;
 
             // Проверяем, есть ли ошибка
-            const hasError = processedMsg.type === 'error' ||
-                           (processedMsg.message && processedMsg.message.toLowerCase().includes('ошибка'));
+            const hasError = (processedMsg.type as any) === 'error' ||
+                           ((processedMsg as any).message && processedMsg.message.toLowerCase().includes('ошибка'));
 
             if (isFinalMessage || hasError) {
               console.log('[useChat] Final assistant message or error received');
@@ -185,7 +185,7 @@ export const useChat = ({ onAuthError, autoConnect = true }: UseChatProps = {}):
           }
 
           // Дополнительная проверка для скрытия скелетона при ошибках
-          if (processedMsg.type === 'error' || processedMsg.type === 'connection_error') {
+          if ((processedMsg.type as any) === 'error' || (processedMsg.type as any) === 'connection_error') {
             console.log('[useChat] Error received - hiding skeleton');
             clearTimeout((window as any).skeletonTimeout);
             setIsWaitingForAssistantResponse(false);
@@ -344,8 +344,8 @@ export const useChat = ({ onAuthError, autoConnect = true }: UseChatProps = {}):
     // Скелетон должен скрываться только при получении финального ответа от ассистента
     // Не скрываем при ошибках, промежуточных сообщениях или системных сообщениях
     const shouldHide = lastMessage.role === 'assistant' &&
-                      lastMessage.type !== 'error' &&
-                      lastMessage.type !== 'connection_error' &&
+                      (lastMessage.type as any) !== 'error' &&
+                      (lastMessage.type as any) !== 'connection_error' &&
                       lastMessage.type !== 'system_message' &&
                       !lastMessage.message?.includes('Запрос занял слишком много времени') &&
                       !lastMessage.message?.includes('An error occurred') &&
@@ -858,3 +858,5 @@ export const useChat = ({ onAuthError, autoConnect = true }: UseChatProps = {}):
     createSystemMessage: _createSystemMessage
   };
 };
+
+export type { Message };

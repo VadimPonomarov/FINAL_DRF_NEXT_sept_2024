@@ -33,7 +33,7 @@ export default function BackendTokenPresenceGate({ children }: { children: React
    * Middleware вже перевірив сесію NextAuth (рівень 1)
    *
    * Логіка:
-   * 1. Перевіряємо наявність токенів у Redis
+   * 1. Перевіряємо наявність токенів у httpOnly cookies
    * 2. Якщо немає → НЕМЕДЛЕННО редирект на /login (БЕЗ показа контента)
    * 3. Якщо є → валідуємо access token через backend API
    * 4. Якщо недійсний → автоматичне оновлення
@@ -62,7 +62,7 @@ export default function BackendTokenPresenceGate({ children }: { children: React
         redirectingRef.current = true;
         setIsLoading(false);
         setIsAuthorized(false);
-        const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+        const currentPath = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
         const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
         if (typeof window !== 'undefined') {
           window.location.replace(loginUrl);
@@ -89,7 +89,7 @@ export default function BackendTokenPresenceGate({ children }: { children: React
       setIsAuthorized(false);
 
       // Немедленный редирект на /login с сохранением текущего пути для возврата
-      const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+      const currentPath = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
       const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
       
       console.log('[BackendTokenPresenceGate] Redirecting to:', loginUrl);
@@ -109,7 +109,7 @@ export default function BackendTokenPresenceGate({ children }: { children: React
       setIsLoading(false);
       setIsAuthorized(false);
 
-      const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+      const currentPath = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
       const loginUrl = `/login${currentPath !== '/autoria' ? `?callbackUrl=${encodeURIComponent(currentPath)}` : ''}`;
       
       console.log('[BackendTokenPresenceGate] Redirecting to (error):', loginUrl);

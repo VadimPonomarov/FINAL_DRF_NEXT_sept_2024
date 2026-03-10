@@ -239,13 +239,13 @@ export const prepareSellerTypesData = (analyticsData: AnalyticsData): ChartData 
     ];
   }
   
-  const labels = sellerStats.map(stat => {
+  const labels = sellerStats.map((stat: any) => {
     const type = stat.seller_type || 'unknown';
     return type === 'private' ? 'Частные' : 
            type === 'dealer' ? 'Дилеры' : 
            'Другие';
   });
-  const data = sellerStats.map(stat => stat.count || 0);
+  const data = sellerStats.map((stat: any) => stat.count || 0);
   
   return {
     labels,
@@ -279,7 +279,7 @@ export const preparePriceYearCorrelationData = (analyticsData: AnalyticsData): C
     labels: [], // Не используется для scatter plot
     datasets: [{
       label: 'Цена vs Год выпуска',
-      data: dataPoints,
+      data: dataPoints as any,
       backgroundColor: CHART_COLORS.primary + '60',
       borderColor: CHART_COLORS.primary,
       borderWidth: 1,

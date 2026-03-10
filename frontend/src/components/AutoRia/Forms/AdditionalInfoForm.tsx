@@ -137,9 +137,9 @@ const AdditionalInfoForm: React.FC<AdditionalInfoFormProps> = ({ data, onChange,
                   </Button>
                   <Button
                     type="button"
-                    variant={data.status === 'paused' ? 'default' : 'outline'}
+                    variant={data.status === ('paused' as any) ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => onChange({ ...data, status: 'paused' })}
+                    onClick={() => onChange({ ...data, status: ('paused' as any) })}
                     className="flex items-center gap-2"
                   >
                     <EyeOff className="h-4 w-4" />

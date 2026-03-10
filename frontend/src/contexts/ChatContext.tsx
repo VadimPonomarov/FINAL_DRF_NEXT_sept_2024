@@ -19,6 +19,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       id: Date.now().toString(),
       content,
       sender,
+      role: sender === 'user' ? 'user' : 'assistant',
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, newMessage]);

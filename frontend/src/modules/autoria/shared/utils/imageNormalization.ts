@@ -33,7 +33,7 @@ const CONDITION_MAP: Record<string, 'excellent'|'good'|'fair'|'poor'|'damaged'> 
 const BODY_TYPE_MAP: Record<string, string> = {
   // cars
   'седан': 'sedan', 'sedan': 'sedan',
-  'хэтчбек': 'hatchback', 'хетчбек': 'hatchback', 'хетчбэк': 'hatchback', 'хетчбек': 'hatchback', 'hatchback': 'hatchback',
+  'хэтчбек': 'hatchback', 'хетчбек': 'hatchback', 'хетчбэк': 'hatchback', 'hatchback': 'hatchback',
   'универсал': 'wagon', 'комби': 'wagon', 'wagon': 'wagon', 'estate': 'wagon',
   'внедорожник': 'suv', 'джип': 'suv', 'кроссовер': 'suv', 'позашляховик': 'suv', 'suv': 'suv', 'crossover': 'suv',
   'купе': 'coupe', 'coupe': 'coupe',

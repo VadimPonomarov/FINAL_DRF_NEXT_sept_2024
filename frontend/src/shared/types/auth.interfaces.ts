@@ -32,6 +32,13 @@ export interface IBackendAuthResponse extends IBackendAuth {
     user?: {
         id: number;
         email: string;
+        first_name?: string;
+        last_name?: string;
+        role?: string;
+        is_superuser?: boolean;
+        account_type?: string;
+        phone?: string;
+        [key: string]: unknown;
     };
     redisSaveSuccess?: boolean;
 }

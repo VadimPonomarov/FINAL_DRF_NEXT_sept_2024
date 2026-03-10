@@ -12,8 +12,8 @@ import TransformedAddressDisplay from '../AddressCard/TransformedAddressDisplay'
 
 interface AddressTabProps {
   address: RawAccountAddress | null;
-  onUpdate: (addressData: Partial<RawAccountAddress>) => Promise<RawAccountAddress>;
-  onCreate: (addressData: Partial<RawAccountAddress>) => Promise<RawAccountAddress>;
+  onUpdate: (addressData: any) => Promise<RawAccountAddress>;
+  onCreate: (addressData: any) => Promise<RawAccountAddress>;
   loading?: boolean;
 }
 
@@ -35,7 +35,7 @@ const AddressTab: React.FC<AddressTabProps> = ({
     }
   }, [address, isEditing]);
 
-  const handleSaveAddress = async (addressData: Partial<RawAccountAddress>) => {
+  const handleSaveAddress = async (addressData: any) => {
     setFormLoading(true);
     setError(null);
 
@@ -84,7 +84,7 @@ const AddressTab: React.FC<AddressTabProps> = ({
           <CardContent>
             <RawAddressForm
               initialData={address}
-              onSubmit={handleSaveAddress}
+              onSubmit={handleSaveAddress as any}
               onCancel={handleCancelEdit}
               loading={formLoading || loading}
             />

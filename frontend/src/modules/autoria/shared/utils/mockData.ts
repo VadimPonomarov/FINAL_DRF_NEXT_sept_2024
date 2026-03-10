@@ -319,7 +319,7 @@ let cachedVehicleTypes: any[] | null = null;
  * Сначала выбираем случайную модель из всех доступных, затем поднимаемся по каскаду связей
  * @param cachedModels - Опциональный массив предзагруженных моделей для избежания повторных запросов
  */
-export const generateMockSpecs = async (cachedModels?: any[]): Promise<Partial<CarAdFormData>> => {
+export const generateMockSpecs = async (cachedModels?: any[]): Promise<any> => {
   try {
     console.log('[MockData] 🎲 Generating REVERSE-CASCADE mock specs (Model → Brand → Type)...');
 
@@ -428,7 +428,7 @@ export const generateMockSpecs = async (cachedModels?: any[]): Promise<Partial<C
 /**
  * FALLBACK DISABLED - функция удалена для принуждения использования реальных данных
  */
-const generateFallbackSpecs = (): Partial<CarAdFormData> => {
+const generateFallbackSpecs = (): any => {
   throw new Error('[MockData] ❌ FALLBACK DISABLED - Use only real API data');
 
   // Статичные данные для fallback
@@ -485,17 +485,17 @@ const generateFallbackSpecs = (): Partial<CarAdFormData> => {
   const vehicleType = vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
 
   // СТРОГОЕ каскадирование: выбираем марку только из доступных для данного типа
-  const availableBrands = brandsData[vehicleType.id];
+  const availableBrands = (brandsData as Record<string, any>)[vehicleType.id];
   if (!availableBrands || availableBrands.length === 0) {
     console.warn(`[MockData] ⚠️ No brands available for vehicle type ${vehicleType.id}, using car type`);
     const carBrands = brandsData['1'];
     const brand = carBrands[Math.floor(Math.random() * carBrands.length)];
-    const availableModels = modelsData[brand.id] || ['Model'];
+    const availableModels = (modelsData as Record<string, any>)[brand.id] || ['Model'];
     const model = availableModels[Math.floor(Math.random() * availableModels.length)];
 
     return {
       ...generateStrictFallbackData('1', brand, model),
-      vehicle_type: 1,
+      vehicle_type: '1',
       vehicle_type_name: 'Легковые автомобили'
     };
   }
@@ -503,7 +503,7 @@ const generateFallbackSpecs = (): Partial<CarAdFormData> => {
   const brand = availableBrands[Math.floor(Math.random() * availableBrands.length)];
 
   // СТРОГОЕ каскадирование: выбираем модель только из доступных для данной марки
-  const availableModels = modelsData[brand.id];
+  const availableModels = (modelsData as Record<string, any>)[brand.id];
   if (!availableModels || availableModels.length === 0) {
     console.warn(`[MockData] ⚠️ No models available for brand ${brand.id}, using generic model`);
     return generateStrictFallbackData(vehicleType.id, brand, 'Model');
@@ -517,14 +517,14 @@ const generateFallbackSpecs = (): Partial<CarAdFormData> => {
 /**
  * Генерирует строгие fallback данные для конкретного типа, марки и модели
  */
-const generateStrictFallbackData = (vehicleTypeId: string, brand: any, model: string): Partial<CarAdFormData> => {
+const generateStrictFallbackData = (vehicleTypeId: string, brand: any, model: string): any => {
   // Определяем тип транспорта для типизированной генерации
   const vehicleTypeName = vehicleTypeId === '1' ? 'Легковые автомобили' :
                          vehicleTypeId === '2' ? 'Грузовые автомобили' :
                          vehicleTypeId === '3' ? 'Мотоциклы' : 'Легковые автомобили';
 
   const vehicleTypeKey = normalizeVehicleType(vehicleTypeName);
-  const typeSpecs = VEHICLE_TYPE_SPECS[vehicleTypeKey] || VEHICLE_TYPE_SPECS.car;
+  const typeSpecs = (VEHICLE_TYPE_SPECS as Record<string, any>)[vehicleTypeKey] || VEHICLE_TYPE_SPECS.car;
 
   const year = [2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015][Math.floor(Math.random() * 10)];
 
@@ -535,7 +535,7 @@ const generateStrictFallbackData = (vehicleTypeId: string, brand: any, model: st
 
   return {
     // Связанные поля с правильными ID и названиями
-    vehicle_type: parseInt(vehicleTypeId) || vehicleTypeId, // Преобразуем в число
+    vehicle_type: vehicleTypeId, // Keep as string for type safety
     vehicle_type_name: vehicleTypeName,
     brand: parseInt(brand.id) || brand.id, // Преобразуем в число
     brand_name: brand.name,
@@ -562,12 +562,12 @@ const generateStrictFallbackData = (vehicleTypeId: string, brand: any, model: st
  */
 export const generateMockPricing = (): Partial<CarAdFormData> => {
   const currency = MOCK_DATA.pricing.currencies[Math.floor(Math.random() * MOCK_DATA.pricing.currencies.length)];
-  const priceRange = MOCK_DATA.pricing.priceRanges[currency];
+  const priceRange = (MOCK_DATA.pricing.priceRanges as Record<string, any>)[currency];
   const price = Math.floor(Math.random() * (priceRange.max - priceRange.min)) + priceRange.min;
 
   return {
     price,
-    currency
+    currency: currency as any
   };
 };
 
@@ -665,8 +665,9 @@ export const generateMockContacts = (): Contact[] => {
       type: 'phone',
       value: phoneNumber,
       is_visible: true,
+      is_primary: true,
       note: `Контакт: ${name}`
-    }
+    } as any
   ];
 };
 
@@ -675,10 +676,10 @@ export const generateMockContacts = (): Contact[] => {
  */
 export const generateMockMetadata = (vehicleType?: string, vehicleSpecs?: any): Partial<CarAdFormData> => {
   const vType = vehicleType || 'car';
-  const specs = vehicleSpecs || VEHICLE_TYPE_SPECS[vType] || VEHICLE_TYPE_SPECS.car;
+  const specs = vehicleSpecs || (VEHICLE_TYPE_SPECS as Record<string, any>)[vType] || VEHICLE_TYPE_SPECS.car;
 
   // Генерируем характеристики в зависимости от типа транспорта
-  let metadata: Partial<CarAdFormData> = {
+  let metadata: any = {
     license_plate: `AA${Math.floor(Math.random() * 9000) + 1000}BB`,
     seller_type: 'private',
     exchange_status: ['no_exchange', 'possible', 'only_exchange'][Math.floor(Math.random() * 3)],
@@ -797,7 +798,7 @@ export const generateFullMockData = async (cachedModels?: any[]): Promise<Partia
 
     // Передаем тип транспорта в generateMockMetadata для типизированной генерации
     const vehicleTypeKey = normalizeVehicleType(specs.vehicle_type_name || '');
-    const typeSpecs = VEHICLE_TYPE_SPECS[vehicleTypeKey] || VEHICLE_TYPE_SPECS.car;
+    const typeSpecs = (VEHICLE_TYPE_SPECS as Record<string, any>)[vehicleTypeKey] || VEHICLE_TYPE_SPECS.car;
     const metadata = generateMockMetadata(vehicleTypeKey, typeSpecs);
 
     const contacts = generateMockContacts();
@@ -830,7 +831,7 @@ const generateFallbackFullMockData = (): Partial<CarAdFormData> => {
 
   const specs = generateFallbackSpecs();
   const vehicleTypeKey = normalizeVehicleType(specs.vehicle_type_name || '');
-  const typeSpecs = VEHICLE_TYPE_SPECS[vehicleTypeKey] || VEHICLE_TYPE_SPECS.car;
+  const typeSpecs = (VEHICLE_TYPE_SPECS as Record<string, any>)[vehicleTypeKey] || VEHICLE_TYPE_SPECS.car;
 
   return {
     ...specs,

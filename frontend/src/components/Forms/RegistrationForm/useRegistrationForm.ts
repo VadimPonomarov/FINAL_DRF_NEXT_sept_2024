@@ -107,7 +107,7 @@ export const useRegistrationForm = () => {
             if (response && response.user) {
                 console.log('[Registration] ✅ Registration successful');
 
-                setNotification(t('auth.registration.success', 'Registration successful! An activation link has been sent to {{email}}. Please check your email to activate your account.', { email: data.email }));
+                setNotification((t as any)('auth.registration.success', 'Registration successful! An activation link has been sent to {{email}}. Please check your email to activate your account.', { email: data.email }));
 
                 toast({
                     title: t('common.success'),

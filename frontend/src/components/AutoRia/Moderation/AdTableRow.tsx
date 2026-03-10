@@ -74,16 +74,16 @@ const AdTableRow = memo<AdTableRowProps>(({
 
   return (
     <TableRow className="hover:bg-gray-50">
-      <TableCell className="font-mono text-sm">{ad.id}</TableCell>
+      <TableCell className="font-mono text-sm">{typeof ad.id === 'object' ? JSON.stringify(ad.id) : String(ad.id ?? '')}</TableCell>
       <TableCell>
         <div className="max-w-[200px]">
-          <div className="font-medium line-clamp-2 mb-1">{ad.title}</div>
-          <div className="text-xs text-gray-500 line-clamp-2">{ad.description}</div>
+          <div className="font-medium line-clamp-2 mb-1">{typeof ad.title === 'object' ? JSON.stringify(ad.title) : String(ad.title ?? '')}</div>
+          <div className="text-xs text-gray-500 line-clamp-2">{typeof ad.description === 'object' ? JSON.stringify(ad.description) : String(ad.description ?? '')}</div>
         </div>
       </TableCell>
       <TableCell>
         <div className="text-sm">
-          <div className="font-medium">{ad.mark_name || ad.mark || '—'}</div>
+          <div className="font-medium">{ad.mark_name || (typeof ad.mark === 'object' ? (ad.mark as any)?.name : ad.mark) || '—'}</div>
           <div className="text-gray-500">{ad.model || '—'}</div>
         </div>
       </TableCell>
@@ -95,7 +95,7 @@ const AdTableRow = memo<AdTableRowProps>(({
       <TableCell>
         <div className="text-sm">
           <div className="font-medium">{ad.user?.email || '—'}</div>
-          <div className="text-gray-500">{ad.city_name || ad.city || '—'}</div>
+          <div className="text-gray-500">{ad.city_name || (typeof ad.city === 'object' ? (ad.city as any)?.name : ad.city) || '—'}</div>
         </div>
       </TableCell>
       <TableCell className="text-sm text-gray-500">

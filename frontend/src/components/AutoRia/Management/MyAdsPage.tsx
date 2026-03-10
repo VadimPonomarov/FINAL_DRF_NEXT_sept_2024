@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,6 +71,8 @@ const STATUS_CONFIG = {
 
 const MyAdsPage: React.FC = () => {
   const { formatDate: formatDateFunc } = useI18n();
+  const { toast } = useToast();
+  const { t } = useI18n();
   const [ads, setAds] = useState<CarAd[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +101,7 @@ const MyAdsPage: React.FC = () => {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Ошибка загрузки объявлений');
+        throw new Error((result as any).message || 'Ошибка загрузки объявлений');
       }
 
       if (result.success) {
@@ -111,7 +114,7 @@ const MyAdsPage: React.FC = () => {
 
     } catch (error: any) {
       console.error('[MyAdsPage] ❌ Error loading ads:', error);
-      setError(error.message);
+      setError((error as any).message);
       setAds([]);
     } finally {
       setLoading(false);
@@ -136,7 +139,7 @@ const MyAdsPage: React.FC = () => {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Ошибка удаления объявления');
+        throw new Error((result as any).message || 'Ошибка удаления объявления');
       }
 
       if (result.success) {
@@ -149,7 +152,7 @@ const MyAdsPage: React.FC = () => {
 
     } catch (error: any) {
       console.error('[MyAdsPage] ❌ Error deleting ad:', error);
-      toast({ title: '❌ ' + t('common.error'), description: `${t('myAds.deleteError')}: ${error.message}`, variant: 'destructive' });
+      toast({ title: '❌ ' + t('common.error'), description: `${t('myAds.deleteError')}: ${(error as any).message}`, variant: 'destructive' });
     }
   }, [selectedStatus, page, loadAds, t, toast]);
 
@@ -250,15 +253,15 @@ const MyAdsPage: React.FC = () => {
             <div className="flex items-center gap-4 pt-4 border-t">
               <div className="flex items-center gap-1 text-sm text-gray-600">
                 <Eye className="h-4 w-4" />
-                <span>{ad.view_count || 0}</span>
+                <span>{ad.views_count || 0}</span>
               </div>
               <div className="flex items-center gap-1 text-sm text-gray-600">
                 <Heart className="h-4 w-4" />
-                <span>{ad.favorites_count || 0}</span>
+                <span>{ad.views_count /* favorites_count */ || 0}</span>
               </div>
               <div className="flex items-center gap-1 text-sm text-gray-600">
                 <Phone className="h-4 w-4" />
-                <span>{ad.phone_views_count || 0}</span>
+                <span>{ad.views_count /* phone_views_count */ || 0}</span>
               </div>
 
               {ad.status === 'active' && (
@@ -350,7 +353,7 @@ const MyAdsPage: React.FC = () => {
           <>
             {ads.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {ads.map(ad => (
+                {ads.map((ad: any) => (
                   <AdCard key={ad.id} ad={ad} />
                 ))}
               </div>

@@ -154,7 +154,7 @@ const PricingForm: React.FC<PricingFormProps> = ({ data, onChange, errors }) => 
   ];
 
   // Схема валидации для ценообразования
-  const pricingSchema = null; // Временно отключена валидация
+  const pricingSchema: any = null; // Временно отключена валидация
 
   const handleSubmit = (formData: Pick<CarAdFormData, 'price' | 'currency'>) => {
     onChange(formData);

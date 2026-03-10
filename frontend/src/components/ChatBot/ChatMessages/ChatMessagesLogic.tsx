@@ -68,7 +68,7 @@ export const useChatMessagesLogic = (props: ChatMessagesProps) => {
       content.includes('👋 hello,') ||
       (content.includes('hello,') && content.includes('ready to help')) ||
       content.includes('i\'m ready to help you') ||
-      content.match(/hello,\s+[\w.@]+!\s+i'm ready to help/i)
+      !!content.match(/hello,\s+[\w.@]+!\s+i'm ready to help/i)
     );
   };
 

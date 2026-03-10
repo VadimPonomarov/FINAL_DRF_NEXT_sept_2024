@@ -43,10 +43,10 @@ export default function ImageApiTester({ adId }: ImageApiTesterProps) {
       })
     } catch (error) {
       console.error('🧪 Ошибка GET:', error)
-      setResult({ type: 'GET', error: error.message })
+      setResult({ type: 'GET', error: (error instanceof Error ? error.message : String(error)) })
       toast({
         title: "❌ Ошибка сети",
-        description: error.message,
+        description: (error instanceof Error ? error.message : String(error)),
         variant: "destructive",
       })
     } finally {
@@ -88,10 +88,10 @@ export default function ImageApiTester({ adId }: ImageApiTesterProps) {
       })
     } catch (error) {
       console.error('🧪 Ошибка POST:', error)
-      setResult({ type: 'POST', error: error.message })
+      setResult({ type: 'POST', error: (error instanceof Error ? error.message : String(error)) })
       toast({
         title: "❌ Ошибка сети",
-        description: error.message,
+        description: (error instanceof Error ? error.message : String(error)),
         variant: "destructive",
       })
     } finally {
@@ -141,10 +141,10 @@ export default function ImageApiTester({ adId }: ImageApiTesterProps) {
       })
     } catch (error) {
       console.error('🧪 Ошибка DELETE:', error)
-      setResult({ type: 'DELETE', error: error.message })
+      setResult({ type: 'DELETE', error: (error instanceof Error ? error.message : String(error)) })
       toast({
         title: "❌ Ошибка сети",
-        description: error.message,
+        description: (error instanceof Error ? error.message : String(error)),
         variant: "destructive",
       })
     } finally {

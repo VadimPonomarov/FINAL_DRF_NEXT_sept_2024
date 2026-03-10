@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   MapPin,
-  Globe,
+  Globe2,
   Navigation,
   ExternalLink,
   CheckCircle,
@@ -260,7 +260,7 @@ const TransformedAddressDisplay: React.FC<TransformedAddressDisplayProps> = ({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-blue-600" />
+                <Globe2 className="h-5 w-5 text-blue-600" />
                 {t('profile.address.geocoding')} Data
               </CardTitle>
             </CardHeader>

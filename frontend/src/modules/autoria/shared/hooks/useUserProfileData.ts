@@ -44,7 +44,7 @@ export const useUserProfileData = () => {
     error: null,
     data: null,
     updating: false,
-    updateError: null
+    updateError: null as string | null
   });
 
   /**
@@ -77,7 +77,7 @@ export const useUserProfileData = () => {
             stats_enabled: false
           };
 
-          const createdAccount = await UserAccountService.updateUserAccount(defaultAccountData);
+          const createdAccount = await UserAccountService.updateUserAccount(defaultAccountData as any);
           if (createdAccount) {
             data.account = createdAccount;
             if (DEBUG) console.log('[useUserProfileData] Default account created successfully');
@@ -115,7 +115,7 @@ export const useUserProfileData = () => {
    */
   const updateProfile = useCallback(async (profileData: ProfileUpdateData) => {
     if (DEBUG) console.log('🚀 [useUserProfileData] updateProfile called with:', profileData);
-    setState(prev => ({ ...prev, updating: true, updateError: null }));
+    setState(prev => ({ ...prev, updating: true, updateError: null as string | null }));
 
     try {
       // Получаем текущий аватар из актуального состояния
@@ -210,7 +210,7 @@ export const useUserProfileData = () => {
    * Обновить аккаунт пользователя
    */
   const updateAccount = useCallback(async (accountData: AccountUpdateData) => {
-    setState(prev => ({ ...prev, updating: true, updateError: null }));
+    setState(prev => ({ ...prev, updating: true, updateError: null as string | null }));
     
     try {
       const updatedAccount = await UserAccountService.updateUserAccount(accountData);
@@ -261,7 +261,7 @@ export const useUserProfileData = () => {
       throw new Error('User ID not available');
     }
     
-    setState(prev => ({ ...prev, updating: true, updateError: null }));
+    setState(prev => ({ ...prev, updating: true, updateError: null as string | null }));
     
     try {
       const updatedProfile = await UserProfileService.uploadAvatar(avatarFile, state.data.user.id);
@@ -311,7 +311,7 @@ export const useUserProfileData = () => {
    * Создать новый адрес
    */
   const createAddress = useCallback(async (addressData: RawAddressUpdateData) => {
-    setState(prev => ({ ...prev, updating: true, updateError: null }));
+    setState(prev => ({ ...prev, updating: true, updateError: null as string | null }));
     
     try {
       const newAddress = await UserAddressService.createAddress(addressData);
@@ -358,7 +358,7 @@ export const useUserProfileData = () => {
    * Обновить существующий адрес
    */
   const updateAddress = useCallback(async (addressId: number, addressData: RawAddressUpdateData) => {
-    setState(prev => ({ ...prev, updating: true, updateError: null }));
+    setState(prev => ({ ...prev, updating: true, updateError: null as string | null }));
     
     try {
       const updatedAddress = await UserAddressService.updateAddress(addressId, addressData);
@@ -407,7 +407,7 @@ export const useUserProfileData = () => {
    * Удалить адрес
    */
   const deleteAddress = useCallback(async (addressId: number) => {
-    setState(prev => ({ ...prev, updating: true, updateError: null }));
+    setState(prev => ({ ...prev, updating: true, updateError: null as string | null }));
     
     try {
       const success = await UserAddressService.deleteAddress(addressId);
@@ -478,7 +478,7 @@ export const useUserProfileData = () => {
    * Создать новый контакт
    */
   const createContact = useCallback(async (contactData: ContactUpdateData): Promise<BackendAccountContact | null> => {
-    setState(prev => ({ ...prev, updating: true, updateError: null }));
+    setState(prev => ({ ...prev, updating: true, updateError: null as string | null }));
 
     try {
       const newContact = await UserContactService.createContact(contactData);
@@ -522,7 +522,7 @@ export const useUserProfileData = () => {
    * Обновить контакт
    */
   const updateContact = useCallback(async (contactId: number, contactData: Partial<ContactUpdateData>): Promise<BackendAccountContact | null> => {
-    setState(prev => ({ ...prev, updating: true, updateError: null }));
+    setState(prev => ({ ...prev, updating: true, updateError: null as string | null }));
 
     try {
       const updatedContact = await UserContactService.updateContact(contactId, contactData);
@@ -568,7 +568,7 @@ export const useUserProfileData = () => {
    * Удалить контакт
    */
   const deleteContact = useCallback(async (contactId: number): Promise<boolean> => {
-    setState(prev => ({ ...prev, updating: true, updateError: null }));
+    setState(prev => ({ ...prev, updating: true, updateError: null as string | null }));
 
     try {
       const success = await UserContactService.deleteContact(contactId);
@@ -646,11 +646,11 @@ export const useUserProfileData = () => {
           loadUserDataRef.current();
         } else {
           if (DEBUG) console.log('[useUserProfileData] No auth, skipping data load');
-          setState({ loading: false, error: null, data: null, updating: false, updateError: null });
+          setState({ loading: false, error: null, data: null, updating: false, updateError: null as string | null });
         }
       })
       .catch(() => {
-        if (!cancelled) setState({ loading: false, error: null, data: null, updating: false, updateError: null });
+        if (!cancelled) setState({ loading: false, error: null, data: null, updating: false, updateError: null as string | null });
       });
     return () => { cancelled = true; };
   }, [status, session, DEBUG]);
@@ -664,7 +664,7 @@ export const useUserProfileData = () => {
         error: null,
         data: null,
         updating: false,
-        updateError: null
+        updateError: null as string | null
       });
     };
 

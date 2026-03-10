@@ -30,7 +30,7 @@ class AdsConfig(AppConfig):
                     cursor.execute("SELECT 1")
             except OperationalError:
                 # Database not ready, skip seeds
-                print("⚠️ Database not ready, skipping seeds")
+                print("[WARNING] Database not ready, skipping seeds")
                 return
 
             # Run seeds in a separate thread to avoid blocking startup
@@ -38,10 +38,10 @@ class AdsConfig(AppConfig):
 
             def run_seeds():
                 try:
-                    print("🌱 Running AutoRia seeds...")
+                    print("[SEED] Running AutoRia seeds...")
                     call_command('init_project_data', verbosity=1)
                 except Exception as e:
-                    print(f"⚠️ Seeds failed: {e}")
+                    print(f"[WARNING] Seeds failed: {e}")
 
             # Start seeds in background
             seeds_thread = threading.Thread(target=run_seeds, daemon=True)
@@ -49,7 +49,7 @@ class AdsConfig(AppConfig):
 
         except Exception as e:
             # Don't let seeds failure break app startup
-            print(f"⚠️ Could not run seeds: {e}")
+            print(f"[WARNING] Could not run seeds: {e}")
 
     def _should_run_seeds(self) -> bool:
         """Check if seeds should be run."""
@@ -69,13 +69,13 @@ class AdsConfig(AppConfig):
         # CRITICAL: Don't run seeds during ASGI/Daphne startup - only during runserver
         # Seeds should run AFTER migrate, not during Django app initialization
         if 'daphne' in ' '.join(sys.argv) or 'gunicorn' in ' '.join(sys.argv):
-            print("🚫 Skipping seeds during ASGI server startup - run seeds manually after deployment")
+            print("[SKIP] Skipping seeds during ASGI server startup - run seeds manually after deployment")
             return False
 
         # Never run seeds in Docker by default
         is_docker = os.getenv('IS_DOCKER', 'false').lower() in ('true', '1', 't', 'yes')
         if is_docker:
-            print("🐳 Running in Docker - seeds disabled by default")
+            print("[DOCKER] Running in Docker - seeds disabled by default")
             # In Docker, only run if explicitly enabled
             run_seeds = os.getenv('RUN_SEEDS', 'false').lower() in ('true', '1', 't', 'yes')
         else:
@@ -83,8 +83,8 @@ class AdsConfig(AppConfig):
             run_seeds = os.getenv('RUN_SEEDS', 'true').lower() in ('true', '1', 't', 'yes')
 
         if run_seeds:
-            print("🌱 Seeds enabled by RUN_SEEDS environment variable")
+            print("[INFO] Seeds enabled by RUN_SEEDS environment variable")
         else:
-            print("⏭️ Seeds disabled by RUN_SEEDS environment variable")
+            print("[INFO] Seeds disabled by RUN_SEEDS environment variable")
 
         return run_seeds

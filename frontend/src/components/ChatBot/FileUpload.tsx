@@ -33,8 +33,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       // Проверка размера файлов
       const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-      const validFiles = [];
-      const invalidFiles = [];
+      const validFiles: any[] = [];
+      const invalidFiles: any[] = [];
 
       for (const file of filesArray) {
         if (file.size <= MAX_FILE_SIZE) {
@@ -48,7 +48,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         const fileNames = invalidFiles.map(f => f.name).join(', ');
         console.warn(`Files exceed maximum size: ${fileNames}`);
         handleError(`Следующие файлы превышают максимальный размер 10 МБ: ${fileNames}`, {
-          type: 'validation',
+          type: 'validation' as any,
           prefix: 'Ошибка размера файла'
         });
       }

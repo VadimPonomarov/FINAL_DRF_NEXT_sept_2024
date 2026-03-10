@@ -139,7 +139,7 @@ const SimpleCarSpecsForm: React.FC<SimpleCarSpecsFormProps> = memo(({ data, onCh
 
               // Обрабатываем ответ API
               const items = data.options || data.results || data || [];
-              return items.map(item => ({
+              return items.map((item: any) => ({
                 value: item.value || item.id?.toString() || '',
                 label: item.label || item.name || ''
               }));
@@ -442,7 +442,7 @@ const SimpleCarSpecsForm: React.FC<SimpleCarSpecsFormProps> = memo(({ data, onCh
           </Label>
           <VirtualSelect
             placeholder={t('selectColor')}
-            value={localData.color || ''}
+            value={String(localData.color || '')}
             onValueChange={(value, label) => {
               console.log('🎨 Color selected:', { value, label });
               const newData = {

@@ -18,6 +18,8 @@ interface RedisApiResponse {
   exists: boolean;
   value?: string;
   message?: string;
+  access?: string;
+  refresh?: string;
 }
 
 interface RedisSimpleResponse {
@@ -89,13 +91,13 @@ export default function TestLoginPage() {
         throw new Error(
           typeof authResult.error === 'string' 
             ? authResult.error 
-            : authResult.error.message || 'Login failed'
+            : (authResult.error instanceof Error ? authResult.error.message : String(authResult.error)) || 'Login failed'
         );
       }
 
       addLog('✅ Login successful');
       if (isSuccessAuthResponse(authResult)) {
-        addLog(`📋 Received tokens: access=${authResult.access ? 'YES' : 'NO'}, refresh=${authResult.refresh ? 'YES' : 'NO'}`);
+        addLog(`📋 Received tokens: access=${(authResult as any).access ? 'YES' : 'NO'}, refresh=${authResult.refresh ? 'YES' : 'NO'}`);
       }
       
       // Check if redisSaveSuccess exists (success case) before accessing it
@@ -112,7 +114,7 @@ export default function TestLoginPage() {
       // Сохраняем токены в state для отображения
       if (isSuccessAuthResponse(authResult)) {
         const tokenData: TokenData = {
-          access: authResult.access,
+          access: (authResult as any).access,
           refresh: authResult.refresh,
           userId: authResult.user?.id?.toString(),
           email: authResult.user?.email || formData.email
@@ -130,7 +132,7 @@ export default function TestLoginPage() {
           if (verifyData?.access) {
             const savedTokens = JSON.parse(verifyData?.access);
             addLog('✅ Tokens retrieved from Redis successfully');
-            addLog(`📋 Retrieved: access=${savedTokens.access ? 'YES' : 'NO'}, refresh=${savedTokens.refresh ? 'YES' : 'NO'}`);
+            addLog(`📋 Retrieved: access=${(savedTokens as any).access ? 'YES' : 'NO'}, refresh=${savedTokens.refresh ? 'YES' : 'NO'}`);
           } else {
             addLog('❌ Tokens not found in Redis');
           }
@@ -200,7 +202,7 @@ export default function TestLoginPage() {
           if (verifyData?.access) {
             const updatedTokens = JSON.parse(verifyData?.access);
             setTokens({
-              access: updatedTokens.access,
+              access: (updatedTokens as any).access,
               refresh: updatedTokens.refresh,
               userId: updatedTokens.user?.id?.toString(),
               email: updatedTokens.user?.email
@@ -329,7 +331,7 @@ export default function TestLoginPage() {
               <div className="mt-3 text-sm text-gray-600">
                 <p><strong>User ID:</strong> {tokens.userId}</p>
                 <p><strong>Email:</strong> {tokens.email}</p>
-                <p><strong>Access Token:</strong> {tokens.access ? `${tokens.access.substring(0, 20)}...` : 'N/A'}</p>
+                <p><strong>Access Token:</strong> {(tokens as any).access ? `${(tokens as any).access.substring(0, 20)}...` : 'N/A'}</p>
                 <p><strong>Refresh Token:</strong> {tokens.refresh ? `${tokens.refresh.substring(0, 20)}...` : 'N/A'}</p>
               </div>
             </div>

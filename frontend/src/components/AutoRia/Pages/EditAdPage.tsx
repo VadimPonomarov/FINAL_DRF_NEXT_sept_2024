@@ -63,7 +63,7 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
       const currentUserEmail = session?.user?.email;
       const adOwnerEmail = adData.user?.email;
       const isOwner = currentUserEmail === adOwnerEmail;
-      const isSuperUser = session?.user?.role === 'superuser' || session?.user?.is_superuser;
+      const isSuperUser = (session?.user as any)?.role === 'superuser' || (session?.user as any)?.is_superuser;
 
       console.log('[EditAdPage] Access check (restrictions removed):', {
         currentUserEmail,
@@ -74,7 +74,7 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
       });
 
       // Используем универсальную функцию маппинга
-      const formDataFromAd = mapApiDataToFormData(adData);
+      const formDataFromAd = (mapApiDataToFormData(adData) as any);
 
       console.log('[EditAdPage] Mapped form data:', formDataFromAd);
       console.log('[EditAdPage] Key mapped fields:', {
@@ -91,11 +91,11 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
     } catch (error) {
       console.error('[EditAdPage] Error loading ad data:', error);
       console.error('[EditAdPage] Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? (error as any).message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         adId: adId
       });
-      setLoadError(`Не удалось загрузить данные объявления (ID: ${adId}). ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
+      setLoadError(`Не удалось загрузить данные объявления (ID: ${adId}). ${error instanceof Error ? (error as any).message : 'Неизвестная ошибка'}`);
     } finally {
       setIsLoadingAd(false);
     }
@@ -192,7 +192,7 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
     try {
       // Дополнительная проверка прав доступа перед обновлением
       const currentUserEmail = session?.user?.email;
-      const isSuperUser = session?.user?.role === 'superuser' || session?.user?.is_superuser;
+      const isSuperUser = (session?.user as any)?.role === 'superuser' || (session?.user as any)?.is_superuser;
 
       // Получаем актуальные данные объявления для проверки владельца
       const adData = await CarAdsService.getCarAd(adId);
@@ -368,7 +368,7 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
         images: apiData.images?.length || 0
       });
 
-      const response = await CarAdsService.updateCarAd(adId, apiData);
+      const response = await CarAdsService.updateCarAd(adId, apiData as any);
       console.log('[EditAdPage] ✅ Ad updated successfully:', response);
 
       // Показываем уведомление об успехе
@@ -386,14 +386,14 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
     } catch (error) {
       console.error('[EditAdPage] ❌ Error updating ad:', error);
       console.error('[EditAdPage] ❌ Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? (error as any).message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       });
 
       // Показываем ошибку пользователю
       toast({
         title: t('common.error'),
-        description: error instanceof Error ? error.message : t('autoria.editAd.updateError', 'Failed to update ad'),
+        description: error instanceof Error ? (error as any).message : t('autoria.editAd.updateError', 'Failed to update ad'),
         variant: "destructive",
       });
 
@@ -425,7 +425,7 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
 
       // Дополнительная проверка прав доступа перед удалением
       const currentUserEmail = session?.user?.email;
-      const isSuperUser = session?.user?.role === 'superuser' || session?.user?.is_superuser;
+      const isSuperUser = (session?.user as any)?.role === 'superuser' || (session?.user as any)?.is_superuser;
 
       // Получаем актуальные данные объявления для проверки владельца
       const adData = await CarAdsService.getCarAd(adId);
@@ -453,7 +453,7 @@ const EditAdPage: React.FC<EditAdPageProps> = ({ adId }) => {
       // Показываем ошибку пользователю
       toast({
         title: t('common.error'),
-        description: error instanceof Error ? error.message : t('autoria.editAd.deleteError', 'Failed to delete ad'),
+        description: error instanceof Error ? (error as any).message : t('autoria.editAd.deleteError', 'Failed to delete ad'),
         variant: "destructive",
       });
 

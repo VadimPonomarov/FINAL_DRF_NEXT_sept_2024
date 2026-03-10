@@ -262,7 +262,7 @@ const ModerationPage = () => {
       };
 
       const newStatus = nextStatusMap[action];
-      setAds(prev => prev.map(ad => ad.id === adId ? { ...ad, status: newStatus } : ad));
+      setAds(prev => prev.map((ad: any) => ad.id === adId ? { ...ad, status: newStatus } : ad));
       setSelectedAd(null);
       // Update only stats, avoid reloading the whole list
       loadModerationStats();
@@ -414,7 +414,7 @@ const ModerationPage = () => {
     const prevAds = [...ads];
     
     // Оптимистичное обновление UI
-    setAds(prev => prev.map(ad => ad.id === adId ? { ...ad, status: newStatus } : ad));
+    setAds(prev => prev.map((ad: any) => ad.id === adId ? { ...ad, status: newStatus } : ad));
 
     try {
       await CarAdsService.updateAdStatusAsModerator(
@@ -507,8 +507,8 @@ const ModerationPage = () => {
       }
 
       // Обновляем локальное состояние
-      setModerationQueue(prev => 
-        prev.map(ad => 
+      ((x: any) => x)((prev: any) => 
+        prev.map((ad: any) => 
           ad.id === adId 
             ? { ...ad, moderation_reason: notes }
             : ad
@@ -745,7 +745,7 @@ const ModerationPage = () => {
           </Card>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {ads.map(ad => (
+            {ads.map((ad: any) => (
               <AdCard
                 key={ad.id}
                 ad={ad}
@@ -789,7 +789,7 @@ const ModerationPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ads.map(ad => (
+                  {ads.map((ad: any) => (
                     <React.Fragment key={ad.id}>
                       <TableRow className="hidden" />
                       <TableRow>

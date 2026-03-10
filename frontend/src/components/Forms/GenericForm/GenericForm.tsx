@@ -373,7 +373,7 @@ export function GenericForm<T extends FieldValues>({
             disabled={field.disabled || isLoading}
             className={cn(inputClasses, error && 'border-destructive')}
             loading={field.disabled && isLoading}
-            fetchOptions={dynamicFetchOptions}
+            fetchOptions={dynamicFetchOptions as any}
             pageSize={field.pageSize || 50}
           />
         );

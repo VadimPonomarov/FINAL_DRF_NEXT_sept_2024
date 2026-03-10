@@ -6,7 +6,7 @@ import { registerCurrentService } from '@/services/serviceRegistry';
 /**
  * Компонент для инициализации Service Registry при загрузке приложения
  */
-export default function ServiceRegistryInitializer() {
+export default function ServiceRegistryInitializer(): null {
   useEffect(() => {
     // Регистрируем frontend сервис при загрузке приложения
     const initializeServiceRegistry = async () => {

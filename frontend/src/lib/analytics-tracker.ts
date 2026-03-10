@@ -122,7 +122,7 @@ export class AnalyticsTracker {
       */
     } catch (error) {
       console.error('[AnalyticsTracker] Error tracking page view (DISABLED):', error);
-      return { success: false, disabled: true, error: error.message };
+      return { success: false, disabled: true, error: (error instanceof Error ? error.message : String(error)) };
     }
   }
 
@@ -155,7 +155,7 @@ export class AnalyticsTracker {
       */
     } catch (error) {
       console.error('[AnalyticsTracker] Error tracking search query (DISABLED):', error);
-      return { success: false, disabled: true, error: error.message };
+      return { success: false, disabled: true, error: (error instanceof Error ? error.message : String(error)) };
     }
   }
 

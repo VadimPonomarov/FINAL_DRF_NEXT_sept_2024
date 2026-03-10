@@ -257,7 +257,7 @@ const EnhancedCRUDGenerator: React.FC = () => {
         });
       } else {
         const error = await response.json();
-        throw new Error(error.message || 'Ошибка создания');
+        throw new Error((error instanceof Error ? error.message : String(error)) || 'Ошибка создания');
       }
     } catch (error) {
       addOperation('CREATE', 'error', `Ошибка создания: ${error}`);
@@ -576,7 +576,7 @@ const EnhancedCRUDGenerator: React.FC = () => {
               <Checkbox
                 id="generateImages"
                 checked={generateImages}
-                onCheckedChange={setGenerateImages}
+                onCheckedChange={setGenerateImages as any}
               />
               <Label htmlFor="generateImages">Генерировать изображения AI</Label>
             </div>
@@ -637,7 +637,7 @@ const EnhancedCRUDGenerator: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {userAds.map(ad => (
+            {userAds.map((ad: any) => (
               <div key={ad.id} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -662,7 +662,7 @@ const EnhancedCRUDGenerator: React.FC = () => {
                 {ad.images.length > 0 && (
                   <div className="mt-3">
                     <div className="flex flex-wrap gap-2">
-                      {ad.images.map(img => (
+                      {ad.images.map((img: any) => (
                         <div key={img.id} className="relative">
                           <Badge variant="outline" className="text-xs">
                             ID: {img.id} {img.is_primary && '(Primary)'}

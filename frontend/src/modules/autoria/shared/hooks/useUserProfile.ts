@@ -63,19 +63,13 @@ export const useUserProfile = () => {
       console.log('[useUserProfile] 📤 Fetching user data using common helpers...');
 
       // Получаем профиль пользователя через общий fetchData
-      const profileData = await fetchData<UserProfile>('api/user/profile/', {
-        redirectOnError: false
-      });
+      const profileData = await fetchData('api/user/profile/');
 
       // Получаем контакты пользователя
-      const contactsData = await fetchData<UserContact[]>('api/user/contacts/', {
-        redirectOnError: false
-      });
+      const contactsData = await fetchData('api/user/contacts/');
 
       // Получаем адреса пользователя
-      const addressesData = await fetchData<UserAddress[]>('api/user/addresses/', {
-        redirectOnError: false
-      });
+      const addressesData = await fetchData('api/user/addresses/');
 
       console.log('[useUserProfile] ✅ All user data received');
 

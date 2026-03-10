@@ -109,7 +109,7 @@ const LocationForm: React.FC<LocationFormProps> = ({ data, onChange, errors }) =
     }
   }, [data.region, data.city, data.region_name, data.city_name, fetchRegionName, fetchCityName]);
 
-  const fields: ExtendedFormFieldConfig<Pick<CarAdFormData, 'region' | 'city'>>[] = useMemo(() => [
+  const fields: any[] = useMemo(() => [
     {
       name: 'region',
       label: t('region'),
@@ -136,7 +136,7 @@ const LocationForm: React.FC<LocationFormProps> = ({ data, onChange, errors }) =
     }
   ], [data.region, t, fetchRegions, fetchCitiesForRegion, regionLabel, cityLabel]);
 
-  const locationSchema = null; // Временно отключена валидация
+  const locationSchema: any = null; // Временно отключена валидация
 
   const handleSubmit = (formData: Pick<CarAdFormData, 'region' | 'city'>) => {
     onChange(formData);

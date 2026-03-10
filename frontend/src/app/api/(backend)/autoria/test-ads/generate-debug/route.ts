@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     // Test auth manager
     console.log('🔥 [DEBUG] Testing ServerAuthManager...');
     const authManager = new ServerAuthManager();
-    const authFetch = await authManager.createAuthFetch();
+    const authFetch = await (authManager as any).createAuthFetch();
     console.log('🔥 [DEBUG] AuthFetch created successfully');
     
     // Test backend connection

@@ -27,6 +27,7 @@ const AccountTypeManager: React.FC<AccountTypeManagerProps> = ({
   isVisible,
   onClose
 }) => {
+  const t = (key: string) => key;
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState<'email' | 'user_id' | 'account_id'>('email');
   const [foundUser, setFoundUser] = useState<User | null>(null);

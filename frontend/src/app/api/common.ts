@@ -167,3 +167,5 @@ export async function fetchWithDomain<T = any>(
  */
 export { fetchData } from '@/app/api/helpers';
 
+
+export const clientRefreshToken = async (): Promise<string | null> => null;

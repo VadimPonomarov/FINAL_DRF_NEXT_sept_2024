@@ -318,16 +318,9 @@ const CRUDCarAdForm: React.FC<CRUDCarAdFormProps> = ({
   };
 
   // Функция для получения городов для выбранного региона
-  const fetchCitiesForRegion = useCallback(async (
-    search: string, 
-    page: number, 
-    pageSize: number
-  ) => {
-    if (!formData.region) {
-      return { options: [], hasMore: false, total: 0 };
-    }
-    
-    return fetchCities(formData.region, search, page, pageSize);
+  const fetchCitiesForRegion = useCallback(async (search: string) => {
+    if (!formData.region) return [];
+    return fetchCities(search, String(formData.region));
   }, [formData.region, fetchCities]);
 
   // Вычисление прогресса заполнения
@@ -484,10 +477,9 @@ const CRUDCarAdForm: React.FC<CRUDCarAdFormProps> = ({
                     <Label>{t('autoria.vehicleType')} *</Label>
                     <VirtualSelect
                       value={formData.vehicle_type || ''}
-                      onChange={(v) => handleFieldChange('vehicle_type', v)}
+                      onValueChange={(v: string | null) => handleFieldChange('vehicle_type', v)}
                       fetchOptions={fetchVehicleTypes}
                       placeholder={t('autoria.selectVehicleType')}
-                      hasError={!!errors.vehicle_type}
                     />
                     {errors.vehicle_type && <p className="text-red-500 text-sm mt-1">{errors.vehicle_type}</p>}
                   </div>
@@ -495,10 +487,9 @@ const CRUDCarAdForm: React.FC<CRUDCarAdFormProps> = ({
                     <Label>{t('autoria.brand')} *</Label>
                     <VirtualSelect
                       value={formData.brand || ''}
-                      onChange={(v) => handleFieldChange('brand', v)}
+                      onValueChange={(v: string | null) => handleFieldChange('brand', v)}
                       fetchOptions={fetchBrands}
                       placeholder={t('autoria.selectBrand')}
-                      hasError={!!errors.brand}
                     />
                     {errors.brand && <p className="text-red-500 text-sm mt-1">{errors.brand}</p>}
                   </div>
@@ -506,10 +497,9 @@ const CRUDCarAdForm: React.FC<CRUDCarAdFormProps> = ({
                     <Label>{t('autoria.model')} *</Label>
                     <VirtualSelect
                       value={formData.model || ''}
-                      onChange={(v) => handleFieldChange('model', v)}
-                      fetchOptions={(s, p, ps) => fetchModels(formData.brand || '', s, p, ps)}
+                      onValueChange={(v: string | null) => handleFieldChange('model', v)}
+                      fetchOptions={async (s: string) => { const r = await fetchModels(s, formData.brand || ''); return (r || []) as {value: string; label: string}[]; }}
                       placeholder={t('autoria.selectModel')}
-                      hasError={!!errors.model}
                     />
                     {errors.model && <p className="text-red-500 text-sm mt-1">{errors.model}</p>}
                   </div>
@@ -539,14 +529,14 @@ const CRUDCarAdForm: React.FC<CRUDCarAdFormProps> = ({
                     <Label>{t('autoria.fuelType')}</Label>
                     <VirtualSelect
                       value={formData.fuel_type || ''}
-                      onChange={(v) => handleFieldChange('fuel_type', v)}
-                      fetchOptions={async () => ({ options: [
+                      onValueChange={(v: string | null) => handleFieldChange('fuel_type', v)}
+                      fetchOptions={async () => [
                         { value: 'petrol', label: t('fuelTypes.petrol') },
                         { value: 'diesel', label: t('fuelTypes.diesel') },
                         { value: 'gas', label: t('fuelTypes.gas') },
                         { value: 'hybrid', label: t('fuelTypes.hybrid') },
                         { value: 'electric', label: t('fuelTypes.electric') },
-                      ], hasMore: false, total: 5 })}
+                      ]}
                       placeholder={t('autoria.selectFuelType')}
                     />
                   </div>
@@ -554,21 +544,21 @@ const CRUDCarAdForm: React.FC<CRUDCarAdFormProps> = ({
                     <Label>{t('autoria.transmission')}</Label>
                     <VirtualSelect
                       value={formData.transmission || ''}
-                      onChange={(v) => handleFieldChange('transmission', v)}
-                      fetchOptions={async () => ({ options: [
+                      onValueChange={(v: string | null) => handleFieldChange('transmission', v)}
+                      fetchOptions={async () => [
                         { value: 'manual', label: t('transmissions.manual') },
                         { value: 'automatic', label: t('transmissions.automatic') },
                         { value: 'robot', label: t('transmissions.robot') },
                         { value: 'cvt', label: t('transmissions.cvt') },
-                      ], hasMore: false, total: 4 })}
+                      ]}
                       placeholder={t('autoria.selectTransmission')}
                     />
                   </div>
                   <div>
                     <Label>{t('autoria.color')}</Label>
                     <VirtualSelect
-                      value={formData.color || ''}
-                      onChange={(v) => handleFieldChange('color', v)}
+                      value={String(formData.color || '')}
+                      onValueChange={(v: string | null) => handleFieldChange('color', v)}
                       fetchOptions={fetchColors}
                       placeholder={t('autoria.selectColor')}
                     />
@@ -595,12 +585,12 @@ const CRUDCarAdForm: React.FC<CRUDCarAdFormProps> = ({
                     <Label>{t('autoria.currency')} *</Label>
                     <VirtualSelect
                       value={formData.currency || 'USD'}
-                      onChange={(v) => handleFieldChange('currency', v)}
-                      fetchOptions={async () => ({ options: [
+                      onValueChange={(v: string | null) => handleFieldChange('currency', v)}
+                      fetchOptions={async () => [
                         { value: 'USD', label: 'USD' },
                         { value: 'EUR', label: 'EUR' },
                         { value: 'UAH', label: 'UAH' },
-                      ], hasMore: false, total: 3 })}
+                      ]}
                       placeholder={t('autoria.selectCurrency')}
                     />
                   </div>
@@ -613,22 +603,20 @@ const CRUDCarAdForm: React.FC<CRUDCarAdFormProps> = ({
                   <div>
                     <Label>{t('autoria.region')} *</Label>
                     <VirtualSelect
-                      value={formData.region || ''}
-                      onChange={(v) => handleFieldChange('region', v)}
+                      value={String(formData.region || '')}
+                      onValueChange={(v: string | null) => handleFieldChange('region', v)}
                       fetchOptions={fetchRegions}
                       placeholder={t('autoria.selectRegion')}
-                      hasError={!!errors.region}
                     />
                     {errors.region && <p className="text-red-500 text-sm mt-1">{errors.region}</p>}
                   </div>
                   <div>
                     <Label>{t('autoria.city')} *</Label>
                     <VirtualSelect
-                      value={formData.city || ''}
-                      onChange={(v) => handleFieldChange('city', v)}
+                      value={String(formData.city || '')}
+                      onValueChange={(v: string | null) => handleFieldChange('city', v)}
                       fetchOptions={fetchCitiesForRegion}
                       placeholder={t('autoria.selectCity')}
-                      hasError={!!errors.city}
                     />
                     {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
                   </div>

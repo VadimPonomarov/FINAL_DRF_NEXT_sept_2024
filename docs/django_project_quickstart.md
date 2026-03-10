@@ -1,6 +1,6 @@
-# Django Project Quickstart (Poetry + Docker Compose + PostgreSQL)
+# Django Project Quickstart (Poetry + Docker Compose + PostgreSQL + HttpOnly Cookies)
 
-> Цель: создать минимальный Django-проект за 5–10 минут с использованием Poetry, Docker Compose и собственной папки `modules` c `load_django.py`, а также проверить подключение к PostgreSQL через отдельные скрипты.
+> Цель: создать минимальный Django-проект за 5–10 минут с использованием Poetry, Docker Compose и собственной папки `modules` c `load_django.py`, а также проверить подключение к PostgreSQL через отдельные скрипты. Проект настроен для работы с httpOnly cookies аутентификацией.
 
 ## 0. Предварительные условия
 
@@ -20,7 +20,7 @@ cd my_django_project
 poetry init -n --python "^3.10"
 
 # 1.3 Устанавливаем зависимости
-poetry add django psycopg2-binary python-dotenv
+poetry add django djangorestframework psycopg2-binary python-dotenv djangorestframework-simplejwt
 poetry add --group dev black isort flake8
 
 # 1.4 Создаём базовую структуру каталогов

@@ -113,17 +113,17 @@ export function mapApiDataToFormData(apiData: CarAd): Partial<CarAdFormData> {
     mark_name: extractName(apiData.mark, 'name') || apiData.mark_name || apiData.brand_name || '',
 
     // Тип транспорта - ID и название
-    vehicle_type: extractId(apiData.vehicle_type) || extractValue(
-      apiData.vehicle_type,
+    vehicle_type: extractId(apiData.vehicle_type as any) || extractValue(
+      apiData.vehicle_type as any,
       apiData.dynamic_fields?.vehicle_type
     ) || '', // ❌ НЕ ДОЛЖНО БЫТЬ ПУСТЫМ
     vehicle_type_name: apiData.vehicle_type_name ||
-                      (typeof apiData.vehicle_type === 'object' ? apiData.vehicle_type.name : undefined) ||
-                      extractName(apiData.vehicle_type, 'name') || '',
+                      (typeof apiData.vehicle_type === 'object' ? (apiData.vehicle_type as any)?.name : undefined) ||
+                      extractName(apiData.vehicle_type as any, 'name') || '',
 
     // ✅ ОБЯЗАТЕЛЬНОЕ: Модель - это строка в нашей системе
     model: extractValue(
-      typeof apiData.model === 'object' ? apiData.model.name : apiData.model,
+      typeof apiData.model === 'object' ? (apiData.model as any)?.name : (apiData.model as any),
       apiData.dynamic_fields?.model
     ) || '', // ❌ НЕ ДОЛЖНО БЫТЬ ПУСТЫМ в production
 
@@ -229,7 +229,7 @@ export function mapApiDataToFormData(apiData: CarAd): Partial<CarAdFormData> {
                (typeof apiData.city === 'string' ? apiData.city : undefined) || '',
 
     // Контакты
-    contacts: apiData.contacts || [],
+    contacts: (apiData.contacts || []) as any[],
     contact_name: extractValue(
       apiData.contact_name,
       apiData.dynamic_fields?.contact_name
@@ -288,7 +288,7 @@ export function mapApiDataToFormData(apiData: CarAd): Partial<CarAdFormData> {
     ),
 
     // Изображения: нормализуем под форму и сохраняем совместимость с компонентами формы
-    images: (apiData.images || []).map((img: any) => {
+    images: ((apiData.images || []).map((img: any) => {
       const resolvedUrl = img?.image_display_url || img?.image_url || img?.url || img?.image;
       const imagePath = img?.image ?? (typeof resolvedUrl === 'string' && !resolvedUrl.startsWith('http') ? resolvedUrl : undefined);
       const displayUrl = img?.image_display_url ?? (typeof resolvedUrl === 'string' && resolvedUrl.startsWith('http') ? resolvedUrl : undefined);
@@ -303,8 +303,8 @@ export function mapApiDataToFormData(apiData: CarAd): Partial<CarAdFormData> {
         is_main: img?.is_main || img?.is_primary,
         order: img?.order,
       };
-    }),
-    existing_images: (apiData.existing_images || apiData.images || []).map((img: any) => {
+    })) as any[],
+    existing_images: ((apiData.existing_images || apiData.images || []).map((img: any) => {
       const resolvedUrl = img?.image_display_url || img?.image_url || img?.url || img?.image;
       const imagePath = img?.image ?? (typeof resolvedUrl === 'string' && !resolvedUrl.startsWith('http') ? resolvedUrl : undefined);
       const displayUrl = img?.image_display_url ?? (typeof resolvedUrl === 'string' && resolvedUrl.startsWith('http') ? resolvedUrl : undefined);
@@ -318,9 +318,9 @@ export function mapApiDataToFormData(apiData: CarAd): Partial<CarAdFormData> {
         is_main: img?.is_main || img?.is_primary,
         order: img?.order,
       };
-    }),
+    })) as any[],
 
-    // Dynamic fields для совместимости
+    // Dynamic fields для совместимості
     dynamic_fields: apiData.dynamic_fields || {},
   };
 
@@ -344,7 +344,7 @@ export function mapApiDataToFormData(apiData: CarAd): Partial<CarAdFormData> {
     brand_name: formData.brand_name,
     model: formData.model,
     images_count: formData.images?.length || 0,
-    first_image_url: formData.images?.[0]?.image_display_url || formData.images?.[0]?.url
+    first_image_url: (formData.images?.[0] as any)?.image_display_url || (formData.images?.[0] as any)?.url
   });
 
   return formData;
@@ -410,7 +410,7 @@ export function mapFormDataToApiData(formData: Partial<CarAdFormData>): Partial<
         console.error('[DataMapper] 🚨 CRITICAL: vehicle_type is not a valid number!', raw);
         return undefined;
       }
-      return n;
+      return n as any;
     })(),
     vehicle_type_name: (formData as any).vehicle_type_name,
 
@@ -450,10 +450,6 @@ export function mapFormDataToApiData(formData: Partial<CarAdFormData>): Partial<
     })(),
 
     // Технические характеристики
-    year: formData.year,
-    mileage_km: formData.mileage,
-    engine_volume: formData.engine_volume,
-    engine_power: formData.engine_power,
     fuel_type: formData.fuel_type,
     transmission_type: formData.transmission,
     drive_type: formData.drive_type,
@@ -482,7 +478,7 @@ export function mapFormDataToApiData(formData: Partial<CarAdFormData>): Partial<
         console.error('[DataMapper] 🚨 CRITICAL: region is missing in form data!', formData);
         throw new Error('Region is required but missing in form data');
       }
-      const regionId = parseInt(formData.region);
+      const regionId = parseInt(String(formData.region));
       if (isNaN(regionId)) {
         console.error('[DataMapper] 🚨 CRITICAL: region is not a valid number!', formData.region);
         throw new Error(`Region must be a valid number, got: ${formData.region}`);
@@ -494,7 +490,7 @@ export function mapFormDataToApiData(formData: Partial<CarAdFormData>): Partial<
         console.error('[DataMapper] 🚨 CRITICAL: city is missing in form data!', formData);
         throw new Error('City is required but missing in form data');
       }
-      const cityId = parseInt(formData.city);
+      const cityId = parseInt(String(formData.city));
       if (isNaN(cityId)) {
         console.error('[DataMapper] 🚨 CRITICAL: city is not a valid number!', formData.city);
         throw new Error(`City must be a valid number, got: ${formData.city}`);
@@ -503,38 +499,21 @@ export function mapFormDataToApiData(formData: Partial<CarAdFormData>): Partial<
     })(),
 
     // Контакты
-    contacts: formData.contacts || [],
+    contacts: (formData.contacts || []) as any[],
     contact_name: formData.contact_name,
     additional_info: formData.additional_info,
     use_profile_contacts: formData.use_profile_contacts,
     phone: formData.phone,
 
     // Изображения
-    images: formData.images || [],
-    existing_images: formData.existing_images || [],
+    images: (formData.images || []) as any[],
+    existing_images: (formData.existing_images || []) as any[],
 
-    // ✅ СИНХРОНИЗАЦИЯ: Технические характеристики (соответствуют CarSpecificationModel)
+    // Технические характеристики с parseInt/parseFloat
     year: formData.year ? parseInt(String(formData.year)) : undefined,
-    mileage_km: formData.mileage ? parseInt(String(formData.mileage)) : undefined, // Frontend mileage -> Backend mileage_km
+    mileage_km: formData.mileage ? parseInt(String(formData.mileage)) : undefined,
     engine_volume: formData.engine_volume ? parseFloat(String(formData.engine_volume)) : undefined,
     engine_power: formData.engine_power ? parseInt(String(formData.engine_power)) : undefined,
-    fuel_type: formData.fuel_type,
-    transmission_type: formData.transmission || formData.transmission_type, // Frontend transmission -> Backend transmission_type
-    drive_type: formData.drive_type,
-    body_type: formData.body_type,
-    color: formData.color,
-    steering_wheel: formData.steering_wheel,
-    condition: (() => {
-      const m = formData.mileage ? parseInt(String(formData.mileage)) : undefined;
-      const cond = formData.condition;
-      if (cond === 'damaged') return 'damaged';
-      if (typeof m === 'number' && !isNaN(m)) return m < 5000 ? 'new' : 'used';
-      return cond || 'used';
-    })(),
-    vin_code: formData.vin_code,
-    license_plate: formData.license_plate,
-    number_of_doors: formData.number_of_doors ? parseInt(String(formData.number_of_doors)) : undefined,
-    number_of_seats: formData.number_of_seats ? parseInt(String(formData.number_of_seats)) : undefined,
     generation: formData.generation,
     modification: formData.modification,
 

@@ -19,9 +19,9 @@
 - CSS Modules - інкапсуляція стилів
 
 **State Management**:
-- Redux Toolkit - глобальний стейт
-- React Query (TanStack Query) - server state
-- Redux Persist - збереження стейту
+- React Context - глобальний стейт
+- API клієнти - server state
+- LocalStorage - збереження даних
 
 **Форми та валідація**:
 - React Hook Form - управління формами
@@ -37,6 +37,11 @@
 - Lucide React - іконки
 - Framer Motion - анімації
 
+**Аутентифікація**:
+- NextAuth.js - управління сесіями
+- JWT токени - backend аутентифікація
+- HttpOnly cookies - безпечне зберігання токенів
+
 ### Backend
 
 **Core**:
@@ -46,7 +51,6 @@
 
 **База даних**:
 - PostgreSQL - реляційна БД
-- Redis - кешування та сесії
 
 **Асинхронність**:
 - Celery - задачі в фоні
@@ -56,6 +60,7 @@
 **Аутентифікація**:
 - Django Simple JWT - JWT токени
 - Custom refresh logic - ротація токенів
+- HttpOnly cookies integration
 
 ### Інфраструктура
 
@@ -70,6 +75,10 @@
 **CI/CD**:
 - Git hooks (Husky) - pre-commit валідація
 - GitHub Actions - автоматизація
+
+**Продакшн**:
+- Vercel - frontend хостинг
+- Railway - backend хостинг
 
 ## Архітектурні патерни
 
@@ -96,6 +105,7 @@ FINAL_DRF_NEXT_sept_2024/
 - Client-side routing
 - State management
 - API споживання
+- HttpOnly cookies управління
 
 **Backend Service** (`backend/`):
 - REST API

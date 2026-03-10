@@ -2,20 +2,23 @@
 
 import React from 'react';
 import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/shared/constants/constants';
 
 /**
  * Глобальный тоглер для переключения между провайдерами аутентификации
  * Показывается на всех страницах для авторизованных пользователей
- * Имеет максимальный z-index для отображения поверх всех элементов
+ * Скрывается на странице логина чтобы избежать дублирования с селектором в форме
  */
 const GlobalProviderToggle: React.FC = () => {
   const { data: session, status } = useSession();
   const { provider, setProvider } = useAuthProvider();
+  const pathname = usePathname();
 
   // Показываем только для авторизованных пользователей
-  if (status !== 'authenticated' || !session) {
+  // Скрываем на странице логина чтобы избежать дублирования
+  if (status !== 'authenticated' || !session || pathname === '/login') {
     return null;
   }
 

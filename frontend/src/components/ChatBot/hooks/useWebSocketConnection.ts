@@ -26,7 +26,8 @@ export const useWebSocketConnection = ({
     try {
       // Используем Service Registry для определения WebSocket URL
       const { resolveServiceUrl } = await import('@/shared/utils/api/serviceUrlResolver');
-      const { getRedisData } = await import('@/app/api/redis');
+      // const { getRedisData } = await import('@/app/api/redis'); // Redis removed
+      const getRedisData = async (_key: string): Promise<null> => null;
 
       // Получаем URL бэкенда через Service Registry
       const backendUrl = await resolveServiceUrl('backend', '', async (key: string) => {

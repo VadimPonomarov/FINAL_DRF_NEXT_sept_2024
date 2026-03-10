@@ -41,8 +41,8 @@ const PUBLIC_PATHS = [
 // ════════════════════════════════════════════════════════════════════════
 //
 // ВАЖЛИВО: 
-// - signOut = удаляет сессию + токены → middleware блокирует
-// - logout = удаляет только токены → middleware пропускает → BackendTokenPresenceGate блокирует
+// - signOut = удаляет сессию + токены → middleware блокирует → /api/auth/signin
+// - logout = удаляет только токены → middleware пропускает → BackendTokenPresenceGate блокирует → /login
 //
 // РІВЕНЬ 1: Перевіряємо тільки наявність NextAuth сесії
 // Токени (access_token, refresh_token) — для зовнішніх API, не для middleware
@@ -53,7 +53,7 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
 
     if (!nextAuthSecret) {
       console.error('[Middleware] NEXTAUTH_SECRET not found');
-      const loginUrl = new URL('/login', req.url);
+      const loginUrl = new URL('/api/auth/signin', req.url);
       loginUrl.searchParams.set('callbackUrl', req.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -61,8 +61,8 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
     const token = await getToken({ req, secret: nextAuthSecret });
 
     if (!token) {
-      console.log('[Middleware] No NextAuth session - redirecting to /login');
-      const loginUrl = new URL('/login', req.url);
+      console.log('[Middleware] No NextAuth session - redirecting to /api/auth/signin');
+      const loginUrl = new URL('/api/auth/signin', req.url);
       loginUrl.searchParams.set('callbackUrl', req.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -71,7 +71,7 @@ async function checkBackendAuth(req: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   } catch (error) {
     console.error('[Middleware] Error checking NextAuth session:', error);
-    const loginUrl = new URL('/login', req.url);
+    const loginUrl = new URL('/api/auth/signin', req.url);
     loginUrl.searchParams.set('callbackUrl', req.url);
     return NextResponse.redirect(loginUrl);
   }

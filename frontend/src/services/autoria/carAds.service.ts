@@ -36,13 +36,13 @@ export class CarAdsService {
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null) {
           // Преобразуем параметры для соответствия backend API
           let paramKey = key;
           let paramValue = String(value);
 
           // Маппинг параметров сортировки
-          if (key === 'sort_by') {
+          if (String(key) === 'sort_by') {
             paramKey = 'ordering';
             // Преобразуем frontend сортировку в backend формат
             switch (value) {
@@ -76,23 +76,23 @@ export class CarAdsService {
           }
 
           // Маппинг других параметров
-          if (key === 'brand' && value) {
+          if (String(key) === 'brand' && value) {
             paramKey = 'mark';
           }
-          if (key === 'mileage_to' && value) {
+          if (String(key) === 'mileage_to' && value) {
             paramKey = 'mileage_km_max';
           }
-          if (key === 'transmission' && value) {
+          if (String(key) === 'transmission' && value) {
             paramKey = 'transmission_type';
           }
 
           // Маппинг фильтра "свои объявления"
-          if (key === 'mine' && value === true) {
+          if (String(key) === 'mine' && value === true) {
             // На backend предполагаем параметр created_by=me
             paramKey = 'created_by';
             paramValue = 'me';
           }
-          if (key === 'owner_id') {
+          if (String(key) === 'owner_id') {
             paramKey = 'created_by';
           }
 
@@ -158,47 +158,6 @@ export class CarAdsService {
     return data;
   }
 
-  // Добавление в избранное
-  static async addToFavorites(carId: number): Promise<void> {
-    console.log('[CarAdsService] Adding to favorites:', carId);
-
-    const response = await fetch(`/api/autoria/cars/${carId}/favorite`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[CarAdsService] Add to favorites error:', response.status, errorText);
-      throw new Error(`Failed to add to favorites: ${response.statusText}`);
-    }
-
-    console.log('[CarAdsService] Successfully added to favorites');
-  }
-
-  // Удаление из избранного
-  static async removeFromFavorites(carId: number): Promise<void> {
-    console.log('[CarAdsService] Removing from favorites:', carId);
-
-    const response = await fetch(`/api/autoria/cars/${carId}/favorite`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[CarAdsService] Remove from favorites error:', response.status, errorText);
-      throw new Error(`Failed to remove from favorites: ${response.statusText}`);
-    }
-
-    console.log('[CarAdsService] Successfully removed from favorites');
-  }
-
-  // Обновление объявления
   static async updateCarAd(id: number, data: Partial<CarAdFormData>): Promise<CarAd> {
     console.log('[CarAdsService] 🔄 Updating car ad:', id);
     console.log('[CarAdsService] 📤 Request data keys:', Object.keys(data));
@@ -482,7 +441,7 @@ export class CarAdsService {
           let paramValue = String(value);
 
           // Преобразуем limit в page_size для соответствия backend API
-          if (key === 'limit') {
+          if (String(key) === 'limit') {
             paramKey = 'page_size';
           }
 
@@ -555,10 +514,10 @@ export class CarAdsService {
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null) {
           // Преобразуем limit в page_size для соответствия backend API
           let paramKey = key;
-          if (key === 'limit') {
+          if (String(key) === 'limit') {
             paramKey = 'page_size';
           }
           queryParams.append(paramKey, String(value));

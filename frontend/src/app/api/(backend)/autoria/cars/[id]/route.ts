@@ -53,8 +53,6 @@ export async function GET(
       dynamicFieldsKeys: data.dynamic_fields ? Object.keys(data.dynamic_fields) : [],
       hasContacts: !!data.contacts,
       contactsCount: data.contacts?.length || 0,
-      mark: typeof data.mark === 'object' ? data.mark?.name : data.mark,
-      model: typeof data.model === 'object' ? data.model?.name : data.model,
       region: typeof data.region === 'object' ? data.region?.name : data.region,
       city: typeof data.city === 'object' ? data.city?.name : data.city,
       // ВАЖНО: Добавляем отладку для vehicle_type

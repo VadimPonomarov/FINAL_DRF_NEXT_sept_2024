@@ -141,7 +141,7 @@ const AutoRiaMainPage = () => {
         });
       } else {
         const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(error.message || 'Failed to generate test ads');
+        throw new Error((error instanceof Error ? error.message : String(error)) || 'Failed to generate test ads');
       }
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
@@ -217,14 +217,14 @@ const AutoRiaMainPage = () => {
       title: t('autoria.createAd'),
       description: t('autoria.createAdDesc'),
       href: "/autoria/create-ad",
-      badge: null
+      badge: null as any
     },
     {
       icon: <Search className="h-8 w-8 text-purple-600" />,
       title: t('autoria.searchCars'),
       description: t('autoria.searchCarsDesc'),
       href: "/autoria/search",
-      badge: null
+      badge: null as any
     },
     // Аналитика теперь доступна во вкладке результатов поиска; отдельный раздел скрываем
     // {
@@ -232,14 +232,14 @@ const AutoRiaMainPage = () => {
     //   title: t('autoria.analytics'),
     //   description: t('autoria.analyticsDesc'),
     //   href: "/autoria/analytics",
-    //   badge: <Badge variant="secondary" className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">{t('autoria.premium')}</Badge>
+    //   badge: <Badge variant="secondary" className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">{t('autoria.premium')}</Badge> as any
     // },
     {
       icon: <User className="h-8 w-8 text-indigo-600" />,
       title: t('autoria.profile'),
       description: t('autoria.profileDesc'),
       href: "/autoria/profile",
-      badge: null
+      badge: null as any
     }
   ], [t]);
 
@@ -250,7 +250,7 @@ const AutoRiaMainPage = () => {
       title: t('autoria.admin.detailedStats'),
       description: t('autoria.admin.detailedStatsDesc'),
       href: "/autoria/statistics",
-      badge: <Badge variant="secondary" className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">{t('autoria.adminLabel')}</Badge>
+      badge: <Badge variant="secondary" className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">{t('autoria.adminLabel')}</Badge> as any
     }
   ], [t]);
 

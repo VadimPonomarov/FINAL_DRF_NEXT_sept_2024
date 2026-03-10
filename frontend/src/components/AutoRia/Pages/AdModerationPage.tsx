@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,6 +38,7 @@ const AdModerationPage: React.FC<AdModerationPageProps> = ({ adId }) => {
 
   // State
   const [adData, setAdData] = useState<CarAd | null>(null);
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -217,7 +219,7 @@ const AdModerationPage: React.FC<AdModerationPageProps> = ({ adId }) => {
             </div>
             <div>
               <span className="text-slate-600">Местоположение:</span>
-              <div className="font-medium">{adData.city}, {adData.region}</div>
+              <div className="font-medium">{String(adData.city ?? '')}, {String(adData.region ?? '')}</div>
             </div>
           </div>
         </CardContent>

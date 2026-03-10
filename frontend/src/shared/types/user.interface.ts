@@ -5,4 +5,7 @@ export interface User {
   last_name: string;
   role: string;
   avatar?: string;
-} 
+  is_superuser?: boolean;
+  account_type?: string;
+  phone?: string;
+}

@@ -353,7 +353,7 @@ export default function AnalyticsTabContent({ filters, results, loading }: Analy
                       .map((r: any) => r.price_usd || r.price || 0)
                       .filter((p: number) => typeof p === 'number' && p > 0)
                       .sort((a: number, b: number) => a - b);
-                    if (prices.length === 0) return { labels: [], datasets: [{ label: t('autoria.analytics.noData'), data: [] }] };
+                    if (prices.length === 0) return { labels: [] as string[], datasets: [{ label: t('autoria.analytics.noData'), data: [] as number[] }] };
                     const bins = 10;
                     const min = prices[0];
                     const max = prices[prices.length - 1];

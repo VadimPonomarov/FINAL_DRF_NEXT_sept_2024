@@ -80,7 +80,7 @@ export const useChatStorage = () => {
       setCurrentChunk(mostRecentChunk);
 
       // Debug: log message timestamps
-      console.log('Loading most recent chunk messages with timestamps:', mostRecentChunk.messages.map(msg => ({
+      console.log('Loading most recent chunk messages with timestamps:', mostRecentChunk.messages.map((msg: any) => ({
         id: msg.id,
         content: (msg.content || msg.message || '').substring(0, 50),
         timestamp: msg.timestamp
@@ -117,7 +117,7 @@ export const useChatStorage = () => {
         setCurrentChunk(lastActiveChunk);
 
         // Debug: log message timestamps
-        console.log('Loading messages with timestamps:', lastActiveChunk.messages.map(msg => ({
+        console.log('Loading messages with timestamps:', lastActiveChunk.messages.map((msg: any) => ({
           id: msg.id,
           content: (msg.content || msg.message || '').substring(0, 50),
           timestamp: msg.timestamp

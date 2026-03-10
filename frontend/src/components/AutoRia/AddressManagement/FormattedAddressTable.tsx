@@ -16,7 +16,7 @@ import {
   CheckCircle,
   AlertCircle,
   MapPin,
-  Globe,
+  Globe2,
   Map,
   ExternalLink,
   Copy,
@@ -68,15 +68,15 @@ const FormattedAddressTable: React.FC<FormattedAddressTableProps> = ({
   onRefresh
 }) => {
   const { t } = useI18n();
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [geocodedData, setGeocodedData] = useState<Map<number, { geocoded_data: GeocodedData; maps_data: MapsData }>>(new Map());
-  const [loadingGeocoding, setLoadingGeocoding] = useState<Set<number>>(new Set());
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new (Set as any)());
+  const [geocodedData, setGeocodedData] = useState<Map<number, { geocoded_data: GeocodedData; maps_data: MapsData }>>(new (Map as any)());
+  const [loadingGeocoding, setLoadingGeocoding] = useState<Set<number>>(new (Set as any)());
 
   // Filter only geocoded addresses
   const geocodedAddresses = addresses.filter(addr => addr.is_geocoded);
 
   const toggleRowExpansion = (addressId: number) => {
-    const newExpanded = new Set(expandedRows);
+    const newExpanded = new (Set as any)(expandedRows);
     if (newExpanded.has(addressId)) {
       newExpanded.delete(addressId);
     } else {
@@ -92,7 +92,7 @@ const FormattedAddressTable: React.FC<FormattedAddressTableProps> = ({
       return; // Already loaded or loading
     }
 
-    setLoadingGeocoding(prev => new Set(prev).add(addressId));
+    setLoadingGeocoding(prev => new (Set as any)(prev).add(addressId));
 
     try {
       const response = await fetch(`/api/accounts/geocoding/formatted/${addressId}/`, {
@@ -103,13 +103,13 @@ const FormattedAddressTable: React.FC<FormattedAddressTableProps> = ({
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new (Error as any)(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
       
       if (data.success && data.geocoded_data) {
-        setGeocodedData(prev => new Map(prev).set(addressId, {
+        setGeocodedData(prev => new (Map as any)(prev).set(addressId, {
           geocoded_data: data.geocoded_data,
           maps_data: data.maps_data
         }));
@@ -118,7 +118,7 @@ const FormattedAddressTable: React.FC<FormattedAddressTableProps> = ({
       console.error('Error loading detailed geocoding data:', err);
     } finally {
       setLoadingGeocoding(prev => {
-        const newSet = new Set(prev);
+        const newSet = new (Set as any)(prev);
         newSet.delete(addressId);
         return newSet;
       });
@@ -130,7 +130,7 @@ const FormattedAddressTable: React.FC<FormattedAddressTableProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new (Date as any)(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -151,7 +151,7 @@ const FormattedAddressTable: React.FC<FormattedAddressTableProps> = ({
   if (geocodedAddresses.length === 0) {
     return (
       <div className="text-center py-8">
-        <Globe className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+        <Globe2 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">{t('profile.address.pending')}</h3>
         <p className="text-gray-600 mb-4">
           {t('profile.address.helpText.autoGeocode')}

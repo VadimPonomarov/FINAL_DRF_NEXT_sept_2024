@@ -9,7 +9,7 @@ const Page = async () => {
             <h1>Hello</h1>
             {session?.user &&
                 <div>
-                    {session.user.email}
+                    {(session.user as any).email}
                 </div>
             }
         </div>

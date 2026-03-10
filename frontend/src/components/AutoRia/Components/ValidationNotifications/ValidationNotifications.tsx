@@ -63,12 +63,12 @@ const ValidationNotifications: React.FC<ValidationNotificationsProps> = ({
   const { t } = useI18n();
 
   // Функция для создания JSX с выделением проблемных участков
-  const renderCensoredContent = (text: string, inappropriateWords: string[] = []): JSX.Element => {
+  const renderCensoredContent = (text: string, inappropriateWords: string[] = []): React.ReactElement => {
     if (!inappropriateWords.length) {
       return <span>{text}</span>;
     }
 
-    let parts: JSX.Element[] = [];
+    let parts: React.ReactElement[] = [];
     let lastIndex = 0;
     let partKey = 0;
 

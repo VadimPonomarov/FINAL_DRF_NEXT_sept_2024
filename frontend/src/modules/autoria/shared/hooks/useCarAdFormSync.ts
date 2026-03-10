@@ -48,15 +48,15 @@ export function useCarAdFormSync({ initialData, onDataChange }: UseCarAdFormSync
       } else {
         // Устанавливаем значения по умолчанию для новой формы
         const defaultData = {
-          contacts: [],
+          contacts: [] as any[],
           use_profile_contacts: true, // По умолчанию используем контакты из профиля
           status: 'draft',
-          visibility_settings: {},
-          metadata: {},
-          tags: []
+          visibility_settings: {} as any,
+          metadata: {} as any,
+          tags: [] as any[]
         };
         console.log('[useCarAdFormSync] Setting default data:', defaultData);
-        setFormData(defaultData);
+        setFormData(defaultData as any);
         setIsDataReady(true);
       }
 

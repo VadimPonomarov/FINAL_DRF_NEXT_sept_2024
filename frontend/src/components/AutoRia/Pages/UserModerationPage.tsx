@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,16 +42,17 @@ interface UserModerationData {
 const UserModerationPage = () => {
   const { t, formatDate } = useI18n();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [users, setUsers] = useState<UserModerationData[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [selectedUser, setSelectedUser] = useState<UserModerationData | null>(null);
+  const [, setSelectedUser] = useState<UserModerationData | null>(null);
 
   // Проверка прав доступа - только менеджеры и админы
   const canModerate = React.useMemo(() => {
-    return user?.is_staff || user?.is_superuser || false;
+    return (user as any)?.is_staff || (user as any)?.is_superuser || false;
   }, [user]);
 
   useEffect(() => {

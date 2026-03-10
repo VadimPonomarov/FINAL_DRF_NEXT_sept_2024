@@ -97,10 +97,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
   const localeConfig = getLocaleConfig(locale);
 
   // Список доступных языков с их конфигурациями
-  const availableLocales = LOCALES.map(locale => ({
-    code: locale,
-    ...getLocaleConfig(locale)
-  }));
+  const availableLocales = LOCALES.map(locale => getLocaleConfig(locale));
 
   // Показываем загрузку до инициализации
   if (!isInitialized) {
@@ -134,10 +131,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
       formatNumber: (value: number) => value.toString(),
       formatDate: (date: Date | string) => date.toString(),
       formatCurrency: (amount: number, currency: string) => `${currency}${amount}`,
-      availableLocales: LOCALES.map(locale => ({
-        code: locale,
-        ...getLocaleConfig(locale)
-      })),
+      availableLocales: LOCALES.map(locale => getLocaleConfig(locale)),
     };
   }
 

@@ -56,7 +56,7 @@ export function usePageTrackerStore<T>(
  * Compatible with App Router
  * SSR-safe: Returns null, no side effects during SSR
  */
-export function PageTracker() {
+export function PageTracker(): null {
   // No-op component - exists for API compatibility only
   // Tracking is handled by usePageTrackerStore hook
   // SSR-safe: Returns null, no side effects

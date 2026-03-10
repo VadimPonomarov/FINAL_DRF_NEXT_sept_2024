@@ -5,7 +5,7 @@ export const filterItems = <T>(
     inputValues: { [key in keyof T]?: string }
 ): T[] => {
     // Фильтруем только если есть значения для фильтрации
-    const hasFilterValues = Object.values(inputValues).some(value => value && value.trim() !== '');
+    const hasFilterValues = Object.values(inputValues).some(value => value && (String(value)).trim() !== '');
     if (!hasFilterValues) return items;
 
     return items.filter(item =>
@@ -13,7 +13,7 @@ export const filterItems = <T>(
             const inputValue = inputValues[key as keyof T];
 
             // Если значение фильтра пустое, считаем что фильтр прошел
-            if (!inputValue || inputValue.trim() === '') return true;
+            if (!inputValue || (String(inputValue)).trim() === '') return true;
 
             const itemValue = item[key as keyof T];
 

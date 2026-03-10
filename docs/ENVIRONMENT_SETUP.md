@@ -43,8 +43,13 @@ DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Frontend
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key
+
+# Аутентифікація
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
 ### 2. Docker розгортання
@@ -66,38 +71,127 @@ DJANGO_SETTINGS_MODULE=config.settings
 ALLOWED_HOSTS=app,localhost,127.0.0.1
 
 # Frontend (використовує service names)
-NEXT_PUBLIC_API_URL=http://app:8000
+NEXT_PUBLIC_BACKEND_URL=http://app:8000
 NEXTAUTH_URL=http://frontend:3000
-
-# Redis
-REDIS_URL=redis://redis:6379
 
 # RabbitMQ
 CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+
+# Аутентифікація
+NEXTAUTH_SECRET=your-secret-key
 ```
 
 ### 3. Production розгортання
 
 **Базується на**: `.env.base` + `.env.secrets`
 
-**Ключові відмінності**:
+**Vercel (Frontend)**:
 ```bash
-# Security
-DEBUG=False
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+# Backend URL
+NEXT_PUBLIC_BACKEND_URL=https://autoria-web-production.up.railway.app
 
-# Database (production URL)
+# NextAuth
+NEXTAUTH_URL=https://autoria-clone.vercel.app
+NEXTAUTH_SECRET=your-production-secret
+
+# Google OAuth
+GOOGLE_CLIENT_ID=453957836335-o91t8rugmejjl1f7thorm4mt4v3rc2tq.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+**Railway (Backend)**:
+```bash
+# Database
 DATABASE_URL=postgresql://user:password@prod-db:5432/dbname
 
-# Frontend (production domain)
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com
-NEXTAUTH_URL=https://yourdomain.com
+# Security
+DEBUG=False
+ALLOWED_HOSTS=autoria-web-production.up.railway.app
 
-# SSL/HTTPS
-SECURE_SSL_REDIRECT=True
-SESSION_COOKIE_SECURE=True
-CSRF_COOKIE_SECURE=True
+# Аутентифікація
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# CORS
+CORS_ALLOWED_ORIGINS=https://autoria-clone.vercel.app
 ```
+
+## HttpOnly Cookies Configuration
+
+### Production Settings
+```bash
+# Безпечні cookies в production
+NODE_ENV=production
+NEXT_PUBLIC_IS_DOCKER=false
+IS_DOCKER=false
+```
+
+### Local Development Settings
+```bash
+# Небезпечні cookies для локальної розробки
+NODE_ENV=development
+NEXT_PUBLIC_IS_DOCKER=false
+IS_DOCKER=false
+```
+
+## Environment Variables Priority
+
+1. **`.env.secrets`** - найвищий пріоритет (секрети)
+2. **`.env.local`** - локальні налаштування
+3. **`.env.docker`** - Docker конфігурація
+4. **`.env.base`** - базові значення (найнижчий пріоритет)
+
+## Critical Variables
+
+### Required for All Environments
+```bash
+# Backend
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000  # або production URL
+
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000             # або production URL
+NEXTAUTH_SECRET=your-secret-key               # унікальний рядок
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+### Optional Variables
+```bash
+# Debug
+DEBUG=True                                      # development
+DEBUG=False                                     # production
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3000     # development
+CORS_ALLOWED_ORIGINS=https://yourdomain.com   # production
+```
+
+## Production Deployment Checklist
+
+### Vercel Environment Variables
+- [ ] `NEXT_PUBLIC_BACKEND_URL` - Railway backend URL
+- [ ] `NEXTAUTH_URL` - Vercel frontend URL
+- [ ] `NEXTAUTH_SECRET` - унікальний секретний ключ
+- [ ] `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- [ ] `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+
+### Railway Environment Variables
+- [ ] `DATABASE_URL` - PostgreSQL connection string
+- [ ] `DEBUG=False` - production mode
+- [ ] `ALLOWED_HOSTS` - Railway domain
+- [ ] `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- [ ] `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- [ ] `CORS_ALLOWED_ORIGINS` - Vercel frontend URL
+
+## Security Notes
+
+1. **Never commit secrets** - `.env.secrets` в `.gitignore`
+2. **Use different secrets** - для production та development
+3. **Rotate secrets regularly** - оновлюйте секретні ключі
+4. **Use HTTPS** - в production обов'язково
+5. **Secure cookies** - httpOnly cookies автоматично secure в production
 
 ## Змінні за категоріями
 

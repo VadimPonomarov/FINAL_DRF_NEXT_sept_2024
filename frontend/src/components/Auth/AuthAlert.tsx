@@ -38,7 +38,7 @@ const AuthAlert: React.FC = () => {
 
         // Проверяем структуру токенов
         try {
-          const authData = JSON.parse(redisData.value);
+          const authData = JSON.parse((null as any).value);
           if (!authData.access || !authData.refresh) {
             setAlertMessage('Данные аутентификации повреждены - необходимо войти в систему заново');
             setShowAlert(true);

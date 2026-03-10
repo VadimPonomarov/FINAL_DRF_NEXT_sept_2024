@@ -1,3 +1,4 @@
+type PageProps<P = Record<string, string>> = { params: P; searchParams?: Record<string, string | string[] | undefined>; };
 import React from "react";
 import { notFound } from "next/navigation";
 import { IUserResponse } from "@/shared/types/users.interfaces";
@@ -7,7 +8,6 @@ import UserDetailsComponent from "@/app/(main)/(dummy)/users/(details)/UserDetai
 import { BaseUrl } from "@/shared/constants/constants";
 import { getAuthorizationHeaders } from "@/shared/constants/headers";
 
-import { PageProps } from 'next';
 
 type UserPageProps = PageProps;
 

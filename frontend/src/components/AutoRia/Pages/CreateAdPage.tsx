@@ -31,7 +31,7 @@ const CreateAdPage: React.FC = () => {
       const apiData = mapFormDataToApiData(formData);
       console.log('[CreateAdPage] 🔄 Mapped API data keys:', Object.keys(apiData));
 
-      const response = await CarAdsService.createCarAd(apiData);
+      const response = await CarAdsService.createCarAd(apiData as any);
       console.log('[CreateAdPage] ✅ Ad created successfully:', response);
 
       // Показываем уведомление об успехе

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,7 @@ import {
   Phone,
   Mail,
   MessageCircle,
-  Globe,
+  Globe2,
   Camera,
   Eye,
   EyeOff,
@@ -34,7 +34,7 @@ const getContactTypes = (t: any) => [
   { value: 'whatsapp', label: `💬 ${t('whatsapp')}`, icon: MessageCircle, placeholder: '+380XXXXXXXXX', required: false },
   { value: 'viber', label: `📡 ${t('viber')}`, icon: MessageCircle, placeholder: '+380XXXXXXXXX', required: false },
   { value: 'instagram', label: `📸 ${t('instagram')}`, icon: Camera, placeholder: '@username', required: false },
-  { value: 'website', label: `🌐 ${t('website')}`, icon: Globe, placeholder: 'https://example.com', required: false }
+  { value: 'website', label: `🌐 ${t('website')}`, icon: Globe2, placeholder: 'https://example.com', required: false }
 ];
 
 // 📞 Интерфейс для контакта согласно AddsAccountContact модели
@@ -59,7 +59,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ data, onChange, errors }) => 
   const CONTACT_TYPES = getContactTypes(t);
 
   // 📋 Состояние для динамического списка контактов
-  const [contacts, setContacts] = useState<Contact[]>(() => {
+  const [contacts, setContacts] = useState<any[]>(() => {
     // Инициализируем с обязательным телефоном
     return data.contacts || [
       { type: 'phone', value: '', is_visible: true, note: '' }
@@ -121,7 +121,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ data, onChange, errors }) => 
 
   // 🎯 Получить информацию о типе контакта
   const getContactTypeInfo = (type: string) => {
-    return CONTACT_TYPES.find(t => t.value === type) || CONTACT_TYPES[0];
+    const found = CONTACT_TYPES.find(t => t.value === type);
+    return found || CONTACT_TYPES[0] || { value: 'phone', label: '📞 Phone', icon: Phone, placeholder: '+380XXXXXXXXX', required: true };
   };
 
   // 💾 Обработчик сохранения контактов

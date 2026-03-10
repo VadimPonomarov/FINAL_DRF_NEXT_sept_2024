@@ -17,7 +17,7 @@ import {
   AlertCircle,
   Info
 } from 'lucide-react';
-import { AdStatistics, UserRole, AccountType } from '@/modules/autoria/shared/types/autoria';
+import { UserRole, AccountType } from '@/modules/autoria/shared/types/autoria';
 import { useI18n } from '@/contexts/I18nContext';
 import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 
@@ -161,7 +161,7 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({
 
       } catch (error: any) {
         console.error('[StatisticsTab] ❌ Error loading statistics:', error);
-        setError(error.message);
+        setError((error instanceof Error ? error.message : String(error)));
         // Fallback на моковые данные для демонстрации
         if (hasAccess) {
           setStatistics(mockStatistics);

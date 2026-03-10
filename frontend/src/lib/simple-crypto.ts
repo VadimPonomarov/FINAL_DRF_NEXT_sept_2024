@@ -4,7 +4,7 @@
  * @param value - Значение для логирования
  * @returns Строка для безопасного логирования
  */
-export function safeLogValue(key: string, value: string): string {
+export function safeLogValue(key: string, value?: string): string {
   if (!value) {
     return `${key}: [EMPTY]`;
   }

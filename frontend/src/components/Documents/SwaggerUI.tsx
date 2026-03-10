@@ -196,7 +196,7 @@ const SwaggerUI: React.FC<SwaggerUIProps> = ({ url = '/api/openapi' }) => {
                   };
 
                   if (window.SwaggerUIBundle.presets?.apis) {
-                    fallbackConfig.presets = [window.SwaggerUIBundle.presets.apis];
+                    (fallbackConfig as any).presets = [window.SwaggerUIBundle.presets.apis];
                   }
 
                   window.SwaggerUIBundle(fallbackConfig);

@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   MapPin,
-  Globe,
+  Globe2,
   Navigation,
   ExternalLink,
   CheckCircle,
@@ -219,7 +219,7 @@ const FormattedAddressDisplay: React.FC<FormattedAddressDisplayProps> = ({
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Globe className="h-5 w-5 text-green-600" />
+                <Globe2 className="h-5 w-5 text-green-600" />
                 Geocoded Information
               </CardTitle>
               <Badge variant="outline" className="text-green-600 border-green-600">

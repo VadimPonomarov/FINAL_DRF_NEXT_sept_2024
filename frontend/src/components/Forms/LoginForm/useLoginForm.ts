@@ -9,7 +9,7 @@ import { fetchAuth } from "@/app/api/helpers";
 import { AuthProvider } from "@/shared/constants/constants";
 import { toast } from "@/modules/autoria/shared/hooks/use-toast";
 import { IDummyAuth } from "@/shared/types/dummy.interfaces";
-import { IBackendAuthCredentials } from "@/shared/types/auth.interfaces";
+import { IBackendAuthCredentials, isSuccessAuthResponse } from "@/shared/types/auth.interfaces";
 import { ISession } from "@/shared/types/session.interfaces";
 import { User } from "@/shared/types/user.interface";
 import { useAuthProvider, useAuth } from "@/contexts/AuthProviderContext";
@@ -105,17 +105,17 @@ export const useLoginForm = () => {
 
   // Add effect to clear errors when form fields change
   useEffect(() => {
-    const backendUnsubscribe = backendForm.watch(() => {
+    const backendSub = backendForm.watch(() => {
       if (error) setError("");
     });
 
-    const dummyUnsubscribe = dummyForm.watch(() => {
+    const dummySub = dummyForm.watch(() => {
       if (error) setError("");
     });
 
     return () => {
-      backendUnsubscribe();
-      dummyUnsubscribe();
+      backendSub.unsubscribe();
+      dummySub.unsubscribe();
     };
   }, [backendForm, dummyForm, error]);
 
@@ -178,14 +178,15 @@ export const useLoginForm = () => {
       // fetchAuth возвращает AuthResponse напрямую: {access, refresh, user} или {error}
       // Не нужно дополнительное обертывание
       if (authResponse.error) {
-        throw new Error(authResponse.error.message || 'Authentication failed');
+        throw new Error(typeof authResponse.error === 'string' ? authResponse.error : ((authResponse.error as any)?.message || 'Authentication failed'));
       }
 
       // Проверяем что получили необходимые данные
-      if (!authResponse.access || !authResponse.user) {
+      if (!isSuccessAuthResponse(authResponse) || !authResponse.access || !authResponse.user) {
         console.error('[LoginForm] Invalid response structure:', authResponse);
         throw new Error('Invalid response from server - missing tokens or user data');
       }
+      const successResponse = authResponse;
 
 
       // Успешная аутентификация
@@ -193,28 +194,28 @@ export const useLoginForm = () => {
 
       // Update authentication state immediately with response data
       console.log('[LoginForm] Checking response data:', {
-        hasUser: !!authResponse.user,
-        hasAccess: !!authResponse.access,
-        hasRefresh: !!authResponse.refresh,
-        userType: typeof authResponse.user,
-        accessType: typeof authResponse.access,
-        refreshType: typeof authResponse.refresh,
-        userKeys: authResponse.user ? Object.keys(authResponse.user) : [],
-        accessLength: authResponse.access ? authResponse.access.length : 0,
-        refreshLength: authResponse.refresh ? authResponse.refresh.length : 0
+        hasUser: !!successResponse.user,
+        hasAccess: !!successResponse.access,
+        hasRefresh: !!successResponse.refresh,
+        userType: typeof successResponse.user,
+        accessType: typeof successResponse.access,
+        refreshType: typeof successResponse.refresh,
+        userKeys: successResponse.user ? Object.keys(successResponse.user) : [],
+        accessLength: successResponse.access ? successResponse.access.length : 0,
+        refreshLength: successResponse.refresh ? successResponse.refresh.length : 0
       });
 
-      if (authResponse.user && authResponse.access && authResponse.refresh) {
+      if (successResponse.user && successResponse.access && successResponse.refresh) {
         console.log('[LoginForm] ✅ All required data present, calling login()');
 
         // Ensure user object matches the expected User interface with all backend fields
         const userForLogin: User = {
-          id: authResponse.user.id,
-          email: authResponse.user.email,
-          first_name: authResponse.user.first_name || '',
-          last_name: authResponse.user.last_name || '',
-          role: authResponse.user.role || 'user',
-          is_superuser: authResponse.user.is_superuser || false
+          id: successResponse.user.id,
+          email: successResponse.user.email,
+          first_name: successResponse.user.first_name || '',
+          last_name: successResponse.user.last_name || '',
+          role: successResponse.user.role || 'user',
+          is_superuser: successResponse.user.is_superuser || false
         };
 
         console.log('[LoginForm] User data for login:', {
@@ -222,7 +223,7 @@ export const useLoginForm = () => {
           isSuperuser: userForLogin.is_superuser
         });
 
-        login(userForLogin, authResponse.access, authResponse.refresh);
+        await login(userForLogin, successResponse.access, successResponse.refresh);
 
         console.log('[LoginForm] Tokens saved in httpOnly cookies');
 

@@ -44,6 +44,7 @@ const SAMPLE_DATA_TEMPLATES = [
 
 const ModernBasicInfoForm: React.FC<ModernBasicInfoFormProps> = ({ data, onChange, errors }) => {
   const { t } = useI18n();
+  const toast = (opts: any) => console.log('[toast]', opts);
   const [activeTab, setActiveTab] = useState('form');
   const [isValidating, setIsValidating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -246,7 +247,7 @@ const ModernBasicInfoForm: React.FC<ModernBasicInfoFormProps> = ({ data, onChang
       }
 
       if (result.suggestions && result.suggestions.length > 0) {
-        message += `\n\nРекомендації:\n${result.suggestions.map(s => `• ${s}`).join('\n')}`;
+        message += `\n\nРекомендації:\n${result.suggestions.map((s: any) => `• ${s}`).join('\n')}`;
       }
 
       toast({ title: '✅ ' + t('common.success'), description: message });
@@ -362,7 +363,7 @@ const ModernBasicInfoForm: React.FC<ModernBasicInfoFormProps> = ({ data, onChang
                 </p>
               )}
               <p className="text-xs text-gray-500">
-                {t('basicInfo.titleLimit', 'Maximum 100 characters. Current length: {count}', { count: data.title?.length || 0 })}
+                {t('basicInfo.titleLimit', { count: data.title?.length || 0 })}
               </p>
             </div>
 
@@ -402,7 +403,7 @@ const ModernBasicInfoForm: React.FC<ModernBasicInfoFormProps> = ({ data, onChang
                 maxLength={2000}
               />
               <p className="text-xs text-gray-500">
-                {t('basicInfo.descriptionLimit', 'Maximum 2000 characters. Current length: {count}', { count: data.description?.length || 0 })}
+                {t('basicInfo.descriptionLimit', { count: data.description?.length || 0 })}
               </p>
             </div>
           </div>

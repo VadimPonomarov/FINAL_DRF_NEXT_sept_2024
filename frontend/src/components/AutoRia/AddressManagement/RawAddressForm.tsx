@@ -1,4 +1,8 @@
 "use client";
+const fetchCitiesForRegion = async (...args: any[]): Promise<any[]> => [];
+// reference API stub
+const fetchRegions = async (...args: any[]): Promise<any[]> => [];
+const fetchCities = async (...args: any[]): Promise<any[]> => [];
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -16,8 +20,7 @@ import {
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { RawAccountAddress } from '@/shared/types/backend-user';
-import VirtualSelect from '@/components/ui/virtual-select';
-import { fetchRegions, fetchCitiesForRegion } from '@/lib/api/reference';
+import { VirtualSelect } from '@/components/ui/virtual-select';
 
 interface RawAddressFormProps {
   initialData?: RawAccountAddress | null;

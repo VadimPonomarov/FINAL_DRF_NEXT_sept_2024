@@ -58,7 +58,7 @@ export function parseTextWithLinks(text: string): Array<{ type: 'text' | 'url', 
   }
 
   // Находим все прямые URL (но исключаем те, что уже в Markdown ссылках)
-  let urlMatch;
+  let urlMatch: RegExpExecArray | null;
   while ((urlMatch = URL_REGEX.exec(text)) !== null) {
     // Проверяем, не находится ли этот URL внутри Markdown ссылки
     const isInsideMarkdown = allMatches.some(mdMatch =>

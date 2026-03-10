@@ -46,7 +46,7 @@ import { FavoritesService } from '@/services/autoria/favorites.service';
 import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
 import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import AdCounters from '@/components/AutoRia/Components/AdCounters';
-import { ApiClient } from '@/services/api/apiClient';
+import { apiClient as ApiClient } from '@/services/api/apiClient';
 import '@/shared/styles/showroom.css';
 
 interface AdDetailPageProps {
@@ -790,7 +790,7 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
                 {adData.contacts && adData.contacts.length > 0 ? (
                   <div className="space-y-3">
                     {adData.contacts
-                      .filter(contact => contact.is_visible) // Показываем только видимые контакты
+                      .filter(contact => (contact as any).is_visible) // Показываем только видимые контакты
                       .map((contact, index) => (
                         <div key={index} className="flex items-center gap-3">
                           {contact.type === 'phone' && <Phone className="h-4 w-4 text-gray-500" />}
@@ -800,8 +800,8 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
                           {contact.type === 'whatsapp' && <span className="text-sm">💬</span>}
                           <div className="flex-1">
                             <span className="text-sm text-gray-700">{contact.value}</span>
-                            {contact.note && (
-                              <div className="text-xs text-gray-500">{contact.note}</div>
+                            {(contact as any).note && (
+                              <div className="text-xs text-gray-500">{(contact as any).note}</div>
                             )}
                             {contact.is_primary && (
                               <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full ml-2">
@@ -930,7 +930,7 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
                         variant="outline"
                         className="w-full border-orange-200 text-orange-600 hover:bg-orange-50"
                         onClick={() => {
-                          const emailContacts = adData.contacts?.filter(c => c.type === 'email' && c.is_visible) || [];
+                          const emailContacts = adData.contacts?.filter(c => c.type === 'email' && (c as any).is_visible) || [];
                           const emailAddresses = emailContacts.length > 0
                             ? emailContacts.map(c => c.value).join(',')
                             : adData.user.email;

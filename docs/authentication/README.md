@@ -2,7 +2,7 @@
 
 ## Огляд
 
-Повнофункціональна система аутентифікації з JWT токенами, Redis зберіганням та автоматичним оновленням токенів.
+Повнофункціональна система аутентифікації з JWT токенами, httpOnly cookies зберіганням та автоматичним оновленням токенів.
 
 ## Архітектура
 
@@ -10,7 +10,7 @@
 
 1. **FrontendFlow** - Next.js аутентифікація
 2. **Backend API** - Django REST Framework
-3. **Redis Storage** - зберігання токенів
+3. **HttpOnly Cookies Storage** - зберігання токенів
 4. **Token Refresh** - механізм оновлення
 5. **Middleware** - захист маршрутів
 
@@ -18,7 +18,7 @@
 
 - `/signin` - NextAuth сесії (користувацька авторизація)
 - `/login` - Bearer токени (API авторизація)
-- `/autoria/*` - вимагають наявності `backend_auth` токенів у Redis
+- `/autoria/*` - вимагають наявності `backend_auth` токенів в cookies
 
 ## Структура файлів
 
@@ -30,17 +30,25 @@
 Основний ендпоінт для аутентифікації:
 - Підтримка email/password (backend) та username/password (dummy)
 - Валідація credentials
-- Збереження токенів у Redis
-- Повернення прапорця `redisSaveSuccess`
+- Збереження токенів в httpOnly cookies
+- Повернення JWT токенів
 
 #### `/api/auth/refresh`
 **Файл**: `frontend/src/app/api/auth/refresh/route.ts`
 
 Оновлення токенів:
-- Читання поточних токенів з Redis
+- Читання поточних токенів з cookies
 - Виклик зовнішнього API для оновлення
-- Збереження нових токенів
+- Збереження нових токенів в cookies
 - Верифікація успішності операції
+
+#### `/api/auth/token`
+**Файл**: `frontend/src/app/api/auth/token/route.ts`
+
+Робота з токенами в cookies:
+- `GET` - отримання токенів з cookies
+- `POST` - збереження токенів в cookies
+- `DELETE` - видалення токенів з cookies
 
 ### Core логіка
 
@@ -54,43 +62,37 @@ export const fetchAuth = async (
 ```
 
 **Критичні деталі**:
-- Використання абсолютних URL для Redis API
-- Верифікація збереження токенів
-- Повернення статусу `redisSaveSuccess`
+- Використання абсолютних URL для API викликів
+- Верифікація успішності аутентифікації
+- Повернення JWT токенів
 
-**Правильна імплементація**:
-```typescript
-// Абсолютні URL для server-side викликів
-const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-const redisUrl = `${baseUrl}/api/redis`;
-const response = await fetch(redisUrl, { ... });
-```
-
-### Redis система
+### HttpOnly Cookies система
 
 #### API маршрут
-**Файл**: `frontend/src/app/api/redis/route.ts`
+**Файл**: `frontend/src/app/api/auth/token/route.ts`
 
 **Підтримувані методи**:
-- `GET` - отримання токенів за ключем
-- `POST` - збереження токенів
-- `DELETE` - видалення токенів
+- `GET` - отримання токенів з cookies
+- `POST` - збереження токенів в cookies
+- `DELETE` - видалення токенів з cookies
 
 **Структура зберігання**:
-```json
-{
-  "backend_auth": {
-    "access": "jwt_access_token",
-    "refresh": "jwt_refresh_token",
-    "refreshAttempts": 0
-  },
-  "dummy_auth": {
-    "access": "dummy_access_token",
-    "refresh": "dummy_refresh_token",
-    "refreshAttempts": 0
-  },
-  "auth_provider": "backend"
-}
+```javascript
+// httpOnly cookies
+access_token = "jwt_access_token"
+refresh_token = "jwt_refresh_token"
+```
+
+**Cookie Settings**:
+```typescript
+const isProduction = process.env.NODE_ENV === 'production';
+response.cookies.set('access_token', access, { 
+  httpOnly: true, 
+  secure: isProduction, 
+  sameSite: 'lax', 
+  path: '/', 
+  maxAge: 60 * 60 * 24 
+});
 ```
 
 ### Middleware захист
@@ -100,22 +102,21 @@ const response = await fetch(redisUrl, { ... });
 
 **Захищені шляхи**:
 ```typescript
-const AUTORIA_PATHS = ['/autoria'];
+const PROTECTED_PATHS = ['/autoria', '/profile', '/settings'];
 ```
 
 **Публічні шляхи**:
 ```typescript
 const PUBLIC_PATHS = [
-  '/api/auth', '/api/redis', '/api/backend-health',
-  '/api/health', '/api/reference', '/api/public',
+  '/api/auth', '/api/health', '/api/reference', '/api/public',
   '/api/user', '/signin', '/register', '/login'
 ];
 ```
 
 **Логіка доступу**:
-- Перевірка наявності `backend_auth` токенів для Autoria
-- Немає валідації токенів - тільки перевірка існування
-- Редірект на `/login` при відсутності токенів
+- Перевірка наявності NextAuth сесії
+- Немає валідації токенів - тільки перевірка існування сесії
+- Редірект на `/api/auth/signin` при відсутності сесії
 - Вільний доступ до публічних маршрутів
 
 ## Провайдери аутентифікації
@@ -123,13 +124,13 @@ const PUBLIC_PATHS = [
 ### Backend (Django)
 - **Ендпоінт**: Django REST API
 - **Credentials**: email/password
-- **Redis ключ**: `backend_auth`
-- **URL**: `http://localhost:8000` (local) або `http://app:8000` (Docker)
+- **Cookies**: `access_token`, `refresh_token`
+- **URL**: `https://autoria-web-production.up.railway.app` (production) або `http://localhost:8000` (local)
 
 ### Dummy (DummyJSON)
 - **Ендпоінт**: `https://dummyjson.com/auth/login`
 - **Credentials**: username/password
-- **Redis ключ**: `dummy_auth`
+- **Cookies**: `access_token`, `refresh_token`
 - **Тестові дані**: `emilys/emilyspass`
 
 ## Django Backend конфігурація
@@ -188,8 +189,8 @@ fetch('/api/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ 
-    username: 'emilys', 
-    password: 'emilyspass' 
+    email: 'admin@autoria.com', 
+    password: '12345678' 
   })
 })
 .then(r => r.json())
@@ -206,109 +207,86 @@ fetch('/api/auth/refresh', {
 .then(data => console.log('Refresh:', data));
 ```
 
-#### Тест Redis
+#### Тест токенів в cookies
 ```javascript
-// Збереження
-fetch('/api/redis', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    key: 'test_auth',
-    value: JSON.stringify({access: 'token', refresh: 'token'})
-  })
+// Отримання
+fetch('/api/auth/token', {
+  method: 'GET',
+  credentials: 'include'
 })
-
-// Читання
-fetch('/api/redis?key=test_auth')
 .then(r => r.json())
-.then(data => console.log('Redis:', data));
-
-// Видалення
-fetch('/api/redis', {
-  method: 'DELETE',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ key: 'test_auth' })
-})
+.then(data => console.log('Tokens:', data));
 ```
 
 ## Типові проблеми
 
-### "Failed to parse URL from /api/redis"
-**Причина**: Використання відносних URL у server-side коді  
-**Рішення**: Використовувати абсолютні URL у функції `fetchAuth`
+### "tokens_not_found" помилка
+**Причина**: Токени не збережені в httpOnly cookies  
+**Рішення**: Перевірити що login функція викликає POST /api/auth/token
 
-### Алерт показує успіх але токенів немає в Redis
-**Причина**: Не перевіряється прапорець `redisSaveSuccess`  
-**Рішення**: Перевіряти `authResponse.redisSaveSuccess` перед показом алерту
+### Алерт показує успіх але токенів немає в cookies
+**Причина**: Login функція не зберігає токени  
+**Рішення**: Перевірити що login() викликається з await
 
 ### 401 Unauthorized при логіні
 **Причина**: Неправильні credentials або backend не працює  
 **Рішення**:
 - Для dummy: використовувати `emilys/emilyspass`
-- Для backend: перевірити що Django контейнер запущений
+- Для backend: перевірити що Django backend запущений
 
 ### Оновлення токенів не працює
-**Причина**: Використання Docker hostname у локальному середовищі  
-**Рішення**: Використовувати localhost URL для локального тестування
+**Причина**: Токени не знайдені в cookies  
+**Рішення**: Перевірити що токени правильно збережені
 
 ## Налаштування середовища
 
 ### Необхідні сервіси
 1. **Next.js Frontend** - `http://localhost:3000`
 2. **Django Backend** - `http://localhost:8000`
-3. **Redis** - `localhost:6379`
 
-### Docker команди
+### Environment Variables
 ```bash
-# Запуск Django
-docker-compose up app -d
+# Production
+NEXT_PUBLIC_BACKEND_URL=https://autoria-web-production.up.railway.app
 
-# Перезапуск після змін коду
-docker-compose restart app
-
-# Перегляд логів
-docker logs final_drf_next_sept_2024-app-1
-
-# Запуск Redis
-docker-compose up redis -d
+# Local
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 ```
 
 ## Критерії успіху
 
 ### Система працює коректно коли:
-- Логін повертає `redisSaveSuccess: true`
-- Токени зберігаються в Redis з правильними ключами
-- Алерт показується тільки при підтвердженому збереженні
-- Оновлення токенів працює та оновлює Redis
-- Middleware перенаправляє на `/login` при відсутності токенів для Autoria
-- Autoria сторінки вимагають наявності `backend_auth` токенів
+- Логін повертає JWT токени
+- Токени зберігаються в httpOnly cookies
+- BackendTokenPresenceGate знаходить токени
+- Оновлення токенів працює
+- Middleware перенаправляє на `/api/auth/signin` при відсутності сесії
+- Autoria сторінки вимагають наявності токенів
 - Публічні маршрути доступні без аутентифікації
 
 ### Система не працює коли:
-- Алерт показує успіх але `redisSaveSuccess: false`
-- Токени не знайдені в Redis після логіну
-- Використовуються відносні URL в server-side викликах
-- Неправильні credentials для dummy провайдера
-- Django refresh повертає тільки access токен
-- Старі refresh токени залишаються валідними
+- Токени не знайдені в cookies після логіну
+- BackendTokenPresenceGate редиректить на /login
+- Неправильні credentials для провайдера
+- Django backend не відповідає
 
 ## Checklist діагностики
 
 При проблемах з аутентифікацією перевірити:
 
-1. **fetchAuth URLs** - мають бути абсолютними
-2. **Redis API** - протестувати GET/POST/DELETE методи
-3. **Credentials** - використовувати `emilys/emilyspass` для dummy
-4. **Alert логіка** - перевіряти `redisSaveSuccess`
+1. **Login функція** - має зберігати токени в cookies
+2. **Token API** - протестувати GET/POST/DELETE методи
+3. **Credentials** - використовувати правильні дані для провайдера
+4. **BackendTokenPresenceGate** - має знаходити токени
 5. **Django refresh view** - має використовувати CustomTokenRefreshSerializer
 6. **Ротація токенів** - новий refresh токен має повертатись
-7. **Docker сервіси** - Django та Redis мають бути запущені
-8. **Middleware редіректи** - перенаправлення на `/login` при відсутності токенів
-9. **Доступ до Autoria** - `/autoria` має вимагати `backend_auth` токени
+7. **Backend сервіс** - Django має бути запущений
+8. **Middleware редіректи** - перенаправлення на `/api/auth/signin`
+9. **Доступ до Autoria** - `/autoria` має вимагати токени
 10. **Публічні маршрути** - API роути та auth сторінки мають бути доступними
 
 ---
 
-**Остання актуалізація**: Листопад 2024  
+**Остання актуалізація**: Березень 2026  
 **Статус системи**: Повністю робоча  
-**Покриття тестами**: 100%
+**Архітектура**: httpOnly cookies + NextAuth

@@ -9,7 +9,7 @@
  */
 
 const redis = {
-  async get(key: string) {
+  async get(key: string): Promise<string | null> {
     console.log('[Redis stub] get() called -  нічого не робимо (Redis тільки на бекенді)');
     return null;
   },
@@ -39,7 +39,7 @@ const redis = {
     return -2;
   },
 
-  async keys(pattern: string) {
+  async keys(pattern: string): Promise<string[]> {
     console.log('[Redis stub] keys() called - нічого не робимо (Redis тільки на бекенді)');
     return [];
   },

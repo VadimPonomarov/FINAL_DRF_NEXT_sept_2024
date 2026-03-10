@@ -2832,7 +2832,6 @@ export default {
   "autoria.moderation.adDetails": "Детали объявления",
   "autoria.moderation.basicInfo": "Основная информация",
   "autoria.moderation.location": "Местоположение",
-  "autoria.moderation.description": "Описание",
   "autoria.moderation.contactInfo": "Контактная информация",
   "autoria.moderation.phone": "Телефон",
   "autoria.moderation.technicalSpecs": "Технические характеристики",
@@ -2916,10 +2915,6 @@ export default {
   "autoria.images.photoTip3": "Сделайте фото салона и багажника",
   "autoria.images.photoTip4": "Отразите все дефекты, если есть",
   "autoria.images.photoTip5": "Используйте качественные изображения",
-  "autoria.images.copyListTooltip": "Скопировать список всех изображений в буфер обмена в формате JSON",
-  "autoria.images.refreshFromServerTooltip": "Обновить список изображений с сервера (только для существующих объявлений)",
-  "autoria.images.toggleAutoSaveTooltip": "Включить/выключить автоматическое сохранение сгенерированных ИИ изображений",
-  "autoria.images.refreshDisabledTooltip": "Обновление доступно только при редактировании существующего объявления",
   "autoria.testAds.howMany": "Сколько объявлений",
   "autoria.testAds.invalidNumber": "Некорректное число",
   "autoria.testAds.startingCreation": "Начинаем создание...",
@@ -3086,24 +3081,6 @@ export default {
   "autoria.deleteAdDesc": "Удалить объявление навсегда",
   "autoria.confirmDelete": "Подтвердить удаление",
   "autoria.confirmDeleteDesc": "Это действие нельзя отменить",
-  "autoria.form.tabs.specs.label": "Характеристики",
-  "autoria.form.tabs.specs.description": "Марка, модель, год",
-  "autoria.form.tabs.pricing.label": "Цены",
-  "autoria.form.tabs.pricing.description": "Стоимость и валюта",
-  "autoria.form.tabs.location.label": "Локация",
-  "autoria.form.tabs.location.description": "Регион и город",
-  "autoria.form.tabs.contact.label": "Контакты",
-  "autoria.form.tabs.contact.description": "Связь с продавцом",
-  "autoria.form.tabs.images.label": "Изображения",
-  "autoria.form.tabs.images.description": "Фото",
-  "autoria.form.tabs.basic.label": "Текст объявления",
-  "autoria.form.tabs.basic.description": "Заголовок и описание",
-  "autoria.form.tabs.additional.label": "Дополнительно",
-  "autoria.form.tabs.additional.description": "Параметры",
-  "autoria.form.tabs.preview.label": "Предпросмотр",
-  "autoria.form.tabs.preview.description": "Финальный вид",
-  "autoria.form.tabs.statistics.label": "Статистика",
-  "autoria.form.tabs.statistics.description": "Аналитика",
   "autoria.creating": "Создание",
   "autoria.additionalInfo": "Дополнительная информация",
   "autoria.noTitle": "Без заголовка",
@@ -3112,7 +3089,6 @@ export default {
   "basicInfo.toolsTab": "Инструменты",
   "Select option": "Выбрать",
   searchAutoApplyNotice: "Поиск",
-  "ai": "ИИ",
   debug: {
     analyticsViewCount: "Отладка: просмотры (аналитика)",
     metadataViewsCount: "Просмотры (метаданные)",
@@ -3175,40 +3151,21 @@ export default {
   "analytics": "Аналитика",
 
   // Analytics content
-  "autoria.analytics.currentSelectionSummary": "Сводка по текущей выборке",
-  "autoria.analytics.filtersAppliedToAnalytics": "Фильтры применены к аналитике так же, как и к результатам поиска",
-  "autoria.analytics.fromDate": "С даты",
-  "autoria.analytics.toDate": "По дату",
-  "autoria.analytics.priceDistribution": "Распределение цен",
-  "autoria.analytics.binsBuiltFromSelection": "Бины построены по текущей выборке",
-  "autoria.analytics.adsPerDay": "Объявления в день",
-  "autoria.analytics.noData": "Нет данных",
-  "autoria.analytics.mlForecastsPricesAndDemand": "ML-прогнозы по ценам и спросу",
 
   // Search page tabs
-  "searchResults": "Результаты",
-  "analytics": "Аналитика",
 
   // Analytics KPI cards and chart labels
   "autoria.analytics.adsInSelection": "Объявлений в выборке",
   "autoria.analytics.totalViews": "Суммарные просмотры",
   "autoria.analytics.userActivity": "Активность пользователей",
-  "autoria.analytics.topBrands": "ТОП-10 марок автомобилей",
   "autoria.analytics.priceDistributionTitle": "Распределение цен автомобилей",
   "autoria.analytics.price": "Цена ($)",
   "autoria.analytics.adsQuantity": "Количество объявлений",
   "autoria.analytics.brand": "Марка",
 
   // Analytics KPI cards
-  "autoria.analytics.adsInSelection": "Объявлений в выборке",
-  "autoria.analytics.totalViews": "Суммарные просмотры",
-  "autoria.analytics.userActivity": "Активность пользователей",
 
   // Analytics KPI cards
-  "autoria.analytics.adsInSelection": "Объявлений в выборке",
-  "autoria.analytics.totalViews": "Суммарные просмотры",
-  "autoria.analytics.averagePrice": "Средняя цена",
-  "autoria.analytics.userActivity": "Активность пользователей",
 
   // Notifications (Toast/Alert messages)
   notifications: {

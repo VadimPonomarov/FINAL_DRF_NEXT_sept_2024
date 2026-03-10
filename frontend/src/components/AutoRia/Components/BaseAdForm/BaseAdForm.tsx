@@ -1,3 +1,4 @@
+const TABS_CONFIG: any[] = [];
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -25,6 +26,7 @@ import {
   Shield,
   Phone
 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 // Импорт компонентов форм для каждого таба

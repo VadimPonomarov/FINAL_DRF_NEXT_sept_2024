@@ -67,49 +67,43 @@ const LoginForm: FC = () => {
 
     return (
         <div className="flex items-center justify-center w-full h-full p-4">
-            <NewResizableWrapper
-              storageKey="login-form"
-              className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col"
-              defaultWidth={350}
-              defaultHeight={450}
-              minWidth={300}
-              minHeight={400}
-            >
+            <div className="w-full max-w-sm sm:max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
                 <div className="w-full h-full flex flex-col overflow-auto">
-                    <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-100">
-                        <div className="flex justify-between items-center">
-                            <h1 className="text-2xl font-bold text-gray-800">{t('auth.login', 'Login')}</h1>
-                            {provider === AuthProvider.MyBackendDocs && (
-                                <Link
-                                    href="/register"
-                                    className="text-blue-500 hover:text-blue-700 text-sm transition-colors duration-300"
+                    <div className="bg-gradient-to-r from-gray-50 to-white px-4 sm:px-6 py-4 sm:py-6 border-b border-gray-100">
+                        <div className="flex flex-col gap-3 sm:gap-4">
+                            <div className="flex items-center justify-between">
+                                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{t('auth.login', 'Login')}</h1>
+                                {provider === AuthProvider.MyBackendDocs && (
+                                    <Link
+                                        href="/register"
+                                        className="text-blue-500 hover:text-blue-700 text-sm transition-colors duration-300"
+                                    >
+                                        {t('auth.register', 'Register')}
+                                    </Link>
+                                )}
+                            </div>
+                            <div className="w-full">
+                                <Select
+                                    onValueChange={handleProviderChange}
+                                    defaultValue={provider}
+                                    value={provider}
                                 >
-                                    {t('auth.register', 'Register')}
-                                </Link>
-                            )}
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder={t('auth.selectAuthType', 'Select auth type')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {authProviderOptions.map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="p-6 space-y-6">
-                        <div className={cn("w-full max-w-[180px]")}>
-                            <Select
-                                onValueChange={handleProviderChange}
-                                defaultValue={provider}
-                                value={provider}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder={t('auth.selectAuthType', 'Select auth type')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {authProviderOptions.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
+                    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                         {provider === AuthProvider.Dummy && (
                             <form 
                                 key={`dummy-form-${formKey}`} 
@@ -128,27 +122,32 @@ const LoginForm: FC = () => {
                                         });
                                     }
                                 )} 
-                                className="space-y-4"
+                                className="space-y-4 sm:space-y-6"
                             >
-                                <DummyUsersComboBox reset={dummyForm.reset} />
-                                <FormFieldsRenderer<IDummyAuth>
-                                    fields={dummyFormFields}
-                                    register={dummyForm.register}
-                                    errors={dummyForm.formState.errors}
-                                    inputClassName="text-gray-800"
-                                    defaultValues={dummyForm.getValues()}
-                                />
+                                <div className="w-full">
+                                    <DummyUsersComboBox reset={dummyForm.reset} />
+                                </div>
+                                <div className="space-y-3 sm:space-y-4">
+                                    <FormFieldsRenderer<IDummyAuth>
+                                        fields={dummyFormFields}
+                                        register={dummyForm.register}
+                                        errors={dummyForm.formState.errors}
+                                        inputClassName="text-gray-800 w-full"
+                                        defaultValues={dummyForm.getValues()}
+                                    />
+                                </div>
                                 {error && (
-                                    <div className="text-red-500 text-sm mt-2">
+                                    <div className="text-red-500 text-sm mt-2 p-2 sm:p-3 bg-red-50 rounded-lg">
                                         {error}
                                     </div>
                                 )}
-                                <div className="pt-4 border-t border-gray-100">
-                                    <ButtonGroup orientation="horizontal">
+                                <div className="pt-3 sm:pt-4 border-t border-gray-100">
+                                    <div className="flex gap-2 sm:gap-3">
                                         <Button
                                             variant="outline"
                                             type="submit"
                                             disabled={isLoading}
+                                            className="flex-1 min-h-[44px] sm:min-h-[48px]"
                                         >
                                             {isLoading ? (
                                                 <span className="animate-spin">⌛</span>
@@ -161,10 +160,11 @@ const LoginForm: FC = () => {
                                             type="button"
                                             onClick={resetForms}
                                             disabled={isLoading}
+                                            className="flex-1 min-h-[44px] sm:min-h-[48px]"
                                         >
                                             <ArrowPathIcon className="h-5 w-5" />
                                         </Button>
-                                    </ButtonGroup>
+                                    </div>
                                 </div>
                             </form>
                         )}
@@ -187,27 +187,32 @@ const LoginForm: FC = () => {
                                         });
                                     }
                                 )} 
-                                className="space-y-4"
+                                className="space-y-4 sm:space-y-6"
                             >
-                                <BackendUsersComboBox reset={backendForm.reset} />
-                                <FormFieldsRenderer<IBackendAuthCredentials>
-                                    fields={backendFormFields}
-                                    register={backendForm.register}
-                                    errors={backendForm.formState.errors}
-                                    inputClassName="text-gray-800"
-                                    defaultValues={backendForm.getValues()}
-                                />
+                                <div className="w-full">
+                                    <BackendUsersComboBox reset={backendForm.reset} />
+                                </div>
+                                <div className="space-y-3 sm:space-y-4">
+                                    <FormFieldsRenderer<IBackendAuthCredentials>
+                                        fields={backendFormFields}
+                                        register={backendForm.register}
+                                        errors={backendForm.formState.errors}
+                                        inputClassName="text-gray-800 w-full"
+                                        defaultValues={backendForm.getValues()}
+                                    />
+                                </div>
                                 {error && (
-                                    <div className="text-red-500 text-sm mt-2">
+                                    <div className="text-red-500 text-sm mt-2 p-2 sm:p-3 bg-red-50 rounded-lg">
                                         {error}
                                     </div>
                                 )}
-                                <div className="pt-4 border-t border-gray-100">
-                                    <ButtonGroup orientation="horizontal">
+                                <div className="pt-3 sm:pt-4 border-t border-gray-100">
+                                    <div className="flex gap-2 sm:gap-3">
                                         <Button
                                             variant="outline"
                                             type="submit"
                                             disabled={isLoading}
+                                            className="flex-1 min-h-[44px] sm:min-h-[48px]"
                                         >
                                             {isLoading ? (
                                                 <span className="animate-spin">⌛</span>
@@ -220,16 +225,17 @@ const LoginForm: FC = () => {
                                             type="button"
                                             onClick={resetForms}
                                             disabled={isLoading}
+                                            className="flex-1 min-h-[44px] sm:min-h-[48px]"
                                         >
                                             <ArrowPathIcon className="h-5 w-5" />
                                         </Button>
-                                    </ButtonGroup>
+                                    </div>
                                 </div>
                             </form>
                         )}
                     </div>
                 </div>
-            </NewResizableWrapper>
+            </div>
         </div>
     );
 };

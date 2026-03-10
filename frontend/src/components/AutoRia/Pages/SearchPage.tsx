@@ -20,6 +20,18 @@ import AdCounters from '@/components/AutoRia/Components/AdCounters';
 import { VirtualSelect } from '@/components/ui/virtual-select';
 import { useTranslation } from '@/contexts/I18nContext';
 import { cachedFetch } from '@/modules/autoria/shared/utils/cachedFetch';
+import { 
+  CarAd, 
+  CarAdFormData, 
+  ReferenceItem, 
+  VehicleType, 
+  Brand, 
+  Model, 
+  Region, 
+  City,
+  Currency,
+  AdStatus 
+} from '@/modules/autoria/shared/types/strict-types';
 import AnalyticsTabContent from '@/components/AutoRia/Analytics/AnalyticsTabContent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
@@ -29,62 +41,38 @@ import { usePriceConverter } from '@/modules/autoria/shared/hooks/usePriceConver
 import CarAdCard from '@/components/AutoRia/Components/CarAdCard';
 import CarAdListItem from '@/components/AutoRia/Components/CarAdListItem';
 
-// Простой тип для автомобиля
-interface CarAd {
-  id: number;
-  title: string;
-  brand?: string;
-  model?: string;
-  year?: number;
-  price?: number;
-  currency?: string;
+// Расширенный тип для автомобиля с ценами в разных валютах
+interface SearchCarAd extends CarAd {
   price_usd?: number; // Цена в USD для отображения
   price_eur?: number; // Цена в EUR для отображения
-  mileage?: number;
-  city?: string;
-  city_name?: string; // Название города
-  region_name?: string; // Название региона
-  mark_name?: string; // Название марки
-  vehicle_type_name?: string; // Тип транспорта
-  fuel_type?: string;
-  engine_volume?: number;
-  transmission?: string;
-  license_plate?: string;
-  vin_code?: string;
-  accident_history?: boolean;
-  is_favorite?: boolean;
-  view_count?: number; // Количество просмотров
-  favorites_count?: number; // Количество добавлений в избранное
   phone_views_count?: number; // Количество показов телефона
   is_vip?: boolean; // VIP статус
   is_premium?: boolean; // Premium статус
-  body_type?: string; // Тип кузова
-  images?: Array<{
-    image: string;
-    image_display_url?: string;
-    image_url?: string;
-    url?: string;
-    is_main?: boolean;
-  }>;
-  user?: {
-    id: number;
-    email: string;
-    account_type?: string;
-    phone?: string;
-  };
-  price_uah?: number; // Цена в UAH для отображения
-  dynamic_fields?: {
-    year?: number;
-    mileage?: number;
-    mileage_km?: number;
-    fuel_type?: string;
-    transmission?: string;
-    [key: string]: any;
-  };
-  seller?: {
-    phone?: string;
-  };
+  accident_history?: boolean;
+  is_favorite?: boolean; // Добавлено поле избранного
 }
+
+// Тип для фильтров поиска
+interface SearchFilters {
+  search?: string;
+  vehicle_type?: string | number;
+  brand?: string | number;
+  model?: string | number;
+  condition?: string;
+  year_from?: string;
+  year_to?: string;
+  price_from?: string;
+  price_to?: string;
+  region?: string | number;
+  city?: string | number;
+  page_size?: number;
+}
+
+const buildSearchParams = (filters: SearchFilters, page: number, sortBy: string, sortOrder: string) => ({
+  ...filters,
+  page,
+  ordering: sortOrder === 'desc' ? `-${sortBy}` : sortBy,
+});
 
 const SearchPage = () => {
   // Хук для переводов
@@ -98,22 +86,38 @@ const SearchPage = () => {
   // Хук для конвертации цен
   const { formatPrice: formatPriceInSelectedCurrency } = usePriceConverter();
 
-  // Простые состояния
-  const [searchResults, setSearchResults] = useState<CarAd[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [paginationLoading, setPaginationLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  // Состояния с правильными типами
+  const [searchResults, setSearchResults] = useState<SearchCarAd[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [paginationLoading, setPaginationLoading] = useState<boolean>(false);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [regionId, setRegionId] = useState(''); // Для каскадной связи регион → город
-  const [sortBy, setSortBy] = useState('created_at');
+  const [regionId, setRegionId] = useState<string>(''); // Для каскадной связи регион → город
+  const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Тип для быстрых фильтров
+  interface QuickFilters {
+    with_images: boolean;
+    my_ads: boolean;
+    favorites: boolean;
+    verified: boolean;
+    vip: boolean;
+    premium: boolean;
+  }
+
+  // Тип для ответа от FavoritesService
+  interface FavoriteToggleResponse {
+    is_favorite: boolean;
+    favorites_count?: number;
+  }
+
   // Быстрые фильтры
-  const [quickFilters, setQuickFilters] = useState({
+  const [quickFilters, setQuickFilters] = useState<QuickFilters>({
     with_images: false,
     my_ads: false,
     favorites: false,
@@ -123,9 +127,7 @@ const SearchPage = () => {
   });
 
   // Переключатель инверсии для особых фильтров
-  const [invertFilters, setInvertFilters] = useState(false);
-
-
+  const [invertFilters, setInvertFilters] = useState<boolean>(false);
 
   // Дебаунсеры для поиска
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -136,8 +138,8 @@ const SearchPage = () => {
   const prevSearchParamsRef = useRef<string>('');
 
 
-  // Простые фильтры
-  const [filters, setFilters] = useState({
+  // Основные фильтры с правильными типами
+  const [filters, setFilters] = useState<SearchFilters>({
     search: '',
     vehicle_type: '',
     brand: '',
@@ -152,11 +154,22 @@ const SearchPage = () => {
     page_size: 20
   });
 
+  // Тип для ID выбранных элементов
+  interface SelectedIds {
+    vehicle_type_id: string | number;
+    brand_id: string | number;
+    model_id: string | number;
+    region_id: string | number;
+    city_id: string | number;
+  }
+
   // Дополнительные состояния для ID (для каскадных связей)
-  const [selectedIds, setSelectedIds] = useState({
+  const [selectedIds, setSelectedIds] = useState<SelectedIds>({
     vehicle_type_id: '',
     brand_id: '',
-    region_id: ''
+    model_id: '',
+    region_id: '',
+    city_id: ''
   });
 
   // Update URL with current filters (объявляем в самом начале, чтобы использовать везде)
@@ -291,7 +304,7 @@ const SearchPage = () => {
 
       // Всегда используем основной API автомобилей
       // Фильтр избранного передается через параметр favorites_only
-      const response = await CarAdsService.getCarAds(searchParams);
+      const response = await CarAdsService.getCarAds(searchParams as any);
 
       console.log('✅ Search successful:', {
         count: response.count,
@@ -387,9 +400,9 @@ const SearchPage = () => {
           try {
             setLoading(true);
             const searchParams = buildSearchParams(newFilters, currentPage, sortBy, sortOrder);
-            const response = await CarAdsService.getCarAds(searchParams);
+            const response = await CarAdsService.getCarAds(searchParams as any);
 
-            setSearchResults(response.results || []);
+            setSearchResults((response.results || []) as unknown as SearchCarAd[]);
             setTotalCount(response.count || 0);
           } catch (error) {
             console.error('🔍 Auto-search error:', error);
@@ -412,9 +425,9 @@ const SearchPage = () => {
         try {
           setLoading(true);
           const searchParams = buildSearchParams(newFilters, currentPage, sortBy, sortOrder);
-          const response = await CarAdsService.getCarAds(searchParams);
+          const response = await CarAdsService.getCarAds(searchParams as any);
 
-          setSearchResults(response.results || []);
+          setSearchResults((response.results || []) as unknown as SearchCarAd[]);
           setTotalCount(response.count || 0);
         } catch (error) {
           console.error('🔍 Auto-search error:', error);
@@ -449,9 +462,9 @@ const SearchPage = () => {
     try {
       setLoading(true);
       const searchParams = buildSearchParams(newFilters, currentPage, sortBy, sortOrder);
-      const response = await CarAdsService.getCarAds(searchParams);
+      const response = await CarAdsService.getCarAds(searchParams as any);
 
-      setSearchResults(response.results || []);
+      setSearchResults((response.results || []) as unknown as SearchCarAd[]);
       setTotalCount(response.count || 0);
     } catch (error) {
       console.error('🔍 Clear search error:', error);
@@ -490,6 +503,7 @@ const SearchPage = () => {
       vehicle_type: '',
       brand: '',
       model: '',
+      condition: '',
       year_from: '',
       year_to: '',
       price_from: '',
@@ -529,7 +543,7 @@ const SearchPage = () => {
       });
 
       console.log('🔄 clearFilters - loaded cars:', response);
-      setSearchResults(response.results || []);
+      setSearchResults((response.results || []) as unknown as SearchCarAd[]);
       setTotalCount(response.count || 0);
       setCurrentPage(1);
     } catch (error) {
@@ -573,7 +587,7 @@ const SearchPage = () => {
     console.log('🔄 Toggle favorite (optimistic) for car:', carId, 'prev:', previousIsFavorite);
 
     try {
-      const result = await FavoritesService.toggleFavorite(carId);
+      const result = await FavoritesService.toggleFavorite(carId) as FavoriteToggleResponse;
       console.log('✅ Favorite toggled (server):', result);
 
       // Зафиксируем фактический ответ сервера (может отличаться от оптимистичного)
@@ -583,8 +597,8 @@ const SearchPage = () => {
             ? {
                 ...car,
                 is_favorite: Boolean(result.is_favorite),
-                favorites_count: typeof (result as any).favorites_count === 'number'
-                  ? (result as any).favorites_count
+                favorites_count: typeof result.favorites_count === 'number'
+                  ? result.favorites_count
                   : (result.is_favorite ? (car.favorites_count || 0) + 1 : Math.max(0, (car.favorites_count || 0) - 1))
               }
             : car
@@ -685,8 +699,8 @@ const SearchPage = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => ({ message: '' }));
+        throw new Error((errorData as { message?: string }).message || `HTTP ${response.status}`);
       }
 
       // Удаляем из локального состояния
@@ -730,7 +744,7 @@ const SearchPage = () => {
     }
   }, [deletingIds, toast, isAuthenticated, user, searchResults]);
 
-  const isOwner = useCallback((car: CarAd) => {
+  const isOwner = useCallback((car: any) => {
     if (!isAuthenticated || !user) return false;
 
     // Проверяем по email пользователя
@@ -765,36 +779,36 @@ const SearchPage = () => {
 
     // Get filters from URL
     const urlFilters: typeof filters = {
-      search: searchParams.get('search') || '',
-      vehicle_type: searchParams.get('vehicle_type') || '',
-      brand: searchParams.get('brand') || '',
-      model: searchParams.get('model') || '',
-      condition: searchParams.get('condition') || '',
-      year_from: searchParams.get('year_from') || '',
-      year_to: searchParams.get('year_to') || '',
-      price_from: searchParams.get('price_from') || '',
-      price_to: searchParams.get('price_to') || '',
-      region: searchParams.get('region') || '',
-      city: searchParams.get('city') || '',
+      search: searchParams?.get('search') || '',
+      vehicle_type: searchParams?.get('vehicle_type') || '',
+      brand: searchParams?.get('brand') || '',
+      model: searchParams?.get('model') || '',
+      condition: searchParams?.get('condition') || '',
+      year_from: searchParams?.get('year_from') || '',
+      year_to: searchParams?.get('year_to') || '',
+      price_from: searchParams?.get('price_from') || '',
+      price_to: searchParams?.get('price_to') || '',
+      region: searchParams?.get('region') || '',
+      city: searchParams?.get('city') || '',
       page_size: 20
     };
 
     // Get pagination and sorting from URL
-    const urlPage = parseInt(searchParams.get('page') || '1');
-    const urlSort = searchParams.get('sort') || 'created_at';
-    const urlOrder = (searchParams.get('order') || 'desc') as 'asc' | 'desc';
+    const urlPage = parseInt(searchParams?.get('page') || '1');
+    const urlSort = searchParams?.get('sort') || 'created_at';
+    const urlOrder = (searchParams?.get('order') || 'desc') as 'asc' | 'desc';
 
     // Get quick filters from URL
     const urlQuickFilters = {
-      with_images: searchParams.get('with_images') === 'true',
-      my_ads: searchParams.get('my_ads') === 'true',
-      favorites: searchParams.get('favorites') === 'true',
-      verified: searchParams.get('verified') === 'true',
+      with_images: searchParams?.get('with_images') === 'true',
+      my_ads: searchParams?.get('my_ads') === 'true',
+      favorites: searchParams?.get('favorites') === 'true',
+      verified: searchParams?.get('verified') === 'true',
       vip: false,
       premium: false
     };
 
-    const urlInvert = searchParams.get('invert') === 'true';
+    const urlInvert = searchParams?.get('invert') === 'true';
 
     // Update state with URL params
     setFilters(urlFilters);
@@ -813,7 +827,7 @@ const SearchPage = () => {
     if (!isInitialized) return; // Skip on initial mount
 
     // Создаем строку из всех параметров для сравнения
-    const currentParamsString = searchParams.toString();
+    const currentParamsString = searchParams?.toString();
 
     // Проверяем, изменились ли параметры
     if (currentParamsString === prevSearchParamsRef.current) {
@@ -825,38 +839,38 @@ const SearchPage = () => {
     console.log('Current params:', currentParamsString);
 
     // Обновляем ref
-    prevSearchParamsRef.current = currentParamsString;
+    prevSearchParamsRef.current = currentParamsString || '';
 
     // Читаем все параметры из URL
     const urlFilters: typeof filters = {
-      search: searchParams.get('search') || '',
-      vehicle_type: searchParams.get('vehicle_type') || '',
-      brand: searchParams.get('brand') || '',
-      model: searchParams.get('model') || '',
-      condition: searchParams.get('condition') || '',
-      year_from: searchParams.get('year_from') || '',
-      year_to: searchParams.get('year_to') || '',
-      price_from: searchParams.get('price_from') || '',
-      price_to: searchParams.get('price_to') || '',
-      region: searchParams.get('region') || '',
-      city: searchParams.get('city') || '',
-      page_size: parseInt(searchParams.get('page_size') || '20')
+      search: searchParams?.get('search') || '',
+      vehicle_type: searchParams?.get('vehicle_type') || '',
+      brand: searchParams?.get('brand') || '',
+      model: searchParams?.get('model') || '',
+      condition: searchParams?.get('condition') || '',
+      year_from: searchParams?.get('year_from') || '',
+      year_to: searchParams?.get('year_to') || '',
+      price_from: searchParams?.get('price_from') || '',
+      price_to: searchParams?.get('price_to') || '',
+      region: searchParams?.get('region') || '',
+      city: searchParams?.get('city') || '',
+      page_size: parseInt(searchParams?.get('page_size') || '20')
     };
 
-    const urlPage = parseInt(searchParams.get('page') || '1');
-    const urlSort = searchParams.get('sort') || 'created_at';
-    const urlOrder = (searchParams.get('order') || 'desc') as 'asc' | 'desc';
+    const urlPage = parseInt(searchParams?.get('page') || '1');
+    const urlSort = searchParams?.get('sort') || 'created_at';
+    const urlOrder = (searchParams?.get('order') || 'desc') as 'asc' | 'desc';
 
     const urlQuickFilters = {
-      with_images: searchParams.get('with_images') === 'true',
-      my_ads: searchParams.get('my_ads') === 'true',
-      favorites: searchParams.get('favorites') === 'true',
-      verified: searchParams.get('verified') === 'true',
+      with_images: searchParams?.get('with_images') === 'true',
+      my_ads: searchParams?.get('my_ads') === 'true',
+      favorites: searchParams?.get('favorites') === 'true',
+      verified: searchParams?.get('verified') === 'true',
       vip: false,
       premium: false
     };
 
-    const urlInvert = searchParams.get('invert') === 'true';
+    const urlInvert = searchParams?.get('invert') === 'true';
 
     // Обновляем все состояния
     setFilters(urlFilters);
@@ -988,7 +1002,7 @@ const SearchPage = () => {
                   <label className="text-sm font-medium mb-2 block">{t('vehicleType')}</label>
                   <VirtualSelect
                     placeholder={t('selectVehicleType')}
-                    value={filters.vehicle_type}
+                    value={String(filters.vehicle_type || '')}
                     onValueChange={(value) => updateFilter('vehicle_type', value || '')}
                     fetchOptions={async (search) => {
                       console.log('🔍 Fetching vehicle types with search:', search);
@@ -1011,7 +1025,7 @@ const SearchPage = () => {
                   <label className="text-sm font-medium mb-2 block">{t('brand')}</label>
                   <VirtualSelect
                     placeholder={t('selectBrand')}
-                    value={filters.brand}
+                    value={String(filters.brand || '')}
                     onValueChange={(value) => {
                       console.log('🔍 Brand selected:', value);
                       updateFilter('brand', value || '');
@@ -1032,7 +1046,7 @@ const SearchPage = () => {
 
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
-                      params.append('vehicle_type_id', filters.vehicle_type);
+                      params.append('vehicle_type_id', String(filters.vehicle_type || ''));
                       params.append('page_size', '1000'); // Загружаем все данные
                       console.log('🔍 ✅ Fetching brands for vehicle_type:', filters.vehicle_type);
 
@@ -1077,7 +1091,7 @@ const SearchPage = () => {
                   <label className="text-sm font-medium mb-2 block">{t('model')}</label>
                   <VirtualSelect
                     placeholder={t('selectModel')}
-                    value={filters.model}
+                    value={String(filters.model || '')}
                     onValueChange={(value) => updateFilter('model', value || '')}
                     fetchOptions={async (search) => {
                       console.log('🔍 Fetching models with search:', search);
@@ -1091,7 +1105,7 @@ const SearchPage = () => {
 
                       const params = new URLSearchParams();
                       if (search) params.append('search', search);
-                      params.append('mark_id', filters.brand); // ИСПРАВЛЕНО: brand_id → mark_id
+                      params.append('mark_id', String(filters.brand || '')); // ИСПРАВЛЕНО: brand_id → mark_id
                       params.append('page_size', '1000'); // Загружаем все данные
 
                       const response = await fetch(`/api/public/reference/models?${params}`);
@@ -1154,7 +1168,7 @@ const SearchPage = () => {
                   <label className="text-sm font-medium mb-2 block">{t('region')}</label>
                   <VirtualSelect
                     placeholder={t('selectRegion')}
-                    value={filters.region}
+                    value={String(filters.region || '')}
                     onValueChange={(value, label) => {
                       console.log('🔍 Region selected:', { value, label });
                       setRegionId(value || ''); // ID для каскадной связи с городами
@@ -1186,7 +1200,7 @@ const SearchPage = () => {
                   <label className="text-sm font-medium mb-2 block">{t('city')}</label>
                   <VirtualSelect
                     placeholder={t('selectCity')}
-                    value={filters.city}
+                    value={String(filters.city || '')}
                     onValueChange={(value, label) => {
                       console.log('🔍 City selected:', { value, label });
                       updateFilter('city', value || ''); // ID для поиска автомобилей
@@ -1330,7 +1344,7 @@ const SearchPage = () => {
                       <p className="text-sm text-slate-600">
                         {filters.page_size === 0 ?
                           `${totalCount} ${t('autoria.total', 'total')}` :
-                          `${searchResults.length} / ${totalCount} • ${t('page', 'Page')} ${currentPage} ${t('autoria.of', 'of')} ${Math.ceil(totalCount / filters.page_size)}`
+                          `${searchResults.length} / ${totalCount} • ${t('page', 'Page')} ${currentPage} ${t('autoria.of', 'of')} ${Math.ceil(totalCount / (filters.page_size || 20))}`
                         }
                       </p>
                     )}
@@ -1340,7 +1354,7 @@ const SearchPage = () => {
 	            {!loading && totalCount > 0 && (
 	              <div className="mt-2">
                 <div className="flex items-center justify-between gap-4 mb-2">
-                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1">
+                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'results' | 'analytics')} className="flex-1">
                     <TabsList>
                       <TabsTrigger value="results">{t('searchResults')}</TabsTrigger>
                       <TabsTrigger value="analytics">{t('analytics')}</TabsTrigger>
@@ -1349,7 +1363,7 @@ const SearchPage = () => {
                       {/* Контент результатов будет отображаться ниже */}
                     </TabsContent>
                     <TabsContent value="analytics">
-                      <AnalyticsTabContent filters={filters as any} results={searchResults as any} loading={loading} />
+                      <AnalyticsTabContent filters={filters} results={searchResults} loading={loading} />
                     </TabsContent>
                   </Tabs>
 
@@ -1370,7 +1384,7 @@ const SearchPage = () => {
                           onChange={(e) => {
                             const val = e.target.value as string;
                             const [field, dir] = val.split('_');
-                            setSortBy(field as any);
+                            setSortBy(field || 'created_at');
                             setSortOrder((dir as 'asc' | 'desc') || 'desc');
                             setCurrentPage(1); // Сбрасываем на первую страницу при изменении сортировки
                           }}
@@ -1494,7 +1508,7 @@ const SearchPage = () => {
             )}
 
             {/* Пагинация */}
-            {activeTab === 'results' && !loading && searchResults.length > 0 && filters.page_size !== 0 && totalCount > filters.page_size && (
+            {activeTab === 'results' && !loading && searchResults.length > 0 && (filters.page_size || 20) !== 0 && totalCount > (filters.page_size || 20) && (
               <div className="flex justify-center items-center gap-4 mt-8 mb-4">
                 <Button
                   variant="outline"
@@ -1511,7 +1525,7 @@ const SearchPage = () => {
 
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-600">
-                    {t('page', 'Page')} {currentPage} / {filters.page_size === 0 ? 1 : Math.ceil(totalCount / filters.page_size)}
+                    {t('page', 'Page')} {currentPage} / {(filters.page_size || 20) === 0 ? 1 : Math.ceil(totalCount / (filters.page_size || 20))}
                   </span>
                   {paginationLoading && (
                     <span className="text-xs text-blue-500 animate-pulse">
@@ -1523,11 +1537,12 @@ const SearchPage = () => {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    if (filters.page_size !== 0 && currentPage < Math.ceil(totalCount / filters.page_size)) {
+                    const pageSize = filters.page_size || 20;
+                    if (pageSize !== 0 && currentPage < Math.ceil(totalCount / pageSize)) {
                       handlePageChange(currentPage + 1);
                     }
                   }}
-                  disabled={filters.page_size === 0 || currentPage >= Math.ceil(totalCount / filters.page_size) || paginationLoading}
+                  disabled={(filters.page_size || 20) === 0 || currentPage >= Math.ceil(totalCount / (filters.page_size || 20)) || paginationLoading}
                   className="flex items-center gap-2"
                 >
                   {t('autoria.next') || 'Next'} {paginationLoading ? '⏳' : '→'}

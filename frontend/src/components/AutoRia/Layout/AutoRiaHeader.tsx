@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,12 @@ import {
   BarChart3,
   User,
   Home,
-  Shield
+  Shield,
+  Menu,
+  X,
+  Sun,
+  Moon,
+  Globe2
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useRedisAuth } from '@/contexts/RedisAuthContext';
@@ -20,8 +25,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Globe } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AutoRiaHeaderProps {
   currentPage?: string;
@@ -194,7 +200,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-1">
-                    <Globe className="h-4 w-4" />
+                    <Globe2 className="h-4 w-4" />
                     <span className="text-xs">{currentLocale?.flag || 'ЁЯМР'}</span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -247,7 +253,7 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
                   size="sm"
                   className="flex flex-col items-center gap-1 min-w-[60px] h-auto py-2"
                 >
-                  <Globe className="h-4 w-4" />
+                  <Globe2 className="h-4 w-4" />
                   <span className="text-xs">{currentLocale?.flag || 'ЁЯМР'}</span>
                 </Button>
               </DropdownMenuTrigger>

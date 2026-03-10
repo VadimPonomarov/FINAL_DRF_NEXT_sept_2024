@@ -9,7 +9,6 @@ import { BackendAuthGuard } from '@/modules/autoria/shared/hooks/useBackendAuth'
 
 import styles from "./index.module.css";
 
-import { PageProps } from 'next';
 
 type UsersPageProps = PageProps;
 

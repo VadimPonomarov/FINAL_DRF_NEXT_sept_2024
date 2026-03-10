@@ -70,9 +70,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: "Logged out successfully." });
   }, [toast]);
   
-  const login = useCallback((user: User, accessToken: string, refreshToken: string) => {
-      // Токены сохраняются в Redis через API route, НЕ в localStorage
-      // Здесь только обновляем локальный state
+  const login = useCallback(async (user: User, accessToken: string, refreshToken: string) => {
+      // Save tokens to httpOnly cookies via API route
+      try {
+        const response = await fetch('/api/auth/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            access: accessToken,
+            refresh: refreshToken
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('[AuthProvider] Failed to save tokens to cookies:', response.status);
+          return;
+        }
+
+        console.log('[AuthProvider] ✅ Tokens saved to httpOnly cookies');
+      } catch (error) {
+        console.error('[AuthProvider] Error saving tokens to cookies:', error);
+        return;
+      }
+
+      // Update local state
       setUser(user);
       setIsAuthenticated(true);
   }, []);
@@ -131,8 +154,8 @@ export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
         // Get provider from localStorage instead of Redis
         const savedProvider = localStorage.getItem('auth_provider');
         
-        if (savedProvider && Object.values(AuthProviderEnum).includes(savedProvider)) {
-          setProviderState(savedProvider as AuthProviderEnum);
+        if (savedProvider && (Object.values(AuthProviderEnum) as string[]).includes(savedProvider)) {
+          setProviderState(savedProvider as any);
           console.log("[AuthProvider] Successfully loaded provider from localStorage:", savedProvider);
         } else {
           console.log("[AuthProvider] No valid provider found in localStorage, using default:", AuthProviderEnum.MyBackendDocs);
@@ -202,7 +225,7 @@ export const AuthProviderProvider = ({ children }: { children: ReactNode }) => {
   // Show loading state during initialization to prevent hydration mismatches
   if (!isInitialized) {
     return (
-      <AuthProviderContext.Provider value={{ provider: AuthProviderEnum.MyBackendDocs, setProvider: () => {} }}>
+      <AuthProviderContext.Provider value={{ provider: AuthProviderEnum.MyBackendDocs, setProvider: (() => {}) as any }}>
         {children}
       </AuthProviderContext.Provider>
     );

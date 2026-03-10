@@ -340,7 +340,7 @@ export function setupGlobalFetchErrorTracking(trackErrorCallback?: (url: string,
       return response;
     } catch (error) {
       // Отслеживаем сетевые ошибки
-      const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+      const url = typeof args[0] === 'string' ? args[0] : (args[0] as any).url || (args[0] as any).href || '';
       tracker.trackError(url, 0, error);
       throw error;
     }

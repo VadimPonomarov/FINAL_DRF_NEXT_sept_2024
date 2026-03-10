@@ -177,7 +177,7 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
           <CardContent>
             <RawAddressForm
               initialData={editingAddress || currentAddress}
-              onSubmit={handleCreateOrUpdateAddress}
+              onSubmit={handleCreateOrUpdateAddress as any}
               onCancel={handleCancelEdit}
               loading={loading}
             />

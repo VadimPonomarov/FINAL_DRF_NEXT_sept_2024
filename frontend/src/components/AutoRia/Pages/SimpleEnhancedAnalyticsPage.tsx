@@ -473,7 +473,7 @@ const SimpleEnhancedAnalyticsPage: React.FC = () => {
                         price_to: '',
                         region: '',
                         city: ''
-                      });
+                      } as any);
                       setRegionId('');
                     }}>
                       Очистить

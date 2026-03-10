@@ -23,6 +23,8 @@ interface VirtualSelectProps {
   searchable?: boolean;
   dependencies?: any[]; // Зависимости для перезагрузки данных
   initialLabel?: string; // Начальное название для отображения
+  className?: string;
+  pageSize?: number;
 }
 
 // 🧠 МЕМОИЗАЦИЯ: Компонент мемоизирован с React.memo
@@ -34,9 +36,7 @@ const VirtualSelectComponent = React.memo(function VirtualSelect({
   emptyMessage = "No data",
   loadingMessage = "Loading...",
   countMessage = "Found",
-  disabled = false,
-  loading = false,
-  fetchOptions,
+  disabled = false,                                                                   fetchOptions,
   allowClear = false,
   searchable = true,
   dependencies = [],

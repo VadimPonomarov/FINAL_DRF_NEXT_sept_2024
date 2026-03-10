@@ -68,9 +68,22 @@ export async function POST(request: NextRequest) {
     }
 
     const response = NextResponse.json({ success: true, message: 'Tokens saved' });
-    response.cookies.set('access_token', access, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 });
+    const isProduction = process.env.NODE_ENV === 'production';
+    response.cookies.set('access_token', access, { 
+      httpOnly: true, 
+      secure: isProduction, 
+      sameSite: 'lax', 
+      path: '/', 
+      maxAge: 60 * 60 * 24 
+    });
     if (refresh) {
-      response.cookies.set('refresh_token', refresh, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30 });
+      response.cookies.set('refresh_token', refresh, { 
+        httpOnly: true, 
+        secure: isProduction, 
+        sameSite: 'lax', 
+        path: '/', 
+        maxAge: 60 * 60 * 24 * 30 
+      });
     }
     return response;
   } catch (error) {

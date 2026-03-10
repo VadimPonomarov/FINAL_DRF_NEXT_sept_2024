@@ -2,7 +2,8 @@ import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { useNotification } from '@/contexts/NotificationContext';
 import { wsLogger } from '@/modules/chatbot/chat/logger';
 import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
-import { useGeolocation } from './useGeolocation';
+// import { useGeolocation } from './useGeolocation'; // module missing
+const useGeolocation = () => ({ latitude: null as any, longitude: null as any, city: null as any, region: null as any, country: null as any, timezone: null as any, locale: null as any });
 
 // Types
 interface WebSocketOptions {

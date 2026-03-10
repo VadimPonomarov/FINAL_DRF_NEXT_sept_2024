@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
 
 interface FormFieldsRendererProps<T extends FieldValues> {
-  fields: FormFieldsConfig<T>[];
+  fields: (FormFieldsConfig<T> & Record<string, any>)[];
   register: UseFormRegister<T>;
   errors: FieldErrors<T>;
   inputClassName?: string;

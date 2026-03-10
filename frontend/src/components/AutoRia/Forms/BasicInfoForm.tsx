@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 
 import React, { useState } from 'react';
 import { GenericForm } from '@/components/Forms/GenericForm/GenericForm';
@@ -81,6 +82,7 @@ const SAMPLE_DATA_TEMPLATES = [
 
 const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors }) => {
   const { t } = useI18n();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('form');
   const [isValidationModalOpen, setIsValidationModalOpen] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
@@ -109,7 +111,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
   ];
 
   // Схема валидации только для основной информации
-  const basicInfoSchema = null; // Временно отключена валидация
+  const basicInfoSchema: any = null; // Временно отключена валидация
 
   const handleSubmit = (formData: Pick<CarAdFormData, 'title' | 'description'>) => {
     onChange(formData);

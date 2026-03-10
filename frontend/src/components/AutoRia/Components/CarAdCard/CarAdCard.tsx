@@ -15,7 +15,7 @@ import {
   Star,
   Mail
 } from 'lucide-react';
-import { CarAd } from '@/modules/autoria/shared/types/autoria';
+import { CarAd } from '@/modules/autoria/shared/types/strict-types';
 import { FavoritesService } from '@/services/autoria/favorites.service';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatCardPrice } from '@/modules/autoria/shared/utils/priceFormatter';
@@ -152,7 +152,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
       console.error(`❌ [CarAdCard] Error toggling favorite for ad ${ad.id}:`, error);
 
       // Показываем пользователю сообщение об ошибке
-      if (error.message?.includes('401') || error.message?.includes('403')) {
+      if ((error instanceof Error ? error.message : String(error))?.includes('401') || (error instanceof Error ? error.message : String(error))?.includes('403')) {
         toast({
           variant: 'destructive',
           title: t('notifications.error'),
@@ -163,7 +163,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
         toast({
           variant: 'destructive',
           title: t('notifications.error'),
-          description: `${t('notifications.favoriteAddError')}: ${error.message || t('notifications.tryAgain')}`,
+          description: `${t('notifications.favoriteAddError')}: ${(error instanceof Error ? error.message : String(error)) || t('notifications.tryAgain')}`,
           duration: 4000
         });
       }

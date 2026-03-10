@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Globe, ChevronUp, ChevronDown } from 'lucide-react';
+import { Globe2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { usePathname } from 'next/navigation';

@@ -18,7 +18,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   onThreadClick,
   showContext = false
 }) => {
-  const isCurrencyData = message.content && typeof message.content === 'object' && 'rates' in message.content;
+  const isCurrencyData = (message.content as any) && typeof (message.content as any) === 'object' && 'rates' in (message.content as any);
   const imageRef = useRef<HTMLImageElement>(null);
   const [imageState, setImageState] = useState({
     loaded: false,
@@ -80,14 +80,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   }, []);
 
   // Extract chart data if available
-  const chartBase64 = message.chartBase64 || message.chart_base64 || (message.content?.chart_base64);
-  const tableHtml = message.tableHtml || message.table_html || (message.content?.table_html);
-  const tableData = message.tableData || message.table_data || (message.content?.table_data);
+  const chartBase64 = message.chartBase64 || message.chart_base64 || ((message.content as any)?.chart_base64);
+  const tableHtml = message.tableHtml || message.table_html || ((message.content as any)?.table_html);
+  const tableData = message.tableData || message.table_data || ((message.content as any)?.table_data);
   const files = message.files || [];
   const resultFileUrl = message.resultFileUrl || message.result_file_url;
 
   // Handle different content types
-  let content = message.content;
+  let content = (message.content ?? "");
   if (typeof content === 'object' && content !== null) {
     // If content is an object but not currency data, try to stringify it
     if (!isCurrencyData) {

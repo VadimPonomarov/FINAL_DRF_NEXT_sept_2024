@@ -9,7 +9,7 @@ import {
   MapPin,
   Edit,
   Trash2,
-  Globe,
+  Globe2,
   Navigation,
   ExternalLink,
   CheckCircle,
@@ -135,7 +135,7 @@ const AddressCard: React.FC<AddressCardProps> = ({
             <Separator />
             <div className="space-y-2">
               <h4 className="font-medium text-sm text-gray-700 flex items-center gap-2">
-                <Globe className="h-4 w-4" />
+                <Globe2 className="h-4 w-4" />
                 {t('profile.address.standardizedData')}
               </h4>
               <div className="bg-blue-50 p-3 rounded-md">

@@ -93,14 +93,14 @@ export async function fetchWithAuth(
   // Если interceptor отключен для этого запроса - используем обычный fetch
   if (init?._skipInterceptor) {
     const { _skipInterceptor, ...cleanInit } = init;
-    return fetch(input, cleanInit);
+    return (fetch as typeof window.fetch)(input, cleanInit);
   }
 
   const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   
   // Пропускаем interceptor для auth endpoints чтобы избежать циклов
   if (url.includes('/api/auth/') && !url.includes('/api/auth/me')) {
-    return fetch(input, init);
+    return (fetch as typeof window.fetch)(input, init);
   }
 
   logger.debug('[apiInterceptor] Fetching:', url);
@@ -133,7 +133,7 @@ export async function fetchWithAuth(
         logger.debug('[apiInterceptor] Retrying original request with refreshed token...');
         const retryResponse = await fetch(input, {
           ...init,
-          _retry: true, // Помечаем как retry
+          ...({ _retry: true } as any), // Помечаем как retry
         });
 
         if (retryResponse.ok) {

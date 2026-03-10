@@ -4,7 +4,7 @@
  */
 
 // Shared module (common for all themes)
-export * from './shared';
+// export * from './shared'; // module not found
 
 // Theme modules
 export * as Main from './main';

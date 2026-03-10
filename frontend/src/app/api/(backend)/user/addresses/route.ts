@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import '@/lib/env-loader'; // Загружаем переменные окружения во время выполнения
 import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
 
+const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+
 /**
  * API route for user addresses
  * Proxies requests to Django backend /api/accounts/addresses/

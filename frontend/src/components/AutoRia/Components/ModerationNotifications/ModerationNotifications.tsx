@@ -44,7 +44,7 @@ const ModerationNotifications: React.FC = () => {
 
   // Проверка прав доступа - только менеджеры и админы
   const canModerate = React.useMemo(() => {
-    return user?.is_staff || user?.is_superuser || false;
+    return (user as any)?.is_staff || user?.is_superuser || false;
   }, [user]);
 
   useEffect(() => {

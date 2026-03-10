@@ -44,7 +44,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = (props) => {
       onZoomOut={handleZoomOut}
       onDownload={handleDownload}
       onToggleFullscreen={handleToggleFullscreen}
-      contextInfo={props.messageContext}
+      contextInfo={props.messageContext as any}
       onThreadClick={props.onThreadClick}
       showContext={props.showContext}
       files={props.message.files}

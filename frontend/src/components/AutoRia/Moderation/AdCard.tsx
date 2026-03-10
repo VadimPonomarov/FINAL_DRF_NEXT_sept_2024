@@ -73,20 +73,20 @@ const AdCard = memo<AdCardProps>(({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg line-clamp-2 mb-2">
-              {ad.title}
+              {typeof ad.title === 'object' ? JSON.stringify(ad.title) : String(ad.title ?? '')}
             </CardTitle>
             <div className="flex items-center gap-4 text-sm text-gray-600">
               <span className="flex items-center gap-1">
                 <Car className="h-4 w-4" />
-                {ad.brand} {ad.model}
+                {ad.brand} {typeof ad.model === 'object' ? JSON.stringify(ad.model) : String(ad.model ?? '')}
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                {ad.year}
+                {typeof ad.year === 'object' ? JSON.stringify(ad.year) : String(ad.year ?? '')}
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
-                {ad.city}
+                {typeof ad.city === 'object' ? JSON.stringify(ad.city) : String(ad.city ?? '')}
               </span>
             </div>
           </div>
@@ -97,7 +97,7 @@ const AdCard = memo<AdCardProps>(({
       <CardContent>
         <div className="space-y-4">
           <p className="text-sm text-gray-600 line-clamp-3">
-            {ad.description}
+            {typeof ad.description === 'object' ? JSON.stringify(ad.description) : String(ad.description ?? '')}
           </p>
 
           <div className="flex items-center justify-between">
@@ -120,7 +120,7 @@ const AdCard = memo<AdCardProps>(({
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <User className="h-4 w-4" />
-              {ad.user?.email}
+              {typeof ad.user?.email === 'object' ? JSON.stringify(ad.user?.email) : String(ad.user?.email ?? '')}
             </div>
           </div>
 

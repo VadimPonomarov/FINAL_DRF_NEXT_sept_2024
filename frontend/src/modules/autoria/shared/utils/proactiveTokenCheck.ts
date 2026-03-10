@@ -44,32 +44,13 @@ async function getTokensFromRedis(): Promise<TokenData | null> {
     const tokenResp = await fetch(`${origin}/api/auth/token`, { cache: 'no-store', credentials: 'include' });
 
     let authKey = 'backend_auth';
-    if (providerResp.ok) {
-      const providerData = await providerResp.json();
-      if (providerData.exists && providerData.value === 'dummy') {
-        authKey = 'dummy_auth';
-      }
-    }
+    // Redis removed - provider check skipped
 
     // Получаем токены
     
 
-    if (!response.ok) {
-      console.log('[proactiveTokenCheck] No tokens in Redis');
-      return null;
-    }
-
-    const data = await response.json();
-    if (!data.exists || !data.value) {
-      console.log('[proactiveTokenCheck] No token data in Redis');
-      return null;
-    }
-
-    const tokenData = typeof data.value === 'string' 
-      ? JSON.parse(data.value) 
-      : data.value;
-
-    return tokenData;
+    // Redis removed - return null
+    return null;
   } catch (error) {
     console.error('[proactiveTokenCheck] Error getting tokens from Redis:', error);
     return null;
@@ -93,12 +74,12 @@ async function refreshTokens(): Promise<boolean> {
       credentials: 'include'
     });
 
-    if (!response.ok) {
-      console.error('[proactiveTokenCheck] Token refresh failed:', response.status);
+    if (!(response as any).ok) {
+      console.error('[proactiveTokenCheck] Token refresh failed:', (response as any).status);
       return false;
     }
 
-    const data = await response.json();
+    const data = await (response as any).json();
     const success = data.success === true && !!data.access;
     
     if (success) {

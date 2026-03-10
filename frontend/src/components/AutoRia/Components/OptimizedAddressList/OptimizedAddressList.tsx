@@ -28,15 +28,15 @@ const AddressItem = memo(({
       <MapPin className="h-4 w-4 text-gray-500" />
       <div className="flex flex-col">
         <span className="font-medium">
-          {address.input_locality || address.city}, {address.input_region || address.region}
+          {address.input_locality || (address as any).city}, {address.input_region || address.region}
         </span>
-        {address.street && (
+        {(address as any).street && (
           <span className="text-sm text-gray-500">
-            {address.street} {address.house_number}
+            {(address as any).street} {(address as any).house_number}
           </span>
         )}
       </div>
-      {address.is_primary && (
+      {(address as any).is_primary && (
         <Badge variant="default" className="text-xs">
           {t('profile.address.primary')}
         </Badge>

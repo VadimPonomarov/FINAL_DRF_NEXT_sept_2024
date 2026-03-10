@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Check, ChevronDown, Globe } from 'lucide-react';
+import { Check, ChevronDown, Globe2 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Locale } from '@/lib/i18n';
 
@@ -53,7 +53,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           {availableLocales.map((localeOption) => (
             <DropdownMenuItem
               key={localeOption.code}
-              onClick={() => handleLocaleChange(localeOption.code)}
+              onClick={() => localeOption.code && handleLocaleChange(localeOption.code as Locale)}
               className="flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center">
@@ -84,7 +84,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             {showFlag ? (
               <span className="text-lg">{localeConfig.flag}</span>
             ) : (
-              <Globe className="h-4 w-4" />
+              <Globe2 className="h-4 w-4" />
             )}
           </Button>
         </DropdownMenuTrigger>
@@ -92,7 +92,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           {availableLocales.map((localeOption) => (
             <DropdownMenuItem
               key={localeOption.code}
-              onClick={() => handleLocaleChange(localeOption.code)}
+              onClick={() => localeOption.code && handleLocaleChange(localeOption.code as Locale)}
               className="flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center">
@@ -137,7 +137,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         {availableLocales.map((localeOption) => (
           <DropdownMenuItem
             key={localeOption.code}
-            onClick={() => handleLocaleChange(localeOption.code)}
+            onClick={() => localeOption.code && handleLocaleChange(localeOption.code as Locale)}
             className="flex items-center justify-between cursor-pointer py-2"
           >
             <div className="flex items-center">

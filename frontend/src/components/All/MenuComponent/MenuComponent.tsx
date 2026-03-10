@@ -36,7 +36,7 @@ const MenuComponent: FC<IProps> = ({ items, className }) => {
                                             }
                                         } catch (error) {
                                             console.error('Error executing callback:', error);
-                                            console.error('Error stack:', error.stack);
+                                            console.error('Error stack:', (error as any).stack);
                                         }
                                     }}
                                     className={clsx(

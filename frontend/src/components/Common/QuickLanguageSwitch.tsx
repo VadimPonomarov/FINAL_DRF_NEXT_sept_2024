@@ -15,7 +15,7 @@ export const QuickLanguageSwitch: React.FC = () => {
           key={localeOption.code}
           variant={locale === localeOption.code ? "default" : "ghost"}
           size="sm"
-          onClick={() => setLocale(localeOption.code)}
+          onClick={() => setLocale(localeOption.code as any)}
           className={`h-8 px-2 text-xs font-medium ${
             locale === localeOption.code 
               ? 'bg-blue-600 text-white' 

@@ -142,7 +142,7 @@ const AdAnalyticsDisplay: React.FC<AdAnalyticsDisplayProps> = ({
           )}
         </span>
         {analytics.trending && (
-          <TrendingUp className="h-3 w-3 text-red-500 animate-pulse" title="Трендовое объявление" />
+          <TrendingUp className="h-3 w-3 text-red-500 animate-pulse" />
         )}
       </div>
 

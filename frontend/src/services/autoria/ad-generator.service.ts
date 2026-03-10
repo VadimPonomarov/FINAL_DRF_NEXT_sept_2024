@@ -181,7 +181,7 @@ export class AdGeneratorService {
 
       // 🔄 REGENERATION CYCLE: Instead of fallback, trigger regeneration
       console.log(`🔄 REGENERATION: Will retry image generation instead of using fallback`);
-      throw new Error(`ImageGenerationFailed: ${error.message}`); // Trigger regeneration cycle
+      throw new Error(`ImageGenerationFailed: ${(error instanceof Error ? error.message : String(error))}`); // Trigger regeneration cycle
     }
   }
 }

@@ -9,6 +9,7 @@ export interface FormFieldsConfig<T extends FieldValues> {
   name: keyof T;
   label: string;
   type: string;
+  placeholder?: string;
   options?: SelectOption[];
   validation?: Record<string, unknown>;
 }

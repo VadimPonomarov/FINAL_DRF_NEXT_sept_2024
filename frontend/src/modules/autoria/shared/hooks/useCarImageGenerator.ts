@@ -101,7 +101,7 @@ export const useCarImageGenerator = (
       console.log('🎨 Generating images with params:', carParams);
 
       // Используем AI генерацию для создания изображений
-      const generatedImages = await CarImageGeneratorService.generateImagesForAd(carParams);
+      const generatedImages = await CarImageGeneratorService.generateImagesForAd(carParams as any);
 
       setImages(generatedImages.images);
 

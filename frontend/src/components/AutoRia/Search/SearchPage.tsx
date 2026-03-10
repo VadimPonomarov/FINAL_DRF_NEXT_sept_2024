@@ -81,7 +81,7 @@ const SearchPage: React.FC = () => {
   });
 
   // 📊 Моковые данные объявлений
-  const mockAds: CarAd[] = [
+  const mockAds: any[] = [
     {
       id: '1',
       title: '🚗 BMW X5 2020 - Идеальное состояние',
@@ -173,7 +173,7 @@ const SearchPage: React.FC = () => {
   };
 
   // 📱 Карточка объявления
-  const AdCard: React.FC<{ ad: CarAd }> = ({ ad }) => (
+  const AdCard: React.FC<{ ad: any }> = ({ ad }) => (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       {/* 🖼️ Изображение */}
       <div className="relative">
@@ -466,7 +466,7 @@ const SearchPage: React.FC = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {sortOptions.map(option => (
+                      {sortOptions.map((option: any) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -501,7 +501,7 @@ const SearchPage: React.FC = () => {
                 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
                 : 'grid-cols-1'
             }`}>
-              {mockAds.map(ad => (
+              {mockAds.map((ad: any) => (
                 <AdCard key={ad.id} ad={ad} />
               ))}
             </div>

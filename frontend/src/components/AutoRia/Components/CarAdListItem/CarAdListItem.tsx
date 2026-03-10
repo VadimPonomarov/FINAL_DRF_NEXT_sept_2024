@@ -17,7 +17,7 @@ import {
   Phone,
   Mail
 } from 'lucide-react';
-import { CarAd } from '@/modules/autoria/shared/types/autoria';
+import { CarAd } from '@/modules/autoria/shared/types/strict-types';
 import { FavoritesService } from '@/services/autoria/favorites.service';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatCardPrice } from '@/modules/autoria/shared/utils/priceFormatter';

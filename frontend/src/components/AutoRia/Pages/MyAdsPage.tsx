@@ -240,7 +240,7 @@ const MyAdsPage = () => {
   const handleOwnerStatusChange = useCallback(async (adId: number, newStatus: string) => {
     try {
       await CarAdsService.updateMyAdStatus(adId, newStatus);
-      setAds(prev => prev.map(ad => ad.id === adId ? { ...ad, status: newStatus } : ad));
+      setAds(((prev: any[]) => prev.map((ad: any) => ad.id === adId ? { ...ad, status: newStatus } : ad)) as any);
       
       // Get the translated status name for the toast message
       const statusTranslation = t(`autoria.moderation.status.${newStatus.toLowerCase()}`, newStatus);

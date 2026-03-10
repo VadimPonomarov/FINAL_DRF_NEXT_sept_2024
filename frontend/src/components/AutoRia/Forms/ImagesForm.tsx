@@ -463,7 +463,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
         })
         .filter(Boolean) as Array<{ id: number; order: number }>;
 
-      await Promise.allSettled(payload.map(item =>
+      await Promise.allSettled(payload.map((item: any) =>
         fetch(`/api/ads/${adId}/images/${item.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -887,7 +887,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
         console.error('[ImagesForm] ❌ ASYNC Generation error:', error);
         toast({
           title: "❌ Ошибка генерации",
-          description: error.message || "Не удалось сгенерировать изображения",
+          description: (error instanceof Error ? error.message : String(error)) || "Не удалось сгенерировать изображения",
           variant: "destructive",
         });
       })
@@ -994,7 +994,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
                     {t('autoria.images.fillBasic', 'Fill in the basic information')}
                   </h3>
                   <p className="text-amber-800 mb-4">
-                    {t('autoria.images.needBrandModelYear', 'To generate images, specify brand, model and year')}
+                    {(t as any)('autoria.images.needBrandModelYear', 'To generate images, specify brand, model and year')}
                   </p>
                   <p className="text-sm text-amber-700">
                     {t('autoria.images.goToBasicTab', 'Go to the Basic Info tab and fill in the required fields')}
@@ -1139,7 +1139,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
                       {t('autoria.images.dragOrClick', 'Drag files here or click the button to select')}
                     </p>
                     <p className="text-sm text-slate-500">
-                      {t('autoria.images.supportedFormats', 'Supported: JPG, PNG, WebP • Max 10 files • Up to 10MB each')}
+                      {(t as any)('autoria.images.supportedFormats', 'Supported: JPG, PNG, WebP • Max 10 files • Up to 10MB each')}
                     </p>
                   </div>
 
@@ -1219,7 +1219,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
               </span>
             </CardTitle>
             <p className="text-sm text-gray-600 mt-2">
-              {t('autoria.images.hint', 'Drag thumbnails to reorder. Click image to zoom. Click ⭐ to set main, ✖ to delete.')}
+              {(t as any)('autoria.images.hint', 'Drag thumbnails to reorder. Click image to zoom. Click ⭐ to set main, ✖ to delete.')}
             </p>
           </CardHeader>
           <CardContent>
@@ -1257,7 +1257,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
 
             toast({
               title: t('autoria.images.generationDone', 'Generation finished'),
-              description: t('autoria.images.requestedTypesCount', 'Requested {count} image types', { count: options.imageTypes?.length || 0 }),
+              description: (t as any)('autoria.images.requestedTypesCount', 'Requested {count} image types', { count: options.imageTypes?.length || 0 }),
             });
           } catch (error) {
             console.error('[ImagesForm] ❌ Generation failed:', error);
@@ -1269,7 +1269,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
           }
         }}
         title={t('autoria.images.genModalTitle', 'Car image generation')}
-        description={t('autoria.images.genModalDesc', { brand: data.brand || '', model: data.model || '', year: data.year || '' })}
+        description={(t as any)('autoria.images.genModalDesc', { brand: data.brand || '', model: data.model || '', year: data.year || '' })}
         isLoading={aiLoading || localAiLoading}
       />
 
