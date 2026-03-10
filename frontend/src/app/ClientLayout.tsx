@@ -1,13 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { Suspense, lazy } from "react";
+import dynamic from "next/dynamic";
 import {MenuMain} from "@/components/Menus/MenuMain/MenuMain";
 import RootProvider from "@/shared/providers/RootProvider";
 import {MagicBackButton} from "@/components/ui/magicBackButton";
-import { ChatBotIcon } from "@/components/ChatBot/ChatBotIcon";
 import { Toaster } from "@/components/ui/toaster";
 import TopRightControls from "@/components/All/TopRightControls/TopRightControls";
 import GlobalProviderToggle from "@/components/All/GlobalProviderToggle/GlobalProviderToggle";
+
+// Lazy load ChatBotIcon - not critical for initial render
+const ChatBotIcon = dynamic(
+  () => import("@/components/ChatBot/ChatBotIcon").then(mod => ({ default: mod.ChatBotIcon })),
+  { ssr: false, loading: () => null }
+);
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (

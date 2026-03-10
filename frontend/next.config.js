@@ -136,6 +136,28 @@ const nextConfig = {
   poweredByHeader: false,
   generateEtags: true,
   compress: true,
+  
+  // SWC minification for faster builds and smaller bundles
+  swcMinify: true,
+  
+  // Modularize imports for tree-shaking
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
+    },
+    'react-icons/fa': {
+      transform: 'react-icons/fa/{{member}}',
+    },
+    'react-icons/md': {
+      transform: 'react-icons/md/{{member}}',
+    },
+    'react-icons/hi': {
+      transform: 'react-icons/hi/{{member}}',
+    },
+    '@radix-ui/react-icons': {
+      transform: '@radix-ui/react-icons/dist/{{member}}',
+    },
+  },
 
   // Disable static generation for error pages (404, 500, etc.)
   // This prevents Next.js from trying to statically generate error pages

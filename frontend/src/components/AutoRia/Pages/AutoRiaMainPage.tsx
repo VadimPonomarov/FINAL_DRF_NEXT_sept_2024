@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,13 +20,25 @@ import {
 import Link from 'next/link';
 import { useI18n } from '@/contexts/I18nContext';
 import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
-import AccountTypeManager from '@/components/AutoRia/AccountTypeManager';
-import TestAdsGenerationModal from '@/components/AutoRia/Components/TestAdsGenerationModal';
-
-import PlatformStatsWidget from '@/components/AutoRia/Statistics/PlatformStatsWidget';
 import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
 import { ensureInitialTestAdsSeed } from '@/shared/init/ensureInitialSeed';
 import { CarAdsService } from '@/services/autoria/carAds.service';
+
+// Lazy load heavy components to improve LCP and reduce TBT
+const AccountTypeManager = dynamic(
+  () => import('@/components/AutoRia/AccountTypeManager'),
+  { ssr: false, loading: () => <div className="animate-pulse h-32 bg-gray-100 rounded-lg" /> }
+);
+
+const TestAdsGenerationModal = dynamic(
+  () => import('@/components/AutoRia/Components/TestAdsGenerationModal'),
+  { ssr: false }
+);
+
+const PlatformStatsWidget = dynamic(
+  () => import('@/components/AutoRia/Statistics/PlatformStatsWidget'),
+  { ssr: false, loading: () => <div className="animate-pulse h-24 bg-gray-100 rounded-lg" /> }
+);
 
 const AutoRiaMainPage = () => {
   const { t, formatNumber } = useI18n();

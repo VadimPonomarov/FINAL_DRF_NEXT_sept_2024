@@ -1,0 +1,18 @@
+# robots.txt for AutoRia Clone
+# https://autoria-clone.vercel.app
+
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes
+Disallow: /api/
+Disallow: /admin/
+
+# Allow search engines to index main pages
+Allow: /autoria
+Allow: /autoria/search
+Allow: /login
+Allow: /register
+
+# Sitemap
+Sitemap: https://autoria-clone.vercel.app/sitemap.xml
