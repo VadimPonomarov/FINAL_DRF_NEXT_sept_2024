@@ -21,6 +21,7 @@ except ImportError:
     chat_urls = []
 from apps.users.urls import urlpatterns as users_urls
 from core.views import health_check, google_maps_api_key
+from core.urls.diagnostic_urls import urlpatterns as diagnostic_urls
 from .docs.urls import urlpatterns as docs_urls
 
 # Main URL patterns
@@ -51,6 +52,9 @@ urlpatterns = [
 
     # Configuration endpoints
     path("api/config/google-maps-key/", google_maps_api_key, name="google_maps_api_key"),
+
+    # Diagnostic endpoints (separate from business logic)
+    path("api/diagnostic/", include(diagnostic_urls)),
 
     # API endpoints
     path("api/accounts/", include((accounts_urls, 'accounts'))),
