@@ -14,8 +14,7 @@ import {
   Menu,
   X,
   Sun,
-  Moon,
-  Globe2
+  Moon
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useRedisAuth } from '@/contexts/RedisAuthContext';
@@ -42,7 +41,7 @@ interface NavigationItem {
 }
 
 const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
-  const { t, locale, setLocale, availableLocales } = useI18n();
+  const { t } = useI18n();
   const { redisAuth } = useRedisAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -51,9 +50,6 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
   const isSuperUser = redisAuth?.user?.is_superuser || false;
   const isModerator = redisAuth?.user?.groups?.some((g: any) => g.name === 'Moderators') || false;
   const isPremiumUser = isSuperUser || true; // Temporary: all users are premium
-
-  // Current locale
-  const currentLocale = availableLocales.find(l => l.code === locale);
 
   // Core navigation items
   const coreNavigation: NavigationItem[] = [
@@ -161,33 +157,8 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
           ))}
         </nav>
 
-        {/* Right Section - Language Selector */}
+        {/* Right Section - User Menu */}
         <div className="flex items-center gap-2">
-          {/* Language Selector - Desktop and Mobile */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-9 w-9 rounded-lg p-0">
-                <Globe2 className="h-4 w-4" />
-                <span className="sr-only">Change language</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[140px]">
-              {availableLocales.map((localeOption) => (
-                <DropdownMenuItem
-                  key={localeOption.code}
-                  onClick={() => setLocale(localeOption.code as any)}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-2",
-                    locale === localeOption.code && "bg-accent"
-                  )}
-                >
-                  <span className="text-sm">{localeOption.flag}</span>
-                  <span className="text-sm font-medium">{localeOption.name}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* User Menu - Desktop Only */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
