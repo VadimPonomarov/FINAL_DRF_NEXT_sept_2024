@@ -5,7 +5,6 @@
       "node",
       "react",
       "@types/react",
-      "react/next",
       "react/jsx-runtime"
     ],
     "lib": [
@@ -58,8 +57,7 @@
     "**/*.ts",
     "**/*.tsx",
     "../client/types/**/*.ts",
-    "src/next-env.d.ts",
-    ".next/types/**/*.ts"
+    "src/next-env.d.ts"
   ],
   "exclude": [
     "node_modules",

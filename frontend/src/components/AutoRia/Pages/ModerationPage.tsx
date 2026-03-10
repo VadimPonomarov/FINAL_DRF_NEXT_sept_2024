@@ -97,8 +97,16 @@ const ModerationPage = () => {
         return;
       }
 
-      if (!isSuperUser) {
-        console.log('[ModerationPage] User not authorized (not superuser), redirecting to home...');
+      // ВАЖНО: Ждем пока user данные загрузятся
+      if (!user) {
+        console.log('[ModerationPage] User data not loaded yet, waiting...');
+        return;
+      }
+
+      // Проверяем is_superuser или is_staff
+      const hasAdminRights = user?.is_superuser || user?.is_staff;
+      if (!hasAdminRights) {
+        console.log('[ModerationPage] User not authorized (not admin), redirecting...', { is_superuser: user?.is_superuser, is_staff: user?.is_staff });
         toast({
           variant: 'destructive',
           title: t('common.error'),
@@ -534,7 +542,9 @@ const ModerationPage = () => {
     setSelectedAd(null);
   }, []);
 
-  if (!isSuperUser) {
+  // Проверяем права для рендера (is_superuser или is_staff)
+  const hasAdminRightsForRender = user?.is_superuser || user?.is_staff;
+  if (!hasAdminRightsForRender) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Alert className="max-w-md">

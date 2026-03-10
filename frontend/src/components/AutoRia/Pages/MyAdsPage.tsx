@@ -261,6 +261,35 @@ const MyAdsPage = () => {
     }
   }, [toast, t]);
 
+  // Удаление объявления с оптимистичным обновлением UI
+  const handleDeleteAd = useCallback(async (adId: number) => {
+    // Сохраняем текущее состояние для отката
+    const previousAds = [...ads];
+    
+    // Оптимистично удаляем из UI
+    setAds(prev => prev.filter(ad => ad.id !== adId));
+    
+    try {
+      await CarAdsService.deleteCarAd(adId);
+      toast({
+        variant: 'default',
+        title: t('notifications.success', 'Успех'),
+        description: t('autoria.adDeleted', 'Объявление удалено'),
+        duration: 2000
+      });
+    } catch (error) {
+      // Откатываем изменения при ошибке
+      setAds(previousAds);
+      console.error('Error deleting ad:', error);
+      toast({
+        variant: 'destructive',
+        title: t('notifications.error', 'Ошибка'),
+        description: t('autoria.deleteError', 'Не удалось удалить объявление'),
+        duration: 3000
+      });
+    }
+  }, [ads, toast, t]);
+
   // Фильтрация теперь происходит на backend через API параметры
 
   // Показываем загрузку во время проверки авторизации
@@ -536,7 +565,7 @@ const MyAdsPage = () => {
                 key={ad.id}
                 ad={ad}
                 onClick={handleCardClick}
-                onDelete={async (id) => { await CarAdsService.deleteCarAd(id); await loadAds(); }}
+                onDelete={handleDeleteAd}
                 onStatusChange={handleOwnerStatusChange}
                 ownerEmail={ownerEmail}
                 formatPrice={(a) => formatPrice(a)}
@@ -646,7 +675,7 @@ const MyAdsPage = () => {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => CarAdsService.deleteCarAd(ad.id).then(loadAds)}><Trash2 className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDeleteAd(ad.id)}><Trash2 className="h-4 w-4" /></Button>
                         </TooltipTrigger>
                         <TooltipContent>{t('delete')}</TooltipContent>
                       </Tooltip>

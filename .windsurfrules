@@ -1,0 +1,2072 @@
+# Windsurf Global Rules
+
+## CONTEXT-FIRST PROTOCOL
+
+Before ANY code change, you MUST:
+1. Read and internalize the existing code in the affected files
+2. Identify all related modules, classes, and functions that interact with the target area
+3. Check for existing patterns, naming conventions, and abstractions already in use
+4. Never introduce a new pattern if an existing one solves the problem
+5. Never rename, restructure, or move existing code unless explicitly asked
+
+When switching to a new task or after a context gap, state explicitly:
+"I see the following existing implementation: [summary]. I will extend it, not replace it."
+
+---
+
+## PROJECT BOOTSTRAP — MANDATORY BEFORE ANY CODE
+
+No implementation work begins until all four project foundation documents are created,
+confirmed by the user, and committed to the repository. This is an absolute gate.
+
+AI is responsible for drafting all four documents based on user prompts and conversations.
+The user confirms or corrects. Only after explicit confirmation does development start.
+
+---
+
+### DOCUMENT 1 — TECHNICAL SPECIFICATION (TZ)
+
+File: docs/SPEC.md
+Created by: AI, based on user requirements conversation
+Confirmed by: user explicitly ("spec approved" or equivalent)
+
+Required sections:
+- Project purpose: what problem it solves, for whom, why it matters
+- Functional requirements: every feature as a numbered user story (As a... I want... So that...)
+- Non-functional requirements: performance targets, security constraints, supported browsers/devices
+- Out of scope: explicit list of what will NOT be built
+- Glossary: domain terms and their definitions
+- Open questions: unresolved decisions that need user input
+
+Rule: if a feature is not in the TZ — it does not get built. New features require TZ update first.
+
+---
+
+### DOCUMENT 2 — ROADMAP (PLAN)
+
+File: docs/ROADMAP.md
+Created by: AI, based on confirmed TZ
+Confirmed by: user explicitly
+
+Required sections:
+- Milestones: numbered phases (M1, M2, M3...) each with a clear deliverable
+- Each milestone contains: goal, list of features from TZ, definition of done
+- Dependencies: which milestone blocks which
+- Current status: which milestone is active, what is done, what is next
+- Known risks: technical or scope risks with mitigation notes
+
+Rule: every development session starts by stating the current milestone and active task.
+Rule: completed items are marked ✓ in ROADMAP.md — it is a living document, updated each session.
+
+---
+
+### DOCUMENT 3 — FILE STRUCTURE
+
+File: docs/STRUCTURE.md
+Created by: AI, based on confirmed TZ + tech stack
+Confirmed by: user explicitly
+
+Required content:
+- Full directory tree of the project with one-line description of each folder and key file
+- Naming conventions: files, components, services, tests, constants
+- Module ownership: which layer owns which responsibility
+- Import rules: what can import what (e.g., UI cannot import DB layer directly)
+- Prohibited patterns: what must never appear where
+
+Format example:
+```
+src/
+  components/       # Reusable UI components, no business logic
+  pages/            # Route-level components, orchestrate components + services
+  services/         # Business logic, API calls, data transformation
+  store/            # State management (redux/zustand/pinia)
+  utils/            # Pure functions, no side effects, no imports from services
+  i18n/             # Localization — see I18N RULES
+  types/            # Shared TypeScript interfaces and enums — single source of truth
+  constants/        # App-wide named constants
+tests/
+  unit/             # Mirror of src/ structure
+  integration/      # API and service integration tests
+  e2e/              # Full user journey tests
+docs/
+  SPEC.md / ROADMAP.md / STRUCTURE.md / DEPLOY.md / DECISIONS.md / CONTEXT.md
+tmp/
+  .gitignore        # contains: * — nothing in tmp/ is ever committed
+  .gitkeep          # keeps the directory tracked in git
+```
+
+Rule: no file may be created outside the agreed structure without updating STRUCTURE.md first.
+
+---
+
+### DOCUMENT 4 — DEPLOYMENT PLAN
+
+File: docs/DEPLOY.md
+Created by: AI, based on confirmed TZ + infrastructure discussion
+Confirmed by: user explicitly
+
+Required sections:
+- Environments: local dev, staging, production — URLs, purposes, access rules
+- Stack: what runs where (frontend host, backend host, DB, CDN, etc.)
+- CI/CD pipeline: step-by-step from push to live (lint → test → build → deploy)
+- Environment variables: full list of required env vars (names only, never values)
+- Deployment commands: exact commands to deploy each environment
+- Rollback procedure: how to revert a bad deployment
+- Health checks: how to verify a deployment succeeded
+- Secrets management: where secrets live, how they are injected, who has access
+
+Rule: no production deployment without running the full PRE-PRODUCTION TEST PROGRAM first.
+Rule: DEPLOY.md must be updated if infrastructure changes.
+
+---
+
+### DOCUMENT 5 — ARCHITECTURAL DECISIONS LOG
+
+File: docs/DECISIONS.md
+Created by: AI, updated after every non-trivial decision
+Never deleted — append only. This is the institutional memory of the project.
+
+Format — every entry follows this exact structure:
+```markdown
+## YYYY-MM-DD — [Decision title]
+**Decision:** [What was decided]
+**Reason:** [Why — trade-offs considered]
+**Alternatives rejected:** [What else was considered and why not]
+**Affects:** [Which files / modules / layers]
+**Model:** [Which AI model made/confirmed this decision]
+---
+```
+
+Example entries:
+```markdown
+## 2024-01-15 — Auth strategy: JWT + httpOnly cookies
+**Decision:** JWT stored in httpOnly cookies, not localStorage
+**Reason:** XSS protection — localStorage accessible to injected scripts
+**Alternatives rejected:** localStorage (XSS risk), sessions (stateful, harder to scale)
+**Affects:** src/services/auth.ts, src/middleware/auth.ts, docs/DEPLOY.md
+**Model:** claude-sonnet
+---
+
+## 2024-01-16 — DB connection pooling via pgBouncer
+**Decision:** pgBouncer with max_pool=20 in front of PostgreSQL
+**Reason:** Railway limits 25 DB connections; pgBouncer multiplexes safely
+**Alternatives rejected:** direct connections (hit limit under load)
+**Affects:** docker-compose.yml, .env.base, docs/DEPLOY.md
+**Model:** claude-opus
+---
+```
+
+Rules:
+- Every architecture choice, library selection, pattern, or structural decision → logged immediately
+- Never overwrite an entry — append a new one with updated date if decision changes
+- If a model makes any decision not explicitly requested — log it anyway
+- DECISIONS.md is read at SESSION INITIALIZATION — incoming models must not contradict
+  existing decisions without explicitly flagging the contradiction and asking user to confirm
+
+---
+
+### DOCUMENT 6 — LIVE CONTEXT SNAPSHOT
+
+File: docs/CONTEXT.md
+Created by: AI — overwritten at the END of every session.
+This is a current-state snapshot, not a history log. Always reflects NOW.
+
+Format:
+```markdown
+## Last updated
+Date: YYYY-MM-DD
+Model: [model name]
+Session summary: [1-2 sentences — what was done this session]
+
+## Current milestone
+[M#] — [Milestone name]
+
+## Completed in this session
+- [task / file / feature] — [brief description]
+
+## In progress (started but not finished)
+- [task] — [current state, what remains to complete]
+
+## Blocked
+- [blocker] — [what is needed to unblock]
+
+## Next task
+[Exact description of what the next session should start with — specific enough
+that a new model with zero chat history knows exactly what to do]
+
+## Open questions for user
+- [anything unclear that needs a decision before proceeding]
+
+## Recent decisions (last 3)
+- [date] [title] — see docs/DECISIONS.md
+```
+
+Rules:
+- Every model MUST update CONTEXT.md at the end of the session before finishing
+- If CONTEXT.md is missing at session start — create it immediately, then proceed
+- "Next task" must be specific enough for a cold-start model to begin without asking
+- "Open questions" — log ambiguities here instead of making silent assumptions
+- CONTEXT.md is always plain markdown, never binary — diff-friendly, committable
+
+---
+
+## SESSION CONTINUITY — HISTORY & CONTEXT ENFORCEMENT
+
+At the START of every session and after every model switch:
+1. Read docs/SPEC.md — internalize current requirements
+2. Read docs/ROADMAP.md — identify current milestone and next task
+3. Read docs/STRUCTURE.md — internalize file/module ownership rules
+4. Read docs/DEPLOY.md — note target environment for current work
+5. Read docs/DECISIONS.md — internalize all prior architectural decisions, never contradict them
+6. Read docs/CONTEXT.md — read "Next task" field and pick up exactly where last session ended
+7. State in one paragraph: current milestone, active task, relevant context from prior sessions
+
+Every response that implements a feature must reference:
+- Which TZ user story it satisfies (e.g., "implements US-04")
+- Which roadmap milestone it belongs to (e.g., "M2 — Authentication")
+- Whether ROADMAP.md needs updating after this task
+
+At the END of every session:
+- Update docs/CONTEXT.md — overwrite with current state snapshot
+- Append to docs/DECISIONS.md — any new architectural decisions made this session
+- Mark completed items in docs/ROADMAP.md
+
+If docs/ folder does not exist yet — STOP and create all 6 documents before writing any code.
+If any document is missing — STOP and create it before proceeding.
+
+---
+
+## STRICT TYPING — MAXIMUM STRICTNESS, ZERO EXCEPTIONS
+
+Typing is not a preference — it is a hard requirement at every layer of the codebase.
+Any untyped, loosely typed, or duplicated type structure is a critical violation.
+
+### TypeScript — compiler config
+
+tsconfig.json must always include:
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true
+  }
+}
+```
+
+Absolutely forbidden — zero tolerance:
+- `any` — use `unknown` and narrow with type guards instead
+- `as any` — never cast to any under any circumstance
+- `@ts-ignore` — fix the type error, never suppress it
+- `@ts-nocheck` — prohibited in all files
+- Non-null assertions `!` without a documented guard justification
+- `object`, `Function`, `{}` as types — use specific interfaces
+- Implicit return types on exported functions — always explicit
+- Optional chaining as a substitute for proper null handling
+
+Python — mypy config (mypy.ini or pyproject.toml):
+```ini
+[mypy]
+strict = true
+disallow_any_explicit = true
+disallow_any_generics = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+no_implicit_optional = true
+```
+
+---
+
+## TYPE DRY — NO DUPLICATED TYPE STRUCTURES EVER
+
+Types and interfaces are subject to the same DRY rules as logic.
+Repeating a shape, field, or structure in more than one type definition is a violation.
+Every shared structure must be defined once and composed everywhere else.
+
+### Composition toolkit — use these patterns, never repeat structures
+
+**Extend, never redefine:**
+```typescript
+// ✗ VIOLATION — fields repeated
+interface CreateUserDto { name: string; email: string; role: string }
+interface UpdateUserDto { name: string; email: string; role: string }
+
+// ✓ CORRECT — extend from base
+interface UserBase { name: string; email: string; role: string }
+interface CreateUserDto extends UserBase {}
+interface UpdateUserDto extends Partial<UserBase> {}
+```
+
+**Utility types — mandatory use:**
+```typescript
+Partial<T>          // all fields optional — for update DTOs, patches
+Required<T>         // all fields required — for confirmed/validated shapes
+Readonly<T>         // immutable — for config, constants, frozen state
+Pick<T, K>          // select subset of fields — never redefine the subset
+Omit<T, K>          // exclude fields — never redefine without excluded fields
+Record<K, V>        // typed map/dictionary — never use plain object {}
+Exclude<T, U>       // filter union types
+Extract<T, U>       // narrow union types
+NonNullable<T>      // strip null/undefined from type
+ReturnType<T>       // derive return type from function — never manually duplicate
+Parameters<T>       // derive param types from function
+InstanceType<T>     // derive instance type from class constructor
+Awaited<T>          // unwrap Promise type
+```
+
+**Mapped types for structural transformation:**
+```typescript
+// Derive API response shape from domain model — never define separately
+type ApiResponse<T> = {
+  readonly [K in keyof T]: T[K] extends Date ? string : T[K];
+};
+
+// Derive form state from entity — never repeat field names
+type FormState<T> = {
+  [K in keyof T]: {
+    value: T[K];
+    error: string | null;
+    touched: boolean;
+  };
+};
+
+// Derive loading states from action map — no duplication
+type LoadingState<T extends string> = Record<T, boolean>;
+```
+
+**Discriminated unions — for state machines and variants:**
+```typescript
+// ✗ VIOLATION — separate interfaces with repeated fields
+interface LoadingState { status: "loading" }
+interface SuccessState { status: "success"; data: User[] }
+interface ErrorState   { status: "error";   error: string }
+
+// ✓ CORRECT — discriminated union, composable
+type RequestState<T> =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; data: T }
+  | { status: "error";   error: string };
+
+// Reuse across the app:
+type UsersState   = RequestState<User[]>;
+type ProductState = RequestState<Product>;
+```
+
+**Template literal types for string unions:**
+```typescript
+// ✗ VIOLATION — manually listing string combinations
+type EventName = "user_created" | "user_updated" | "user_deleted"
+               | "order_created" | "order_updated" | "order_deleted";
+
+// ✓ CORRECT — derive from constituents
+type Entity = "user" | "order" | "product";
+type Action = "created" | "updated" | "deleted";
+type EventName = `${Entity}_${Action}`;
+```
+
+**Branded/nominal types — for domain primitives:**
+```typescript
+// Prevent mixing of semantically different strings/numbers
+type UserId    = string & { readonly __brand: "UserId" };
+type OrderId   = string & { readonly __brand: "OrderId" };
+type PriceUSD  = number & { readonly __brand: "PriceUSD" };
+
+// Constructor helpers
+const UserId   = (id: string): UserId => id as UserId;
+const PriceUSD = (n: number): PriceUSD => n as PriceUSD;
+```
+
+**Type guards — narrow unknown/union types explicitly:**
+```typescript
+// Never cast with `as` — always guard
+function isUser(value: unknown): value is User {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    "email" in value
+  );
+}
+```
+
+**Infer from implementation, don't duplicate:**
+```typescript
+// ✗ VIOLATION — type manually mirrors the object shape
+const CONFIG = { timeout: 3000, retries: 3, baseUrl: "/api" };
+interface Config { timeout: number; retries: number; baseUrl: string }
+
+// ✓ CORRECT — derive type from the single source of truth
+const CONFIG = { timeout: 3000, retries: 3, baseUrl: "/api" } as const;
+type Config = typeof CONFIG;
+type ConfigKey = keyof Config;
+```
+
+### Type file organization — src/types/
+
+```
+src/types/
+  domain.ts       # Core domain entities (User, Order, Product...)
+  api.ts          # API request/response shapes — derived from domain via mapped types
+  store.ts        # State shapes — derived from domain via RequestState<T> etc.
+  forms.ts        # Form shapes — derived from domain via FormState<T>
+  events.ts       # Event/action names — derived via template literal types
+  primitives.ts   # Branded primitives (UserId, OrderId, PriceUSD...)
+  utils.ts        # Reusable generic utility types
+  index.ts        # Re-exports all types — single import point
+```
+
+Rules:
+- domain.ts is the root — all other type files derive from it, never define shapes independently
+- api.ts never re-declares fields that exist in domain.ts — use Pick, Omit, mapped types
+- store.ts never re-declares entity shapes — wrap with RequestState<T> or similar
+- forms.ts never re-declares field names — derive with FormState<T> or mapped type
+- No type defined in two files — if needed in multiple places, it belongs in types/
+- No inline interface definitions inside component files for shared shapes
+
+### Type audit checklist — run on every response touching types:
+```
+NO any/unknown unnarrowed           ✓/✗
+NO duplicated field sets            ✓/✗
+NO manual string unions derivable   ✓/✗
+Utility types used where applicable ✓/✗
+Mapped types used for transforms    ✓/✗
+Branded types for domain primitives ✓/✗
+Type guards for unknown narrowing   ✓/✗
+All exported functions typed        ✓/✗
+ReturnType/Parameters inferred      ✓/✗
+domain.ts is root, others derive    ✓/✗
+```
+
+---
+
+## LINTING · FORMATTING · TYPE CHECKING — ON EVERY SAVE AND UPDATE
+
+Code quality tools run on every file change, every save, every commit. Always.
+
+### Toolchain — mandatory in every project
+
+JavaScript / TypeScript:
+```
+ESLint      → .eslintrc.json          (zero warnings policy)
+Prettier    → .prettierrc             (single formatting authority)
+TypeScript  → tsconfig.json           (strict: true — see STRICT TYPING section)
+lint-staged → lint-staged config      (staged files only — fast)
+husky       → .husky/pre-commit       (blocks commit on any failure)
+```
+
+Python:
+```
+Ruff        → ruff.toml               (lint + format)
+mypy        → mypy.ini                (strict — see STRICT TYPING section)
+pre-commit  → .pre-commit-config.yaml
+```
+
+Shared IDE config — committed to repo:
+```json
+// .vscode/settings.json
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": { "source.fixAll.eslint": true },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
+```
+
+lint-staged config:
+```json
+{
+  "*.{ts,tsx,js,jsx}": ["prettier --write", "eslint --fix --max-warnings 0"],
+  "*.{css,scss,json,md}": ["prettier --write"],
+  "*.py": ["ruff format", "ruff check --fix"]
+}
+```
+
+### Enforcement stages
+
+Stage 1 — On save: ESLint auto-fix, Prettier format, TypeScript inline errors
+Stage 2 — On commit: lint-staged runs, tsc --noEmit — commit BLOCKED on any failure
+Stage 3 — On AI change: run and report lint/format/types before presenting code
+Stage 4 — On CI: eslint + prettier --check + tsc --noEmit — merge BLOCKED on failure
+
+Zero-tolerance:
+- ESLint: --max-warnings 0 always
+- Prettier: single authority, no manual formatting, no prettier-ignore without reason
+- TypeScript: strict always, no @ts-ignore, no any, no implicit types
+- No eslint-disable without explicit reason comment on the same line
+
+---
+
+## I18N — SINGLE SOURCE OF TRUTH LOCALIZATION
+
+One file. One key. All locales. No per-language files. No scattered strings.
+
+File: src/i18n/translations.ts
+
+```typescript
+export const translations = {
+  nav_home:             { en: "Home",                    uk: "Головна",                  ru: "Главная",               de: "Startseite" },
+  auth_login_button:    { en: "Sign in",                 uk: "Увійти",                   ru: "Войти",                 de: "Anmelden"   },
+  error_field_required: { en: "This field is required",  uk: "Це поле є обов'язковим",   ru: "Это поле обязательно",  de: "Pflichtfeld" },
+  dashboard_welcome:    { en: "Welcome, {name}",         uk: "Ласкаво просимо, {name}",  ru: "Добро пожаловать, {name}", de: "Willkommen, {name}" },
+} as const;
+
+export type TranslationKey = keyof typeof translations;
+export type LocaleCode = "en" | "uk" | "ru" | "de";
+```
+
+Helper — single typed accessor, used everywhere:
+```typescript
+// src/i18n/t.ts
+export function t(
+  key: TranslationKey,
+  locale: LocaleCode,
+  vars?: Record<string, string>
+): string {
+  let str = translations[key][locale] ?? translations[key]["en"];
+  if (vars) Object.entries(vars).forEach(([k, v]) => { str = str.replace(`{${k}}`, v); });
+  return str;
+}
+```
+
+Rules:
+- Zero hardcoded strings in components — t() only
+- Key naming: snake_case with context prefix (nav_, auth_, error_, form_, btn_, msg_)
+- Every key must have ALL locales populated — no partial translations
+- Adding a string = adding ALL language values in one commit
+- Pluralization: separate keys (item_count_one / item_count_many)
+- Date/number formatting: Intl.DateTimeFormat / Intl.NumberFormat with locale
+
+Completeness validator — runs in CI and pre-production:
+```typescript
+// src/i18n/validate.ts
+import { translations } from "./translations";
+const locales = ["en", "uk", "ru", "de"];
+let errors = 0;
+for (const [key, values] of Object.entries(translations)) {
+  for (const locale of locales) {
+    if (!values[locale]) { console.error(`MISSING: key="${key}" locale="${locale}"`); errors++; }
+  }
+}
+if (errors > 0) process.exit(1);
+```
+
+---
+
+## MANDATORY TESTING RULES
+
+Every code change MUST be accompanied by tests. No exceptions.
+
+Unit tests:
+- Write tests BEFORE or ALONGSIDE implementation (not after)
+- Test edge cases: empty input, None/null, boundary values, error paths
+- Each test must have a single, clear assertion purpose
+- Test names describe behavior: test_returns_empty_list_when_no_users_found()
+
+Integration tests:
+- Required for any new API endpoint, service method, or DB interaction
+- Mock external dependencies, never hit real external services in tests
+
+Test file location mirrors source: src/services/user.ts → tests/services/test_user.ts
+
+Before submitting any solution, state: "Tests written: [list test cases covered]"
+
+---
+
+## UI DEVELOPMENT RULES
+
+- Never hardcode colors, fonts, spacing — use design tokens/CSS variables/theme system
+- All interactive elements: hover, focus, disabled states required
+- Forms: inline validation feedback, not just alerts
+- Every async action: loading state (spinner/skeleton/disabled button)
+- Use existing UI components before creating new ones
+- Responsive by default: mobile-first, 320px / 768px / 1280px breakpoints
+- Accessibility: semantic HTML, aria-labels on icon-only buttons, keyboard navigation
+- Never use inline styles unless absolutely impossible
+
+---
+
+## RESPONSIVE & ERGONOMIC DESIGN — MANDATORY FOR ALL UI WORK
+
+Responsive rules:
+- Mobile-first: base styles 320px–767px, scale up via min-width breakpoints
+- Breakpoints: 320 / 480 / 768 / 1024 / 1280 / 1920px
+- Touch targets: minimum 44×44px on mobile
+- No horizontal scroll on any viewport — ever
+- Typography: clamp() or responsive units, never fixed px for font sizes
+- Navigation: hamburger/bottom bar on mobile, full menu on desktop
+- Images: width: 100% / max-width constrained, never overflow container
+- Modals: full-screen on mobile, centered fixed-width on desktop
+- Tables: horizontally scrollable wrapper on mobile, or card layout
+
+Ergonomic rules:
+- Desktop: hover states, tooltips, dense information layouts allowed
+- Mobile: primary actions in bottom 60% of screen, avoid top-corner CTAs
+- Inputs: min height 48px on mobile, 16px minimum font (prevents iOS zoom)
+- WCAG AA contrast: 4.5:1 text, 3:1 UI components
+
+---
+
+## MCP VISUAL VERIFICATION — REQUIRED FOR ALL UI TASKS
+
+All UI work must be verified via MCP tools with computer vision before marking complete.
+
+Workflow — execute in this exact order:
+1. Implement the UI change
+2. Launch/reload the app in the browser
+3. MCP screenshot → computer vision analysis (layout, alignment, regressions)
+4. Mobile viewport 375px → screenshot → analyze
+5. Desktop viewport 1280px → screenshot → analyze
+6. Interact with all clickable/interactive elements — verify states visually
+7. Fix any issues found — re-capture until clean
+8. Only then mark the task complete
+
+Verify on every page:
+- Visual: no overflow, no broken alignment, no overlapping elements
+- Design: spacing, color, typography, icon clarity
+- Responsive: no cut-off elements, no horizontal scroll, touch targets correct
+- Functional: all interactive states render correctly
+
+Performance visual checks:
+- No layout shift (CLS) on load
+- Skeletons/spinners appear before content — no blank white flashes
+- Above-fold renders without waiting for below-fold assets
+
+Report: "MCP VISUAL CHECK: desktop ✓/✗ / mobile ✓/✗ / interactions ✓/✗ / perf ✓/✗"
+If MCP unavailable: "MCP unavailable — manual verification required before merge"
+
+---
+
+## PERFORMANCE & LAZY LOADING — NAVIGATION PRIORITY
+
+Performance is a first-class feature. Every page must load fast and feel instant.
+
+Navigation rules:
+- All routes: lazy loaded, separate dynamic import chunks
+- Navigation renders immediately — never blocks on data fetching
+- Use React.lazy() + Suspense, dynamic import(), or framework-native lazy routing
+
+Content loading rules:
+- Above-the-fold first — defer everything below the fold
+- Images: lazy loading / Intersection Observer — never eager off-screen
+- Heavy components (charts, maps, editors): dynamic import
+- Fonts: font-display: swap — never block render
+- Third-party scripts: async or defer, never blocking in <head>
+
+Loading states — no blank screens, ever:
+- Every async fetch shows skeleton immediately
+- Skeleton matches shape/layout of real content
+- Error states handled and displayed
+- Stale-while-revalidate preferred
+
+Performance targets:
+- FCP < 1.5s / TTI < 3s / CLS < 0.1 / LCP < 2.5s
+
+Confirm at end of every UI task:
+"PERFORMANCE: lazy loading ✓ / skeletons ✓ / no blocking resources ✓"
+
+---
+
+## CODE PRINCIPLES AUDIT — DRY · KISS · SOLID · YAGNI · LoD
+
+Every implementation must be audited before considered complete.
+
+- DRY: zero duplicated logic OR type structures anywhere in the codebase
+- KISS: simplest solution that works, explainable in one sentence, no clever tricks
+- SOLID S: each class/module does exactly one thing — if you use "and" to describe it, split it
+- SOLID O: extend via new code, never modify working existing code
+- SOLID L: subclasses substitutable for base without breaking behavior
+- SOLID I: small focused interfaces, no fat interfaces with unused methods
+- SOLID D: depend on abstractions, inject dependencies, never hardcode them
+- YAGNI: never implement for "future use" — requirements must exist today
+- LoD: max 2-level chaining, never reach through objects to manipulate internals
+
+Checklist — append to every response with non-trivial logic:
+```
+DRY ✓/✗ | KISS ✓/✗ | S ✓/✗ | O ✓/✗ | L ✓/✗ | I ✓/✗ | D ✓/✗ | YAGNI ✓/✗ | LoD ✓/✗
+```
+
+---
+
+## PRE-PRODUCTION: COMPREHENSIVE TESTING PROGRAM
+
+Before ANY production build, all 9 phases must pass. No exceptions.
+
+**Phase 1 — Static Analysis**
+Linter (0 warnings), type checker (0 errors), complexity audit,
+duplicate detector, dependency CVE scan (0 high/critical)
+
+**Phase 2 — Test Suite**
+All unit tests pass, ≥80% line coverage, ≥70% branch coverage,
+integration tests pass, contract tests for all external APIs
+
+**Phase 3 — E2E Functional (MCP)**
+Every page loads, every form works, every navigation path tested,
+auth flows, all CRUD operations, error boundary behavior,
+MCP computer vision check on each tested page
+
+**Phase 4 — Performance (MCP Lighthouse)**
+Lighthouse ≥90 all categories, chunks <250kb uncompressed,
+FCP <1.5s / TTI <3s / CLS <0.1 / LCP <2.5s, tested on 3G throttle
+
+**Phase 5 — Responsive/Device (MCP)**
+Screenshots at 320 / 375 / 768 / 1024 / 1280 / 1920px,
+zero overflow, all touch targets ≥44px, nav collapses correctly
+
+**Phase 6 — Security**
+No secrets in code or build output, all inputs validated and sanitized,
+auth tokens in httpOnly cookies, no sensitive console.log, HTTPS-only
+
+**Phase 7 — Accessibility**
+axe-core zero critical violations, keyboard navigation works through all flows,
+semantic landmarks present, all images have alt text, WCAG AA contrast
+
+**Phase 8 — I18N Completeness**
+Completeness validator passes with zero missing keys across all locales
+
+**Phase 9 — Type Audit**
+Zero `any`, zero duplicated type structures, type audit checklist fully passed,
+domain.ts confirmed as root of type hierarchy
+
+Production is cleared only when this full sign-off is produced:
+
+```
+PRE-PRODUCTION SIGN-OFF
+════════════════════════════════════════════════════
+Phase 1 — Static Analysis + Lint/Format/Types : ✓ PASS
+Phase 2 — Test Suite                          : ✓ PASS  [coverage: ___%]
+Phase 3 — E2E Functional (MCP)                : ✓ PASS  [__ journeys]
+Phase 4 — Performance (MCP Lighthouse)        : ✓ PASS  [score: ___]
+Phase 5 — Responsive/Device (MCP)             : ✓ PASS  [6 breakpoints]
+Phase 6 — Security                            : ✓ PASS
+Phase 7 — Accessibility                       : ✓ PASS
+Phase 8 — I18N Completeness                   : ✓ PASS  [__ keys / __ locales]
+Phase 9 — Type Audit                          : ✓ PASS  [0 any / 0 duplicates]
+════════════════════════════════════════════════════
+PRODUCTION: CLEARED ✓
+```
+
+---
+
+## DEPLOYMENT — OPTIONS · DRY ENV · DRY COMPOSE
+
+Every project must support three deployment targets from day one.
+Each target is independently runnable. No target requires manual file editing to activate —
+only the correct `.env.*` file is needed. All three share a common configuration foundation.
+
+---
+
+### Three mandatory deployment targets
+
+```
+local      — direct run on developer machine (no Docker), uses .env.local
+docker     — Docker Compose on any machine, uses .env.docker
+production — remote server / cloud hosting, uses .env.production
+```
+
+Documented in `docs/DEPLOY.md` with exact commands for each target:
+```bash
+# Local
+pnpm dev  /  uvicorn main:app --reload
+
+# Docker
+docker compose --env-file .env.docker up --build
+
+# Production
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+---
+
+### ENV file structure — DRY, layered, single source of truth
+
+No value is ever repeated across env files. Shared values live in `.env.base`.
+Environment-specific files only override what differs. Nothing else.
+
+```
+.env.base            ← shared across ALL environments (ports, app name, common limits)
+.env.local           ← local overrides only (extends .env.base)
+.env.docker          ← docker overrides only (extends .env.base)
+.env.production      ← production overrides only (extends .env.base)
+.env.example         ← committed to repo, ALL keys present, NO real values
+.env*.local          ← never committed (in .gitignore)
+.env.production      ← never committed (injected by CI/CD or secrets manager)
+```
+
+`.env.base` — the root, committed to repo (contains no secrets):
+```dotenv
+# ─── APP ──────────────────────────────────────────────
+APP_NAME=myapp
+APP_VERSION=1.0.0
+APP_PORT=3000
+API_PORT=8000
+
+# ─── PAGINATION ───────────────────────────────────────
+DEFAULT_PAGE_SIZE=20
+MAX_PAGE_SIZE=100
+
+# ─── LIMITS ───────────────────────────────────────────
+MAX_FILE_SIZE_MB=10
+MAX_UPLOAD_COUNT=5
+
+# ─── TIMEOUTS ─────────────────────────────────────────
+API_TIMEOUT_MS=10000
+SESSION_TTL_SEC=86400
+```
+
+`.env.local` — only what differs locally:
+```dotenv
+# extends .env.base
+NODE_ENV=development
+API_BASE_URL=http://localhost:8000
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/myapp_dev
+REDIS_URL=redis://localhost:6379
+DEBUG=true
+LOG_LEVEL=debug
+```
+
+`.env.docker` — only what differs in Docker (service names as hostnames):
+```dotenv
+# extends .env.base
+NODE_ENV=development
+API_BASE_URL=http://api:8000
+DATABASE_URL=postgresql://postgres:postgres@db:5432/myapp_dev
+REDIS_URL=redis://redis:6379
+DEBUG=true
+LOG_LEVEL=debug
+```
+
+`.env.production` — only production overrides (injected by CI/CD, never committed):
+```dotenv
+# extends .env.base
+NODE_ENV=production
+API_BASE_URL=https://api.myapp.com
+DATABASE_URL=${SECRET_DATABASE_URL}
+REDIS_URL=${SECRET_REDIS_URL}
+DEBUG=false
+LOG_LEVEL=warn
+```
+
+`.env.example` — committed to repo, all keys, no real values, kept in sync always:
+```dotenv
+# Copy to .env.local / .env.docker / .env.production and fill in values
+
+# ─── APP ──────────────────────────────────────────────
+APP_NAME=
+APP_VERSION=
+APP_PORT=
+API_PORT=
+
+# ─── ENVIRONMENT ──────────────────────────────────────
+NODE_ENV=
+API_BASE_URL=
+DEBUG=
+LOG_LEVEL=
+
+# ─── DATABASE ─────────────────────────────────────────
+DATABASE_URL=
+
+# ─── CACHE ────────────────────────────────────────────
+REDIS_URL=
+
+# ─── AUTH ─────────────────────────────────────────────
+JWT_SECRET=
+JWT_EXPIRES_IN=
+```
+
+ENV rules — enforced always:
+- A key that exists in `.env.base` must NOT be repeated in any other env file unless overriding
+- `.env.example` must contain every key used anywhere in the codebase — kept in sync on every change
+- Secrets (passwords, tokens, API keys) never go in `.env.base` or `.env.example` values
+- Application code never hardcodes env var names — they reference `src/constants/index.ts` ENV_KEYS:
+  ```typescript
+  // ✗ VIOLATION
+  process.env.DATABASE_URL
+
+  // ✓ CORRECT
+  export const ENV_KEYS = {
+    DATABASE_URL:  "DATABASE_URL",
+    JWT_SECRET:    "JWT_SECRET",
+    API_BASE_URL:  "API_BASE_URL",
+    NODE_ENV:      "NODE_ENV",
+  } as const;
+
+  process.env[ENV_KEYS.DATABASE_URL]
+  ```
+
+---
+
+### Docker Compose — DRY, YAML anchors, single source of truth
+
+No value, image tag, resource limit, network name, or volume name is repeated.
+YAML anchors (`&`) and aliases (`*`) are used for all shared blocks.
+A single `docker-compose.yml` is the base. Overrides are in `docker-compose.prod.yml`.
+
+`docker-compose.yml` — base for local docker + production foundation:
+```yaml
+# ─── ANCHORS (shared blocks — referenced below, never repeated) ────────────
+x-common-env: &common-env
+  env_file:
+    - .env.base
+
+x-restart-policy: &restart-policy
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 10s
+
+x-resource-limits: &resource-limits
+  deploy:
+    resources:
+      limits:
+        cpus: "0.50"
+        memory: 512M
+      reservations:
+        cpus: "0.25"
+        memory: 256M
+
+# ─── NETWORKS ──────────────────────────────────────────────────────────────
+networks:
+  app-network:
+    driver: bridge
+
+# ─── VOLUMES ───────────────────────────────────────────────────────────────
+volumes:
+  db-data:
+  redis-data:
+
+# ─── SERVICES ──────────────────────────────────────────────────────────────
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT}:3000"
+    <<: [*common-env, *restart-policy, *logging, *resource-limits]
+    env_file:
+      - .env.base
+      - .env.docker
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "${API_PORT}:8000"
+    <<: [*common-env, *restart-policy, *logging, *resource-limits]
+    env_file:
+      - .env.base
+      - .env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      <<: *healthcheck-defaults
+    networks:
+      - app-network
+
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    <<: [*common-env, *restart-policy, *logging]
+    env_file:
+      - .env.base
+      - .env.docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      <<: *healthcheck-defaults
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    <<: [*restart-policy, *logging]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *healthcheck-defaults
+    networks:
+      - app-network
+```
+
+`docker-compose.prod.yml` — production overrides only:
+```yaml
+# Extends docker-compose.yml — only production-specific differences
+
+x-prod-resource-limits: &prod-resource-limits
+  deploy:
+    resources:
+      limits:
+        cpus: "1.00"
+        memory: 1024M
+      reservations:
+        cpus: "0.50"
+        memory: 512M
+
+services:
+
+  frontend:
+    build:
+      args:
+        NODE_ENV: production
+    <<: *prod-resource-limits
+
+  api:
+    build:
+      args:
+        NODE_ENV: production
+    <<: *prod-resource-limits
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
+      - api
+    <<: *restart-policy
+    networks:
+      - app-network
+```
+
+Docker Compose DRY rules:
+- All shared service config (env_file, restart, logging, resource limits) → YAML anchor, used by reference
+- Image tags pinned to exact versions — never `latest`
+- Port mappings always use env vars: `"${APP_PORT}:3000"` — never hardcoded port numbers
+- Volume names and network names defined once at top level, referenced by name only
+- No copy-pasted blocks between services — if two services share config, it becomes an anchor
+- `docker-compose.prod.yml` contains ONLY what differs from base — not a full redefinition
+
+---
+
+### Dockerfile — optimized, DRY, multi-stage
+
+Each service Dockerfile uses multi-stage builds. Base stage is shared via `FROM ... AS base`.
+
+```dockerfile
+# ─── BASE ──────────────────────────────────────────────
+FROM node:20-alpine AS base
+WORKDIR /app
+ENV NODE_ENV=production
+
+# ─── DEPS ──────────────────────────────────────────────
+FROM base AS deps
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
+
+# ─── BUILD ─────────────────────────────────────────────
+FROM deps AS build
+COPY . .
+RUN pnpm build
+
+# ─── PRODUCTION IMAGE ──────────────────────────────────
+FROM base AS production
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+EXPOSE 3000
+CMD ["node", "dist/main.js"]
+```
+
+### Deployment checklist — append to every deploy-related response:
+```
+ENV      : .env.example in sync ✓/✗ | no secrets in base ✓/✗ | no repeated keys ✓/✗
+COMPOSE  : anchors used for shared blocks ✓/✗ | ports use env vars ✓/✗ | no copy-paste ✓/✗
+TARGETS  : local ✓/✗ | docker ✓/✗ | production ✓/✗
+DOCKERFILE: multi-stage ✓/✗ | pinned versions ✓/✗
+ENV_KEYS : constants module updated ✓/✗
+```
+
+---
+
+## LOGGING — NO PRINT, ALWAYS STRUCTURED LOGGERS
+
+`print()`, `console.log()`, `console.debug()` and any raw output calls are forbidden
+in application code. Always. No exceptions. Even for "quick debug" — use the logger.
+
+---
+
+### TypeScript / Node.js — pino (preferred)
+
+**Why pino:** fastest Node.js logger, native JSON output, minimal overhead, simple config,
+excellent ecosystem (pino-pretty for dev, transports for prod).
+
+Installation:
+```bash
+pnpm add pino pino-pretty
+pnpm add -D @types/pino
+```
+
+`src/logger/index.ts` — single shared logger instance:
+```typescript
+import pino, { Logger, LoggerOptions } from "pino";
+import { ENV_KEYS } from "@/constants";
+
+const isDev = process.env[ENV_KEYS.NODE_ENV] !== "production";
+
+const devTransport: LoggerOptions["transport"] = {
+  target: "pino-pretty",
+  options: {
+    colorize:         true,          // ← colored output in terminal
+    translateTime:    "SYS:HH:MM:ss.l",
+    ignore:           "pid,hostname",
+    messageFormat:    "{levelLabel} [{module}] {msg}",
+    colorizeObjects:  true,
+    singleLine:       false,
+  },
+};
+
+const prodTransport: LoggerOptions["transport"] = {
+  targets: [
+    {
+      // structured JSON to stdout (captured by log aggregator)
+      target: "pino/file",
+      options: { destination: 1 },
+      level: "info",
+    },
+    {
+      // compressed rotating file archive
+      target: "pino-roll",
+      options: {
+        file:      "./logs/app.log",
+        frequency: "daily",
+        mkdir:     true,
+        compress:  "gzip",            // ← zip archiving of rotated logs
+        size:      "50m",             // rotate at 50MB regardless of date
+        limit:     { count: 30 },     // keep last 30 archives
+      },
+      level: "warn",
+    },
+  ],
+};
+
+const options: LoggerOptions = {
+  level:      isDev ? "debug" : "info",
+  transport:  isDev ? devTransport : prodTransport,
+  base:       { env: process.env[ENV_KEYS.NODE_ENV] },
+  timestamp:  pino.stdTimeFunctions.isoTime,
+  redact: {
+    paths:  ["req.headers.authorization", "*.password", "*.token", "*.secret"],
+    censor: "[REDACTED]",
+  },
+};
+
+export const logger: Logger = pino(options);
+
+// Child logger factory — always tag with module name
+export const createLogger = (module: string): Logger =>
+  logger.child({ module });
+```
+
+Usage — always child logger per module:
+```typescript
+// ✗ VIOLATION
+console.log("User created", user);
+print(f"User created: {user}")
+
+// ✓ CORRECT — TypeScript
+import { createLogger } from "@/logger";
+const log = createLogger("UserService");
+
+log.info({ userId: user.id }, "User created");
+log.warn({ attempt }, "Login failed");
+log.error({ err, userId }, "Failed to send email");
+log.debug({ payload }, "Incoming request payload");
+```
+
+Additional packages for prod:
+```bash
+pnpm add pino-roll        # rotating + gzip archiving
+```
+
+---
+
+### Python — loguru (preferred)
+
+**Why loguru:** zero-config by default, beautiful colored output out of the box,
+structured logging, built-in rotation + compression, exception tracing, no Handler boilerplate.
+
+Installation:
+```bash
+pip install loguru
+```
+
+`src/logger/__init__.py` — single configured logger, imported everywhere:
+```python
+import sys
+import os
+from loguru import logger
+
+# Remove default handler
+logger.remove()
+
+_is_dev = os.getenv("NODE_ENV", "development") != "production"
+
+# ─── DEV — colored, human-readable ────────────────────
+if _is_dev:
+    logger.add(
+        sys.stdout,
+        level="DEBUG",
+        colorize=True,                          # ← colored output
+        format=(
+            "<green>{time:HH:mm:ss.SSS}</green> | "
+            "<level>{level: <8}</level> | "
+            "<cyan>{name}</cyan>:<cyan>{line}</cyan> | "
+            "<level>{message}</level>"
+        ),
+        backtrace=True,
+        diagnose=True,                          # ← full variable values in tracebacks
+    )
+
+# ─── PROD — JSON structured to stdout ─────────────────
+else:
+    logger.add(
+        sys.stdout,
+        level="INFO",
+        serialize=True,                         # ← JSON output for log aggregators
+        backtrace=False,
+        diagnose=False,
+    )
+
+# ─── FILE — rotating + gzip archive (all envs) ────────
+logger.add(
+    "logs/app_{time:YYYY-MM-DD}.log",
+    level="WARNING",
+    rotation="50 MB",                           # rotate at 50MB
+    retention="30 days",                        # keep 30 days of archives
+    compression="zip",                          # ← zip archiving
+    serialize=True,
+    enqueue=True,                               # ← async write, no performance hit
+    backtrace=True,
+    diagnose=False,                             # diagnose=False in file (security)
+)
+
+__all__ = ["logger"]
+```
+
+Usage — import once, use everywhere:
+```python
+# ✗ VIOLATION
+print(f"User created: {user_id}")
+
+# ✓ CORRECT
+from src.logger import logger
+
+logger.info("User created", user_id=user_id, email=email)
+logger.warning("Login failed", attempt=attempt, ip=ip)
+logger.error("Email send failed", user_id=user_id)
+logger.debug("Incoming payload", payload=payload)
+
+# ✓ Exception with full traceback
+try:
+    process_payment(order)
+except Exception:
+    logger.exception("Payment processing failed", order_id=order.id)
+```
+
+---
+
+### Log levels — mandatory usage rules
+
+```
+DEBUG    dev only — variable values, flow tracing, incoming payloads
+INFO     normal operations — entity created/updated, service started, job completed
+WARNING  unexpected but recoverable — retry, fallback used, deprecated call
+ERROR    operation failed, requires attention — caught exception with context
+CRITICAL service cannot continue — unrecoverable state, immediate alert needed
+```
+
+Rules:
+- Never log at ERROR for expected/handled business cases (e.g. "user not found" → WARNING or INFO)
+- Always include structured context — never interpolate into the message string:
+  ```typescript
+  // ✗ VIOLATION — unsearchable, unstructured
+  log.error(`Failed to process order ${orderId} for user ${userId}`);
+
+  // ✓ CORRECT — structured, filterable
+  log.error({ orderId, userId, err }, "Order processing failed");
+  ```
+- Never log sensitive data: passwords, tokens, secrets, PII — use redact config
+- Log files go to `./logs/` — this directory is in `.gitignore`
+- `./logs/` directory is created automatically by the logger — never commit it
+
+### .gitignore additions (mandatory):
+```
+logs/
+*.log
+```
+
+### Logging checklist — append to every response touching application code:
+```
+NO print/console.log in application code  ✓/✗
+Logger imported from shared module        ✓/✗
+Child/named logger used (module tagged)   ✓/✗
+Structured context passed, not interpolated ✓/✗
+No sensitive data logged                  ✓/✗
+Log rotation + compression configured     ✓/✗
+logs/ in .gitignore                       ✓/✗
+```
+
+---
+
+## MODEL SELECTION — COST · CAPABILITY · TASK MATCH
+
+Using an expensive model for a simple task is waste. Using a weak model for a complex task
+is risk. Match the model to the task every time. This is a mandatory decision, not a preference.
+
+---
+
+### Tier system
+
+```
+TIER 0 — Free / ultra-cheap     Routine, mechanical, no reasoning required (preferred: SWE-1.5)
+TIER 1 — Fast & cheap           Simple logic, single-file edits, lookups
+TIER 2 — Balanced (default)     Standard coding, refactoring, reviews
+TIER 3 — Powerful               Architecture, complex debugging, multi-file reasoning
+TIER 4 — Maximum                Hardest problems only — cross-system design, novel algorithms
+```
+
+---
+
+### Task → Tier mapping
+
+**TIER 0 — Free models (preferred: SWE-1.5 / fallback: gemini-flash-2.0, claude-haiku)**
+- Generating boilerplate (CRUD, DTOs, simple components)
+- Renaming, reformatting, moving files
+- Writing docstrings and comments
+- Generating `.env.example`, config stubs
+- Simple regex, trivial utility functions
+- Translating strings for i18n keys
+- Generating test data / fixtures / mocks
+- Filling in repetitive patterns already established in the codebase
+
+**TIER 1 — Cheap fast models (gemini-flash-2.0, gpt-4o-mini)**
+- Single-file bug fixes with obvious cause
+- Adding a field to an existing type/schema
+- Writing unit tests for already-implemented logic
+- Linting and formatting fixes
+- Simple SQL queries
+- README updates
+- Straightforward CSS/style adjustments
+
+**TIER 2 — Balanced models — DEFAULT for coding (claude-sonnet-4-5, claude-sonnet-4-6)**
+- Multi-file feature implementation
+- Refactoring with DRY / SOLID compliance
+- API endpoint implementation (full stack)
+- State management changes
+- Integration test writing
+- Docker / CI config authoring
+- Code review and principle audit (DRY, KISS, SOLID)
+- Debugging non-obvious issues
+- Type system design for a module
+- Performance optimization of a specific component
+
+> claude-sonnet is the primary coding model. Default to it for all standard dev tasks.
+
+**TIER 3 — Powerful models (claude-opus, gpt-4.5)**
+- Cross-module architecture decisions
+- Complex async/concurrency debugging
+- Security audit of authentication flows
+- Database schema design with complex relations
+- Performance profiling across services
+- Migrating between frameworks or major versions
+- Designing the type hierarchy for the whole project
+- Writing the pre-production test program plan
+
+**TIER 4 — Maximum models (gpt-5, claude-opus for hardest tasks)**
+- Novel algorithm design with no clear prior pattern
+- Cross-system distributed architecture (multiple services, queues, caches)
+- Complex business logic with many interacting constraints
+- Root cause analysis of subtle production bugs across multiple services
+- Full project architecture from scratch with deep trade-off analysis
+- Anything where TIER 3 has already failed or produced wrong results
+
+> gpt-5 is reserved for the hardest multi-system reasoning and combinations.
+> Never use TIER 4 for anything a TIER 2 can handle — cost is 10–50x higher.
+
+---
+
+### Decision rules — mandatory before selecting a model
+
+```
+1. Can a free model do this correctly in one shot?       → TIER 0
+2. Is this a single-file, obvious, low-reasoning task?  → TIER 1
+3. Is this standard coding / refactoring / testing?     → TIER 2 (claude-sonnet, default)
+4. Does this require deep multi-file reasoning?         → TIER 3
+5. Has TIER 3 failed, or is this truly novel/complex?   → TIER 4
+```
+
+Escalation rule: always start at the lowest viable tier.
+If the result is wrong or incomplete — escalate exactly one tier and retry.
+Never skip tiers. Never pre-escalate "just in case".
+
+Downgrade rule: if a task was assigned TIER 3+ but turned out to be simple —
+note it and use a lower tier for similar tasks in future.
+
+---
+
+### Anti-patterns — forbidden
+
+```
+✗ Using claude-opus / gpt-5 to generate a DTO or boilerplate
+✗ Using gpt-5 to fix a typo or add a CSS class
+✗ Using TIER 4 as the default "to be safe"
+✗ Escalating without trying a lower tier first
+✗ Using TIER 0 for architecture decisions or complex debugging
+✗ Mixing models mid-task without re-reading context (causes regression)
+```
+
+---
+
+### Model switch protocol
+
+When switching models mid-project (different tier for a new task):
+1. The incoming model MUST execute SESSION INITIALIZATION before touching code
+2. Read all four docs/ foundation documents
+3. State current milestone, active task, and relevant context
+4. Only then proceed — never assume context from a prior session
+
+Context loss on model switch is the #1 cause of DRY violations and structural regressions.
+The session initialization protocol is the fix. It is not optional.
+
+---
+
+### Quick reference card
+
+| Task type                        | Tier | Model examples                     |
+|----------------------------------|------|------------------------------------|
+| Boilerplate, stubs, i18n strings | 0    | **SWE-1.5** (preferred), gemini-flash-2.0, claude-haiku |
+| Simple fixes, single-file edits  | 1    | gpt-4o-mini, gemini-flash-2.0      |
+| Standard coding (DEFAULT)        | 2    | claude-sonnet-4-5, claude-sonnet-4-6 |
+| Architecture, deep debugging     | 3    | claude-opus, gpt-4.5               |
+| Novel/cross-system complexity    | 4    | gpt-5, claude-opus (hardest only)  |
+
+---
+
+## LINT & FORMAT ON EVERY EDIT — NON-NEGOTIABLE
+
+After writing or modifying ANY file — before presenting the result, before moving to the
+next file, before considering the task done — the agent MUST immediately run:
+
+**TypeScript / JavaScript:**
+```bash
+# 1. Prettify — format the file
+npx prettier --write <changed_file>
+
+# 2. Lint — fix auto-fixable, report the rest
+npx eslint --fix --max-warnings 0 <changed_file>
+
+# 3. Type check — full project, no errors allowed
+npx tsc --noEmit
+```
+
+**Python:**
+```bash
+# 1. Prettify + lint — ruff handles both
+ruff format <changed_file>
+ruff check --fix <changed_file>
+
+# 2. Type check
+mypy <changed_file>
+```
+
+**Multiple files changed in one task:**
+```bash
+# Run on all changed files at once, not one by one
+npx prettier --write src/services/user.ts src/types/domain.ts src/constants/index.ts
+npx eslint --fix --max-warnings 0 src/services/user.ts src/types/domain.ts src/constants/index.ts
+npx tsc --noEmit
+```
+
+### Execution rules — no exceptions
+
+- Run order is always: **prettier first → eslint second → tsc/mypy third**
+  (prettier may reformat what eslint would flag; run prettier first to avoid false positives)
+- If prettier changes anything — show the diff, do not silently apply
+- If eslint reports errors that cannot be auto-fixed — fix them manually before proceeding,
+  never present code with unresolved lint errors
+- If tsc/mypy reports type errors — fix them before presenting, never leave type errors in output
+- If a file was only read (not written) — skip lint/format for that file
+- If a new file was created — lint and format it exactly like an edited file
+
+### When lint/format cannot be run (no terminal access)
+
+If the agent cannot execute shell commands in the current context:
+1. Apply prettier formatting rules manually to the code before presenting it
+2. Apply eslint rules mentally — check for violations before presenting
+3. Explicitly state: "AUTO-RUN UNAVAILABLE — code formatted manually, verify with:
+   `npx prettier --write <file> && npx eslint --fix <file> && npx tsc --noEmit`"
+
+### Output format after running
+
+Always report results inline before the end-of-response checklist:
+```
+→ prettier:  reformatted 2 lines in user.ts
+→ eslint:    0 errors, 0 warnings
+→ tsc:       0 errors
+```
+or on failure:
+```
+→ prettier:  applied
+→ eslint:    ✗ 1 error — no-explicit-any at line 42 → FIXED
+→ tsc:       ✗ 2 errors — fixed before presenting
+```
+
+Never present code that failed lint or type check without showing it was fixed.
+
+---
+
+## SAFE CHANGE PROTOCOL
+
+- Change ONLY what was explicitly requested — no unprompted "improvements"
+- Bugs outside scope: REPORT, never silently fix
+- Never delete code — comment with // DEPRECATED: reason
+- Refactor needed: ask first — "To do this cleanly, I need to refactor X. Should I proceed?"
+- After changes: list all modified files, functions added/changed, anything deleted
+
+---
+
+## SELF-DOCUMENTATION DURING WORK
+
+At the START of each response:
+- Current milestone (from ROADMAP.md) and active task
+- TZ user story being implemented
+- Existing patterns found relevant
+
+At the END of every response:
+```
+MILESTONE : [M#] — [name] | TASK: [desc] | TZ: [US-##]
+CHANGED   : [file] — [what changed]
+TESTED    : [file] — [N cases, what covered]
+ASSUMPTION: [any assumption made]
+TODO      : [out of scope, explicitly flagged]
+PRINCIPLES: DRY ✓/✗ | KISS ✓/✗ | S ✓/✗ | O ✓/✗ | L ✓/✗ | I ✓/✗ | D ✓/✗ | YAGNI ✓/✗ | LoD ✓/✗
+TYPES     : no-any ✓/✗ | no-dupl ✓/✗ | utility ✓/✗ | mapped ✓/✗ | branded ✓/✗ | guards ✓/✗
+LINT      : ✓ 0 errors 0 warnings / ✗ [details]
+FORMAT    : ✓ all formatted / ✗ [details]
+TYPES CHK : ✓ 0 errors / ✗ [details]
+MCP CHECK : desktop ✓/✗ / mobile ✓/✗ / interactions ✓/✗ / perf ✓/✗
+PERF      : lazy ✓/✗ / skeletons ✓/✗ / no blocking ✓/✗
+I18N      : keys added ✓/✗ / all locales ✓/✗ / completeness ✓/✗
+CONSTANTS : no literals ✓/✗ | new consts in shared module ✓/✗ | derived refs base ✓/✗
+LOGGING   : no print/console.log ✓/✗ | structured context ✓/✗ | no sensitive data ✓/✗
+DEPLOY    : env.example synced ✓/✗ | no repeated keys ✓/✗ | compose anchors ✓/✗
+MODEL     : correct tier used ✓/✗ | no over-spend ✓/✗ | context re-read after switch ✓/✗
+ROADMAP   : updated ✓/✗ — [what marked done]
+ROOT AUDIT: root clean ✓/✗ | no undeclared dirs ✓/✗ | violations: [list or —]
+FILESYSTEM: tmp/ empty ✓/✗ | no junk in root/src ✓/✗ | deleted: [list or —]
+```
+
+---
+
+## CONSTANTS — NO LITERALS EVER
+
+Literals are forbidden anywhere in the codebase. Every string, number, boolean flag,
+URL, path, limit, timeout, color value, key name, event name, or any other fixed value
+must be declared as a named constant and referenced by name. Always. No exceptions.
+
+### Single constants module — thematic sections, shared across the entire project
+
+All constants live in one place: `src/constants/index.ts` (TS) or `src/constants/__init__.py` (Python).
+Organized into thematic sections within that single shared module.
+No scattered per-file constants. No magic values inline. One source of truth.
+
+TypeScript structure:
+```typescript
+// src/constants/index.ts
+
+// ─── API ──────────────────────────────────────────────
+export const API = {
+  BASE_URL:        "/api/v1",
+  TIMEOUT_MS:      10_000,
+  RETRY_ATTEMPTS:  3,
+  RETRY_DELAY_MS:  1_000,
+} as const;
+
+// ─── AUTH ─────────────────────────────────────────────
+export const AUTH = {
+  TOKEN_KEY:         "access_token",
+  REFRESH_KEY:       "refresh_token",
+  SESSION_TTL_SEC:   86_400,
+  MIN_PASSWORD_LEN:  8,
+} as const;
+
+// ─── PAGINATION ───────────────────────────────────────
+export const PAGINATION = {
+  DEFAULT_PAGE:      1,
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE:     100,
+} as const;
+
+// ─── UI ───────────────────────────────────────────────
+export const UI = {
+  DEBOUNCE_MS:        300,
+  TOAST_DURATION_MS:  4_000,
+  ANIMATION_FAST_MS:  150,
+  ANIMATION_SLOW_MS:  400,
+  MOBILE_BREAKPOINT:  768,
+  SIDEBAR_WIDTH_PX:   240,
+} as const;
+
+// ─── ROUTES ───────────────────────────────────────────
+export const ROUTES = {
+  HOME:         "/",
+  LOGIN:        "/login",
+  DASHBOARD:    "/dashboard",
+  PROFILE:      "/profile",
+  SETTINGS:     "/settings",
+} as const;
+
+// ─── LIMITS ───────────────────────────────────────────
+export const LIMITS = {
+  MAX_FILE_SIZE_MB:   10,
+  MAX_UPLOAD_COUNT:   5,
+  MAX_NAME_LENGTH:    100,
+  MAX_BIO_LENGTH:     500,
+} as const;
+
+// ─── REGEX ────────────────────────────────────────────
+export const REGEX = {
+  EMAIL:    /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  PHONE:    /^\+?[\d\s\-()]{7,15}$/,
+  SLUG:     /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+  UUID:     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+} as const;
+
+// ─── HTTP ─────────────────────────────────────────────
+export const HTTP = {
+  OK:                   200,
+  CREATED:              201,
+  NO_CONTENT:           204,
+  BAD_REQUEST:          400,
+  UNAUTHORIZED:         401,
+  FORBIDDEN:            403,
+  NOT_FOUND:            404,
+  UNPROCESSABLE:        422,
+  INTERNAL_ERROR:       500,
+} as const;
+
+// ─── EVENTS ───────────────────────────────────────────
+export const EVENTS = {
+  USER_CREATED:   "user_created",
+  USER_UPDATED:   "user_updated",
+  SESSION_EXPIRED:"session_expired",
+} as const;
+```
+
+Python structure (`src/constants/__init__.py`):
+```python
+from dataclasses import dataclass
+
+# ─── API ──────────────────────────────────────────────
+class API:
+    BASE_URL        = "/api/v1"
+    TIMEOUT_SEC     = 10
+    RETRY_ATTEMPTS  = 3
+    RETRY_DELAY_SEC = 1.0
+
+# ─── AUTH ─────────────────────────────────────────────
+class AUTH:
+    TOKEN_KEY        = "access_token"
+    SESSION_TTL_SEC  = 86_400
+    MIN_PASSWORD_LEN = 8
+
+# ─── PAGINATION ───────────────────────────────────────
+class PAGINATION:
+    DEFAULT_PAGE      = 1
+    DEFAULT_PAGE_SIZE = 20
+    MAX_PAGE_SIZE     = 100
+
+# ─── LIMITS ───────────────────────────────────────────
+class LIMITS:
+    MAX_FILE_SIZE_MB  = 10
+    MAX_UPLOAD_COUNT  = 5
+    MAX_NAME_LENGTH   = 100
+
+# ─── HTTP ─────────────────────────────────────────────
+class HTTP:
+    OK            = 200
+    CREATED       = 201
+    BAD_REQUEST   = 400
+    UNAUTHORIZED  = 401
+    NOT_FOUND     = 404
+    INTERNAL      = 500
+
+# ─── ROUTES ───────────────────────────────────────────
+class ROUTES:
+    HOME      = "/"
+    LOGIN     = "/login"
+    DASHBOARD = "/dashboard"
+```
+
+### Usage rules
+
+```typescript
+// ✗ VIOLATION — literal everywhere
+fetch("/api/v1/users", { signal: AbortSignal.timeout(10000) });
+if (password.length < 8) { ... }
+if (response.status === 404) { ... }
+localStorage.setItem("access_token", token);
+
+// ✓ CORRECT — constants only
+fetch(`${API.BASE_URL}/users`, { signal: AbortSignal.timeout(API.TIMEOUT_MS) });
+if (password.length < AUTH.MIN_PASSWORD_LEN) { ... }
+if (response.status === HTTP.NOT_FOUND) { ... }
+localStorage.setItem(AUTH.TOKEN_KEY, token);
+```
+
+### Mandatory rules
+
+- Every literal in the codebase is a violation — numbers, strings, booleans, regexes, URLs, paths
+- Before writing any value inline, check if a constant exists — if yes, use it; if no, add it first
+- Constants are grouped thematically (API, AUTH, UI, ROUTES, LIMITS, etc.) but always in the shared module
+- Adding a new thematic group requires a comment header separator for readability
+- Constants are always `as const` (TS) or class-level attributes (Python) — never `let`, never mutable
+- Derived values reference other constants, never repeat the base value:
+  ```typescript
+  // ✗ VIOLATION
+  MAX_REQUEST_SIZE_BYTES: 10 * 1024 * 1024
+
+  // ✓ CORRECT
+  MAX_FILE_SIZE_BYTES: LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024
+  ```
+- Environment-specific values (API keys, URLs per env) go in `.env` files, referenced via `process.env`,
+  but their key names are constants: `process.env[ENV_KEYS.API_BASE_URL]`
+- Constants are typed — TS infers from `as const`, Python uses class attributes (no bare module-level variables)
+
+### Constants audit — run on every response:
+```
+NO inline strings in logic/components  ✓/✗
+NO inline numbers (magic values)       ✓/✗
+NO inline regex literals               ✓/✗
+NO inline route/URL strings            ✓/✗
+New constants added to shared module   ✓/✗
+Thematic section exists or created     ✓/✗
+Derived values reference base constants✓/✗
+```
+
+---
+
+## CODE QUALITY BASELINE
+
+- Functions: max 30 lines — extract helpers if longer
+- Cyclomatic complexity: max 3 levels of nesting
+- All functions: explicit return types (TS) / type hints (Python)
+- No magic numbers or strings — named constants only
+- Error handling: never swallow silently — log + re-raise or handle explicitly
+- Atomic commits: one logical change per task
+- No dead commented-out code in final output
+- Imports: stdlib → third-party → local, no unused imports
+
+---
+
+## FILESYSTEM CLEANLINESS — ZERO TOLERANCE FOR JUNK
+
+The project root and all source directories are sacred.
+Dropping temporary files anywhere outside `tmp/` is a structural violation.
+
+---
+
+### CANONICAL ROOT STRUCTURE — every service and app
+
+Every service root and every app root must be canonically clean at all times.
+Only files that belong there by established convention are allowed in the root.
+Anything else is either moved to its proper directory or goes to `tmp/`.
+
+**Canonical frontend root (Next.js / React / Vue):**
+```
+/
+├── src/                    # all application source code
+├── public/                 # static assets served directly
+├── tests/                  # test suites (or colocated in src/ per framework convention)
+├── docs/                   # project documentation
+├── tmp/                    # temp/scratch only — fully gitignored
+├── .github/                # CI/CD workflows
+├── .husky/                 # git hooks
+├── .vscode/                # shared IDE config (committed)
+├── node_modules/           # never touched manually
+├── .env.example            # committed — all keys, no values
+├── .env.local              # not committed
+├── .eslintrc.json          # linting config
+├── .prettierrc             # formatting config
+├── .gitignore              # standard ignores
+├── tsconfig.json           # TypeScript config
+├── package.json            # dependencies and scripts
+├── pnpm-lock.yaml          # lockfile (or package-lock / yarn.lock)
+└── README.md               # project entry point
+```
+
+**Canonical backend root (FastAPI / Django / Express):**
+```
+/
+├── src/                    # all application source code
+│   ├── api/                # route handlers / controllers
+│   ├── services/           # business logic
+│   ├── models/             # DB models / schemas
+│   ├── repositories/       # data access layer
+│   ├── utils/              # pure helpers
+│   ├── constants/          # named constants
+│   ├── logger/             # logging module
+│   └── types/              # shared types / interfaces
+├── tests/                  # test suites mirroring src/
+├── migrations/             # DB migrations (Alembic / Prisma)
+├── docs/                   # project documentation
+├── tmp/                    # temp/scratch only — fully gitignored
+├── .github/                # CI/CD workflows
+├── .env.example            # committed — all keys, no values
+├── .gitignore
+├── Dockerfile
+├── pyproject.toml          # Python: deps, ruff, mypy config
+├── ruff.toml               # if separate from pyproject
+└── README.md
+```
+
+**Canonical monorepo root:**
+```
+/
+├── apps/                   # deployable applications
+│   ├── web/                # frontend app (canonical frontend structure inside)
+│   └── api/                # backend app (canonical backend structure inside)
+├── packages/               # shared internal packages
+│   ├── ui/                 # shared component library
+│   ├── types/              # shared types across apps
+│   └── config/             # shared configs (eslint, tsconfig base, etc.)
+├── docs/                   # top-level project docs
+├── tmp/                    # temp/scratch — gitignored
+├── .github/
+├── .env.example
+├── .gitignore
+├── package.json            # workspace root
+├── pnpm-workspace.yaml
+├── turbo.json              # or nx.json
+└── README.md
+```
+
+### Root cleanliness rules — enforced on every task
+
+**Allowed in any service/app root:** canonical config files, lockfiles, Dockerfile,
+README.md, .env.example, .gitignore, and standard top-level directories.
+
+**Never allowed in root:**
+```
+✗ One-off scripts:          setup.py, init.js, fix.sh, seed.py
+✗ Dump files:               output.json, response.txt, data.csv
+✗ Versioned duplicates:     app_old/, src_backup/, index_v2.ts
+✗ Nested configs scattered: every tool config must be in root or its canonical subdir
+✗ Undeclared directories:   anything not in docs/STRUCTURE.md
+✗ Random markdown:          NOTES.md, TODO.md, CHANGES.md, PLAN.md
+✗ Temporary test files:     test.py, try.ts, check.js, debug.py
+✗ Build artifacts:          dist/, build/, .next/ — gitignored, never committed
+```
+
+**Where displaced files go:**
+```
+One-off scripts needed briefly    → tmp/        (deleted after use)
+Permanent utility scripts         → src/scripts/ or Makefile targets
+Tool configuration                → root (canonical) or config/ if many
+Shared types                      → src/types/ or packages/types/ (monorepo)
+Documentation notes               → docs/ (only the 6 approved docs)
+DB seeds / fixtures               → tests/fixtures/ or src/db/seeds/
+Migration scripts                 → migrations/
+```
+
+**Makefile / scripts/ for recurring tasks:**
+If a project accumulates ad-hoc shell commands, they must be consolidated into
+a `Makefile` or `scripts/` directory with clear named targets — never as loose
+files in root:
+```makefile
+# Makefile
+dev:        docker compose --env-file .env.docker up
+build:      docker compose --env-file .env.production build
+test:       pnpm test
+lint:       pnpm lint && pnpm tsc --noEmit
+clean-tmp:  find tmp/ -not -name '.gitignore' -not -name '.gitkeep' -not -type d -delete
+```
+
+**Structure audit — run at start of every session:**
+1. Scan root directory — flag any file not in the canonical allowlist
+2. Scan for duplicate or versioned directories/files
+3. Verify `tmp/` contains only `.gitignore` and `.gitkeep` (no leftover files)
+4. Report: `ROOT AUDIT: clean ✓` or list violations found
+
+---
+
+### tmp/ — the only place for anything temporary
+
+```
+tmp/                ← all temporary, scratch, debug, intermediate files live here ONLY
+  .gitignore        ← contains: * (ignore everything inside tmp/)
+```
+
+`tmp/.gitignore` — created once, never touched again:
+```
+*
+```
+
+This means the `tmp/` directory itself is tracked (via an empty `.gitkeep`),
+but every file inside it is ignored by git automatically. Nothing in `tmp/` ever
+gets committed. Ever.
+
+```
+tmp/
+  .gitignore        ← * (committed once)
+  .gitkeep          ← empty file so the directory exists in repo
+```
+
+---
+
+### What goes into tmp/ — mandatory routing
+
+Every file that is not a permanent project artifact must go to `tmp/`:
+
+```
+tmp/debug_output.json       ← API response snapshots for debugging
+tmp/test_run.py             ← throwaway test scripts
+tmp/scratch.ts              ← exploratory code snippets
+tmp/analysis.md             ← intermediate analysis notes
+tmp/migration_check.sql     ← one-off SQL queries
+tmp/diff_before.txt         ← comparison files
+tmp/fixture_gen.py          ← one-time data generation scripts
+tmp/lint_report.txt         ← saved lint output
+tmp/type_check.log          ← saved tsc output
+```
+
+Forbidden locations for temp files — never create temp files here:
+```
+/                           ← project root — absolutely forbidden
+src/                        ← source code only
+tests/                      ← real tests only, no throwaway scripts
+docs/                       ← permanent docs only
+```
+
+---
+
+### Lifecycle — create → use → delete
+
+Every file created in `tmp/` follows a strict lifecycle within the same task cycle:
+
+```
+1. CREATE  → tmp/filename        (never in root or src/)
+2. USE     → read, run, analyze
+3. DELETE  → rm tmp/filename     (in the same response/cycle, before task ends)
+```
+
+Deletion is mandatory. Not optional. Not "when convenient".
+If the task ends and `tmp/` still has files created this session — the cycle is incomplete.
+
+Cleanup command to run at end of every task cycle:
+```bash
+# Remove all files in tmp/ except .gitignore and .gitkeep
+find tmp/ -not -name '.gitignore' -not -name '.gitkeep' -not -type d -delete
+```
+
+---
+
+### Rules — enforced always
+
+- Any file that serves only the current task and has no permanent value → `tmp/` only
+- Never create versioned duplicates anywhere: `file_v2.py`, `file_new.ts`, `file_backup.py`
+  → if a backup is needed, use git: `git stash` or a branch
+- Never dump log output or command results to files in root or src/ — use `tmp/` or pipe to stdout
+- If unsure whether a file should persist — it goes to `tmp/` and gets deleted after use
+- The root directory must contain only: canonical project files, config files, and standard
+  top-level dirs (src/, tests/, docs/, tmp/, .github/, etc.)
+
+---
+
+### Allowed .md files — explicit whitelist
+
+The ONLY markdown files allowed to persist in the project:
+```
+README.md
+docs/SPEC.md
+docs/ROADMAP.md
+docs/STRUCTURE.md
+docs/DEPLOY.md
+docs/DECISIONS.md
+docs/CONTEXT.md
+[any .md the user has explicitly named and requested]
+```
+
+Any other .md → `tmp/` → deleted after use.
+
+---
+
+Confirm at end of every response:
+```
+FILESYSTEM: clean ✓ — tmp/ empty, no junk in root or src/
+```
+or on cleanup performed:
+```
+FILESYSTEM: cleaned ✓ — deleted tmp/debug_output.json, tmp/scratch.ts
+```
+
+---
+
+## SESSION INITIALIZATION
+
+On every new conversation or model switch:
+1. Read docs/SPEC.md → internalize requirements
+2. Read docs/ROADMAP.md → current milestone + next task
+3. Read docs/STRUCTURE.md → file/module ownership rules
+4. Read docs/DEPLOY.md → target environment
+5. Read docs/DECISIONS.md → all prior architectural decisions — never contradict without flagging
+6. Read docs/CONTEXT.md → "Next task" field — this is the entry point for this session
+7. Verify toolchain present: .eslintrc / .prettierrc / tsconfig.json / husky / lint-staged
+8. Verify src/types/domain.ts exists as root of type hierarchy
+9. State in one paragraph: current milestone, active task, context summary, toolchain status
+
+At the END of every session before closing:
+- Overwrite docs/CONTEXT.md with current snapshot
+- Append new decisions to docs/DECISIONS.md
+- Update docs/ROADMAP.md — mark completed items ✓
+
+If docs/ missing → STOP, draft all 6 documents before any code.
+If toolchain config missing → STOP, configure before writing any code.
+If types/domain.ts missing → STOP, establish type root before writing any typed code.
+If CONTEXT.md missing → create it now, then proceed.
+
+If project context is unavailable, ask:
+"Please share your project description so I can draft SPEC, ROADMAP, STRUCTURE, DEPLOY,
+DECISIONS, CONTEXT, configure the quality toolchain, and establish the type hierarchy
+before we start."

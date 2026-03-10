@@ -31,7 +31,7 @@ const BACKEND_URL = RAW_BACKEND_BASE.replace(/\/+$/, '').replace(/\/(api)\/?$/i,
 const CREATE_AD_TIMEOUT_MS = 30000;
 const IMAGE_GEN_TIMEOUT_MS = 60000;
 const IMAGE_SAVE_TIMEOUT_MS = 15000;
-const MAX_ADS_LIMIT = 50;
+const MAX_ADS_LIMIT = 3;
 
 // Utility functions
 const mergeHeaders = (...headerSets: Array<HeadersInit | undefined>): HeadersRecord => {
@@ -117,7 +117,7 @@ const createSingleAd = async (
       console.error(`❌ [TestAds] Failed to create ad ${index + 1}:`, response.status, errorText);
       return {
         success: false,
-        title: formData.title,
+        title: formData.title || `Test Ad ${index + 1}`,
         imagesCount: 0,
         error: `HTTP ${response.status}: ${errorText}`,
         index: index + 1
@@ -153,7 +153,7 @@ const createSingleAd = async (
 
     return {
       success: true,
-      title: formData.title,
+      title: formData.title || `Test Ad ${index + 1}`,
       id: createdAd.id,
       user: 'current-session',
       imagesCount: savedCount
@@ -166,7 +166,7 @@ const createSingleAd = async (
       console.error(`⏱️ [TestAds] Timeout creating ad ${index + 1}`);
       return {
         success: false,
-        title: formData.title,
+        title: formData.title || `Test Ad ${index + 1}`,
         imagesCount: 0,
         error: 'Request timeout',
         index: index + 1
@@ -190,7 +190,7 @@ const createSingleAd = async (
     return {
       success: false,
       error: message,
-      title: formData.title,
+      title: formData.title || `Test Ad ${index + 1}`,
       imagesCount: 0,
       index: index + 1
     };
@@ -206,10 +206,28 @@ const generateAndSaveImages = async (
   try {
     console.log(`🎨 [TestAds] Generating images for ad ${createdAd.id}...`);
 
-    const vehicleTypeName = createdAd?.vehicle_type_name || createdAd?.dynamic_fields?.vehicle_type_name;
+    // Получаем vehicle_type_name из разных источников
+    let vehicleTypeName = createdAd?.vehicle_type_name || createdAd?.dynamic_fields?.vehicle_type_name;
+    
+    // Если vehicle_type_name отсутствует, пробуем получить из полных данных объявления
+    if (!vehicleTypeName && createdAd?.id) {
+      try {
+        console.log(`🔍 [TestAds] Fetching full ad data to get vehicle_type_name...`);
+        const adResponse = await authFetch(`${BACKEND_URL}/api/ads/cars/${createdAd.id}/`);
+        if (adResponse.ok) {
+          const fullAdData = await adResponse.json();
+          vehicleTypeName = fullAdData?.vehicle_type_name || fullAdData?.dynamic_fields?.vehicle_type_name;
+          console.log(`✅ [TestAds] Got vehicle_type_name from full ad data: ${vehicleTypeName}`);
+        }
+      } catch (fetchError) {
+        console.warn(`⚠️ [TestAds] Failed to fetch full ad data:`, fetchError);
+      }
+    }
+    
+    // Fallback: используем "Легкові" как дефолт для легковых авто
     if (!vehicleTypeName) {
-      console.warn(`⚠️ [TestAds] vehicle_type_name is missing for ad ${createdAd.id}, skipping image generation`);
-      return 0;
+      vehicleTypeName = 'Легкові';
+      console.warn(`⚠️ [TestAds] Using default vehicle_type_name: ${vehicleTypeName}`);
     }
 
     const carData = {
@@ -379,6 +397,11 @@ export async function createTestAdsServer(
   // Process batches sequentially, but ads within each batch in parallel
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
     const batch = batches[batchIndex];
+    if (!batch) {
+      console.warn(`⚠️ [TestAds] Batch ${batchIndex} is undefined, skipping`);
+      continue;
+    }
+    
     const batchProgress = Math.round((batchIndex / batches.length) * (includeImages ? 50 : 90));
     
     onProgress?.(batchProgress, `Обрабатываем пакет ${batchIndex + 1}/${batches.length} (${batch.length} объявлений)...`);

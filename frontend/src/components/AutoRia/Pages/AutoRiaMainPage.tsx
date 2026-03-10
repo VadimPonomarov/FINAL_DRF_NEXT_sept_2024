@@ -15,14 +15,15 @@ import {
   Zap,
   Database,
   Trash2,
-  Settings
+  Settings,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 import { useI18n } from '@/contexts/I18nContext';
 import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import { fetchWithAuth } from '@/modules/autoria/shared/utils/fetchWithAuth';
-import { ensureInitialTestAdsSeed } from '@/shared/init/ensureInitialSeed';
 import { CarAdsService } from '@/services/autoria/carAds.service';
+import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
 
 // Lazy load heavy components to improve LCP and reduce TBT
 const AccountTypeManager = dynamic(
@@ -43,33 +44,49 @@ const PlatformStatsWidget = dynamic(
 const AutoRiaMainPage = () => {
   const { t, formatNumber } = useI18n();
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading: authLoading } = useAutoRiaAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAccountManager, setShowAccountManager] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [showTestAdsModal, setShowTestAdsModal] = useState(false);
   const [testAdsCount, setTestAdsCount] = useState(3);
 
-  useEffect(() => {
-    const controller = new AbortController();
+  // Проверка прав администратора
+  const isAdmin = useMemo(() => {
+    return user?.is_superuser || user?.is_staff || false;
+  }, [user]);
 
-    ensureInitialTestAdsSeed({ signal: controller.signal })
-      .catch((error) => {
-        if (error?.name === 'AbortError') {
-          return;
-        }
-        console.error('[AutoRiaMainPage] ❌ Initial seed failed:', error);
+  // ОТКЛЮЧЕНО: Автоматический сидинг создавал лишние объявления
+  // Теперь генерация только по кнопке администратора
+  // useEffect(() => {
+  //   const controller = new AbortController();
+  //   ensureInitialTestAdsSeed({ signal: controller.signal })
+  //     .catch((error) => {
+  //       if (error?.name === 'AbortError') return;
+  //       console.error('[AutoRiaMainPage] ❌ Initial seed failed:', error);
+  //     });
+  //   return () => controller.abort();
+  // }, []);
+
+  // Функция проверки прав перед выполнением админ-действий
+  const checkAdminPermission = useCallback((): boolean => {
+    if (!isAuthenticated) {
+      toast({
+        title: "🔒 Потрібна авторизація",
+        description: "Будь ласка, увійдіть в систему для виконання цієї дії",
+        variant: "destructive",
       });
-
-    return () => controller.abort();
-  }, []);
-
-
-
-  // УДАЛЕНО: Дублирующий запрос к /api/user/profile
-  // useUserProfileData в AutoRiaHeader уже загружает эти данные
-  // Этот код вызывал CORS ошибки, так как /api/user/profile не существует как Next.js API route
-
-  const isSuperUser = currentUser?.is_superuser || currentUser?.is_staff || true; // Временно true для тестирования
+      return false;
+    }
+    if (!isAdmin) {
+      toast({
+        title: "🚫 Недостатньо прав",
+        description: "Ця дія доступна тільки для адміністраторів (is_superuser або is_staff)",
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  }, [isAuthenticated, isAdmin, toast]);
 
 
 
@@ -77,6 +94,9 @@ const AutoRiaMainPage = () => {
   // Функция генерации тестовых объявлений с выбранными типами изображений
   const generateTestAds = useCallback(async (count?: number, imageTypes?: string[]) => {
     if (isGenerating) return;
+
+    // Проверка прав администратора
+    if (!checkAdminPermission()) return;
 
     // Если параметры не переданы, используем значения по умолчанию
     if (count === undefined || imageTypes === undefined) {
@@ -184,9 +204,12 @@ const AutoRiaMainPage = () => {
 
 
 
-  // Функция очистки ВСЕХ объявлений в БД (не только своих)
+  // Функция очистки ВСЕХ объявлений в БД (не только своих) - только для админов
   const clearAllAds = useCallback(async () => {
     if (isGenerating) return;
+
+    // Проверка прав администратора
+    if (!checkAdminPermission()) return;
 
     const { alertHelpers } = await import('@/components/ui/alert-dialog-helper');
     const confirmed = await alertHelpers.confirmDelete(t('autoria.testAds.allAdsInDatabase') || 'ВСІ оголошення в базі даних');
@@ -364,14 +387,19 @@ const AutoRiaMainPage = () => {
           </CardContent>
         </Card>
 
-        {/* Быстрые действия */}
+        {/* Быстрые действия - админ кнопки */}
         <div className="flex flex-wrap gap-3 md:gap-4 justify-center items-start px-4 md:px-0">
 
+          {/* Кнопка генерации - показываем замок если не админ */}
           <Button
             size="lg"
             onClick={() => setShowTestAdsModal(true)}
             disabled={isGenerating}
-            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0 drop-shadow-lg"
+            className={`font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0 drop-shadow-lg ${
+              isAdmin 
+                ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+                : 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white'
+            }`}
           >
             {isGenerating ? (
               <>
@@ -381,6 +409,7 @@ const AutoRiaMainPage = () => {
               </>
             ) : (
               <>
+                {!isAdmin && <Lock className="h-4 w-4 mr-1" />}
                 <Database className="h-4 md:h-5 w-4 md:w-5 mr-2" />
                 <span className="hidden sm:inline">{t('autoria.testAds.generatorButton')}</span>
                 <span className="sm:hidden">{t('autoria.testAds.generatorButtonShort')}</span>
@@ -388,27 +417,33 @@ const AutoRiaMainPage = () => {
             )}
           </Button>
 
-
-
-
-
-          {/* Кнопка управления аккаунтами */}
+          {/* Кнопка управления аккаунтами - показываем замок если не админ */}
           <Button
             size="lg"
             onClick={() => setShowAccountManager(true)}
-            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold shadow-md whitespace-nowrap flex-shrink-0 border-0 drop-shadow-lg"
+            className={`font-semibold shadow-md whitespace-nowrap flex-shrink-0 border-0 drop-shadow-lg ${
+              isAdmin 
+                ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white'
+                : 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white'
+            }`}
           >
+            {!isAdmin && <Lock className="h-4 w-4 mr-1" />}
             <Settings className="h-5 w-5 mr-2" />
             {t('autoria.testAds.manageAccounts')}
           </Button>
 
-          {/* Кнопка очистки */}
+          {/* Кнопка очистки - показываем замок если не админ */}
           <Button
             size="lg"
             onClick={clearAllAds}
             disabled={isGenerating}
-            className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0 drop-shadow-lg"
+            className={`font-semibold shadow-md disabled:opacity-50 whitespace-nowrap flex-shrink-0 border-0 drop-shadow-lg ${
+              isAdmin 
+                ? 'bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white'
+                : 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white'
+            }`}
           >
+            {!isAdmin && <Lock className="h-4 w-4 mr-1" />}
             <Trash2 className="h-5 w-5 mr-2" />
             {t('autoria.testAds.clearAll')}
           </Button>
