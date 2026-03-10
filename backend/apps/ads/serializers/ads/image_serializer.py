@@ -52,14 +52,13 @@ class AdImageSerializer(BaseModelSerializer):
                     "image": "Either image file or image_url must be provided."
                 })
 
-        # Ensure only one primary image per ad
+        # Ensure only one primary image per ad - auto-reset existing primary instead of error
         if data.get('is_primary', False):
             ad_id = self.context.get('view').kwargs.get('ad_pk')
-            if ad_id and AddImageModel.objects.filter(ad_id=ad_id, is_primary=True).exists():
-                if not self.instance or not self.instance.is_primary:
-                    raise serializers.ValidationError({
-                        "is_primary": "An ad can only have one primary image."
-                    })
+            if ad_id:
+                # Instead of raising error, we'll reset existing primary in create/update
+                # This allows setting new primary images without validation errors
+                pass
 
         return data
     
@@ -67,14 +66,20 @@ class AdImageSerializer(BaseModelSerializer):
         """
         Create a new image instance.
         """
+        from django.db.models import Max
+        
         # Set the ad_id from the URL
         validated_data['ad_id'] = self.context['view'].kwargs['ad_pk']
+        ad_id = validated_data['ad_id']
+        
+        # If setting as primary, reset existing primary images first
+        if validated_data.get('is_primary', False):
+            AddImageModel.objects.filter(ad_id=ad_id, is_primary=True).update(is_primary=False)
         
         # Set the order to be the next available number if not provided
         if 'order' not in validated_data:
-            ad_id = validated_data['ad_id']
             max_order = AddImageModel.objects.filter(ad_id=ad_id).aggregate(
-                max_order=serializers.Max('order')
+                max_order=Max('order')
             )['max_order'] or 0
             validated_data['order'] = max_order + 1
         

@@ -9,12 +9,10 @@ class AdsConfig(AppConfig):
     label = 'ads'
 
     def ready(self):
-        import os
-        # Run seeds automatically in non-Docker environments (Render, Railway, local)
-        # In Docker, seeds are managed by docker-compose start command
-        is_docker = os.getenv('IS_DOCKER', 'false').lower() in ('true', '1', 't', 'yes')
-        if not is_docker and self._should_run_seeds():
-            self._run_seeds_safely()
+        # DISABLED: Auto-seeding removed to prevent unwanted ad creation
+        # Seeds should only run manually via admin command or button
+        # This prevents the "10 ads created without command" issue
+        pass
 
     def _run_seeds_safely(self):
         """Run seeds safely without blocking app startup."""

@@ -331,32 +331,41 @@ const generateAndSaveImages = async (
       try {
         const { controller: saveController, timeoutId: saveTimeoutId } = createTimeoutController(IMAGE_SAVE_TIMEOUT_MS);
         
+        const imagePayload = {
+          image_url: imageData.url,
+          caption: imageData.alt_text || imageData.title || `Generated image ${idx + 1}`,
+          is_primary: idx === 0,
+          order: idx + 1,
+        };
+        
+        console.log(`📤 [TestAds] Saving image ${idx + 1}/${genData.images.length} for ad ${createdAd.id}:`, {
+          url: imagePayload.image_url?.substring(0, 80) + '...',
+          is_primary: imagePayload.is_primary,
+          order: imagePayload.order
+        });
+        
         const saveResp = await authFetch(`${BACKEND_URL}/api/ads/${createdAd.id}/images`, {
           method: 'POST',
-          body: JSON.stringify({
-            image_url: imageData.url,
-            caption: imageData.alt_text || imageData.title || `Generated image ${idx + 1}`,
-            is_primary: idx === 0,
-            order: idx + 1,
-          }),
+          body: JSON.stringify(imagePayload),
           signal: saveController.signal
         });
 
         clearTimeout(saveTimeoutId);
         
         if (saveResp.ok) {
-          console.log(`💾 [TestAds] Saved image ${idx + 1}/${genData.images.length} for ad ${createdAd.id}`);
+          const savedData = await saveResp.json().catch(() => ({}));
+          console.log(`💾 [TestAds] Saved image ${idx + 1}/${genData.images.length} for ad ${createdAd.id}:`, savedData);
           return true;
         } else {
           const errorText = await saveResp.text().catch(() => 'Unknown error');
-          console.warn(`⚠️ [TestAds] Failed to save image ${idx + 1} for ad ${createdAd.id}: ${saveResp.status} ${errorText}`);
+          console.error(`❌ [TestAds] Failed to save image ${idx + 1} for ad ${createdAd.id}: ${saveResp.status}`, errorText);
           return false;
         }
       } catch (error: any) {
         if (error instanceof Error && error.name === 'AbortError') {
           console.warn(`⏱️ [TestAds] Timeout saving image ${idx + 1} for ad ${createdAd.id}`);
         } else {
-          console.warn(`⚠️ [TestAds] Error saving image ${idx + 1} for ad ${createdAd.id}:`, error.message);
+          console.error(`❌ [TestAds] Error saving image ${idx + 1} for ad ${createdAd.id}:`, error.message);
         }
         return false;
       }
@@ -392,7 +401,7 @@ export async function createTestAdsServer(
   console.log(`🚀 Creating ${count} test ads on server...`);
 
   // Validate input
-  const validatedCount = Math.min(Math.max(MIN_ADS_COUNT, count), MAX_ADS_COUNT);
+  let validatedCount = Math.min(Math.max(MIN_ADS_COUNT, count), MAX_ADS_COUNT);
   if (validatedCount !== count) {
     console.warn(`⚠️ [TestAds] Count adjusted from ${count} to ${validatedCount} (max: ${MAX_ADS_COUNT})`);
   }
@@ -414,21 +423,23 @@ export async function createTestAdsServer(
       
       if (!limitsData.allowed) {
         console.warn(`🚫 [TestAds] Account limit exceeded: ${limitsData.reason}`);
-        return NextResponse.json(
-          {
+        return {
+          created: 0,
+          totalImages: 0,
+          details: [{
             success: false,
+            title: 'Account Limit Exceeded',
             error: 'ACCOUNT_LIMIT_EXCEEDED',
-            message: limitsData.reason,
-            details: {
+            index: 0,
+            debug: {
               current_ads: limitsData.current_ads,
               max_ads: limitsData.max_ads,
               account_type: limitsData.account_type,
               upgrade_message: limitsData.upgrade_message,
               upgrade_url: limitsData.upgrade_url
             }
-          },
-          { status: 429 } // Too Many Requests
-        );
+          }]
+        };
       }
       
       // Additional check: ensure we don't exceed limits with batch creation
@@ -439,21 +450,23 @@ export async function createTestAdsServer(
           console.warn(`🚫 [TestAds] Batch creation would exceed limits. Adjusting from ${validatedCount} to ${maxAllowed}`);
           
           if (maxAllowed === 0) {
-            return NextResponse.json(
-              {
+            return {
+              created: 0,
+              totalImages: 0,
+              details: [{
                 success: false,
+                title: 'Account Limit Exceeded',
                 error: 'ACCOUNT_LIMIT_EXCEEDED',
-                message: `Cannot create any ads. Account already has ${limitsData.current_ads}/${limitsData.max_ads} ads.`,
-                details: {
+                index: 0,
+                debug: {
                   current_ads: limitsData.current_ads,
                   max_ads: limitsData.max_ads,
                   account_type: limitsData.account_type,
                   requested: validatedCount,
                   allowed: maxAllowed
                 }
-              },
-              { status: 429 }
-            );
+              }]
+            };
           }
           
           // Adjust count to fit within limits

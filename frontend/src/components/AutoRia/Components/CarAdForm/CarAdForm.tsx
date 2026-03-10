@@ -568,11 +568,17 @@ const CarAdForm: React.FC<CarAdFormProps> = ({
                     brand: formData.brand,
                     brand_name: formData.brand_name,
                     model: formData.model,
+                    model_name: formData.model_name,
                     year: formData.year,
                     color: formData.color,
+                    color_name: formData.color_name,
                     condition: formData.condition,
                     title: formData.title,
-                    description: formData.description // Теперь описание доступно для генератора
+                    description: formData.description,
+                    // КРИТИЧНО для генерации изображений:
+                    body_type: formData.body_type,
+                    vehicle_type: formData.vehicle_type,
+                    vehicle_type_name: formData.vehicle_type_name
                   }}
                   onChange={(data) => handleFormDataChange('images', data)}
                   errors={[]}

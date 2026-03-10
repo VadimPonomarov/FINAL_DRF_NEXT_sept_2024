@@ -775,16 +775,24 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
       .then(async (response): Promise<any> => {
         console.log(`📡 [ImagesForm] Image generation response status: ${response.status}`);
         
+        // Clone response before reading body to avoid "body stream already read" error
+        const responseClone = response.clone();
+        
         if (!response.ok) {
           // Пытаемся получить детали ошибки из ответа
           let errorDetails = '';
           try {
-            const errorData = await response.json();
+            const errorData = await responseClone.json();
             errorDetails = errorData.error || errorData.details || JSON.stringify(errorData);
             console.error(`❌ [ImagesForm] Backend error details:`, errorData);
           } catch (e) {
-            errorDetails = await response.text();
-            console.error(`❌ [ImagesForm] Backend error (text):`, errorDetails);
+            try {
+              errorDetails = await response.text();
+              console.error(`❌ [ImagesForm] Backend error (text):`, errorDetails);
+            } catch (textError) {
+              errorDetails = 'Could not read error response';
+              console.error(`❌ [ImagesForm] Could not read error response:`, textError);
+            }
           }
           throw new Error(`Ошибка генерации (${response.status}): ${errorDetails || 'Unknown error'}`);
         }

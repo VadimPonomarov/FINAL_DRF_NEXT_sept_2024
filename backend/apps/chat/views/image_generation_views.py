@@ -431,15 +431,10 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
         logger.info(f"🚗 [safe_algorithm] Car data: {car_data}")
         logger.info(f"📐 [safe_algorithm] Angles: {angles}")
 
-        # Validate vehicle_type_name (required for consistency)
-        vehicle_type_name = car_data.get('vehicle_type_name')
-        if not vehicle_type_name:
-            logger.error("❌ vehicle_type_name is required but not provided")
-            return Response({
-                'success': False,
-                'error': 'vehicle_type_name is required for image generation',
-                'details': 'Please provide vehicle_type_name in car_data (e.g., "Легкові", "Вантажівки", etc.)'
-            }, status=400)
+        # Get vehicle_type_name with fallback (no longer required - use 'car' as default)
+        vehicle_type_name = car_data.get('vehicle_type_name') or car_data.get('vehicle_type') or 'car'
+        if not car_data.get('vehicle_type_name'):
+            logger.warning(f"⚠️ vehicle_type_name not provided, using fallback: '{vehicle_type_name}'")
 
         # Create session ID for consistency
         session_data = f"{car_data.get('brand', '')}_{car_data.get('model', '')}_{car_data.get('year', '')}_{car_data.get('color', '')}_{car_data.get('body_type', '')}"
@@ -455,9 +450,10 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
             try:
                 logger.info(f"🔄 Generating image for angle: {angle} ({i + 1}/{len(angles)})")
 
-                # Create prompt using simple method
+                # Create prompt using vehicle_type_name for accurate generation
                 car_info = f"{car_data.get('brand', '')} {car_data.get('model', '')} {car_data.get('year', '')}"
-                prompt = f"Professional automotive photography of {car_info} - {angle} view. {car_data.get('color', 'silver')} color, {car_data.get('body_type', 'sedan')} body type, realistic, high quality, clean background"
+                vehicle_type_for_prompt = vehicle_type_name if vehicle_type_name != 'car' else car_data.get('body_type', 'sedan')
+                prompt = f"Professional automotive photography of {vehicle_type_for_prompt} {car_info} - {angle} view. {car_data.get('color', 'silver')} color, {car_data.get('body_type', 'sedan')} body type, realistic, high quality, clean background"
 
                 # Use Pollinations.ai with FLUX model (no dependencies needed)
                 try:
