@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   Sun,
-  Moon
+  Moon,
+  Globe2
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useRedisAuth } from '@/contexts/RedisAuthContext';
@@ -160,19 +161,32 @@ const AutoRiaHeader: React.FC<AutoRiaHeaderProps> = ({ currentPage }) => {
           ))}
         </nav>
 
-        {/* Right Section */}
+        {/* Right Section - Language Selector */}
         <div className="flex items-center gap-2">
-          {/* Theme Toggle - Desktop Only */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleDarkMode}
-            className="hidden md:flex h-9 w-9 rounded-lg p-0"
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
+          {/* Language Selector - Desktop and Mobile */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-9 w-9 rounded-lg p-0">
+                <Globe2 className="h-4 w-4" />
+                <span className="sr-only">Change language</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[140px]">
+              {availableLocales.map((localeOption) => (
+                <DropdownMenuItem
+                  key={localeOption.code}
+                  onClick={() => setLocale(localeOption.code as any)}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2",
+                    locale === localeOption.code && "bg-accent"
+                  )}
+                >
+                  <span className="text-sm">{localeOption.flag}</span>
+                  <span className="text-sm font-medium">{localeOption.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* User Menu - Desktop Only */}
           <DropdownMenu>

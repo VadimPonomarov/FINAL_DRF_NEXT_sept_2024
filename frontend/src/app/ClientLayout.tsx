@@ -3,11 +3,8 @@
 import React, { useEffect } from "react";
 import {MenuMain} from "@/components/Menus/MenuMain/MenuMain";
 import RootProvider from "@/shared/providers/RootProvider";
-import {MagicBackButton} from "@/components/ui/magicBackButton";
 import { ChatBotIcon } from "@/components/ChatBot/ChatBotIcon";
 import { Toaster } from "@/components/ui/toaster";
-import TopRightControls from "@/components/All/TopRightControls/TopRightControls";
-import FixedLanguageSwitch from "@/components/AutoRia/Layout/FixedLanguageSwitch";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { logger } from "@/shared/utils/logger";
 
@@ -42,12 +39,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <header className="header-container h-[50px]">
         <MenuMain/>
       </header>
-      
-      {/* Fixed Controls - Desktop only (mobile має їх в burger menu) */}
-      <TopRightControls />
-      
-      {/* Language Selector - bottom left, всі платформи */}
-      <FixedLanguageSwitch />
       <main className="w-full min-h-[calc(100vh-50px)] pt-[60px] pb-4">
         {children}
       </main>
