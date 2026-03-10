@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 // import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { cleanupAuth } from '@/lib/auth/cleanupAuth';
-import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield, ChevronDown, User } from 'lucide-react';
+import { Activity, Menu as BurgerIcon, X as CloseIcon, Shield, ChevronDown, User, Globe2 } from 'lucide-react';
 import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { AuthProvider } from '@/shared/constants/constants';
 import { IMenuItem } from '@/components/All/MenuComponent/menu.interfaces';
@@ -13,6 +13,13 @@ import { ThemeControls } from '@/components/ui/theme-controls';
 import { FaBook, FaSignOutAlt, FaNetworkWired, FaCar } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MagicBackButton } from '@/components/ui/magicBackButton';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export const MenuMain: FC = () => {
   const { provider } = useAuthProvider();
@@ -418,9 +425,21 @@ export const MenuMain: FC = () => {
         <MenuComponent items={menuItems} />
       </div>
       
-      {/* Theme Controls - Desktop - Bottom Left */}
+      {/* Language Selector - Desktop - Bottom Left */}
       <div className="hidden md:block absolute left-4 bottom-0 z-[99999]">
-        <ThemeControls />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Globe2 className="h-4 w-4" />
+              <span className="text-xs">🌍</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>English</DropdownMenuItem>
+            <DropdownMenuItem>Українська</DropdownMenuItem>
+            <DropdownMenuItem>Русский</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       {/* Mobile burger - Fixed positioned on the right */}
       <div className={`md:hidden fixed right-4 top-4 z-[1002] transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-20'}`}>
