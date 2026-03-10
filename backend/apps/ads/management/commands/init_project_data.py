@@ -825,18 +825,36 @@ Style: Photorealistic, automotive magazine quality"""
             return False
  
     def _create_car_advertisements(self):
-        """Create car advertisements with images using frontend algorithm (FINAL STEP)."""
+        """Create car advertisements with images using frontend algorithm (FINAL STEP).
+        
+        CRITICAL SEEDING RULE:
+        - If DB has >= MAX_SEEDING_THRESHOLD (10) records, NO seeding occurs
+        - Only seed the difference to reach threshold, never more
+        - This is an inviolable algorithm to prevent time overhead
+        """
         self.stdout.write('🚗 Creating car advertisements with images...')
 
         try:
             from apps.ads.models import CarAd
             import os
 
-            # Configuration: minimum number of ACTIVE ads that must have at least one image
-            min_ads_with_images = int(os.getenv('MIN_TEST_ADS_WITH_IMAGES', '10') or '10')
+            # CRITICAL: Maximum threshold - if DB has >= this many records, NO seeding
+            MAX_SEEDING_THRESHOLD = 10
 
             # Current counts
             existing_ads = CarAd.objects.count()
+            
+            # CRITICAL CHECK: If DB already has >= threshold, skip seeding entirely
+            if existing_ads >= MAX_SEEDING_THRESHOLD:
+                self.stdout.write(
+                    f'✅ В БД вже є {existing_ads} оголошень (>= поріг {MAX_SEEDING_THRESHOLD}). '
+                    f'Сидінг НЕ потрібен - пропускаємо для економії часу.'
+                )
+                return {'created': 0}
+            
+            # Calculate how many records to create (only up to threshold)
+            needed_to_threshold = MAX_SEEDING_THRESHOLD - existing_ads
+            
             # Use the same semantics as CarAdFilter.filter_with_photos_only:
             # at least one non-empty image or image_url
             base_images_qs = CarAd.objects.filter(
@@ -851,13 +869,14 @@ Style: Photorealistic, automotive magazine quality"""
 
             self.stdout.write(
                 f'ℹ️ Current car ads: total={existing_ads}, '
-                f'with images={total_with_images}, active with images={active_with_images}'
+                f'with images={total_with_images}, active with images={active_with_images}, '
+                f'needed to threshold={needed_to_threshold}'
             )
 
-            # If we already have enough ACTIVE ads with images, nothing to do
-            if active_with_images >= min_ads_with_images:
+            # If we already have enough ads, nothing to do
+            if existing_ads >= MAX_SEEDING_THRESHOLD:
                 self.stdout.write(
-                    f'✅ Minimum {min_ads_with_images} ACTIVE car ads with images already satisfied'
+                    f'✅ Threshold {MAX_SEEDING_THRESHOLD} already reached'
                 )
                 return {'created': 0}
 
@@ -894,11 +913,12 @@ Style: Photorealistic, automotive magazine quality"""
                 )
                 return max(0, new_active_count - previous_active_count)
 
-            # STEP 1: ensure we have at least min_ads_with_images total ads WITH images (any status)
-            if total_with_images < min_ads_with_images:
-                needed_images = min_ads_with_images - total_with_images
+            # STEP 1: ensure we have at least needed_to_threshold total ads WITH images (any status)
+            # But NEVER exceed MAX_SEEDING_THRESHOLD
+            if total_with_images < needed_to_threshold:
+                needed_images = min(needed_to_threshold - total_with_images, needed_to_threshold)
                 self.stdout.write(
-                    f'🎨 Need at least {min_ads_with_images} ads with images, missing {needed_images} – generating...'
+                    f'🎨 Need {needed_images} more ads with images to reach threshold {MAX_SEEDING_THRESHOLD}...'
                 )
 
                 generate_with_images = os.getenv(
@@ -920,11 +940,12 @@ Style: Photorealistic, automotive magazine quality"""
                     )
                 else:
                     # Legacy fallback (without guaranteed images)
+                    # CRITICAL: Only seed up to threshold, never more
                     self.stdout.write(
                         '📝 GENERATE_TEST_ADS_WITH_IMAGES=false – using legacy seed_car_ads '
-                        '(cannot guarantee that all seeded ads will have images)'
+                        f'(limited to {needed_to_threshold} records)'
                     )
-                    call_command('seed_car_ads', count=max(min_ads_with_images, 50), verbosity=0)
+                    call_command('seed_car_ads', count=needed_to_threshold, verbosity=0)
                     new_total_ads = CarAd.objects.count()
                     self.stdout.write(
                         f'✅ Total car advertisements after legacy seeding: {new_total_ads}'
@@ -935,10 +956,10 @@ Style: Photorealistic, automotive magazine quality"""
             # STEP 2: promote ads WITH images to ACTIVE if still below threshold
             active_with_images = base_images_qs.filter(status=AdStatusEnum.ACTIVE).count()
 
-            if active_with_images < min_ads_with_images:
-                needed_active = min_ads_with_images - active_with_images
+            if active_with_images < MAX_SEEDING_THRESHOLD:
+                needed_active = min(MAX_SEEDING_THRESHOLD - active_with_images, needed_to_threshold)
                 self.stdout.write(
-                    f'🔧 Promoting {needed_active} ads with images to ACTIVE to reach minimum {min_ads_with_images}...'
+                    f'🔧 Promoting {needed_active} ads with images to ACTIVE to reach threshold {MAX_SEEDING_THRESHOLD}...'
                 )
                 promoted_delta = _promote_ads_to_active(self, needed_active, active_with_images)
                 new_active_with_images = base_images_qs.filter(status=AdStatusEnum.ACTIVE).count()

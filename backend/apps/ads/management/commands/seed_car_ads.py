@@ -16,23 +16,30 @@ from core.enums.ads import AdStatusEnum
 
 class Command(BaseCommand):
     help = 'Seed car advertisements (final step in seeding chain)'
-    MIN_REQUIRED_ADS = 5
+    # CRITICAL: Maximum threshold - if DB has >= this many records, NO seeding occurs
+    # This is an inviolable algorithm to prevent time overhead from excessive seeding
+    MAX_SEEDING_THRESHOLD = 10
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--count',
             type=int,
             default=100,
-            help='Number of car ads to create (default: 100)'
+            help='Number of car ads to create (default: 100, but limited by MAX_SEEDING_THRESHOLD)'
         )
         parser.add_argument(
             '--clear',
             action='store_true',
             help='Clear existing car ads before seeding'
         )
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            help='Force seeding even if threshold is reached (use with caution)'
+        )
 
     def handle(self, *args, **options):
-        """Seed car advertisements."""
+        """Seed car advertisements with strict threshold control."""
         try:
             self.stdout.write('🚗 НАПОЛНЕНИЕ ТАБЛИЦЫ ОБЪЯВЛЕНИЙ О ПРОДАЖЕ АВТОМОБИЛЕЙ')
             self.stdout.write('=' * 70)
@@ -45,41 +52,38 @@ class Command(BaseCommand):
             if options['clear']:
                 self._clear_existing_ads()
             
-            # Create car ads
-            count = options['count']
-
+            # CRITICAL CHECK: If DB already has >= MAX_SEEDING_THRESHOLD records, DO NOT seed
             existing_count = CarAd.objects.count()
-            required_extra = max(0, self.MIN_REQUIRED_ADS - existing_count)
-            if required_extra > 0:
-                if count < required_extra:
-                    self.stdout.write(
-                        f'\nℹ️ В наявності лише {existing_count} оголошень. '
-                        f'Для досягнення мінімуму {self.MIN_REQUIRED_ADS} буде створено {required_extra} записів.'
-                    )
-                    count = required_extra
-                else:
-                    self.stdout.write(
-                        f'\nℹ️ В наявності лише {existing_count} оголошень. '
-                        f'Після створення ще {count} записів мінімум {self.MIN_REQUIRED_ADS} буде забезпечено.'
-                    )
+            
+            if existing_count >= self.MAX_SEEDING_THRESHOLD and not options.get('force'):
+                self.stdout.write(
+                    f'\n✅ В БД вже є {existing_count} оголошень (>= поріг {self.MAX_SEEDING_THRESHOLD}). '
+                    f'Сидінг НЕ потрібен - пропускаємо для економії часу.'
+                )
+                self._show_statistics()
+                return
+            
+            # Calculate how many records to create (only up to threshold)
+            needed_to_threshold = self.MAX_SEEDING_THRESHOLD - existing_count
+            requested_count = options['count']
+            
+            # Only seed the difference to reach threshold, never more
+            count = min(requested_count, needed_to_threshold)
+            
+            if count <= 0:
+                self.stdout.write(
+                    f'\n✅ Поріг {self.MAX_SEEDING_THRESHOLD} вже досягнуто ({existing_count} записів). '
+                    f'Додаткові записи не створюються.'
+                )
+                self._show_statistics()
+                return
+            
+            self.stdout.write(
+                f'\nℹ️ В наявності {existing_count} оголошень. '
+                f'Буде створено {count} записів для досягнення порогу {self.MAX_SEEDING_THRESHOLD}.'
+            )
 
             self._create_car_ads(count)
-
-            # Перевірка мінімального порогу після сидінга
-            total_after_seed = CarAd.objects.count()
-            if total_after_seed < self.MIN_REQUIRED_ADS:
-                missing = self.MIN_REQUIRED_ADS - total_after_seed
-                self.stdout.write(
-                    f'\n⚠️ Після сидінга залишилось лише {total_after_seed} оголошень. '
-                    f'Додаємо ще {missing}, щоб досягти мінімального порогу {self.MIN_REQUIRED_ADS}.'
-                )
-                self._create_car_ads(missing)
-                final_total = CarAd.objects.count()
-                if final_total < self.MIN_REQUIRED_ADS:
-                    self.stdout.write(
-                        f'❌ Не вдалося досягти мінімуму {self.MIN_REQUIRED_ADS} оголошень. '
-                        'Перевірте наявність довідників та акаунтів продавців.'
-                    )
 
             # Show statistics
             self._show_statistics()
