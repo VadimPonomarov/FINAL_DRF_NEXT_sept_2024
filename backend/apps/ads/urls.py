@@ -23,6 +23,7 @@ from .views.statistics_view import (
     PlatformAnalyticsView, QuickStatsView, DailyReportView,
     AnalyticsTaskStatusView
 )
+from .views.image_views import AddImageListCreateView, AddImageRetrieveDestroyView
 
 urlpatterns = [
     # =============================================================================
@@ -59,6 +60,14 @@ urlpatterns = [
 
     # Аналитика объявления (только для премиум аккаунтов)
     path('cars/<int:pk>/analytics', car_ad_analytics, name='car-ads-analytics'),
+
+    # =============================================================================
+    # ИЗОБРАЖЕНИЯ ОБЪЯВЛЕНИЙ
+    # =============================================================================
+
+    # Изображения объявлений (загрузка и просмотр)
+    path('cars/<int:ad_pk>/images/', AddImageListCreateView.as_view(), name='ad-images-list-create'),
+    path('cars/<int:ad_pk>/images/<int:pk>/', AddImageRetrieveDestroyView.as_view(), name='ad-image-detail'),
 
     # =============================================================================
     # ИЗБРАННЫЕ ОБЪЯВЛЕНИЯ
