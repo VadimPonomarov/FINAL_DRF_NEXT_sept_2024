@@ -32,7 +32,7 @@ function isTokenExpired(token: string, bufferSeconds: number = 300): boolean {
 }
 
 /**
- * Получает токены из Redis
+ * Получает токены из cookies/session (без Redis)
  */
 async function getTokensFromRedis(): Promise<TokenData | null> {
   try {
@@ -40,19 +40,29 @@ async function getTokensFromRedis(): Promise<TokenData | null> {
       ? window.location.origin 
       : process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-    // Сначала определяем провайдер
+    // Получаем токены из cookies/session через /api/auth/token
     const tokenResp = await fetch(`${origin}/api/auth/token`, { cache: 'no-store', credentials: 'include' });
 
-    let authKey = 'backend_auth';
-    // Redis removed - provider check skipped
+    if (!tokenResp.ok) {
+      console.error('[proactiveTokenCheck] Failed to get tokens:', tokenResp.status);
+      return null;
+    }
 
-    // Получаем токены
+    const data = await tokenResp.json();
     
+    if (!data.access) {
+      console.log('[proactiveTokenCheck] No access token in response');
+      return null;
+    }
 
-    // Redis removed - return null
-    return null;
+    return {
+      access: data.access,
+      refresh: data.refresh || '',
+      refreshAttempts: 0,
+      lastRefreshTime: Date.now()
+    };
   } catch (error) {
-    console.error('[proactiveTokenCheck] Error getting tokens from Redis:', error);
+    console.error('[proactiveTokenCheck] Error getting tokens from cookies:', error);
     return null;
   }
 }
