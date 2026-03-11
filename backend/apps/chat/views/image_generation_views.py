@@ -413,7 +413,7 @@ def generate_car_images(request):
 @permission_classes([AllowAny])
 def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None, style='realistic'):
     """
-    Generate car images using safe Pollinations.ai algorithm (always works)
+    Generate car images using g4f Client (FREE model access)
     """
     try:
         # Extract data from request if needed
@@ -427,14 +427,9 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
             angles = angles or ['front', 'side', 'rear']
             style = style or 'realistic'
 
-        logger.info(f"🎨 [safe_algorithm] Generating images with Pollinations.ai")
-        logger.info(f"🚗 [safe_algorithm] Car data: {car_data}")
-        logger.info(f"📐 [safe_algorithm] Angles: {angles}")
-
-        # Get vehicle_type_name with fallback (no longer required - use 'car' as default)
-        vehicle_type_name = car_data.get('vehicle_type_name') or car_data.get('vehicle_type') or 'car'
-        if not car_data.get('vehicle_type_name'):
-            logger.warning(f"⚠️ vehicle_type_name not provided, using fallback: '{vehicle_type_name}'")
+        logger.info(f"🎨 [g4f_algorithm] Generating images with g4f Client")
+        logger.info(f"🚗 [g4f_algorithm] Car data: {car_data}")
+        logger.info(f"📐 [g4f_algorithm] Angles: {angles}")
 
         # Create session ID for consistency
         session_data = f"{car_data.get('brand', '')}_{car_data.get('model', '')}_{car_data.get('year', '')}_{car_data.get('color', '')}_{car_data.get('body_type', '')}"
@@ -443,90 +438,96 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
 
         logger.info(f"🔗 Session ID: {session_id}")
 
-        # Safe image generation using Pollinations.ai directly (no dependencies needed)
+        # Generate images using g4f Client (FREE FLUX model)
         generated_images = []
         
         for i, angle in enumerate(angles):
             try:
                 logger.info(f"🔄 Generating image for angle: {angle} ({i + 1}/{len(angles)})")
 
-                # Create prompt using vehicle_type_name for accurate generation
+                # Create prompt for g4f
                 car_info = f"{car_data.get('brand', '')} {car_data.get('model', '')} {car_data.get('year', '')}"
-                vehicle_type_for_prompt = vehicle_type_name if vehicle_type_name != 'car' else car_data.get('body_type', 'sedan')
-                prompt = f"Professional automotive photography of {vehicle_type_for_prompt} {car_info} - {angle} view. {car_data.get('color', 'silver')} color, {car_data.get('body_type', 'sedan')} body type, realistic, high quality, clean background"
+                vehicle_type = car_data.get('body_type', 'sedan')
+                prompt = f"Professional automotive photography of {vehicle_type} {car_info} - {angle} view. {car_data.get('color', 'silver')} color, {vehicle_type} body type, realistic, high quality, clean background"
 
-                # Use Pollinations.ai with FLUX model (no dependencies needed)
+                # Use g4f Client for FREE FLUX model
                 try:
-                    # Create consistent seed for this car and angle
-                    base_seed = abs(hash(session_id)) % 1000000
-                    angle_offset = hash(angle) % 100
-                    seed = base_seed + angle_offset
-                    
-                    # Encode prompt for URL
-                    encoded_prompt = urllib.parse.quote(prompt)
-                    
-                    # Generate Pollinations.ai URL
-                    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&model=flux&enhance=true&seed={seed}&nologo=true"
-                    
-                    logger.info(f"✅ Generated URL for {angle}: {image_url[:100]}...")
-                    
-                    image_obj = {
-                        'url': image_url,
-                        'angle': angle,
-                        'title': f"{car_info} - {angle.title()} View",
-                        'isMain': i == 0,
-                        'prompt': prompt,
-                        'seed': seed,
-                        'session_id': session_id,
-                        'success': True
-                    }
-                    
-                    generated_images.append(image_obj)
-                    logger.info(f"✅ Completed {angle} (total: {len(generated_images)}/{len(angles)})")
-                    
-                except Exception as e:
-                    logger.error(f"❌ Error generating {angle} image: {e}")
-                    # Fallback placeholder
-                    fallback_url = f"https://via.placeholder.com/1024x768/cccccc/000000?text={urllib.parse.quote(f'{car_info} - {angle.title()}')}"
+                    from g4f.client import Client
+                    client = Client()
+
+                    response = client.images.generate(
+                        model="flux",
+                        prompt=prompt,
+                        response_format="url"
+                    )
+
+                    if response and hasattr(response, 'data') and response.data:
+                        image_url = response.data[0].url
+                        logger.info(f"✅ g4f image generated: {image_url}")
+                        
+                        generated_images.append({
+                            'url': image_url,
+                            'angle': angle,
+                            'title': f"{car_info} - {angle.title()} View",
+                            'isMain': (i == 0),
+                            'prompt': prompt,
+                            'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
+                            'session_id': session_id,
+                            'success': True
+                        })
+                    else:
+                        logger.warning(f"No image data in g4f response for {angle}")
+                        # Fallback to placeholder
+                        placeholder_url = f"https://picsum.photos/1024/768?random={hashlib.md5(f'{session_id}_{angle}'.encode()).hexdigest()[:8]}"
+                        generated_images.append({
+                            'url': placeholder_url,
+                            'angle': angle,
+                            'title': f"{car_info} - {angle.title()} View (Placeholder)",
+                            'isMain': (i == 0),
+                            'prompt': prompt,
+                            'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
+                            'session_id': session_id,
+                            'success': False,
+                            'fallback': True
+                        })
+
+                except Exception as g4f_error:
+                    logger.error(f"g4f generation failed for {angle}: {g4f_error}")
+                    # Fallback to placeholder
+                    placeholder_url = f"https://picsum.photos/1024/768?random={hashlib.md5(f'{session_id}_{angle}'.encode()).hexdigest()[:8]}"
                     generated_images.append({
-                        'url': fallback_url,
+                        'url': placeholder_url,
                         'angle': angle,
-                        'title': f"{car_info} - {angle.title()} View",
-                        'isMain': i == 0,
+                        'title': f"{car_info} - {angle.title()} View (Fallback)",
+                        'isMain': (i == 0),
                         'prompt': prompt,
-                        'seed': seed if 'seed' in locals() else 0,
+                        'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
                         'session_id': session_id,
                         'success': False,
-                        'error': str(e)
+                        'fallback': True,
+                        'error': str(g4f_error)
                     })
 
-            except Exception as e:
-                logger.error(f"❌ Critical error in {angle} generation: {e}")
-                continue
-
-        logger.info(f"🎯 Generated {len(generated_images)} images using safe Pollinations.ai algorithm")
-
-        if not generated_images:
-            return Response({
-                'success': False,
-                'error': 'Failed to generate any images'
-            }, status=500)
-
+            # Return success response with generated images
+        logger.info(f"✅ Generated {len(generated_images)} images using g4f")
+        
         return Response({
             'success': True,
             'images': generated_images,
             'total_generated': len(generated_images),
             'session_id': session_id,
-            'method': 'pollinations_flux_safe'
-        })
+            'method': 'g4f_flux_free',
+            'car_data': car_data,
+            'angles': angles,
+            'style': style
+        }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"❌ Critical error in image generation: {e}")
-        import traceback
-        logger.error(f"❌ Traceback: {traceback.format_exc()}")
-        
+        logger.error(f"❌ Critical error in g4f image generation: {e}")
         return Response({
             'success': False,
-            'error': str(e),
-            'fallback_used': True
-        }, status=500)
+            'error': f'g4f image generation failed: {str(e)}',
+            'total_generated': 0
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        
