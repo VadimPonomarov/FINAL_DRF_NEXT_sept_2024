@@ -480,3 +480,4 @@ MIT
 **Версія**: 2.1  
 **Статус**: Production Ready  
 **Гілка**: history-local (буде злита з master після тестування)
+
