@@ -7,7 +7,7 @@ from .views.car_ad_views import (
     CarAdListView, CarAdCreateView, CarAdDetailView,
     CarAdUpdateView, CarAdDeleteView, MyCarAdsListView,
     car_ad_check_limits, car_ad_statistics, car_ad_analytics,
-    cleanup_all_ads, populate_references, seed_test_ads_with_photos,
+    cleanup_all_ads, populate_references, add_images_to_ad, seed_test_ads_with_photos,
     owner_update_ad_status
 )
 from .views.reference_views import (
@@ -33,6 +33,7 @@ urlpatterns = [
     # Специальные endpoints для тестирования (должны быть ПЕРВЫМИ!)
     path('cars/cleanup-all', cleanup_all_ads, name='cleanup-all-ads'),
     path('cars/populate-references', populate_references, name='populate-references'),
+    path('cars/<int:ad_id>/add-images', add_images_to_ad, name='add-images-to-ad'),
     path('cars/seed-with-photos', seed_test_ads_with_photos, name='seed-test-ads-with-photos'),
 
     # Основные операции с объявлениями

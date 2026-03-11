@@ -1410,6 +1410,91 @@ def populate_references(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+def add_images_to_ad(request, ad_id):
+    """
+    Добавляет изображения к существующему объявлению.
+    """
+    try:
+        import requests
+        from apps.ads.models import CarAd, AddImageModel
+        
+        # Получаем объявление
+        try:
+            ad = CarAd.objects.get(id=ad_id)
+        except CarAd.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': f'Ad with ID {ad_id} not found'
+            }, status=404)
+        
+        # Генерируем изображения для этого объявления
+        car_data = {
+            'brand': ad.mark.name if ad.mark else 'TestCar',
+            'model': ad.model,
+            'year': ad.dynamic_fields.get('year', 2020),
+            'color': ad.dynamic_fields.get('color', 'silver'),
+            'body_type': ad.dynamic_fields.get('body_type', 'sedan'),
+            'vehicle_type_name': ad.dynamic_fields.get('vehicle_type_name', 'sedan')
+        }
+        
+        # Вызываем генерацию изображений
+        backend_url = settings.BACKEND_URL if hasattr(settings, 'BACKEND_URL') else 'https://autoria-web-production.up.railway.app'
+        response = requests.post(
+            f'{backend_url}/api/chat/generate-car-images-mock/',
+            json={
+                'car_data': car_data,
+                'angles': ['front', 'side', 'rear'],
+                'style': 'realistic',
+                'use_mock_algorithm': True
+            },
+            timeout=60
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and data.get('images'):
+                images_created = 0
+                
+                for idx, img in enumerate(data['images']):
+                    url = img.get('url', '').strip()
+                    if not url:
+                        continue
+                    
+                    AddImageModel.objects.create(
+                        ad=ad,
+                        image_url=url,
+                        caption=img.get('title', f"{img.get('angle', 'front')} view"),
+                        order=idx + 1,
+                        is_primary=(idx == 0)
+                    )
+                    images_created += 1
+                
+                return Response({
+                    'success': True,
+                    'message': f'Added {images_created} images to ad {ad_id}',
+                    'images_count': images_created
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'error': 'Failed to generate images'
+                }, status=500)
+        else:
+            return Response({
+                'success': False,
+                'error': f'Image generation failed: {response.status_code}'
+            }, status=500)
+            
+    except Exception as e:
+        logger.error(f"❌ Error adding images to ad {ad_id}: {e}")
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def seed_test_ads_with_photos(request):
     """
     Создает тестовые объявления с реальными AI-сгенерированными фотографиями.
