@@ -84,14 +84,14 @@ def _setup():
         from django.core.wsgi import get_wsgi_application
         _django_app = get_wsgi_application()
         _init_event.set()
-        # Seed data in background after app is ready
-        def _seed():
-            try:
-                os.environ['RUN_SEEDS'] = 'true'
-                call_command('init_project_data', '--force', verbosity=0)
-            except Exception as e:
-                print(f"Seed error: {e}")
-        threading.Thread(target=_seed, daemon=True).start()
+        # Отключаем автосидинг для предотвращения нежелательной генерации
+        # def _seed():
+        #     try:
+        #         os.environ['RUN_SEEDS'] = 'true'
+        #         call_command('init_project_data', '--force', verbosity=0)
+        #     except Exception as e:
+        #         print(f"Seed error: {e}")
+        # threading.Thread(target=_seed, daemon=True).start()
     except Exception:
         _init_error = traceback.format_exc()
         _init_event.set()
