@@ -254,15 +254,16 @@ export class ServerAuthManager {
    * Get user ID from access token
    */
   static async getUserId(request: NextRequest): Promise<string | null> {
-    const tokens = await this.getTokensFromRedis(request);
-    if (!tokens) {
-      console.error('[ServerAuth] No tokens available for getUserId');
+    // Read access token directly from httpOnly cookie
+    const accessToken = request.cookies.get('access_token')?.value;
+    if (!accessToken) {
+      console.error('[ServerAuth] No access_token cookie available for getUserId');
       return null;
     }
 
     try {
       // Decode the access token to get user ID
-      const base64Url = tokens.access.split('.')[1];
+      const base64Url = accessToken.split('.')[1];
       if (!base64Url) {
         console.error('[ServerAuth] Invalid token format - missing payload');
         return null;
