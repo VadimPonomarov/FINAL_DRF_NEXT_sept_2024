@@ -730,7 +730,11 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
 
       // Запускаем генерацию через backend mock-алгоритм — ИДЕНТИЧНО тестовым объявлениям
       console.log('[ImagesForm] 🎨 Calling backend /api/chat/generate-car-images-mock (same as test ads)');
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      // КРИТИЧНО: Используем правильный URL для production
+      const backendUrl = typeof window !== 'undefined' 
+        ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autoria-web-production.up.railway.app')
+        : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
+      console.log('[ImagesForm] 🌐 Using backend URL:', backendUrl);
       
       // КРИТИЧНО: Используем ТОТ ЖЕ алгоритм, что и в тестовых объявлениях
       // НЕ используем buildCanonicalCarData - используем прямую обработку как в test-ads

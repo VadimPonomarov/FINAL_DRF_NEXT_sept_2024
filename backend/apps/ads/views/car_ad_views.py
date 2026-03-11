@@ -1361,6 +1361,144 @@ def car_ad_check_limits(request):
 
 
 @swagger_auto_schema(
+    method='post',
+    operation_summary="🌱 Seed Test Ads with Real Photos",
+    operation_description="Create test advertisements with real AI-generated photos.",
+    tags=['🧪 Testing'],
+    responses={
+        200: openapi.Response(description='Test ads created'),
+        500: openapi.Response(description='Seed failed')
+    }
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def seed_test_ads_with_photos(request):
+    """
+    Создает тестовые объявления с реальными AI-сгенерированными фотографиями.
+    """
+    import requests
+    from apps.ads.models import CarAd, AddImageModel
+    from apps.accounts.models import AddsAccount
+    from django.contrib.auth import get_user_model
+    
+    User = get_user_model()
+    
+    try:
+        # Получаем или создаем тестового пользователя
+        user, _ = User.objects.get_or_create(
+            email='admin@autoria.com',
+            defaults={'is_staff': True, 'is_superuser': True}
+        )
+        
+        account, _ = AddsAccount.objects.get_or_create(
+            user=user,
+            defaults={
+                'organization_name': 'Test Account',
+                'role': 'seller',
+                'account_type': 'PREMIUM'
+            }
+        )
+        
+        # Тестовые автомобили
+        test_cars = [
+            {'brand': 'BMW', 'model': 'X5', 'year': 2023, 'color': 'black', 'body_type': 'SUV', 'price': 85000},
+            {'brand': 'Mercedes', 'model': 'E-Class', 'year': 2022, 'color': 'silver', 'body_type': 'sedan', 'price': 65000},
+            {'brand': 'Audi', 'model': 'Q7', 'year': 2023, 'color': 'white', 'body_type': 'SUV', 'price': 78000},
+        ]
+        
+        created_ads = []
+        
+        for car in test_cars:
+            # Генерируем изображения через внутренний вызов
+            from apps.chat.views import generate_car_images_mock
+            from django.test import RequestFactory
+            
+            factory = RequestFactory()
+            img_request = factory.post(
+                '/api/chat/generate-car-images-mock/',
+                data={
+                    'car_data': {
+                        'brand': car['brand'],
+                        'model': car['model'],
+                        'year': car['year'],
+                        'color': car['color'],
+                        'body_type': car['body_type'],
+                        'vehicle_type_name': car['body_type']
+                    },
+                    'angles': ['front', 'side', 'rear'],
+                    'style': 'realistic',
+                    'use_mock_algorithm': True
+                },
+                content_type='application/json'
+            )
+            
+            images = []
+            try:
+                img_response = generate_car_images_mock(img_request)
+                if hasattr(img_response, 'data') and img_response.data.get('success'):
+                    images = img_response.data.get('images', [])
+            except Exception as img_error:
+                logger.warning(f"Image generation failed for {car['brand']}: {img_error}")
+                # Используем fallback URL
+                images = [
+                    {'url': f"https://image.pollinations.ai/prompt/Professional%20automotive%20photography%20of%20{car['body_type']}%20{car['brand']}%20{car['model']}%20{car['year']}%20-%20front%20view.%20{car['color']}%20color?width=1024&height=768&model=flux&enhance=true&nologo=true", 'angle': 'front'},
+                    {'url': f"https://image.pollinations.ai/prompt/Professional%20automotive%20photography%20of%20{car['body_type']}%20{car['brand']}%20{car['model']}%20{car['year']}%20-%20side%20view.%20{car['color']}%20color?width=1024&height=768&model=flux&enhance=true&nologo=true", 'angle': 'side'},
+                    {'url': f"https://image.pollinations.ai/prompt/Professional%20automotive%20photography%20of%20{car['body_type']}%20{car['brand']}%20{car['model']}%20{car['year']}%20-%20rear%20view.%20{car['color']}%20color?width=1024&height=768&model=flux&enhance=true&nologo=true", 'angle': 'rear'},
+                ]
+            
+            # Создаем объявление
+            ad = CarAd.objects.create(
+                account=account,
+                title=f"{car['brand']} {car['model']} {car['year']} - С реальными фото",
+                model=f"{car['brand']} {car['model']}",
+                price=car['price'],
+                currency='USD',
+                status='active',
+                is_validated=True,
+                dynamic_fields={
+                    'year': car['year'],
+                    'color': car['color'],
+                    'body_type': car['body_type'],
+                    'mileage': 15000,
+                    'fuel_type': 'gasoline',
+                    'transmission': 'automatic'
+                }
+            )
+            
+            # Добавляем изображения
+            for i, img in enumerate(images):
+                AddImageModel.objects.create(
+                    car_ad=ad,
+                    image_url=img.get('url', ''),
+                    is_primary=(i == 0),
+                    order=i
+                )
+            
+            created_ads.append({
+                'id': ad.id,
+                'title': ad.title,
+                'images_count': len(images),
+                'image_urls': [img.get('url', '') for img in images]
+            })
+        
+        return Response({
+            'success': True,
+            'created': len(created_ads),
+            'ads': created_ads,
+            'message': f'Successfully created {len(created_ads)} test ads with real photos'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"❌ Error seeding test ads: {str(e)}")
+        import traceback
+        return Response({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@swagger_auto_schema(
     method='delete',
     operation_summary="🗑️ Cleanup All Ads",
     operation_description="Special endpoint for complete cleanup of all advertisements. Used only for testing and development.",
