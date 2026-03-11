@@ -51,7 +51,26 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
   };
   const [images, setImages] = useState<File[]>([]);
   const [mainImageIndex, setMainImageIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<'upload' | 'generate'>('generate');
+  
+  // Умный выбор активной вкладки в зависимости от контекста
+  const getInitialTab = (): 'upload' | 'generate' => {
+    // Если есть существующие изображения (режим редактирования), показываем upload
+    if (data.existing_images && data.existing_images.length > 0) {
+      return 'upload';
+    }
+    // Если есть загруженные файлы, показываем upload
+    if (data.uploaded_images && data.uploaded_images.length > 0) {
+      return 'upload';
+    }
+    // Если есть сгенерированные изображения, показываем upload для управления ими
+    if (data.generated_images && data.generated_images.length > 0) {
+      return 'upload';
+    }
+    // По умолчанию показываем генератор (для создания нового объявления)
+    return 'generate';
+  };
+  
+  const [activeTab, setActiveTab] = useState<'upload' | 'generate'>(getInitialTab());
   // Настройка: автосохранять ли AI-изображения сразу после генерации
   const [autoSaveGenerated, setAutoSaveGenerated] = useState(true);
 
@@ -830,6 +849,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
           }));
 
           console.log('🎯 [ImagesForm] Generated images:', freshImages);
+          console.log('🎯 [ImagesForm] Fresh images URLs:', freshImages.map((img: any) => img.url));
 
           // Мержим с уже сгенерированными локально и удаляем дубли по URL
           setLocalAiImages((prev) => {
@@ -841,15 +861,33 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
               seen.add(key);
               return true;
             });
+            
+            console.log('✅ [ImagesForm] Updated localAiImages:', deduped.length, 'images');
+            console.log('✅ [ImagesForm] Image URLs:', deduped.map((d: any) => d.url));
+            
             // Также сразу отражаем в данных формы для сохранения
             try {
               onChange({
                 ...data,
                 generated_images: deduped.map((d: any) => ({ url: d.url, title: d.title, isMain: !!d.isMain }))
               });
+              console.log('✅ [ImagesForm] onChange called with generated_images:', deduped.length);
             } catch (e) {
               console.warn('[ImagesForm] onChange for generated_images failed:', e);
             }
+            
+            // КРИТИЧНО: Переключаемся на вкладку upload после генерации
+            setTimeout(() => {
+              console.log('🔄 [ImagesForm] Switching to upload tab to show generated images');
+              setActiveTab('upload');
+              
+              // Показываем уведомление об успехе
+              toast({
+                title: '✅ Изображения сгенерированы!',
+                description: `Создано ${deduped.length} изображений. Проверьте галерею ниже.`,
+              });
+            }, 500);
+            
             return deduped;
           });
 
