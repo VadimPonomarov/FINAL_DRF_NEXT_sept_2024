@@ -19,10 +19,14 @@ class AccountLimitsService:
     - Only ACTIVE, PENDING, and NEEDS_REVIEW ads count towards limits
     """
     
-    # Account type limits
+    # Account type limits (use string keys for compatibility)
     LIMITS = {
+        'BASIC': 1,
+        'basic': 1,
         AccountTypeEnum.BASIC: 1,
-        AccountTypeEnum.PREMIUM: None,  # None means unlimited
+        'PREMIUM': None,  # None means unlimited
+        'premium': None,
+        AccountTypeEnum.PREMIUM: None,
     }
     
     # Statuses that count towards ad limits
