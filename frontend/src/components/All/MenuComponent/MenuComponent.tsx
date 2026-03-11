@@ -67,6 +67,7 @@ const MenuComponent: FC<IProps> = ({ items, className }) => {
                             ) : (
                                 <Link
                                     href={item.path}
+                                    prefetch={false}
                                     onClick={(e) => {
                                         // Добавляем небольшую задержку для предотвращения двойных кликов
                                         e.currentTarget.style.pointerEvents = 'none';

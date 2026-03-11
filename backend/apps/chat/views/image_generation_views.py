@@ -35,30 +35,64 @@ except ImportError as e:
 
 
 def create_car_image_prompt(car_data: dict, angle: str, style: str, session_id: str) -> str:
-    """Create optimized prompt for car image generation"""
-    brand = car_data.get('brand', 'Unknown')
-    model = car_data.get('model', 'Unknown')
-    year = car_data.get('year', 2020)
-    color = car_data.get('color', 'silver')
-    body_type = car_data.get('body_type', 'sedan')
-    
-    # Create professional automotive photography prompt
-    base_prompt = f"Professional automotive photography of {brand} {model} {year}"
-    
+    """Build a rich, field-driven prompt for car image generation.
+
+    Cascade: vehicle_type → brand → model → year, then colour, body_type,
+    condition and free-text description contribute detail.  session_id enforces
+    cross-angle consistency so every angle looks like the same vehicle.
+    """
+    vehicle_type = car_data.get('vehicle_type_name') or car_data.get('vehicle_type') or 'car'
+    brand        = car_data.get('brand', 'vehicle')
+    model        = car_data.get('model', '')
+    year         = car_data.get('year', '')
+    color        = car_data.get('color', 'silver')
+    body_type    = car_data.get('body_type', 'sedan')
+    condition    = car_data.get('condition', 'good')
+    description  = (car_data.get('description') or '').strip()[:120]
+
+    # Angle descriptions
     angle_descriptions = {
-        'front': 'front view, showing grille, headlights and bumper',
-        'side': 'side profile view, showing wheels and body lines',
-        'rear': 'rear view, showing taillights and trunk',
-        'interior': 'interior view, dashboard and seats',
-        'engine': 'engine bay view',
-        'dashboard': 'dashboard and steering wheel view'
+        'front':     f'front view of {brand} {model}, grille, headlights and bumper clearly visible',
+        'side':      f'side profile of {brand} {model}, full silhouette, wheels and body lines',
+        'rear':      f'rear view of {brand} {model}, taillights and trunk',
+        'interior':  f'interior of {brand} {model}, dashboard, steering wheel, seats',
+        'engine':    f'engine bay of {brand} {model}',
+        'dashboard': f'dashboard close-up of {brand} {model}, instrument cluster',
     }
-    
-    angle_desc = angle_descriptions.get(angle, f'{angle} view')
-    
-    prompt = f"{base_prompt} - {angle_desc}. {color} color, {body_type} style, realistic, high quality, professional lighting, clean background, automotive photography"
-    
-    return prompt
+    angle_desc = angle_descriptions.get(angle, f'{angle} view of {brand} {model}')
+
+    # Condition modifiers
+    condition_modifiers = {
+        'excellent': 'showroom condition, flawless paint, no scratches',
+        'good':      'well-maintained, minor wear acceptable',
+        'fair':      'visible everyday wear, some light scratches',
+        'poor':      'heavily worn, dull paint, noticeable dents',
+        'damaged':   'visibly damaged, dents, scratches, repair needed',
+    }
+    cond_mod = condition_modifiers.get(condition, 'good condition')
+
+    # Style modifiers
+    style_mod = {
+        'realistic':     'photorealistic, professional automotive photography, studio lighting',
+        'professional':  'commercial-grade automotive photography, showroom lighting',
+        'artistic':      'artistic automotive shot, dramatic lighting',
+    }.get(style, 'photorealistic, professional automotive photography')
+
+    # Base subject
+    subject = f"{year} {brand} {model} {body_type} {vehicle_type}".strip()
+
+    parts = [
+        f"SERIES ID: {session_id} — all angles MUST depict the SAME vehicle.",
+        f"Subject: {subject}, {color} exterior.",
+        f"Angle: {angle_desc}.",
+        f"Condition: {cond_mod}.",
+        style_mod + ", high resolution, sharp focus, clean neutral background.",
+        "No people, no text overlays, no brand logos.",
+    ]
+    if description:
+        parts.append(f"Additional details: {description}.")
+
+    return " ".join(parts)
 
 
 def get_angle_title(angle, car_data):
@@ -77,13 +111,10 @@ def get_angle_title(angle, car_data):
     return angle_titles.get(angle, f"{car_info} - {angle}")
 
 
-def generate_placeholder_url(prompt):
-    """Generate placeholder image URL"""
-    hash_value = hash(prompt) % 1000000
-    colors = ['FF6B6B', '4ECDC4', '45B7D1', 'FFA07A', '98D8C8', 'F7DC6F']
-    color = colors[abs(hash_value) % len(colors)]
-    encoded_prompt = urllib.parse.quote(prompt)[:50]
-    return f"https://via.placeholder.com/800x600/{color}/FFFFFF?text={encoded_prompt}"
+def generate_placeholder_url(prompt, width=800, height=600):
+    """Generate consistent seed-based picsum placeholder URL."""
+    seed = hashlib.md5(str(prompt).encode()).hexdigest()[:12]
+    return f"https://picsum.photos/seed/{seed}/{width}/{height}"
 
 
 @swagger_auto_schema(
@@ -439,15 +470,14 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
 
         # Generate images using g4f Client (FREE FLUX model)
         generated_images = []
-        
+        car_info = f"{car_data.get('brand', '')} {car_data.get('model', '')} {car_data.get('year', '')}".strip()
+
         for i, angle in enumerate(angles):
             try:
                 logger.info(f"[g4f_algorithm] Generating image for angle: {angle} ({i + 1}/{len(angles)})")
 
                 # Create prompt for g4f
-                car_info = f"{car_data.get('brand', '')} {car_data.get('model', '')} {car_data.get('year', '')}"
-                vehicle_type = car_data.get('body_type', 'sedan')
-                prompt = f"Professional automotive photography of {vehicle_type} {car_info} - {angle} view. {car_data.get('color', 'silver')} color, {vehicle_type} body type, realistic, high quality, clean background"
+                prompt = create_car_image_prompt(car_data, angle, style, session_id)
 
                 # Use g4f Client for FREE FLUX model
                 try:
@@ -477,7 +507,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                     else:
                         logger.warning(f"[g4f_algorithm] No image data in g4f response for {angle}")
                         # Fallback to placeholder
-                        placeholder_url = f"https://picsum.photos/1024/768?random={hashlib.md5(f'{session_id}_{angle}'.encode()).hexdigest()[:8]}"
+                        placeholder_url = generate_placeholder_url(f"{session_id}_{angle}", 1024, 768)
                         generated_images.append({
                             'url': placeholder_url,
                             'angle': angle,
@@ -493,7 +523,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 except Exception as g4f_error:
                     logger.error(f"[g4f_algorithm] g4f generation failed for {angle}: {g4f_error}")
                     # Fallback to placeholder
-                    placeholder_url = f"https://picsum.photos/1024/768?random={hashlib.md5(f'{session_id}_{angle}'.encode()).hexdigest()[:8]}"
+                    placeholder_url = generate_placeholder_url(f"{session_id}_{angle}", 1024, 768)
                     generated_images.append({
                         'url': placeholder_url,
                         'angle': angle,

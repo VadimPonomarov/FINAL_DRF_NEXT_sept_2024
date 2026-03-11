@@ -280,6 +280,12 @@ export async function POST(request: NextRequest) {
       const u = String(img?.url || '').trim();
       if (!u) return false;
       if (u.includes('via.placeholder.com')) return false;
+      // Pollinations.ai is unreliable (returns 500 randomly) — prefer g4f fallback picsum URLs
+      if (u.includes('image.pollinations.ai') && u.includes('?')) {
+        // Keep stable Pollinations URLs (no query string noise); drop ones with many params that tend to 500
+        const paramCount = (u.match(/&/g) || []).length;
+        if (paramCount > 3) return false;
+      }
       if (!/^https?:\/\//i.test(u)) return false;
       return true;
     });
@@ -772,13 +778,12 @@ function hashToSeed(input: string): number {
   return h % 1000000; // pollinations seed range
 }
 
-function generatePlaceholderImage(prompt: string): string {
-  // Kept for completeness but we avoid using this in flows that must save images
-  const hash = prompt.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  const colors = ['FF6B6B', '4ECDC4', '45B7D1', 'FFA07A', '98D8C8', 'F7DC6F'];
-  const color = colors[Math.abs(hash) % colors.length];
-  return `https://via.placeholder.com/800x600/${color}/FFFFFF?text=Car+Image`;
+function generatePlaceholderImage(prompt: string, width = 800, height = 600): string {
+  // Consistent seed-based picsum URL — always loads, never 500s
+  let h = 0;
+  for (let i = 0; i < prompt.length; i++) {
+    h = (Math.imul(h, 31) + prompt.charCodeAt(i)) | 0;
+  }
+  const seed = Math.abs(h).toString(16).padStart(8, '0');
+  return `https://picsum.photos/seed/${seed}/${width}/${height}`;
 }

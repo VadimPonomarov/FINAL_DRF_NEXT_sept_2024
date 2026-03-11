@@ -658,7 +658,7 @@ Final Style: {style} with enhanced details"""
             # Fallback to placeholder
             import hashlib
             prompt_hash = hashlib.md5(enhanced_prompt.encode()).hexdigest()[:8]
-            image_url = f"https://picsum.photos/{width}/{height}?random={prompt_hash}"
+            image_url = f"https://picsum.photos/seed/{prompt_hash}/{width}/{height}"
 
         if image_url:
             logger.info(f"✅ Image generated successfully for user {user_id}")
