@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import {
   Dialog,
@@ -60,6 +60,7 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
   const { t } = useI18n();
   const [selectedTypes, setSelectedTypes] = useState<string[]>([...DEFAULT_IMAGE_TYPES]);
   const [count, setCount] = useState(DEFAULT_ADS_COUNT);
+  const isGeneratingRef = useRef(false);
 
   const imageTypes: ImageType[] = [
     {
@@ -116,16 +117,28 @@ const TestAdsGenerationModal: React.FC<TestAdsGenerationModalProps> = ({
     }
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = useCallback(() => {
     if (selectedTypes.length === 0) {
       return;
     }
     if (count < MIN_ADS_COUNT || count > MAX_ADS_COUNT) {
       return;
     }
+    if (isLoading) {
+      return; // Prevent multiple clicks during loading
+    }
+    if (isGeneratingRef.current) {
+      return; // Debounce protection
+    }
     
+    isGeneratingRef.current = true;
     onGenerate(count, selectedTypes);
-  };
+    
+    // Reset ref after a short delay to allow future clicks
+    setTimeout(() => {
+      isGeneratingRef.current = false;
+    }, 1000);
+  }, [selectedTypes, count, isLoading, onGenerate]);
 
   const handleCancel = () => {
     setSelectedTypes([...DEFAULT_IMAGE_TYPES]);
