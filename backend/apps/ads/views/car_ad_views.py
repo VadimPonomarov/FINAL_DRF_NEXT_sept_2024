@@ -1372,6 +1372,44 @@ def car_ad_check_limits(request):
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
+def populate_references(request):
+    """
+    Заполняет справочные данные (марки, модели, регионы, города).
+    """
+    try:
+        from django.core.management import call_command
+        
+        # Заполняем справочные данные
+        call_command('auto_populate_references', verbosity=1)
+        
+        # Считаем созданные записи
+        from apps.ads.models.reference import RegionModel, CityModel, CarMarkModel, CarModel
+        regions_count = RegionModel.objects.count()
+        cities_count = CityModel.objects.count()
+        marks_count = CarMarkModel.objects.count()
+        models_count = CarModel.objects.count()
+        
+        return Response({
+            'success': True,
+            'message': 'Reference data populated successfully',
+            'counts': {
+                'regions': regions_count,
+                'cities': cities_count,
+                'marks': marks_count,
+                'models': models_count
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error populating references: {e}")
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def seed_test_ads_with_photos(request):
     """
     Создает тестовые объявления с реальными AI-сгенерированными фотографиями.

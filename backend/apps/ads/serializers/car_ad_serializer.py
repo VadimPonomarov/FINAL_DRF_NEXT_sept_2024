@@ -197,6 +197,8 @@ class CarAdSerializer(BaseModelSerializer):
             "account": {"read_only": True},  # Account cannot be changed during update
             "price": {"required": True},  # Цена обязательна
             "currency": {"required": True, "default": "USD"},  # Валюта обязательна с дефолтом
+            "region": {"required": True},  # Регион обязателен
+            "city": {"required": True},  # Город обязателен
             "is_validated": {"read_only": True},
             "validation_errors": {"read_only": True},
             "status": {"read_only": True},
