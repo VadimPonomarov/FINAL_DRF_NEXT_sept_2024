@@ -1,6 +1,7 @@
 """
 Views for CarAd model with LLM validation and comprehensive filtering.
 """
+import hashlib
 import logging
 from typing import Dict
 from rest_framework import generics, status
@@ -1437,56 +1438,65 @@ def add_images_to_ad(request, ad_id):
             'vehicle_type_name': ad.dynamic_fields.get('vehicle_type_name', 'sedan')
         }
         
-        # Вызываем генерацию изображений
-        backend_url = settings.BACKEND_URL if hasattr(settings, 'BACKEND_URL') else 'https://autoria-web-production.up.railway.app'
-        response = requests.post(
-            f'{backend_url}/api/chat/generate-car-images-mock/',
-            json={
-                'car_data': car_data,
-                'angles': ['front', 'side', 'rear'],
-                'style': 'realistic',
-                'use_mock_algorithm': True
-            },
-            timeout=60
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('success') and data.get('images'):
-                images_created = 0
-                
-                for idx, img in enumerate(data['images']):
-                    url = img.get('url', '').strip()
-                    if not url:
-                        continue
-                    
+        # Генерируем изображения через g4f напрямую
+        images_created = 0
+        try:
+            from g4f.client import Client
+            client = Client()
+            angles = ['front', 'side', 'rear']
+            for idx, angle in enumerate(angles):
+                try:
+                    car_info = f"{car_data.get('brand', 'Car')} {car_data.get('model', '')} {car_data.get('year', '')}"
+                    vehicle_type = car_data.get('body_type', 'sedan')
+                    prompt = f"Professional automotive photography of {vehicle_type} {car_info} - {angle} view. {car_data.get('color', 'silver')} color, realistic, high quality, clean white background"
+                    response = client.images.generate(
+                        model="flux",
+                        prompt=prompt,
+                        response_format="url"
+                    )
+                    if response and hasattr(response, 'data') and response.data:
+                        url = response.data[0].url
+                    else:
+                        seed = hashlib.md5(f"{ad_id}_{angle}".encode()).hexdigest()[:8]
+                        url = f"https://picsum.photos/seed/{seed}/1024/768"
                     AddImageModel.objects.create(
                         ad=ad,
                         image_url=url,
-                        caption=img.get('title', f"{img.get('angle', 'front')} view"),
+                        caption=f"{car_info} - {angle.title()} View",
                         order=idx + 1,
                         is_primary=(idx == 0)
                     )
                     images_created += 1
-                
-                return Response({
-                    'success': True,
-                    'message': f'Added {images_created} images to ad {ad_id}',
-                    'images_count': images_created
-                })
-            else:
-                return Response({
-                    'success': False,
-                    'error': 'Failed to generate images'
-                }, status=500)
-        else:
-            return Response({
-                'success': False,
-                'error': f'Image generation failed: {response.status_code}'
-            }, status=500)
-            
+                except Exception as angle_err:
+                    logger.warning(f"[g4f] Failed for angle {angle}: {angle_err}")
+                    seed = hashlib.md5(f"{ad_id}_{angle}".encode()).hexdigest()[:8]
+                    AddImageModel.objects.create(
+                        ad=ad,
+                        image_url=f"https://picsum.photos/seed/{seed}/1024/768",
+                        caption=f"Car - {angle.title()} View",
+                        order=idx + 1,
+                        is_primary=(idx == 0)
+                    )
+                    images_created += 1
+        except ImportError:
+            for idx, angle in enumerate(['front', 'side', 'rear']):
+                seed = hashlib.md5(f"{ad_id}_{angle}".encode()).hexdigest()[:8]
+                AddImageModel.objects.create(
+                    ad=ad,
+                    image_url=f"https://picsum.photos/seed/{seed}/1024/768",
+                    caption=f"Car - {angle.title()} View",
+                    order=idx + 1,
+                    is_primary=(idx == 0)
+                )
+                images_created += 1
+        return Response({
+            'success': True,
+            'message': f'Added {images_created} images to ad {ad_id}',
+            'images_count': images_created
+        })
+
     except Exception as e:
-        logger.error(f"❌ Error adding images to ad {ad_id}: {e}")
+        logger.error(f"Error adding images to ad {ad_id}: {e}")
         return Response({
             'success': False,
             'error': str(e)
@@ -1531,43 +1541,44 @@ def seed_test_ads_with_photos(request):
         
         created_ads = []
         
-        for car in test_cars:
-            # Генерируем изображения через внутренний вызов
-            from apps.chat.views import generate_car_images_mock
-            from django.test import RequestFactory
-            
-            factory = RequestFactory()
-            img_request = factory.post(
-                '/api/chat/generate-car-images-mock/',
-                data={
-                    'car_data': {
-                        'brand': car['brand'],
-                        'model': car['model'],
-                        'year': car['year'],
-                        'color': car['color'],
-                        'body_type': car['body_type'],
-                        'vehicle_type_name': car['body_type']
-                    },
-                    'angles': ['front', 'side', 'rear'],
-                    'style': 'realistic',
-                    'use_mock_algorithm': True
-                },
-                content_type='application/json'
-            )
-            
+        def _generate_images_g4f(car, angles=None):
+            """Generate car images using g4f Client directly."""
+            if angles is None:
+                angles = ['front', 'side', 'rear']
             images = []
             try:
-                img_response = generate_car_images_mock(img_request)
-                if hasattr(img_response, 'data') and img_response.data.get('success'):
-                    images = img_response.data.get('images', [])
-            except Exception as img_error:
-                logger.warning(f"Image generation failed for {car['brand']}: {img_error}")
-                # Используем fallback URL
-                images = [
-                    {'url': f"https://image.pollinations.ai/prompt/Professional%20automotive%20photography%20of%20{car['body_type']}%20{car['brand']}%20{car['model']}%20{car['year']}%20-%20front%20view.%20{car['color']}%20color?width=1024&height=768&model=flux&enhance=true&nologo=true", 'angle': 'front'},
-                    {'url': f"https://image.pollinations.ai/prompt/Professional%20automotive%20photography%20of%20{car['body_type']}%20{car['brand']}%20{car['model']}%20{car['year']}%20-%20side%20view.%20{car['color']}%20color?width=1024&height=768&model=flux&enhance=true&nologo=true", 'angle': 'side'},
-                    {'url': f"https://image.pollinations.ai/prompt/Professional%20automotive%20photography%20of%20{car['body_type']}%20{car['brand']}%20{car['model']}%20{car['year']}%20-%20rear%20view.%20{car['color']}%20color?width=1024&height=768&model=flux&enhance=true&nologo=true", 'angle': 'rear'},
-                ]
+                from g4f.client import Client
+                client = Client()
+                for angle in angles:
+                    try:
+                        car_info = f"{car['brand']} {car['model']} {car['year']}"
+                        prompt = f"Professional automotive photography of {car['body_type']} {car_info} - {angle} view. {car['color']} color, realistic, high quality, clean white background"
+                        response = client.images.generate(
+                            model="flux",
+                            prompt=prompt,
+                            response_format="url"
+                        )
+                        if response and hasattr(response, 'data') and response.data:
+                            url = response.data[0].url
+                            logger.info(f"[g4f] Generated image for {car['brand']} {angle}: {url[:80]}")
+                        else:
+                            seed = hashlib.md5(f"{car['brand']}_{car['model']}_{angle}".encode()).hexdigest()[:8]
+                            url = f"https://picsum.photos/seed/{seed}/1024/768"
+                            logger.warning(f"[g4f] No data for {car['brand']} {angle}, using picsum placeholder")
+                        images.append({'url': url, 'angle': angle, 'title': f"{car_info} - {angle.title()} View"})
+                    except Exception as e:
+                        seed = hashlib.md5(f"{car['brand']}_{car['model']}_{angle}".encode()).hexdigest()[:8]
+                        url = f"https://picsum.photos/seed/{seed}/1024/768"
+                        logger.warning(f"[g4f] Error for {car['brand']} {angle}: {e}, using picsum")
+                        images.append({'url': url, 'angle': angle, 'title': f"{car['brand']} {car['model']} - {angle.title()} View"})
+            except ImportError:
+                for angle in angles:
+                    seed = hashlib.md5(f"{car['brand']}_{car['model']}_{angle}".encode()).hexdigest()[:8]
+                    images.append({'url': f"https://picsum.photos/seed/{seed}/1024/768", 'angle': angle, 'title': f"{car['brand']} {car['model']} - {angle.title()} View"})
+            return images
+
+        for car in test_cars:
+            images = _generate_images_g4f(car)
             
             # Создаем объявление
             ad = CarAd.objects.create(
@@ -1591,10 +1602,10 @@ def seed_test_ads_with_photos(request):
             # Добавляем изображения
             for i, img in enumerate(images):
                 AddImageModel.objects.create(
-                    car_ad=ad,
+                    ad=ad,
                     image_url=img.get('url', ''),
                     is_primary=(i == 0),
-                    order=i
+                    order=i + 1
                 )
             
             created_ads.append({

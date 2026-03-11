@@ -1,19 +1,18 @@
 """
 Views for AI image generation using g4f and Pollinations.ai
 """
+import hashlib
 import logging
+import urllib.parse
+
 import requests
-from typing import Optional, List, Dict
+from django.conf import settings
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework import status
-from django.conf import settings
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-import json
-import hashlib
-import urllib.parse
 
 logger = logging.getLogger(__name__)
 
@@ -427,23 +426,23 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
             angles = angles or ['front', 'side', 'rear']
             style = style or 'realistic'
 
-        logger.info(f"🎨 [g4f_algorithm] Generating images with g4f Client")
-        logger.info(f"🚗 [g4f_algorithm] Car data: {car_data}")
-        logger.info(f"📐 [g4f_algorithm] Angles: {angles}")
+        logger.info(f"[g4f_algorithm] Generating images with g4f Client")
+        logger.info(f"[g4f_algorithm] Car data: {car_data}")
+        logger.info(f"[g4f_algorithm] Angles: {angles}")
 
         # Create session ID for consistency
         session_data = f"{car_data.get('brand', '')}_{car_data.get('model', '')}_{car_data.get('year', '')}_{car_data.get('color', '')}_{car_data.get('body_type', '')}"
         car_session_id = hashlib.md5(session_data.encode()).hexdigest()[:8]
         session_id = f"CAR-{car_session_id}"
 
-        logger.info(f"🔗 Session ID: {session_id}")
+        logger.info(f"[g4f_algorithm] Session ID: {session_id}")
 
         # Generate images using g4f Client (FREE FLUX model)
         generated_images = []
         
         for i, angle in enumerate(angles):
             try:
-                logger.info(f"🔄 Generating image for angle: {angle} ({i + 1}/{len(angles)})")
+                logger.info(f"[g4f_algorithm] Generating image for angle: {angle} ({i + 1}/{len(angles)})")
 
                 # Create prompt for g4f
                 car_info = f"{car_data.get('brand', '')} {car_data.get('model', '')} {car_data.get('year', '')}"
@@ -463,7 +462,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
 
                     if response and hasattr(response, 'data') and response.data:
                         image_url = response.data[0].url
-                        logger.info(f"✅ g4f image generated: {image_url}")
+                        logger.info(f"[g4f_algorithm] g4f image generated: {image_url}")
                         
                         generated_images.append({
                             'url': image_url,
@@ -476,7 +475,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                             'success': True
                         })
                     else:
-                        logger.warning(f"No image data in g4f response for {angle}")
+                        logger.warning(f"[g4f_algorithm] No image data in g4f response for {angle}")
                         # Fallback to placeholder
                         placeholder_url = f"https://picsum.photos/1024/768?random={hashlib.md5(f'{session_id}_{angle}'.encode()).hexdigest()[:8]}"
                         generated_images.append({
@@ -492,7 +491,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                         })
 
                 except Exception as g4f_error:
-                    logger.error(f"g4f generation failed for {angle}: {g4f_error}")
+                    logger.error(f"[g4f_algorithm] g4f generation failed for {angle}: {g4f_error}")
                     # Fallback to placeholder
                     placeholder_url = f"https://picsum.photos/1024/768?random={hashlib.md5(f'{session_id}_{angle}'.encode()).hexdigest()[:8]}"
                     generated_images.append({
@@ -508,8 +507,12 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                         'error': str(g4f_error)
                     })
 
-            # Return success response with generated images
-        logger.info(f"✅ Generated {len(generated_images)} images using g4f")
+            except Exception as angle_error:
+                logger.error(f"[g4f_algorithm] Error generating image for angle {angle}: {angle_error}")
+                continue
+
+        # Return success response with generated images
+        logger.info(f"[g4f_algorithm] Generated {len(generated_images)} images using g4f")
         
         return Response({
             'success': True,
@@ -523,7 +526,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"❌ Critical error in g4f image generation: {e}")
+        logger.error(f"[g4f_algorithm] Critical error in g4f image generation: {e}")
         return Response({
             'success': False,
             'error': f'g4f image generation failed: {str(e)}',
