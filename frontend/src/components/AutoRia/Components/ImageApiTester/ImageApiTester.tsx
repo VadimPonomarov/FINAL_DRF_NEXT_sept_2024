@@ -18,7 +18,7 @@ export default function ImageApiTester({ adId }: ImageApiTesterProps) {
     try {
       console.log(`🧪 Тестируем GET /api/autoria/cars/${adId}/images`)
       
-      const response = await fetch(`/api/autoria/cars/${adId}/images?t=${Date.now()}`, {
+      const response = await fetch(`/api/autoria/cars/${adId}/images?t=cache-bust`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
@@ -58,8 +58,8 @@ export default function ImageApiTester({ adId }: ImageApiTesterProps) {
     setLoading(true)
     try {
       const testImage = {
-        image_url: 'https://via.placeholder.com/400x300/0066cc/ffffff?text=Test+Image+' + Date.now(),
-        caption: 'Test Image ' + new Date().toLocaleTimeString(),
+        image_url: 'https://via.placeholder.com/400x300/0066cc/ffffff?text=Test+Image',
+        caption: 'Test Image',
         is_primary: false,
         order: 999
       }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Eye, Heart, Phone } from 'lucide-react';
+import { getVisitorSessionId } from '@/utils/sessionUtils';
 
 interface AdCountersProps {
   adId: number;
@@ -114,7 +115,7 @@ const AdCounters = forwardRef<{ forceRefresh: () => Promise<any> }, AdCountersPr
           ad_id: adId,
           interaction_type: 'phone_reveal',
           source_page: 'counters_component',
-          session_id: (typeof window !== 'undefined' ? (sessionStorage.getItem('visitor_session_id') || (sessionStorage.setItem('visitor_session_id', crypto.randomUUID()), sessionStorage.getItem('visitor_session_id'))) : undefined),
+          session_id: getVisitorSessionId(),
           metadata: {
             timestamp: new Date().toISOString()
           }

@@ -119,7 +119,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
 
   // Функция для заполнения примерными данными
   const fillSampleData = () => {
-    const randomTemplate = SAMPLE_DATA_TEMPLATES[Math.floor(Math.random() * SAMPLE_DATA_TEMPLATES.length)];
+    const randomTemplate = SAMPLE_DATA_TEMPLATES[0]; // Use first template for consistency
 
     // Заполняем поля через DOM для мгновенного отображения
     const titleInput = document.querySelector('input[name="title"]') as HTMLInputElement;
@@ -272,7 +272,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
     } catch (error) {
       console.error('Error generating title:', error);
       // Fallback к случайному шаблону
-      const randomTemplate = SAMPLE_DATA_TEMPLATES[Math.floor(Math.random() * SAMPLE_DATA_TEMPLATES.length)];
+      const randomTemplate = SAMPLE_DATA_TEMPLATES[0]; // Use first template for consistency
       const titleInput = document.querySelector('input[type="text"]') as HTMLInputElement;
       if (titleInput) {
         titleInput.value = randomTemplate.title;
@@ -334,7 +334,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
         onChange({ ...data, description: result.description });
       } else {
         // Fallback к шаблону
-        const randomTemplate = SAMPLE_DATA_TEMPLATES[Math.floor(Math.random() * SAMPLE_DATA_TEMPLATES.length)];
+        const randomTemplate = SAMPLE_DATA_TEMPLATES[0]; // Use first template for consistency
         const descriptionTextarea = document.querySelector('textarea') as HTMLTextAreaElement;
         if (descriptionTextarea) {
           descriptionTextarea.value = randomTemplate.description;
@@ -345,7 +345,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
     } catch (error) {
       console.error('Error generating description:', error);
       // Fallback к случайному шаблону
-      const randomTemplate = SAMPLE_DATA_TEMPLATES[Math.floor(Math.random() * SAMPLE_DATA_TEMPLATES.length)];
+      const randomTemplate = SAMPLE_DATA_TEMPLATES[0]; // Use first template for consistency
       const descriptionTextarea = document.querySelector('textarea') as HTMLTextAreaElement;
       if (descriptionTextarea) {
         descriptionTextarea.value = randomTemplate.description;

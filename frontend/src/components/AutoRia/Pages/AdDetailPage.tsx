@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { getVisitorSessionId } from '@/utils/sessionUtils';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -179,7 +180,7 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
             ad_id: adId,
             interaction_type: 'view',
             source_page: 'ad_view',
-            session_id: (typeof window !== 'undefined' ? (sessionStorage.getItem('visitor_session_id') || (sessionStorage.setItem('visitor_session_id', crypto.randomUUID()), sessionStorage.getItem('visitor_session_id'))) : undefined),
+            session_id: getVisitorSessionId(),
             metadata: { timestamp: new Date().toISOString() }
           })
         });
@@ -848,7 +849,7 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
                                 ad_id: adId,
                                 interaction_type: 'phone_reveal',
                                 source_page: 'ad_view',
-                                session_id: (typeof window !== 'undefined' ? (sessionStorage.getItem('visitor_session_id') || (sessionStorage.setItem('visitor_session_id', crypto.randomUUID()), sessionStorage.getItem('visitor_session_id'))) : undefined),
+                                session_id: getVisitorSessionId(),
                                 metadata: {
                                   timestamp: new Date().toISOString()
                                 }

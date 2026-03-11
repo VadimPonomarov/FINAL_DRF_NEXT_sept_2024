@@ -75,7 +75,7 @@ const ModerationNotifications: React.FC = () => {
           title: 'Новое объявление требует проверки',
           message: 'Объявление #12345 прошло автоматическую модерацию и требует ручного рассмотрения',
           priority: 'high',
-          created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 минут назад
+          created_at: new Date('2025-06-12T00:55:00.000Z').toISOString(), // 5 минут назад (static)
           read: false,
           ad_id: 12345
         },
@@ -85,7 +85,7 @@ const ModerationNotifications: React.FC = () => {
           title: 'Превышено максимальное количество попыток редактирования',
           message: 'Объявление #12346 достигло максимума попыток редактирования после модерации',
           priority: 'medium',
-          created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 минут назад
+          created_at: new Date('2025-06-12T00:45:00.000Z').toISOString(), // 15 минут назад (static)
           read: false,
           ad_id: 12346
         },
@@ -95,7 +95,7 @@ const ModerationNotifications: React.FC = () => {
           title: 'Обнаружено нарушение контента',
           message: 'В объявлении #12347 обнаружены признаки нарушения правил платформы',
           priority: 'urgent',
-          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 часа назад
+          created_at: new Date('2025-06-11T22:55:00.000Z').toISOString(), // 2 часа назад (static)
           read: true,
           ad_id: 12347
         }
