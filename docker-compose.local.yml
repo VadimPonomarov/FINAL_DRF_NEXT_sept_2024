@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  # PostgreSQL для продакшен-эмуляции
+  postgres:
+    image: postgres:15-alpine
+    container_name: autoria-postgres
+    environment:
+      POSTGRES_DB: autoria_demo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d autoria_demo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
