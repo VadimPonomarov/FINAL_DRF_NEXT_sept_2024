@@ -10,7 +10,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TestTube, FileText, AlertTriangle, CheckCircle, Wand2, RefreshCw } from 'lucide-react';
+import { TestTube, FileText,  CheckCircle, Wand2, RefreshCw } from 'lucide-react';
 import ValidationDemo from '@/components/AutoRia/Components/ValidationDemo';
 import ContentValidationModal from '@/components/AutoRia/Components/ContentValidationModal';
 
@@ -535,7 +535,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h4 className="font-medium text-yellow-900 mb-2">
-                  <AlertTriangle className="h-4 w-4 inline mr-2" />
+                  <Warning className="h-4 w-4 inline mr-2" />
                   {t('validation.autoModeration')}
                 </h4>
                 <div className="text-sm text-yellow-800 space-y-2">

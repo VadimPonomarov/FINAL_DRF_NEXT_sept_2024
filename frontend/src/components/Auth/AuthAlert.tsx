@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, X } from 'lucide-react';
+import {  X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const AuthAlert: React.FC = () => {
@@ -69,7 +69,7 @@ const AuthAlert: React.FC = () => {
   return (
     <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[999999] max-w-md">
       <Alert variant="destructive" className="shadow-lg">
-        <AlertTriangle className="h-4 w-4" />
+        <Warning className="h-4 w-4" />
         <AlertDescription className="flex items-center justify-between">
           <div className="flex-1 pr-2">
             {alertMessage}

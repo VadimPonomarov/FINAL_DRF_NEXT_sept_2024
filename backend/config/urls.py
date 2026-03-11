@@ -21,8 +21,14 @@ except ImportError:
     chat_urls = []
 from apps.users.urls import urlpatterns as users_urls
 from core.views import health_check, google_maps_api_key
-from core.urls.diagnostic_urls import urlpatterns as diagnostic_urls
-from .docs.urls import urlpatterns as docs_urls
+try:
+    from core.urls.diagnostic_urls import urlpatterns as diagnostic_urls
+except ImportError:
+    diagnostic_urls = []
+try:
+    from .docs.urls import urlpatterns as docs_urls
+except ImportError:
+    docs_urls = []
 
 # Main URL patterns
 urlpatterns = [

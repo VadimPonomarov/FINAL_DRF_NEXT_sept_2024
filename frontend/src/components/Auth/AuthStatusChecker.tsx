@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { toast } from '@/modules/autoria/shared/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import {  RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AuthStatus {
@@ -140,7 +140,7 @@ const AuthStatusChecker: React.FC<AuthStatusCheckerProps> = ({
   return (
     <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[999999] max-w-md">
       <Alert variant="destructive" className="shadow-lg">
-        <AlertTriangle className="h-4 w-4" />
+        <Warning className="h-4 w-4" />
         <AlertDescription className="flex items-center justify-between">
           <div className="flex-1">
             {authStatus.error ? (

@@ -241,7 +241,9 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
     // Перемещаем изображение на первое место в массиве
     const newImages = [...existingImages];
     const [movedImage] = newImages.splice(index, 1);
-    newImages.unshift(movedImage);
+    if (movedImage) {
+      newImages.unshift(movedImage);
+    }
 
     // Обновляем флаги is_main/is_primary и порядок
     const updatedImages = newImages.map((img: any, i: number) => ({
@@ -488,6 +490,9 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
       // Перемещаем изображение на первое место в массиве
       const newImages = [...existingImages];
       const [movedImage] = newImages.splice(index, 1);
+      
+      if (!movedImage) return;
+      
       newImages.unshift(movedImage);
 
       // Обновляем флаги is_main/is_primary
@@ -519,8 +524,8 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
           });
 
           if (!res.ok) {
-            const errorText = await res.text();
-            throw new Error(errorText || `HTTP ${res.status}`);
+            const errorResponse = await res.clone().text(); // Clone response before reading
+            throw new Error(errorResponse || `HTTP ${res.status}`);
           }
 
           // Затем обновляем порядок остальных изображений

@@ -189,6 +189,20 @@ LIMITS = {
 }
 
 # =============================================================================
+# SEEDING CONFIGURATION (with environment override)
+# =============================================================================
+SEEDING_CONFIG = {
+    'MAX_ADS_PER_RUN': int(os.getenv('SEEDING_MAX_ADS_PER_RUN', 50)),
+    'MAX_IMAGES_PER_AD': int(os.getenv('SEEDING_MAX_IMAGES_PER_AD', 10)),
+    'ENABLE_AUTO_GENERATION': os.getenv('SEEDING_ENABLE_AUTO_GENERATION', 'false').lower() == 'true',
+    'ENABLE_IMAGE_GENERATION': os.getenv('SEEDING_ENABLE_IMAGE_GENERATION', 'false').lower() == 'true',
+    'GENERATION_TIMEOUT_SECONDS': int(os.getenv('SEEDING_GENERATION_TIMEOUT', 30)),
+    'MAX_DAILY_GENERATIONS': int(os.getenv('SEEDING_MAX_DAILY_GENERATIONS', 100)),
+    'COOLDOWN_PERIOD_MINUTES': int(os.getenv('SEEDING_COOLDOWN_PERIOD', 5)),
+    'FORCE_RESEED': os.getenv('FORCE_RESEED', 'false').lower() == 'true',
+}
+
+# =============================================================================
 # INTERNATIONALIZATION (with environment override)
 # =============================================================================
 I18N_CONFIG = {

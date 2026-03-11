@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Activity, TrendingUp, Users, Car, Eye, DollarSign, Target, Zap, Calendar as CalendarIcon } from "lucide-react";
+import {  TrendingUp, Users, Car, Eye, DollarSign, Target, Zap, Calendar as CalendarIcon } from "lucide-react";
 // Charts
 import { PriceDistributionChart, TopBrandsChart, MonthlyTrendsChart } from "@/components/AutoRia/Analytics/Charts/ChartComponents";
 import { Line } from "react-chartjs-2";
@@ -278,7 +278,7 @@ export default function AnalyticsTabContent({ filters, results, loading }: Analy
           <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Activity className="h-5 w-5 text-blue-600" />
+                <TrendingUp className="h-5 w-5 text-blue-600" />
                 {t('autoria.analytics.viewsDynamics')}
               </CardTitle>
               <CardDescription className="text-sm">{t('autoria.analytics.basedOnCurrentResults')}</CardDescription>

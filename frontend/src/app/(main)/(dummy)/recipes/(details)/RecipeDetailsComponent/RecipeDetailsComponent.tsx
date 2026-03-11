@@ -12,7 +12,7 @@ import { IRecipe } from "@/shared/types/recipe.interfaces.ts";
 import { FC } from "react";
 import NewResizableWrapper from "@/components/All/ResizableWrapper/NewResizableWrapper";
 import {
-  CalendarIcon,
+  
   ClockIcon,
   FlameIcon,
   StarIcon,
@@ -68,7 +68,7 @@ const RecipeDetailsComponent: FC<IProps> = async (props) => {
                   <span>Cook: {item.cookTimeMinutes || "N/A"} mins</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CalendarIcon size={16} />
+                  <Calendar size={16} />
                   <span>Total: {totalTime} mins</span>
                 </div>
                 <div className="flex items-center gap-2">

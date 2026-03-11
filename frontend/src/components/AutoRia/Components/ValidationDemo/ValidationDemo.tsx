@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Play, RotateCcw, Edit3 } from 'lucide-react';
+import {  Play, RotateCcw, Edit3 } from 'lucide-react';
 import ContentValidationModal from '../ContentValidationModal/ContentValidationModal';
 import { useI18n } from '@/contexts/I18nContext';
 

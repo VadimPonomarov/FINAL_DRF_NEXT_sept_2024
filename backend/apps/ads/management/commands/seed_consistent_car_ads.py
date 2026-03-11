@@ -18,6 +18,7 @@ from core.enums.cars import (
     SteeringWheelSide, ConditionType
 )
 from core.enums.ads import AdStatusEnum
+from core.utils.seeding_limiter import seeding_limiter
 
 
 class Command(BaseCommand):
@@ -40,7 +41,26 @@ class Command(BaseCommand):
         count = options['count']
         with_images = options['with_images']
         
-        self.stdout.write(f"🚗 Creating {count} consistent car advertisements...")
+        self.stdout.write(f"🚗 Starting generation of {count} consistent car advertisements...")
+        
+        # Check if auto-generation is allowed
+        allowed, reason = seeding_limiter.can_generate_ads(count)
+        if not allowed:
+            self.stdout.write(
+                self.style.ERROR(f'❌ Seeding blocked: {reason}')
+            )
+            return
+        
+        # Check if image generation is allowed (if requested)
+        if with_images:
+            images_allowed, images_reason = seeding_limiter.can_generate_images(count * 3)  # 3 images per ad
+            if not images_allowed:
+                self.stdout.write(
+                    self.style.WARNING(f'⚠️ Image generation disabled: {images_reason}')
+                )
+                with_images = False
+        
+        self.stdout.write(f"✅ Generation allowed: {reason}")
         
         with transaction.atomic():
             self.create_car_ads(count, with_images)
@@ -95,8 +115,20 @@ class Command(BaseCommand):
             'После ДТП, восстановлен'
         ]
 
+        ads_created = 0
+        images_created = 0
+
         for i in range(count):
             try:
+                # Check limits before each ad generation
+                if ads_created > 0:
+                    allowed, reason = seeding_limiter.can_generate_ads(1, check_cooldown=False)
+                    if not allowed:
+                        self.stdout.write(
+                            self.style.WARNING(f'⚠️ Stopping early: {reason}')
+                        )
+                        break
+                
                 # Выбираем случайные данные
                 account = random.choice(accounts)
                 mark = random.choice(marks)
@@ -162,16 +194,31 @@ class Command(BaseCommand):
                 )
                 
                 self.stdout.write(f"✅ Created ad {i+1}/{count}: {title} in {city.name}, {region.name}")
+                ads_created += 1
                 
-                # Генерируем изображения, если запрошено
+                # Генерируем изображения, если запрошено и разрешено
                 if with_images:
-                    self.generate_images_for_ad(car_ad)
+                    images_allowed, images_reason = seeding_limiter.can_generate_images(3)
+                    if images_allowed:
+                        generated_count = self.generate_images_for_ad(car_ad)
+                        if generated_count:
+                            images_created += generated_count
+                    else:
+                        self.stdout.write(
+                            self.style.WARNING(f'⚠️ Image generation stopped: {images_reason}')
+                        )
+                        with_images = False  # Stop trying for subsequent ads
                     
             except Exception as e:
                 self.stdout.write(
                     self.style.ERROR(f'❌ Error creating ad {i+1}: {str(e)}')
                 )
                 continue
+
+        # Record generation in limiter
+        seeding_limiter.record_generation(ads_created, images_created)
+        
+        self.stdout.write(f"📊 Generation summary: {ads_created} ads, {images_created} images")
 
     def get_consistent_region_city_pairs(self):
         """Получить консистентные пары регион-город из базы данных."""
@@ -207,15 +254,16 @@ class Command(BaseCommand):
                 'condition': car_ad.dynamic_fields.get('condition', 'good')
             }
 
-            # Вызываем генератор изображений
+            # Вызываем генератор изображений с mock алгоритмом (более надежный)
             response = requests.post(
-                'http://localhost:8000/api/chat/generate-car-images/',
+                'http://localhost:8000/api/chat/generate-car-images-mock/',
                 json={
                     'car_data': car_data,
                     'angles': ['front', 'side', 'rear'],
-                    'style': 'realistic'
+                    'style': 'realistic',
+                    'use_mock_algorithm': True
                 },
-                timeout=60
+                timeout=30
             )
 
             if response.status_code == 200:
@@ -232,16 +280,20 @@ class Command(BaseCommand):
                         )
 
                     self.stdout.write(f"🖼️ Generated {len(result['images'])} images for: {car_ad.title}")
+                    return len(result['images'])
                 else:
                     self.stdout.write(
                         self.style.WARNING(f'⚠️ No images generated for {car_ad.title}')
                     )
+                    return 0
             else:
                 self.stdout.write(
                     self.style.WARNING(f'⚠️ Image generation failed for {car_ad.title}: HTTP {response.status_code}')
                 )
+                return 0
 
         except Exception as e:
             self.stdout.write(
                 self.style.WARNING(f'⚠️ Failed to generate images for {car_ad.title}: {str(e)}')
             )
+            return 0

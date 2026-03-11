@@ -354,6 +354,11 @@ class CarImageGeneratorService {
 
     for (let i = 0; i < images.length; i++) {
       const image = images[i];
+      
+      if (!image) {
+        console.warn(`Image at index ${i} is undefined, skipping`);
+        continue;
+      }
 
       try {
         // Получаем изображение как blob
@@ -399,7 +404,11 @@ class CarImageGeneratorService {
         const result = reader.result as string;
         // Убираем префикс data:image/...;base64,
         const base64 = result.split(',')[1];
-        resolve(base64);
+        if (base64) {
+          resolve(base64);
+        } else {
+          reject(new Error('Failed to convert blob to base64: invalid data URL format'));
+        }
       };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
@@ -450,8 +459,17 @@ class CarImageGeneratorService {
   /**
    * Генерирует изображения автомобиля с использованием универсального AI сервиса
    */
-  async generateAIImages(params: CarImageParams): Promise<GeneratedCarImage[]> {
+  async generateAIImages(params: CarImageParams, requireAuthorization: boolean = true): Promise<GeneratedCarImage[]> {
     try {
+      // Проверяем авторизацию для предотвращения несанкционированной генерации
+      if (requireAuthorization) {
+        const hasUserConsent = localStorage.getItem('image_generation_consent') === 'true';
+        if (!hasUserConsent) {
+          console.warn('🚫 [CarImageGeneratorService] Auto-generation blocked - no user consent');
+          throw new Error('Image generation requires user consent');
+        }
+      }
+
       console.log('🎨 [CarImageGeneratorService] Starting AI image generation for car (normalized route):', params);
 
       // Формируем formData для нашего фронтового нормализующего эндпоинта
@@ -588,6 +606,14 @@ class CarImageGeneratorService {
     const color = colors[Math.abs(hash) % colors.length];
 
     return `https://via.placeholder.com/1024x768/${color}/FFFFFF?text=Car+Image`;
+  }
+
+  /**
+   * Останавливает несанкционированную автогенерацию
+   */
+  stopAutoGeneration(): void {
+    localStorage.removeItem('image_generation_consent');
+    console.warn('🛑 [CarImageGeneratorService] Auto-generation stopped and consent cleared');
   }
 
   /**

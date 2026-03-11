@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test blobToBase64</title>
+</head>
+<body>
+    <h1>Тест blobToBase64 метода</h1>
+    <button onclick="testValidBlob()">Тест с валидным blob</button>
+    <button onclick="testInvalidData()">Тест с невалидными данными</button>
+    <div id="results"></div>
+
+    <script>
+        // Копия метода из carImageGenerator.service.ts
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = reader.result;
+                    // Убираем префикс data:image/...;base64,
+                    const base64 = result.split(',')[1];
+                    if (base64) {
+                        resolve(base64);
+                    } else {
+                        reject(new Error('Failed to convert blob to base64: invalid data URL format'));
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function testValidBlob() {
+            const results = document.getElementById('results');
+            try {
+                // Создаем тестовый blob
+                const testBlob = new Blob(['test data'], { type: 'image/png' });
+                const result = await blobToBase64(testBlob);
+                
+                results.innerHTML += `
+                    <div style="color: green; margin: 10px 0;">
+                        ✅ Успех: blobToBase64 вернул строку base64<br>
+                        Длина: ${result.length}<br>
+                        Начало: ${result.substring(0, 20)}...
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML += `
+                    <div style="color: red; margin: 10px 0;">
+                        ❌ Ошибка: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testInvalidData() {
+            const results = document.getElementById('results');
+            try {
+                // Создаем blob с невалидными данными (без data URL формата)
+                const invalidBlob = new Blob(['invalid'], { type: 'text/plain' });
+                const result = await blobToBase64(invalidBlob);
+                
+                results.innerHTML += `
+                    <div style="color: green; margin: 10px 0;">
+                        ✅ Обработал невалидные данные: ${result.substring(0, 20)}...
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML += `
+                    <div style="color: orange; margin: 10px 0;">
+                        ✅ Правильно отклонил невалидные данные: ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

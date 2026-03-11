@@ -57,7 +57,8 @@
     "**/*.ts",
     "**/*.tsx",
     "../client/types/**/*.ts",
-    "src/next-env.d.ts"
+    "src/next-env.d.ts",
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

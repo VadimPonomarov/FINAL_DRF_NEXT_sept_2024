@@ -30,6 +30,7 @@ _try_include("api/auth/", "apps.auth.urls")
 _try_include("api/ads/", "apps.ads.urls")
 _try_include("api/currency/", "apps.currency.urls")
 _try_include("api/public/reference/", "apps.ads.urls.reference_urls")
+_try_include("api/chat/", "apps.chat.urls")
 
 try:
     from .docs.urls import urlpatterns as docs_urls
