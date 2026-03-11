@@ -574,6 +574,25 @@ class CarAdCreateView(generics.CreateAPIView):
             ad.save(update_fields=['status', 'is_validated', 'moderation_reason'])
             logger.info(f"✅ Ad {ad.id} auto-approved as fallback")
 
+        # Attach images passed directly in request body
+        images_data = self.request.data.get('images', [])
+        if images_data and isinstance(images_data, list):
+            from ..models import AddImageModel
+            for i, img in enumerate(images_data):
+                if not isinstance(img, dict):
+                    continue
+                url = img.get('url') or img.get('image_url', '')
+                if not url:
+                    continue
+                AddImageModel.objects.create(
+                    ad=ad,
+                    image_url=url,
+                    caption=img.get('caption', ''),
+                    is_primary=(i == 0),
+                    order=img.get('order', i + 1),
+                )
+            logger.info(f"Attached {len(images_data)} images to ad {ad.id}")
+
 
 class CarAdDetailView(generics.RetrieveAPIView):
     """Detail view for car advertisements (public access)."""
