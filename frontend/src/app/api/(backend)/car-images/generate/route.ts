@@ -370,8 +370,6 @@ function generatePlaceholderUrl(prompt: string): string {
     return a & a;
   }, 0);
   
-  const colors = ['FF6B6B', '4ECDC4', '45B7D1', 'FFA07A', '98D8C8', 'F7DC6F'];
-  const color = colors[Math.abs(hash) % colors.length];
-  
-  return `https://via.placeholder.com/1024x768/${color}/FFFFFF?text=Car+Image`;
+  const seed = Math.abs(hash).toString(16).padStart(8, '0');
+  return `https://picsum.photos/seed/${seed}/1024/768`;
 }

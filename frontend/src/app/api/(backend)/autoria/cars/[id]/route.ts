@@ -12,8 +12,6 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const carId = resolvedParams.id;
-    console.log('[Car Detail API] Fetching car ad:', carId);
-
     // Формируем URL к backend
     // В Docker используем имя сервиса 'app', в разработке - localhost
     const backendUrl = process.env.IS_DOCKER === 'true' ? 'http://app:8000' : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
@@ -28,8 +26,6 @@ export async function GET(
       headers: authHeaders
     });
 
-    console.log('[Car Detail API] Backend response status:', backendResponse.status);
-
     if (!backendResponse.ok) {
       const errorText = await backendResponse.text();
       console.error('[Car Detail API] Backend error:', errorText);
@@ -40,35 +36,6 @@ export async function GET(
     }
 
     const data = await backendResponse.json();
-    console.log('[Car Detail API] Successfully fetched car ad:', {
-      id: data.id,
-      title: data.title?.substring(0, 50) + '...',
-      mark: data.mark,
-      markId: data.mark?.id,
-      markName: data.mark?.name,
-      model: data.model,
-      hasImages: !!data.images,
-      imagesCount: data.images?.length || 0,
-      hasDynamicFields: !!data.dynamic_fields,
-      dynamicFieldsKeys: data.dynamic_fields ? Object.keys(data.dynamic_fields) : [],
-      hasContacts: !!data.contacts,
-      contactsCount: data.contacts?.length || 0,
-      region: typeof data.region === 'object' ? data.region?.name : data.region,
-      city: typeof data.city === 'object' ? data.city?.name : data.city,
-      // ВАЖНО: Добавляем отладку для vehicle_type
-      vehicle_type: data.vehicle_type,
-      vehicle_type_name: data.vehicle_type_name,
-      vehicle_type_type: typeof data.vehicle_type
-    });
-
-    // Дополнительная отладка для изображений
-    if (data.images && data.images.length > 0) {
-      console.log('[Car Detail API] Images details:', {
-        firstImage: data.images[0],
-        imageUrls: data.images.map((img: any) => img.image_display_url || img.url || img.image)
-      });
-    }
-
     return NextResponse.json(data);
 
   } catch (error) {

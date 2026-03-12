@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthorizationHeaders } from '@/shared/constants/headers';
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
 /**
  * POST /api/tracking/ad-interaction/
  * Proxy to backend: /api/ads/analytics/track/

@@ -36,12 +36,18 @@ export async function GET(
     const bgColor = searchParams.get('bg') || 'cccccc';
     const textColor = searchParams.get('color') || '666666';
 
-    // Generate placeholder URL using via.placeholder.com
-    const placeholderUrl = `https://via.placeholder.com/${width}x${height}/${bgColor}/${textColor}?text=${encodeURIComponent(text)}`;
+    // Generate seed-based picsum URL (stable, no 404s)
+    const seedInput = `${width}x${height}-${bgColor}-${text}`;
+    let h = 0;
+    for (let i = 0; i < seedInput.length; i++) {
+      h = (Math.imul(h, 31) + seedInput.charCodeAt(i)) | 0;
+    }
+    const seed = Math.abs(h).toString(16).padStart(8, '0');
+    const placeholderUrl = `https://picsum.photos/seed/${seed}/${width}/${height}`;
 
-    // Fetch the image from placeholder service
+    // Fetch the image from picsum
     const response = await fetch(placeholderUrl);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch placeholder image: ${response.status}`);
     }
@@ -52,7 +58,7 @@ export async function GET(
     return new NextResponse(imageBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'image/png',
+        'Content-Type': response.headers.get('Content-Type') || 'image/jpeg',
         'Cache-Control': 'public, max-age=31536000, immutable',
         'Access-Control-Allow-Origin': '*',
       },

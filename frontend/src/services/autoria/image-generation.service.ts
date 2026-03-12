@@ -43,7 +43,7 @@ export class ImageGenerationService {
     } catch (error) {
       console.error(`❌ Failed to generate car image via backend:`, error);
       // Возвращаем placeholder изображение
-      return 'https://via.placeholder.com/400x300/cccccc/666666?text=Car+Image';
+      return 'https://picsum.photos/seed/car-fallback/400/300';
     }
   }
 
@@ -114,7 +114,7 @@ export class ImageGenerationService {
       // Возвращаем placeholder изображения для каждого запрошенного типа
       const placeholderImages = imageTypes.map(type => {
         const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-        return `https://via.placeholder.com/400x300/cccccc/666666?text=Car+${typeLabel}`;
+        return `https://picsum.photos/seed/car-${type}/400/300`;
       });
 
       console.log(`🔄 Using ${placeholderImages.length} placeholder images for types:`, imageTypes);
@@ -142,7 +142,7 @@ export class ImageGenerationService {
       } catch (error) {
         console.warn(`Failed to generate image ${i + 1}:`, error);
         // Добавляем placeholder
-        images.push('https://via.placeholder.com/400x300/cccccc/666666?text=Car+Image');
+        images.push('https://picsum.photos/seed/car-fallback/400/300');
       }
     }
     

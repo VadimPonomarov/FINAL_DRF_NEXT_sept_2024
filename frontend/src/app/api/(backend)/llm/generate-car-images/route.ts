@@ -280,12 +280,6 @@ export async function POST(request: NextRequest) {
       const u = String(img?.url || '').trim();
       if (!u) return false;
       if (u.includes('via.placeholder.com')) return false;
-      // Pollinations.ai is unreliable (returns 500 randomly) — prefer g4f fallback picsum URLs
-      if (u.includes('image.pollinations.ai') && u.includes('?')) {
-        // Keep stable Pollinations URLs (no query string noise); drop ones with many params that tend to 500
-        const paramCount = (u.match(/&/g) || []).length;
-        if (paramCount > 3) return false;
-      }
       if (!/^https?:\/\//i.test(u)) return false;
       return true;
     });
