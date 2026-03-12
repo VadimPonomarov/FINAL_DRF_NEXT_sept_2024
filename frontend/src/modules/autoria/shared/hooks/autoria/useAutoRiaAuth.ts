@@ -154,23 +154,23 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
         return false;
       }
 
-      // If no NextAuth session user, fetch from backend profile to get is_superuser, email etc.
-      if (!user) {
-        try {
-          const profileResp = await fetch('/api/user/profile', { cache: 'no-store', credentials: 'include' });
-          if (profileResp.ok) {
-            const profileData = await profileResp.json();
-            user = {
-              id: profileData.id,
-              email: profileData.email,
-              is_superuser: profileData.is_superuser,
-              is_staff: profileData.is_staff,
-            };
-            console.log('[useAutoRiaAuth] ✅ User data from backend profile:', user.email, 'superuser:', user.is_superuser);
-          }
-        } catch (profileErr) {
-          console.warn('[useAutoRiaAuth] Could not fetch profile data:', profileErr);
+      // Always fetch backend profile to get is_superuser/is_staff.
+      // NextAuth session user only has email — no admin flags.
+      try {
+        const profileResp = await fetch('/api/user/profile', { cache: 'no-store', credentials: 'include' });
+        if (profileResp.ok) {
+          const profileData = await profileResp.json();
+          user = {
+            ...(user || {}),
+            id: profileData.id,
+            email: profileData.email,
+            is_superuser: profileData.is_superuser,
+            is_staff: profileData.is_staff,
+          };
+          console.log('[useAutoRiaAuth] ✅ User enriched from backend profile:', user.email, 'superuser:', user.is_superuser);
         }
+      } catch (profileErr) {
+        console.warn('[useAutoRiaAuth] Could not fetch profile data:', profileErr);
       }
 
       console.log('[useAutoRiaAuth] ✅ Authenticated via cookies');
