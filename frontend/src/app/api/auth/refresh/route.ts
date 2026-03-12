@@ -99,12 +99,23 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Refresh API] ✅ Token refresh successful for ${authProvider}`);
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     // Возвращаем новый access token
     const response = NextResponse.json({
       success: true,
       access: data.access,
       provider: authProvider,
       message: 'Token refreshed successfully'
+    });
+
+    // Обновляем access_token cookie — обязательно, иначе ServerAuthManager продолжит читать старый
+    response.cookies.set('access_token', data.access, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24
     });
 
     // Обновляем refresh token cookie если пришел новый

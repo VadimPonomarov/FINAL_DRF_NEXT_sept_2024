@@ -41,6 +41,7 @@ import { useVirtualReferenceData } from '@/modules/autoria/shared/hooks/useVirtu
 import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import { VirtualSelect } from '@/components/ui/virtual-select';
 import { useCascadingProfile } from '@/modules/autoria/shared/hooks/useCascadingProfile';
+import { resolveMediaUrl } from '@/shared/utils/media-url';
 
 const UpdatedProfilePage = () => {
   const { t } = useI18n();
@@ -636,8 +637,8 @@ const UpdatedProfilePage = () => {
             const saveResult = await saveResponse.json();
             // console.debug('✅ Avatar downloaded and saved to profile successfully');
 
-            // Update local state with the local URL
-            const localAvatarUrl = saveResult.profile?.avatar_url || result.avatar_url;
+            // Update local state with the saved URL (backend returns avatar in profile.profile.avatar or profile.avatar)
+            const localAvatarUrl = saveResult.profile?.profile?.avatar || saveResult.profile?.avatar || result.avatar_url;
             updateAvatarUrl(localAvatarUrl);
             // console.debug('📝 Updated avatar via updateAvatarUrl()');
 
@@ -838,7 +839,8 @@ const UpdatedProfilePage = () => {
                       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
                   ) : (() => {
-                    const avatarUrl = data?.user.profile?.avatar;
+                    const rawAvatarUrl = data?.user.profile?.avatar;
+                    const avatarUrl = rawAvatarUrl ? resolveMediaUrl(rawAvatarUrl) : null;
 
                     return avatarUrl ? (
                       <img

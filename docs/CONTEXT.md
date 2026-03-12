@@ -1,36 +1,31 @@
 # Текущий контекст - AutoRia Clone
 
 ## Последнее обновление
-**Дата:** 2026-03-11
-**Model:** Penguin Alpha via Cascade
-**Session summary:** Созданы фундаментальные документы, исправлена самопроизвольная генерация, диагностированы и исправлены проблемы с chat endpoints, найдена и исправлена проблема с URL routing
+**Дата:** 2026-03-12
+**Commit:** ae156b6
+**Session summary:** Remove all fallbacks from image generation — only real API values (Pollinations.ai via g4f). Fix wrong endpoint /api/users/generate-image/ → /api/chat/generate-image/. Deploy to Railway + Vercel confirmed working.
 
 ## Текущий milestone
 **M1 — Foundation & MVP**
 
 ## Завершено в этой сессии
-- **Фундаментальные документы** - Созданы SPEC.md, ROADMAP.md, STRUCTURE.md, DEPLOY.md, CONTEXT.md согласно правилам PROJECT BOOTSTRAP
-- **Исправление самопроизвольной генерации** - Добавлен `RUN_SEEDS=false` в railway.json start command
-- **Созданы недостающие файлы** - Добавлены apps.py и __init__.py для chat приложения
-- **Безопасные импорты** - Добавлены try/except блоки в image_generation_views.py
-- **Диагностический endpoint** - Создан /api/ads/diagnostic/ для отладки загрузки приложений
-- **Исправление URL routing** - Найдена и исправлена проблема с include('apps.chat.urls') → include(chat_urls)
-- **Архитектурные решения** - Зафиксированы в DECISIONS.md с соблюдением формата
+- **Удалены все fallback-и из генерации изображений** — backend и frontend теперь возвращают только реальные значения от API (Pollinations.ai через g4f), при ошибке бросают исключение
+- **`image_generation_views.py`** — `generate_image`, `generate_car_images`, `generate_car_images_with_mock_algorithm`: fallback на placeholder удалён, `continue` → `raise`, g4f error → 500
+- **`generate-car-images/route.ts`** — удалён try/catch с placeholder fallback, удалена фильтрация validImages; ошибка бэкенда → 500
+- **`carImageGenerator.service.ts`** — `generateImagesForAd` больше не fallback на локальный mock; `generateSingleCarImage` бросает ошибку; добавлен `use_mock_algorithm: true` в тело запроса
+- **`image-generation.service.ts`** — исправлен неверный endpoint `/api/users/generate-image/` → `/api/chat/generate-image/`; все три метода бросают ошибку вместо placeholder
+- **`car-images/generate/route.ts`** — исправлен неверный endpoint, per-angle errors теперь propagate
+- **Commit:** ae156b6 → pushed → Railway auto-deploy + Vercel `--prod` выполнен
+- **Live тест подтверждён:** `POST /api/chat/generate-car-images/` → `200 OK` с реальными `https://image.pollinations.ai/prompt/...` URL
 
-## В процессе (начато но не завершено)
-- **Тестирование исправления chat endpoints** - Развертывание Railway с исправлением URL routing
-- **Проверка генерации изображений** - Ожидание завершения развертывания для финального тестирования
+## В процессе
+- Нет
 
 ## Заблокировано
-- **Завершение M1** - Заблокировано ожиданием развертывания и финального тестирования
+- Нет
 
 ## Следующая задача
-**Точная следующая задача:** После завершения развертывания Railway (обычно 3-5 минут), протестировать chat endpoints (/api/chat/generate-car-images-mock/) и убедиться что генерация изображений работает. Если работает - протестировать полную генерацию тестовых объявлений через frontend и отметить M1 как завершенный в ROADMAP.md.
-
-## Открытые вопросы для пользователя
-1. **Готовность к M2** - После исправления генерации изображений, готовы ли переходить к следующему этапу (Real-time чат, многоязычность)?
-2. **Приоритет тестирования** - Нужно ли дождаться полного развертывания или можно продолжить с другими задачами?
-3. **Дополнительная диагностика** - Нужны ли дополнительные диагностические инструменты для мониторинга production?
+**Генерация изображений полностью работает на реальных API.** Следующий шаг — тестирование avatar-генерации через UI и переход к M2 (Real-time чат, многоязычность).
 
 ## Последние архитектурные решения (из DECISIONS.md)
 - **2026-03-11 — Image Generation Fix: Safe Imports + Auto-Generation Prevention**

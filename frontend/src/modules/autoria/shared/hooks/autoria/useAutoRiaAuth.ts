@@ -199,17 +199,11 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
     }
   }, []);
 
-  // Инициализация: выполняем проверку авторизации ОДИН раз
-  const hasCheckedRef = useRef(false);
+  // Инициализация и реактивная проверка авторизации при смене сессии/статуса
   useEffect(() => {
-    // Ждем, пока NextAuth закончит загрузку состояния
     if (status === 'loading') return;
 
-    if (hasCheckedRef.current) return; // уже проверяли, не повторяем
-    hasCheckedRef.current = true;
-
     if (status === 'unauthenticated' || !session) {
-      // Нет сессии — очищаем состояние и не дергаем проверку лишний раз
       setState({
         isAuthenticated: false,
         isLoading: false,
@@ -221,11 +215,9 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
       return;
     }
 
-    // Есть сессия — разово проверяем наличие backend-токенов
     void checkAuth();
-    // Пустой список зависимостей: сработает только на первом монтировании после стабилизации статуса
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
+  }, [status, session]);
 
   // Дополнительная очистка при signout событии
   useEffect(() => {
