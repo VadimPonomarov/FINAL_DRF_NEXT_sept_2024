@@ -36,8 +36,9 @@ const normalizeMediaPath = (value: string): string | null => {
         return `/api/media/${mediaMatch[1]}`;
       }
     }
-    // Інші абсолютні URL (наприклад, CDN) повертаємо як є
-    return trimmed;
+    // Всі інші зовнішні URL (pollinations.ai, CDN тощо) проксюємо через Next.js
+    // щоб уникнути ERR_BLOCKED_BY_ORB у Chrome
+    return `/api/image-proxy?url=${encodeURIComponent(trimmed)}`;
   }
 
   if (trimmed.startsWith('/api/media/')) {

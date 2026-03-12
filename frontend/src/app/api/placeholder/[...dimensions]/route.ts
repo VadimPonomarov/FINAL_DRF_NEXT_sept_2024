@@ -18,15 +18,15 @@ export async function GET(
     // Parse dimensions from URL
     if (dimensions.dimensions && dimensions.dimensions.length >= 2) {
       // Format: /api/placeholder/800/400
-      width = parseInt(dimensions.dimensions[0]) || 800;
-      height = parseInt(dimensions.dimensions[1]) || 400;
+      width = parseInt(dimensions.dimensions[0]! || '800') || 800;
+      height = parseInt(dimensions.dimensions[1]! || '400') || 400;
     } else if (dimensions.dimensions && dimensions.dimensions.length === 1) {
       // Format: /api/placeholder/800x400
-      const dimensionStr = dimensions.dimensions[0];
+      const dimensionStr = dimensions.dimensions[0]!;
       const match = dimensionStr.match(/(\d+)x(\d+)/);
       if (match) {
-        width = parseInt(match[1]) || 800;
-        height = parseInt(match[2]) || 400;
+        width = parseInt(match[1]!) || 800;
+        height = parseInt(match[2]!) || 400;
       }
     }
 

@@ -124,7 +124,8 @@ export async function POST(request: NextRequest) {
           description: (ad as any).description || ''
         } as any;
 
-        const imageResponse = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/api/llm/generate-car-images`, {
+        const selfOrigin = request.nextUrl.origin;
+        const imageResponse = await fetch(`${selfOrigin}/api/llm/generate-car-images`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ formData, angles: imageTypes, style: 'realistic', quality: 'standard', useDescription: true })

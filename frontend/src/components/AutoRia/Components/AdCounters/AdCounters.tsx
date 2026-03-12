@@ -49,9 +49,6 @@ const AdCounters = forwardRef<{ forceRefresh: () => Promise<any> }, AdCountersPr
     phone_views_count: initialCounters.phone_views_count || 0
   });
 
-  // Отладочные логи
-  console.log(`[AdCounters] Ad ${adId} - showClickableButtons:`, showClickableButtons, 'showResetButton:', showResetButton);
-
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Обновляем счетчики при изменении initialCounters

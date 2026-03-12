@@ -94,12 +94,13 @@ export async function PATCH(request: NextRequest) {
 
       const downloadResult = await downloadResponse.json();
       console.log('[Save Avatar API] 📦 Download result:', downloadResult);
-      const rawLocalUrl: string = downloadResult.local_url;
 
-      // Avatar file is stored on the Railway backend — use backendUrl, not frontendBase.
-      const localAvatarUrl = rawLocalUrl.startsWith('http') ? rawLocalUrl : `${backendUrl}${rawLocalUrl}`;
+      // Use the original external URL (not the ephemeral Railway filesystem path).
+      // Railway storage is ephemeral — local paths vanish on redeploy.
+      // The original URL (e.g. Pollinations) is persistent and will be proxied via /api/image-proxy.
+      const avatarUrlToStore = requestData.avatar_url;
 
-      console.log('[Save Avatar API] ✅ Avatar downloaded and saved locally:', localAvatarUrl);
+      console.log('[Save Avatar API] ✅ Storing original avatar URL:', avatarUrlToStore);
 
       // Add timeout for profile update request (30 seconds)
       const UPDATE_TIMEOUT_MS = 30000;
@@ -108,7 +109,7 @@ export async function PATCH(request: NextRequest) {
 
       let response: Response;
       try {
-        // Now update the profile with the local URL
+        // Update the profile with the original external URL
         response = await ServerAuthManager.authenticatedFetch(
           request,
           `${backendUrl}/api/users/profile/`,
@@ -116,7 +117,7 @@ export async function PATCH(request: NextRequest) {
             method: 'PATCH',
             body: JSON.stringify({
               profile: {
-                avatar_url: localAvatarUrl
+                avatar_url: avatarUrlToStore
               }
             }),
             signal: updateController.signal,

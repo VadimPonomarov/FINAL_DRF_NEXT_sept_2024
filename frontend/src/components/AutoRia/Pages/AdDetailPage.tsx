@@ -42,13 +42,13 @@ import {
 
 import { CarAd } from '@/modules/autoria/shared/types/autoria';
 import { useI18n, useTranslation } from '@/contexts/I18nContext';
-import { CarAdsService } from '@/services/autoria/carAds.service';
 import { FavoritesService } from '@/services/autoria/favorites.service';
 import { useAutoRiaAuth } from '@/modules/autoria/shared/hooks/autoria/useAutoRiaAuth';
 import { useToast } from '@/modules/autoria/shared/hooks/use-toast';
 import AdCounters from '@/components/AutoRia/Components/AdCounters';
 import { apiClient as ApiClient } from '@/services/api/apiClient';
 import '@/shared/styles/showroom.css';
+import { resolveMediaUrl } from '@/shared/utils/media-url';
 
 interface AdDetailPageProps {
   adId: number;
@@ -295,17 +295,17 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
   }, [adData]);
 
   const nextImage = useCallback(() => {
-    if (adData?.images) {
+    if (adData?.images && adData.images.length > 0) {
       setCurrentImageIndex((prev) =>
-        prev === adData.images.length - 1 ? 0 : prev + 1
+        prev === adData.images!.length - 1 ? 0 : prev + 1
       );
     }
   }, [adData]);
 
   const prevImage = useCallback(() => {
-    if (adData?.images) {
+    if (adData?.images && adData.images.length > 0) {
       setCurrentImageIndex((prev) =>
-        prev === 0 ? adData.images.length - 1 : prev - 1
+        prev === 0 ? adData.images!.length - 1 : prev - 1
       );
     }
   }, [adData]);
@@ -316,7 +316,7 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
     user && (
       user.is_superuser ||
       user.id === adData?.user?.id ||
-      (user.email && adData?.user?.email && user.email.toLowerCase() === adData.user.email.toLowerCase())
+      (user.email && adData?.user?.email && user.email.toLowerCase() === adData.user?.email.toLowerCase())
     )
   ), [user, adData?.user?.id, adData?.user?.email]);
 
@@ -601,7 +601,9 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
                 {adData.price_eur && (
                   <div>≈ {formatCurrency(adData.price_eur, 'EUR')}</div>
                 )}
-                <div>≈ {formatCurrency(adData.price, 'UAH')}</div>
+                {adData.price_uah && (
+                  <div>≈ {formatCurrency(adData.price_uah, 'UAH')}</div>
+                )}
               </div>
 
               <div className="text-xs text-gray-500 mt-2">
@@ -616,18 +618,16 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
                   {adData.images && adData.images.length > 0 ? (
                     (() => {
                       const currentImage = adData.images[currentImageIndex];
-                      const imageUrl = currentImage?.image_display_url || currentImage?.image_url || currentImage?.url || currentImage?.image;
-                      console.log('[AdDetailPage] Rendering image:', { currentImageIndex, currentImage, imageUrl });
+                      const rawUrl = currentImage?.image_display_url || currentImage?.image_url || currentImage?.url || currentImage?.image;
+                      const imageUrl = resolveMediaUrl(rawUrl) || '/api/placeholder/800/400';
                       return (
                         <img
                           src={imageUrl}
                           alt={adData.title}
                           className="w-full h-full object-cover"
-                          onLoad={() => console.log('[AdDetailPage] Image loaded successfully:', imageUrl)}
                           onError={(e) => {
-                            console.error('[AdDetailPage] Image failed to load:', imageUrl);
                             const target = e.target as HTMLImageElement;
-                            target.src = '/api/placeholder/800/400?text=Car+Image';
+                            target.src = '/api/placeholder/800/400';
                           }}
                         />
                       );
@@ -817,11 +817,11 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
                   // Fallback к email пользователя если нет контактов объявления
                   <div className="flex items-center gap-3">
                     <Mail className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">{adData.user.email}</span>
+                    <span className="text-sm text-gray-700">{adData.user?.email}</span>
                   </div>
                 )}
 
-                {adData.user.account_type === 'premium' && (
+                {adData.user?.account_type === 'premium' && (
                   <div className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-yellow-500 fill-current" />
                     <span className="text-sm font-medium text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
@@ -934,7 +934,7 @@ const AdDetailPage: React.FC<AdDetailPageProps> = ({
                           const emailContacts = adData.contacts?.filter(c => c.type === 'email' && (c as any).is_visible) || [];
                           const emailAddresses = emailContacts.length > 0
                             ? emailContacts.map(c => c.value).join(',')
-                            : adData.user.email;
+                            : adData.user?.email;
                           window.open(`mailto:${emailAddresses}`, '_self');
                         }}
                       >

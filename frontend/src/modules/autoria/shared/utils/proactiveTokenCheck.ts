@@ -21,7 +21,15 @@ interface TokenCheckResult {
  */
 function isTokenExpired(token: string, bufferSeconds: number = 300): boolean {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const parts = token.split('.');
+    const payloadPart = parts[1];
+    
+    if (!payloadPart) {
+      console.error('[proactiveTokenCheck] Invalid token format - no payload found');
+      return true;
+    }
+    
+    const payload = JSON.parse(atob(payloadPart));
     const currentTime = Math.floor(Date.now() / 1000);
     // Добавляем буфер 5 минут - если токен истекает в ближайшие 5 минут, считаем его истёкшим
     return payload.exp < (currentTime + bufferSeconds);

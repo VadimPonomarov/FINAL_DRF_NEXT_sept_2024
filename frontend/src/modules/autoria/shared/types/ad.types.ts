@@ -34,6 +34,11 @@ export interface CarAd {
   user_id: number;
   moderation_status?: ModerationStatus;
   rejection_reason?: string;
+  // VIP/Premium status flags
+  is_vip?: boolean;
+  is_premium?: boolean;
+  is_favorite?: boolean;
+  phone_views_count?: number;
 }
 
 export interface AdImage {

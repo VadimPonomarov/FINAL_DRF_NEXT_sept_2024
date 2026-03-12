@@ -8,9 +8,8 @@ from core.utils.environment_detector import env_detector
 
 def get_database_config():
     """Get database configuration based on environment."""
-    db_config = env_detector.get_database_config()
-
     # PostgreSQL configuration (ONLY database we use)
+    db_config = env_detector.get_database_config()
     postgresql_config = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -28,7 +27,6 @@ def get_database_config():
         }
     }
 
-    # Always use PostgreSQL - no SQLite fallback
     return postgresql_config
 
 

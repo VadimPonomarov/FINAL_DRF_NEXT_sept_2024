@@ -8,11 +8,9 @@ import { CarAdFormData } from '@/modules/autoria/shared/types/autoria';
 import { ExtendedFormFieldConfig } from '@/components/Forms/GenericForm/GenericForm';
 import { useI18n } from '@/contexts/I18nContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TestTube, FileText,  CheckCircle, Wand2, RefreshCw } from 'lucide-react';
+import { TestTube, FileText,  CheckCircle, Wand2, RefreshCw, CircleAlert } from 'lucide-react';
 import ValidationDemo from '@/components/AutoRia/Components/ValidationDemo';
-import ContentValidationModal from '@/components/AutoRia/Components/ContentValidationModal';
 
 // Временная заглушка для ContentValidationModal
 const ContentValidationModalStub = ({ isOpen, onClose, formData, validationResult, onRetry, onAccept, t }: any) => {
@@ -120,26 +118,27 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
   // Функция для заполнения примерными данными
   const fillSampleData = () => {
     const randomTemplate = SAMPLE_DATA_TEMPLATES[0]; // Use first template for consistency
+    if (!randomTemplate) return;
 
     // Заполняем поля через DOM для мгновенного отображения
     const titleInput = document.querySelector('input[name="title"]') as HTMLInputElement;
     const descriptionTextarea = document.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
 
     if (titleInput) {
-      titleInput.value = randomTemplate.title;
+      titleInput.value = randomTemplate!.title;
       titleInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     if (descriptionTextarea) {
-      descriptionTextarea.value = randomTemplate.description;
+      descriptionTextarea.value = randomTemplate!.description;
       descriptionTextarea.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // Также обновляем состояние компонента
     onChange({
       ...data,
-      title: randomTemplate.title,
-      description: randomTemplate.description
+      title: randomTemplate!.title,
+      description: randomTemplate!.description
     });
   };
 
@@ -273,12 +272,14 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
       console.error('Error generating title:', error);
       // Fallback к случайному шаблону
       const randomTemplate = SAMPLE_DATA_TEMPLATES[0]; // Use first template for consistency
+      if (!randomTemplate) return;
+      
       const titleInput = document.querySelector('input[type="text"]') as HTMLInputElement;
       if (titleInput) {
-        titleInput.value = randomTemplate.title;
+        titleInput.value = randomTemplate!.title;
         titleInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      onChange({ ...data, title: randomTemplate.title });
+      onChange({ ...data, title: randomTemplate!.title });
     } finally {
       setIsGenerating(false);
     }
@@ -335,23 +336,27 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
       } else {
         // Fallback к шаблону
         const randomTemplate = SAMPLE_DATA_TEMPLATES[0]; // Use first template for consistency
+        if (!randomTemplate) return;
+        
         const descriptionTextarea = document.querySelector('textarea') as HTMLTextAreaElement;
         if (descriptionTextarea) {
-          descriptionTextarea.value = randomTemplate.description;
+          descriptionTextarea.value = randomTemplate!.description;
           descriptionTextarea.dispatchEvent(new Event('input', { bubbles: true }));
         }
-        onChange({ ...data, description: randomTemplate.description });
+        onChange({ ...data, description: randomTemplate!.description });
       }
     } catch (error) {
       console.error('Error generating description:', error);
       // Fallback к случайному шаблону
       const randomTemplate = SAMPLE_DATA_TEMPLATES[0]; // Use first template for consistency
+      if (!randomTemplate) return;
+      
       const descriptionTextarea = document.querySelector('textarea') as HTMLTextAreaElement;
       if (descriptionTextarea) {
-        descriptionTextarea.value = randomTemplate.description;
+        descriptionTextarea.value = randomTemplate!.description;
         descriptionTextarea.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      onChange({ ...data, description: randomTemplate.description });
+      onChange({ ...data, description: randomTemplate!.description });
     } finally {
       setIsGenerating(false);
     }
@@ -535,7 +540,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ data, onChange, errors })
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h4 className="font-medium text-yellow-900 mb-2">
-                  <Warning className="h-4 w-4 inline mr-2" />
+                  <CircleAlert className="h-4 w-4 inline mr-2" />
                   {t('validation.autoModeration')}
                 </h4>
                 <div className="text-sm text-yellow-800 space-y-2">

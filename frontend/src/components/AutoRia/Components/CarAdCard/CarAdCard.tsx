@@ -40,23 +40,10 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
 
   // Инициализируем состояние при смене объявления
   useEffect(() => {
-    console.log(`🔄 [CarAdCard] Initializing ad ${ad.id}:`, {
-      is_favorite: ad.is_favorite,
-      favorites_count: ad.favorites_count,
-      phone_views_count: ad.phone_views_count
-    });
-
     setIsFavorite(ad.is_favorite || false);
-    // Если сердечко активно – минимум 1
     const initialFavCount = Math.max(ad.favorites_count || 0, (ad.is_favorite ? 1 : 0));
     setFavoritesCount(initialFavCount);
     setPhoneViewsCount(ad.phone_views_count || 0);
-
-    console.log(`✅ [CarAdCard] Initialized ad ${ad.id} with:`, {
-      isFavorite: ad.is_favorite || false,
-      favoritesCount: initialFavCount,
-      phoneViewsCount: ad.phone_views_count || 0
-    });
   }, [ad.id]);
 
   // Удалена локальная функция formatPrice - используем импортированную formatCardPrice
@@ -217,15 +204,7 @@ const CarAdCard: React.FC<CarAdCardProps> = ({ ad, onCountersUpdate }) => {
     }
   };
 
-  const imageUrl = useMemo(() => {
-    const resolved = resolveAdImageUrl(ad.images);
-    console.log(`🖼️ [CarAdCard ${ad.id}] Image resolution:`, {
-      raw_images: ad.images,
-      resolved_url: resolved,
-      images_count: Array.isArray(ad.images) ? ad.images.length : 'not array'
-    });
-    return resolved;
-  }, [ad.images, ad.id]);
+  const imageUrl = useMemo(() => resolveAdImageUrl(ad.images), [ad.images]);
 
   // Handle card click to navigate to ad details
   const handleCardClick = (e: React.MouseEvent) => {

@@ -121,7 +121,7 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
 
       const data = await response.json();
       let token: string | null = data.access || null;
-      const user = data.user || null;
+      let user = data.user || null;
 
       if (!token) {
         console.log('[useAutoRiaAuth] No access token in cookies');
@@ -146,6 +146,25 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
       if (!token) {
         setState(prev => ({ ...prev, isAuthenticated: false, isLoading: false, token: null, user: null, hasBackendTokens: false }));
         return false;
+      }
+
+      // If no NextAuth session user, fetch from backend profile to get is_superuser, email etc.
+      if (!user) {
+        try {
+          const profileResp = await fetch('/api/user/profile', { cache: 'no-store', credentials: 'include' });
+          if (profileResp.ok) {
+            const profileData = await profileResp.json();
+            user = {
+              id: profileData.id,
+              email: profileData.email,
+              is_superuser: profileData.is_superuser,
+              is_staff: profileData.is_staff,
+            };
+            console.log('[useAutoRiaAuth] ✅ User data from backend profile:', user.email, 'superuser:', user.is_superuser);
+          }
+        } catch (profileErr) {
+          console.warn('[useAutoRiaAuth] Could not fetch profile data:', profileErr);
+        }
       }
 
       console.log('[useAutoRiaAuth] ✅ Authenticated via cookies');

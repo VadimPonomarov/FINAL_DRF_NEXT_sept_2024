@@ -22,6 +22,7 @@ import { FavoritesService } from '@/services/autoria/favorites.service';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatCardPrice } from '@/modules/autoria/shared/utils/priceFormatter';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { resolveMediaUrl } from '@/shared/utils/media-url';
 
 interface CarAdListItemProps {
   ad: CarAd;
@@ -113,23 +114,12 @@ const CarAdListItem: React.FC<CarAdListItemProps> = ({
     if (!ad.images || (Array.isArray(ad.images) && ad.images.length === 0)) {
       return '/api/placeholder/400/300';
     }
-
     if (Array.isArray(ad.images)) {
       const firstImage = ad.images[0];
       if (!firstImage) return '/api/placeholder/400/300';
-
-      // ПРИОРИТЕТ: image_display_url (абсолютный URL от бекенда) > image_url > url > image
-      const url = firstImage.image_display_url || firstImage.image_url || firstImage.url || firstImage.image;
-      if (!url) return '/api/placeholder/400/300';
-
-      if (typeof url === 'string' && url.startsWith('http')) return url;
-      if (typeof url === 'string' && url.startsWith('/media/')) {
-        return `/api/media${url.substring(6)}`;
-      }
-      if (typeof url === 'string' && url.startsWith('/api/media/')) return url;
-      return `/api/media/${String(url).replace(/^\/+/, '')}`;
+      const raw = firstImage.image_display_url || firstImage.image_url || firstImage.url || firstImage.image;
+      return resolveMediaUrl(raw) || '/api/placeholder/400/300';
     }
-
     return '/api/placeholder/400/300';
   };
 
@@ -210,7 +200,7 @@ const CarAdListItem: React.FC<CarAdListItemProps> = ({
               )}
               {ad.model && (
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 leading-[16px]">
-                  {ad.model}
+                  {typeof ad.model === 'string' ? ad.model : ad.model.name}
                 </Badge>
               )}
             </div>
@@ -309,7 +299,7 @@ const CarAdListItem: React.FC<CarAdListItemProps> = ({
           <div className="flex items-center gap-2.5 text-[11px] text-slate-500 ml-auto">
             <span className="flex items-center gap-1" title="Просмотры">
               <Eye className="h-3.5 w-3.5" />
-              <span className="font-medium tabular-nums">{ad.views_count || ad.view_count || 0}</span>
+              <span className="font-medium tabular-nums">{ad.views_count || 0}</span>
             </span>
             <span className="flex items-center gap-1" title="В избранном">
               <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
@@ -354,7 +344,7 @@ export default React.memo(CarAdListItem, (prevProps, nextProps) => {
     'is_favorite',
     'favorites_count',
     'phone_views_count',
-    'view_count',
+    'views_count',
     'title',
     'price',
     'price_usd',

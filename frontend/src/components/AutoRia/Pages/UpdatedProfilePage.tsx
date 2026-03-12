@@ -843,11 +843,20 @@ const UpdatedProfilePage = () => {
                     const avatarUrl = rawAvatarUrl ? resolveMediaUrl(rawAvatarUrl) : null;
 
                     return avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt="Avatar"
-                        className="w-20 h-20 rounded-full object-cover"
-                      />
+                      <>
+                        <img
+                          src={avatarUrl}
+                          alt="Avatar"
+                          className="w-20 h-20 rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.setProperty('display', 'flex');
+                          }}
+                        />
+                        <div className="w-20 h-20 rounded-full bg-muted items-center justify-center" style={{ display: 'none' }}>
+                          <User className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      </>
                     ) : (
                       <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
                         <User className="h-8 w-8 text-muted-foreground" />

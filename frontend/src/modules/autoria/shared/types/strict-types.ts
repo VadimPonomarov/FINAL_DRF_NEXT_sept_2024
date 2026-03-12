@@ -303,6 +303,7 @@ export interface CarAd {
   is_urgent?: boolean;
   is_highlighted?: boolean;
   is_premium?: boolean;
+  is_vip?: boolean;
 }
 
 // ============================================================================
