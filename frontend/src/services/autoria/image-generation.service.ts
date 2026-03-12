@@ -13,7 +13,7 @@ export class ImageGenerationService {
       const backendUrl = typeof window !== 'undefined' ? '' : (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000');
 
       // Используем универсальный backend endpoint для генерации изображений
-      const response = await fetch(`${backendUrl}/api/users/generate-image/`, {
+      const response = await fetch(`${backendUrl}/api/chat/generate-image/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,8 +42,7 @@ export class ImageGenerationService {
 
     } catch (error) {
       console.error(`❌ Failed to generate car image via backend:`, error);
-      // Возвращаем placeholder изображение
-      return 'https://picsum.photos/seed/car-fallback/400/300';
+      throw error;
     }
   }
 
@@ -110,15 +109,7 @@ export class ImageGenerationService {
 
     } catch (error) {
       console.error(`❌ Failed to generate car images via backend:`, error);
-
-      // Возвращаем placeholder изображения для каждого запрошенного типа
-      const placeholderImages = imageTypes.map(type => {
-        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-        return `https://picsum.photos/seed/car-${type}/400/300`;
-      });
-
-      console.log(`🔄 Using ${placeholderImages.length} placeholder images for types:`, imageTypes);
-      return placeholderImages;
+      throw error;
     }
   }
 
@@ -140,9 +131,8 @@ export class ImageGenerationService {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } catch (error) {
-        console.warn(`Failed to generate image ${i + 1}:`, error);
-        // Добавляем placeholder
-        images.push('https://picsum.photos/seed/car-fallback/400/300');
+        console.error(`Failed to generate image ${i + 1}:`, error);
+        throw error;
       }
     }
     

@@ -3,7 +3,6 @@ Views for AI image generation using g4f and Pollinations.ai
 """
 import hashlib
 import logging
-import urllib.parse
 
 import requests
 from django.conf import settings
@@ -182,13 +181,11 @@ def generate_image(request):
         logger.info(f"🎨 Generating FREE image with prompt: {prompt[:100]}...")
 
         if not G4F_AVAILABLE:
-            logger.warning("g4f not available, returning placeholder")
+            logger.error("g4f not available")
             return Response({
-                'success': True,
-                'image_url': generate_placeholder_url(prompt),
-                'fallback': True,
-                'message': 'g4f not available, using placeholder'
-            })
+                'success': False,
+                'error': 'g4f not available'
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         try:
             # Initialize g4f client for FREE model access
@@ -213,22 +210,18 @@ def generate_image(request):
                     'free_model': True
                 })
             else:
-                logger.warning("No image data in g4f response, using placeholder")
+                logger.error("No image data in g4f response")
                 return Response({
-                    'success': True,
-                    'image_url': generate_placeholder_url(prompt),
-                    'fallback': True,
-                    'message': 'g4f response empty, using placeholder'
-                })
+                    'success': False,
+                    'error': 'No image data in g4f response'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         except Exception as g4f_error:
             logger.error(f"g4f generation failed: {g4f_error}")
             return Response({
-                'success': True,
-                'image_url': generate_placeholder_url(prompt),
-                'fallback': True,
-                'message': f'g4f failed: {str(g4f_error)}'
-            })
+                'success': False,
+                'error': f'g4f generation failed: {str(g4f_error)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     except Exception as e:
         logger.error(f"Image generation error: {e}")
@@ -361,12 +354,14 @@ def generate_car_images(request):
                         if response and hasattr(response, 'data') and response.data:
                             image_url = response.data[0].url
                         else:
-                            image_url = generate_placeholder_url(prompt)
+                            logger.error(f"No image data in g4f response for {angle}")
+                            raise Exception("No image data in g4f response")
                     except Exception as e:
-                        logger.warning(f"G4F generation failed for {angle}: {e}")
-                        image_url = generate_placeholder_url(prompt)
+                        logger.error(f"G4F generation failed for {angle}: {e}")
+                        raise e
                 else:
-                    image_url = generate_placeholder_url(prompt)
+                    logger.error("G4F not available")
+                    raise Exception("G4F not available")
 
                 generated_images.append({
                     'url': image_url,
@@ -380,14 +375,7 @@ def generate_car_images(request):
 
             except Exception as e:
                 logger.error(f"Failed to generate image for angle {angle}: {e}")
-                generated_images.append({
-                    'url': generate_placeholder_url(f"Error generating {angle} view"),
-                    'angle': angle,
-                    'title': get_angle_title(angle, car_data),
-                    'isMain': i == 0,
-                    'prompt': f"Error: {str(e)}",
-                    'success': False
-                })
+                raise e
 
         logger.info(f"🎯 Generated {len(generated_images)} images using FREE models")
 
@@ -505,41 +493,16 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                             'success': True
                         })
                     else:
-                        logger.warning(f"[g4f_algorithm] No image data in g4f response for {angle}")
-                        # Fallback to placeholder
-                        placeholder_url = generate_placeholder_url(f"{session_id}_{angle}", 1024, 768)
-                        generated_images.append({
-                            'url': placeholder_url,
-                            'angle': angle,
-                            'title': f"{car_info} - {angle.title()} View (Placeholder)",
-                            'isMain': (i == 0),
-                            'prompt': prompt,
-                            'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
-                            'session_id': session_id,
-                            'success': False,
-                            'fallback': True
-                        })
+                        logger.error(f"[g4f_algorithm] No image data in g4f response for {angle}")
+                        raise Exception("No image data in g4f response")
 
                 except Exception as g4f_error:
                     logger.error(f"[g4f_algorithm] g4f generation failed for {angle}: {g4f_error}")
-                    # Fallback to placeholder
-                    placeholder_url = generate_placeholder_url(f"{session_id}_{angle}", 1024, 768)
-                    generated_images.append({
-                        'url': placeholder_url,
-                        'angle': angle,
-                        'title': f"{car_info} - {angle.title()} View (Fallback)",
-                        'isMain': (i == 0),
-                        'prompt': prompt,
-                        'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
-                        'session_id': session_id,
-                        'success': False,
-                        'fallback': True,
-                        'error': str(g4f_error)
-                    })
+                    raise g4f_error
 
             except Exception as angle_error:
                 logger.error(f"[g4f_algorithm] Error generating image for angle {angle}: {angle_error}")
-                continue
+                raise angle_error
 
         # Return success response with generated images
         logger.info(f"[g4f_algorithm] Generated {len(generated_images)} images using g4f")

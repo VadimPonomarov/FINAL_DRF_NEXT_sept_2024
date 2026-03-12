@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
         angle,
         title: getAngleTitle(angle, canonical),
         isMain: i === 0,
-        prompt: plannedPrompts[i]
+        prompt: plannedPrompts[i] || ''
       }));
 
       return NextResponse.json({
@@ -256,39 +256,14 @@ export async function POST(request: NextRequest) {
     console.log(`🔗 Car session ID for consistency: CAR-${carSessionId}`);
     console.log(`🎯 Use mock algorithm: ${use_mock_algorithm}`);
 
-    try {
-      generatedImages = await generateCarImagesWithBackend(formData, angles, style, carSessionId, use_mock_algorithm, request);
-    } catch (error) {
-      console.error('Backend generation failed, using placeholder fallback (pollinations disabled):', error);
+    generatedImages = await generateCarImagesWithBackend(formData, angles, style, carSessionId, use_mock_algorithm, request);
 
-      // Fallback: deterministic placeholders to avoid external DNS failures
-      generatedImages = angles.map((angle, i) => {
-        const prompt = createCarImagePrompt(canonical, angle, style, carSessionId);
-        const url = generatePlaceholderImage(`${canonical.brand} ${canonical.model} ${angle}`);
-        return {
-          url,
-          angle,
-          title: getAngleTitle(angle, canonical),
-          isMain: i === 0,
-          prompt
-        };
-      });
-    }
-
-    // Filter out empty/bad image URLs
-    const validImages = (generatedImages || []).filter(img => {
-      const u = String(img?.url || '').trim();
-      if (!u) return false;
-      if (u.includes('via.placeholder.com')) return false;
-      if (!/^https?:\/\//i.test(u)) return false;
-      return true;
-    });
-
-    if (validImages.length === 0) {
+    // Return backend images directly (no filtering, no fallbacks)
+    if (!generatedImages || generatedImages.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Failed to generate valid images (all URLs empty/invalid)',
+          error: 'Backend failed to generate images',
           ...(debug ? { debug: { canonical, angles, style, prompts: plannedPrompts } } : {})
         },
         { status: 500 }
@@ -296,7 +271,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response: CarImageGenerationResponse & { debug?: any } = {
-      images: validImages,
+      images: generatedImages,
       success: true,
       ...(debug ? { debug: { canonical, angles, style, prompts: plannedPrompts } } : {})
     };

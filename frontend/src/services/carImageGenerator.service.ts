@@ -423,34 +423,12 @@ class CarImageGeneratorService {
     apiImages: any[];
     mainImage: GeneratedCarImage | null;
   }> {
-    try {
-      // Пытаемся сгенерировать изображения через AI
-      const aiImages = await this.generateAIImages(params);
-
-      if (aiImages.length > 0) {
-        // Конвертируем для API
-        const apiImages = await this.convertImagesToApiFormat(aiImages);
-
-        // Находим главное изображение
-        const mainImage = aiImages.find(img => img.isMain) || aiImages[0] || null;
-
-        return {
-          images: aiImages,
-          apiImages,
-          mainImage
-        };
-      }
-    } catch (error) {
-      console.warn('AI image generation failed, falling back to placeholders:', error);
-    }
-
-    // Fallback к placeholder изображениям
-    const images = this.generateCarImageSet(params);
-    const apiImages = await this.convertImagesToApiFormat(images);
-    const mainImage = images.find(img => img.isMain) || images[0] || null;
+    const aiImages = await this.generateAIImages(params);
+    const apiImages = await this.convertImagesToApiFormat(aiImages);
+    const mainImage = aiImages.find(img => img.isMain) || aiImages[0] || null;
 
     return {
-      images,
+      images: aiImages,
       apiImages,
       mainImage
     };
@@ -492,7 +470,8 @@ class CarImageGeneratorService {
         angles: ['front', 'side', 'rear'],
         style: 'realistic',
         quality: 'standard',
-        useDescription: true
+        useDescription: true,
+        use_mock_algorithm: true
       };
 
       console.log('🎨 [CarImageGeneratorService] POST /api/llm/generate-car-images with body:', requestBody);
@@ -564,8 +543,7 @@ class CarImageGeneratorService {
       }
     } catch (error) {
       console.error('Single image generation failed:', error);
-      // Fallback к placeholder
-      return this.generatePlaceholderUrl(prompt);
+      throw error;
     }
   }
 

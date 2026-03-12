@@ -54,8 +54,7 @@ export async function POST(request: NextRequest) {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
     // Generate images for each angle
-    for (let i = 0; i < angles.length; i++) {
-      const angle = angles[i];
+    for (const [i, angle] of angles.entries()) {
       
       try {
         const prompt = createCarImagePrompt(brand, model, year, color, body_type, angle.id);
@@ -63,7 +62,7 @@ export async function POST(request: NextRequest) {
         console.log(`🔄 Generating ${angle.name} view: ${prompt.substring(0, 100)}...`);
 
         // Call the universal image generation endpoint
-        const response = await fetch(`${backendUrl}/api/users/generate-image/`, {
+        const response = await fetch(`${backendUrl}/api/chat/generate-image/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -77,48 +76,26 @@ export async function POST(request: NextRequest) {
           }),
         });
 
-        if (response.ok) {
-          const result = await response.json();
-          
-          if (result.success && result.image_url) {
-            generatedImages.push({
-              url: result.image_url,
-              angle: angle.id,
-              title: `${brand} ${model} ${year} - ${angle.name}`,
-              isMain: i === 0 // First image (front) is main
-            });
-            
-            console.log(`✅ Generated ${angle.name} view successfully`);
-          } else {
-            console.warn(`⚠️ Failed to generate ${angle.name} view: ${result.error || 'Unknown error'}`);
-            // Add placeholder for failed generation
-            generatedImages.push({
-              url: generatePlaceholderUrl(prompt),
-              angle: angle.id,
-              title: `${brand} ${model} ${year} - ${angle.name}`,
-              isMain: i === 0
-            });
-          }
-        } else {
-          console.warn(`⚠️ Backend request failed for ${angle.name} view: ${response.status}`);
-          // Add placeholder for failed request
+        if (!response.ok) {
+          throw new Error(`Backend request failed for ${angle.name} view: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.image_url) {
           generatedImages.push({
-            url: generatePlaceholderUrl(prompt),
+            url: result.image_url,
             angle: angle.id,
             title: `${brand} ${model} ${year} - ${angle.name}`,
             isMain: i === 0
           });
+          console.log(`✅ Generated ${angle.name} view successfully`);
+        } else {
+          throw new Error(`Failed to generate ${angle.name} view: ${result.error || 'Unknown error'}`);
         }
       } catch (error) {
         console.error(`❌ Error generating ${angle.name} view:`, error);
-        // Add placeholder for error
-        const prompt = createCarImagePrompt(brand, model, year, color, body_type, angle.id);
-        generatedImages.push({
-          url: generatePlaceholderUrl(prompt),
-          angle: angle.id,
-          title: `${brand} ${model} ${year} - ${angle.name}`,
-          isMain: i === 0
-        });
+        throw error;
       }
     }
 
