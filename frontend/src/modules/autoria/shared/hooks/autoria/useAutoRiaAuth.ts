@@ -108,6 +108,12 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
+      if (provider === AuthProvider.Select) {
+        // Provider not yet initialized from localStorage — stay loading, re-run after init
+        setState(prev => ({ ...prev, isLoading: true }));
+        return false;
+      }
+
       if (provider !== AuthProvider.MyBackendDocs) {
         setState(prev => ({ ...prev, isAuthenticated: false, isLoading: false, hasBackendTokens: false }));
         return false;
@@ -207,7 +213,7 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
     if (status === 'loading') return;
     void checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, session]);
+  }, [status, session, provider]);
 
   // Дополнительная очистка при signout событии
   useEffect(() => {
