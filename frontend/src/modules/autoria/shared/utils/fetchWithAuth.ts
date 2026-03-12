@@ -54,17 +54,10 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
     return resp;
   }
 
-  // 403 Forbidden — обробляємо як 401, із захистом від циклів
+  // 403 Forbidden — редирект з тротлінгом (10 секунд між редиректами)
   if (resp.status === 403) {
     console.log('[fetchWithAuth] ❌ 403 Заборонено');
     if (typeof window !== 'undefined') {
-      const currentPathname = window.location.pathname;
-      // Уникаємо редиректу на сторінках AutoRia — гард рівня 2 сам обробить
-      if (currentPathname.startsWith('/autoria/')) {
-        console.warn('[fetchWithAuth] Придушуємо редирект 403 на /autoria/* (гейт обробить)');
-        return resp;
-      }
-      // Глобальний тротлінг
       try {
         const now = Date.now();
         const last = Number(window.sessionStorage.getItem('auth:lastRedirectTs') || '0');
@@ -75,8 +68,7 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
         window.sessionStorage.setItem('auth:lastRedirectTs', String(now));
       } catch {}
       const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
-      const currentPath = currentPathname + window.location.search;
-      redirectToAuth(currentPath, 'auth_required');
+      redirectToAuth(window.location.pathname + window.location.search, 'auth_required');
     }
     return resp;
   }
@@ -131,31 +123,21 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
     console.error('[fetchWithAuth] ❌ Помилка під час оновлення токена:', error);
   }
 
-  // Як і раніше 401: виконуємо редирект з урахуванням багаторівневої системи
-  // Обробники 401/403 мають виконати правильний редирект без створення циклів
+  // Persistent 401 after refresh failure — редирект з тротлінгом
   if (typeof window !== 'undefined') {
-    const currentPathname = window.location.pathname;
-    // Уникаємо циклів редиректів на сторінках AutoRia — BackendTokenPresenceGate обробить ситуацію централізовано
-    if (currentPathname.startsWith('/autoria/')) {
-      console.warn('[fetchWithAuth] Придушуємо редирект на /autoria/* (це робить гейт)');
-      return resp;
-    }
-
-    // Глобальний тротлінг, щоб уникнути частих редиректів
     try {
       const now = Date.now();
       const last = Number(window.sessionStorage.getItem('auth:lastRedirectTs') || '0');
       if (now - last < 10000) {
-        console.warn('[fetchWithAuth] Придушуємо редирект (тротлінг)');
+        console.warn('[fetchWithAuth] Придушуємо редирект 401 (тротлінг)');
         return resp;
       }
       window.sessionStorage.setItem('auth:lastRedirectTs', String(now));
     } catch {}
 
-    console.log('[fetchWithAuth] ❌ Оновлення токена не вдалося, перевіряємо сесію NextAuth і виконуємо редирект');
+    console.log('[fetchWithAuth] ❌ Токен не вдалося оновити — редирект на логін');
     const { redirectToAuth } = await import('@/shared/utils/auth/redirectToAuth');
-    const currentPath = currentPathname + window.location.search;
-    redirectToAuth(currentPath, 'auth_required');
+    redirectToAuth(window.location.pathname + window.location.search, 'auth_required');
   }
 
   return resp; // Повертаємо відповідь 401 для викликів на серверному боці

@@ -121,35 +121,53 @@ export async function refreshToken(): Promise<boolean> {
   }
 }
 
+function isTokenExpiredLocal(token: string, bufferSeconds = 60): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp < Math.floor(Date.now() / 1000) + bufferSeconds;
+  } catch {
+    return true;
+  }
+}
+
 /**
- * Проверка auth session с возможностью refresh
- * 
- * ВАЖНО: Это НЕ валидация токенов!
- * Мы только проверяем наличие сессии и токенов.
- * Реальная валидация токенов происходит в API interceptor при получении 401.
+ * Проверка токена с валидацией срока действия и авто-обновлением при истечении
  */
 export async function validateAndRefreshToken(): Promise<TokenValidationResult> {
   console.log('[validateAndRefreshToken] Checking tokens in cookies...');
 
-  // Tokens are stored in httpOnly cookies - if access token exists, user is authenticated
-  const tokensExist = await checkTokensExist();
-  console.log('[validateAndRefreshToken] Tokens in cookies:', tokensExist);
+  try {
+    const response = await fetch('/api/auth/token', { method: 'GET', cache: 'no-store', credentials: 'include' });
+    if (!response.ok) {
+      return { isValid: false, needsRedirect: true, redirectTo: '/login', message: 'Failed to reach token endpoint' };
+    }
 
-  if (!tokensExist) {
-    return {
-      isValid: false,
-      needsRedirect: true,
-      redirectTo: '/login',
-      message: 'No tokens found in cookies'
-    };
+    const data = await response.json();
+    const token: string | null = data.access || null;
+
+    if (!token) {
+      return { isValid: false, needsRedirect: true, redirectTo: '/login', message: 'No token in cookies' };
+    }
+
+    // Token is present and not expired
+    if (!isTokenExpiredLocal(token)) {
+      console.log('[validateAndRefreshToken] ✅ Token valid');
+      return { isValid: true, needsRedirect: false, message: 'Token valid' };
+    }
+
+    // Token expired — try to refresh
+    console.log('[validateAndRefreshToken] Token expired, refreshing...');
+    const refreshed = await refreshToken();
+    if (refreshed) {
+      console.log('[validateAndRefreshToken] ✅ Token refreshed successfully');
+      return { isValid: true, needsRedirect: false, message: 'Token refreshed' };
+    }
+
+    return { isValid: false, needsRedirect: true, redirectTo: '/login', message: 'Token expired and refresh failed' };
+  } catch (error) {
+    console.error('[validateAndRefreshToken] Error:', error);
+    return { isValid: false, needsRedirect: true, redirectTo: '/login', message: 'Validation error' };
   }
-
-  // Token exists in cookie - user is authenticated
-  return {
-    isValid: true,
-    needsRedirect: false,
-    message: 'Token found in cookies'
-  };
 }
 
 /**

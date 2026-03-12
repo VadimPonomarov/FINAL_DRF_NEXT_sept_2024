@@ -6,6 +6,15 @@ import { useAuthProvider } from '@/contexts/AuthProviderContext';
 import { getAuthTokens, refreshAccessToken } from '@/services/auth/tokenService';
 import { AuthProvider } from '@/shared/constants/constants';
 
+function isTokenExpiredLocal(token: string, bufferSeconds = 60): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp < Math.floor(Date.now() / 1000) + bufferSeconds;
+  } catch {
+    return true;
+  }
+}
+
 export interface AutoRiaAuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -94,93 +103,68 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
     }
   }, [provider]);
 
-  // Проверка авторизации
+  // Проверка авторизации — работает для cookie-based backend auth без NextAuth сессии
   const checkAuth = useCallback(async (): Promise<boolean> => {
     try {
-      // Если нет сессии, не проверяем токены
-      if (status === 'unauthenticated' || !session) {
-        console.log('[useAutoRiaAuth] No session, clearing auth state');
-        setState({
-          isAuthenticated: false,
-          isLoading: false,
-          token: null,
-          user: null,
-          error: null,
-          hasBackendTokens: false
-        });
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+      if (provider !== AuthProvider.MyBackendDocs) {
+        setState(prev => ({ ...prev, isAuthenticated: false, isLoading: false, hasBackendTokens: false }));
         return false;
       }
 
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      const response = await fetch('/api/auth/token', { cache: 'no-store', credentials: 'include' });
+      if (!response.ok) {
+        setState(prev => ({ ...prev, isAuthenticated: false, isLoading: false, token: null, user: null, hasBackendTokens: false }));
+        return false;
+      }
 
-      // Проверяем наличие backend токенов и получаем user data из Redis
-      let token: string | null = null;
-      let hasBackendTokens = false;
-      let user = null;
-      
-      if (provider === AuthProvider.MyBackendDocs) {
-        try {
-          // Получаем токены и user data из /api/auth/token (который читает Redis)
-          const response = await fetch('/api/auth/token');
-          if (response.ok) {
-            const data = await response.json();
-            token = data.access || null;
-            hasBackendTokens = !!data.access;
-            user = data.user || null;
-            
-            console.log('[useAutoRiaAuth] Token data from Redis:', {
-              hasToken: !!token,
-              hasUser: !!user,
-              userEmail: user?.email,
-              isSuperuser: user?.is_superuser
-            });
-          } else {
-            console.log('[useAutoRiaAuth] No tokens in Redis');
-          }
-        } catch (error) {
-          console.error('[useAutoRiaAuth] Error fetching tokens:', error);
+      const data = await response.json();
+      let token: string | null = data.access || null;
+      const user = data.user || null;
+
+      if (!token) {
+        console.log('[useAutoRiaAuth] No access token in cookies');
+        setState(prev => ({ ...prev, isAuthenticated: false, isLoading: false, token: null, user: null, hasBackendTokens: false }));
+        return false;
+      }
+
+      // Auto-refresh if token is expired
+      if (isTokenExpiredLocal(token)) {
+        console.log('[useAutoRiaAuth] Token expired — refreshing...');
+        const refreshResp = await fetch('/api/auth/refresh', { method: 'POST', cache: 'no-store', credentials: 'include' });
+        if (refreshResp.ok) {
+          const refreshData = await refreshResp.json();
+          token = refreshData.access || null;
+          console.log('[useAutoRiaAuth] ✅ Token refreshed');
+        } else {
+          console.warn('[useAutoRiaAuth] Refresh failed:', refreshResp.status);
+          token = null;
         }
       }
 
-      if (!token || !hasBackendTokens) {
-        console.log('[useAutoRiaAuth] No backend tokens found');
-        setState(prev => ({ 
-          ...prev, 
-          isAuthenticated: false,
-          isLoading: false,
-          token: null,
-          user: null,
-          hasBackendTokens: false
-        }));
+      if (!token) {
+        setState(prev => ({ ...prev, isAuthenticated: false, isLoading: false, token: null, user: null, hasBackendTokens: false }));
         return false;
       }
 
-      console.log('[useAutoRiaAuth] ✅ Token present and user data loaded from Redis');
+      console.log('[useAutoRiaAuth] ✅ Authenticated via cookies');
       setState(prev => ({
         ...prev,
-        isAuthenticated: hasBackendTokens,
+        isAuthenticated: true,
         isLoading: false,
         token,
         user,
         error: null,
-        hasBackendTokens
+        hasBackendTokens: true,
       }));
-
-      return hasBackendTokens;
+      return true;
     } catch (error) {
       console.error('[useAutoRiaAuth] Error checking auth:', error);
-      setState(prev => ({
-        ...prev,
-        isAuthenticated: false,
-        isLoading: false,
-        token: null,
-        user: null,
-        error: 'Authentication check failed',
-        hasBackendTokens: false
-      }));
+      setState(prev => ({ ...prev, isAuthenticated: false, isLoading: false, error: 'Authentication check failed', hasBackendTokens: false }));
       return false;
     }
-  }, [getToken, session, status, provider]);
+  }, [provider]);
 
   // Выход из системы
   const logout = useCallback(() => {
@@ -199,22 +183,9 @@ export const useAutoRiaAuth = (): AutoRiaAuthState & AutoRiaAuthActions => {
     }
   }, []);
 
-  // Инициализация и реактивная проверка авторизации при смене сессии/статуса
+  // Инициализация и реактивная проверка: всегда проверяем cookies, сессия NextAuth не обязательна
   useEffect(() => {
     if (status === 'loading') return;
-
-    if (status === 'unauthenticated' || !session) {
-      setState({
-        isAuthenticated: false,
-        isLoading: false,
-        token: null,
-        user: null,
-        error: null,
-        hasBackendTokens: false
-      });
-      return;
-    }
-
     void checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, session]);
