@@ -94,7 +94,12 @@ export async function PATCH(request: NextRequest) {
 
       const downloadResult = await downloadResponse.json();
       console.log('[Save Avatar API] 📦 Download result:', downloadResult);
-      const localAvatarUrl = downloadResult.local_url;
+      const rawLocalUrl: string = downloadResult.local_url;
+
+      // ProfileSerializer.avatar_url is a URLField — must be a full URL, not a relative path.
+      // The media proxy route /api/media/... is served via the Next.js frontend.
+      const frontendBase = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://autoria-clone.vercel.app';
+      const localAvatarUrl = rawLocalUrl.startsWith('http') ? rawLocalUrl : `${frontendBase}${rawLocalUrl}`;
 
       console.log('[Save Avatar API] ✅ Avatar downloaded and saved locally:', localAvatarUrl);
 
