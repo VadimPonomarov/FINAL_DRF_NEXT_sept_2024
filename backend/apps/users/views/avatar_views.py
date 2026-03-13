@@ -396,6 +396,18 @@ Final Style: {style} style with custom elements"""
         if response and hasattr(response, 'data') and response.data:
             image_url = response.data[0].url
             logger.info(f"✅ Avatar generated using G4F for user {user_id}")
+            
+            # Fix Pollinations.ai URL encoding issues
+            if 'image.pollinations.ai' in image_url:
+                # Convert to proper URL format
+                import urllib.parse
+                image_url = urllib.parse.unquote(image_url)
+                # Ensure proper format
+                if '?prompt=' in image_url:
+                    base_url = image_url.split('?prompt=')[0]
+                    params = image_url.split('?prompt=')[1]
+                    # Rebuild with proper encoding
+                    image_url = f"{base_url}?prompt={params}&width=1024&height=1024&model=flux&nologo=true"
         else:
             logger.error(f"G4F returned empty response for user {user_id}")
             raise Exception("No image data in G4F response")
