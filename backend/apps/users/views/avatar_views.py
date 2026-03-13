@@ -384,54 +384,36 @@ Final Style: {style} style with custom elements"""
         logger.info(f"Generating avatar for user {user_id}")
 
         # Generate avatar image using g4f with proper configuration
-        image_url = None
-        max_retries = 3
-        
-        for attempt in range(max_retries):
-            try:
-                from g4f.client import Client
-                from g4f.Provider import Pollinations
-                
-                # Create client with Railway-optimized configuration
-                client = Client(
-                    image_provider=Pollinations,
-                    provider_args={
-                        'timeout': int(os.environ.get('G4F_TIMEOUT', '30')),
-                        'verify_ssl': os.environ.get('G4F_VERIFY_SSL', 'false').lower() == 'true'
-                    }
-                )
-                
-                # Generate image with proper parameters
-                response = client.images.generate(
-                    model=os.environ.get('G4F_MODEL', 'flux'),
-                    prompt=formatted_prompt,
-                    response_format="url",
-                    width=1024,
-                    height=1024,
-                    n=1
-                )
+        try:
+            from g4f.client import Client
+            import g4f.Provider
+            
+            # Create client with Pollinations provider
+            client = Client(provider=g4f.Provider.Pollinations)
+            
+            # Generate image with proper parameters
+            response = client.images.generate(
+                model="flux",
+                prompt=formatted_prompt,
+                response_format="url",
+                n=1
+            )
 
-                if response and hasattr(response, 'data') and response.data:
-                    image_url = response.data[0].url
-                    logger.info(f"✅ Avatar generated using g4f Pollinations for user {user_id} (attempt {attempt + 1})")
-                    break
-                else:
-                    logger.warning(f"g4f returned empty response for user {user_id} (attempt {attempt + 1})")
-                    if attempt == max_retries - 1:
-                        raise Exception("No image data in g4f response after all retries")
-                    continue
+            if response and hasattr(response, 'data') and response.data:
+                image_url = response.data[0].url
+                logger.info(f"✅ Avatar generated using g4f Pollinations for user {user_id}")
+                logger.info(f"Provider used: {getattr(response, 'provider', 'unknown')}")
+                logger.info(f"Model: {getattr(response, 'model', 'flux')}")
+            else:
+                logger.error(f"g4f returned empty response for user {user_id}")
+                raise Exception("No image data in g4f response")
 
-            except ImportError as e:
-                logger.error(f"g4f not available: {e}")
-                raise Exception("g4f library is not installed - check Railway deployment")
-            except Exception as e:
-                logger.error(f"g4f image generation failed (attempt {attempt + 1}): {e}")
-                if attempt == max_retries - 1:
-                    raise Exception(f"g4f failed after {max_retries} attempts: {str(e)}")
-                continue
-
-        if not image_url:
-            raise Exception("Failed to generate avatar image - G4F not working")
+        except ImportError as e:
+            logger.error(f"g4f not available: {e}")
+            raise Exception("g4f library is not installed - check Railway deployment")
+        except Exception as e:
+            logger.error(f"g4f image generation failed: {e}")
+            raise Exception(f"g4f failed: {str(e)}")
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")

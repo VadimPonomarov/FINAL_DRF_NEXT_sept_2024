@@ -469,65 +469,42 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 prompt = create_car_image_prompt(car_data, angle, style, session_id)
 
                 # Use g4f Client with Pollinations provider for FREE FLUX model
-                max_retries = 3
-                image_url = None
-                
-                for attempt in range(max_retries):
-                    try:
-                        from g4f.client import Client
-                        from g4f.Provider import Pollinations, OpenaiChat
-                        
-                        # Use different providers based on model
-                        car_model = os.environ.get('G4F_CAR_MODEL', 'dall-e-3')
-                        if car_model.startswith('dall-e'):
-                            # Use OpenAI provider for DALL-E models
-                            client = Client(
-                                image_provider=OpenaiChat,
-                                provider_args={
-                                    'timeout': int(os.environ.get('G4F_TIMEOUT', '30')),
-                                    'verify_ssl': os.environ.get('G4F_VERIFY_SSL', 'false').lower() == 'true'
-                                }
-                            )
-                        else:
-                            # Use Pollinations for other models
-                            client = Client(
-                                image_provider=Pollinations,
-                                provider_args={
-                                    'timeout': int(os.environ.get('G4F_TIMEOUT', '30')),
-                                    'verify_ssl': os.environ.get('G4F_VERIFY_SSL', 'false').lower() == 'true'
-                                }
-                            )
+                # Use g4f Client with proper provider configuration
+                try:
+                    from g4f.client import Client
+                    import g4f.Provider
+                    
+                    # Use different providers based on model
+                    car_model = os.environ.get('G4F_CAR_MODEL', 'dall-e-3')
+                    if car_model.startswith('dall-e'):
+                        # Use OpenAI provider for DALL-E models
+                        client = Client(provider=g4f.Provider.OpenaiChat)
+                    else:
+                        # Use Pollinations for other models
+                        client = Client(provider=g4f.Provider.Pollinations)
 
-                        response = client.images.generate(
-                            model=os.environ.get('G4F_CAR_MODEL', 'dall-e-3'),
-                            prompt=prompt,
-                            response_format="url",
-                            width=1024,
-                            height=1024,
-                            n=1
-                        )
+                    response = client.images.generate(
+                        model=car_model,
+                        prompt=prompt,
+                        response_format="url",
+                        n=1
+                    )
 
-                        if response and hasattr(response, 'data') and response.data:
-                            image_url = response.data[0].url
-                            logger.info(f"[g4f_algorithm] g4f image generated for {angle} (attempt {attempt + 1}): {image_url}")
-                            break
-                        else:
-                            logger.warning(f"[g4f_algorithm] No image data in g4f response for {angle} (attempt {attempt + 1})")
-                            if attempt == max_retries - 1:
-                                raise Exception("No image data in g4f response after all retries")
-                            continue
+                    if response and hasattr(response, 'data') and response.data:
+                        image_url = response.data[0].url
+                        logger.info(f"[g4f_algorithm] g4f image generated for {angle}")
+                        logger.info(f"[g4f_algorithm] Provider used: {getattr(response, 'provider', 'unknown')}")
+                        logger.info(f"[g4f_algorithm] Model: {getattr(response, 'model', car_model)}")
+                    else:
+                        logger.error(f"[g4f_algorithm] No image data in g4f response for {angle}")
+                        raise Exception("No image data in g4f response")
 
-                    except ImportError as e:
-                        logger.error(f"[g4f_algorithm] g4f not available: {e}")
-                        raise Exception("g4f library is not installed")
-                    except Exception as g4f_error:
-                        logger.error(f"[g4f_algorithm] g4f generation failed for {angle} (attempt {attempt + 1}): {g4f_error}")
-                        if attempt == max_retries - 1:
-                            raise Exception(f"g4f failed after {max_retries} attempts: {str(g4f_error)}")
-                        continue
-                
-                if not image_url:
-                    raise Exception(f"Failed to generate image for {angle} after {max_retries} attempts")
+                except ImportError as e:
+                    logger.error(f"[g4f_algorithm] g4f not available: {e}")
+                    raise Exception("g4f library is not installed")
+                except Exception as g4f_error:
+                    logger.error(f"[g4f_algorithm] g4f generation failed for {angle}: {g4f_error}")
+                    raise Exception(f"g4f failed: {str(g4f_error)}")
                         
                 generated_images.append({
                     'url': image_url,

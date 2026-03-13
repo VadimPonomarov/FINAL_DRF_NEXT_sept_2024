@@ -25,7 +25,7 @@ COPY backend/requirements.txt requirements.txt
 RUN pip install --no-cache-dir --prefer-binary --upgrade -r requirements.txt
 
 # Verify G4F installation
-RUN python -c "import g4f; print('G4F version:', g4f.__version__)" || echo "G4F installation failed"
+RUN python -c "import g4f; print('G4F version:', g4f.__version__); print('G4F installed successfully')" || echo "G4F installation failed"
 
 # Copy the rest of the application
 COPY . .
