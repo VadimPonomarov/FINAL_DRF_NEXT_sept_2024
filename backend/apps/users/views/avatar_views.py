@@ -453,48 +453,44 @@ Final Style: {style} style with custom elements"""
         500: openapi.Response(description="Server error")
     }
 )
-@api_view(['POST'])
+@api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
-def download_avatar(request):
+def save_avatar(request):
     """
-    Download avatar image from external URL and save it locally.
-    Returns local URL for the saved image.
+    Save avatar URL directly to user profile without downloading.
+    Returns success response with saved URL.
     """
     try:
         user_id = getattr(request.user, 'id', None)
-        logger.info(f"🔄 Download avatar request for user {user_id}")
+        logger.info(f"🔄 Save avatar URL request for user {user_id}")
 
-        # Get image URL from request
-        image_url = request.data.get('image_url')
-        if not image_url:
-            logger.error(f"❌ No image_url provided for user {user_id}")
+        # Get avatar URL from request
+        avatar_url = request.data.get('avatar_url')
+        if not avatar_url:
+            logger.error(f"❌ No avatar_url provided for user {user_id}")
             return Response({
                 'success': False,
-                'error': 'image_url is required'
+                'error': 'avatar_url is required'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        logger.info(f"📥 Downloading avatar from: {image_url[:100]}...")
+        logger.info(f"💾 Saving avatar URL for user {user_id}: {avatar_url[:100]}...")
 
-        media_base_url = request.build_absolute_uri(settings.MEDIA_URL)
+        # Save avatar URL directly to user profile
+        user = request.user
+        profile = user.profile
+        profile.avatar_url = avatar_url
+        profile.save(update_fields=['avatar_url'])
 
-        # Download and save image locally
-        local_avatar_url = download_and_save_avatar(image_url, user_id, media_base_url)
-
-        if local_avatar_url:
-            logger.info(f"✅ Avatar downloaded and saved successfully for user {user_id}")
-            return Response({
-                'success': True,
-                'local_url': local_avatar_url
-            }, status=status.HTTP_200_OK)
-        else:
-            logger.error(f"❌ Failed to download and save avatar for user {user_id}")
-            return Response({
-                'success': False,
-                'error': 'Failed to download and save avatar'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.info(f"✅ Avatar URL saved successfully for user {user_id}")
+        
+        return Response({
+            'success': True,
+            'avatar_url': avatar_url,
+            'message': 'Avatar URL saved successfully'
+        }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"❌ Error in download_avatar for user {user_id or 'anonymous'}: {e}")
+        logger.error(f"❌ Error in save_avatar for user {user_id or 'anonymous'}: {e}")
         return Response({
             'success': False,
             'error': str(e)

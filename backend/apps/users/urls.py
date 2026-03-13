@@ -1,7 +1,7 @@
 from django.urls.conf import path
 
 from apps.users.views.activate_views import ActivateUserView
-from apps.users.views.avatar_views import UpdateAvatarView, generate_avatar, generate_image, download_avatar
+from apps.users.views.avatar_views import UpdateAvatarView, generate_avatar, generate_image, save_avatar
 from apps.users.views.details_views import UserDetailView, UserProfileView
 from apps.users.views.list_create_views import ListUsersView, CreateUserView
 from apps.users.views.reset_password_views import ResetPasswordTokenView, ResetPasswordView, RequestPasswordResetView
@@ -41,6 +41,6 @@ urlpatterns = [
     path('<int:pk>/profile/avatar/', UpdateAvatarView.as_view(),
          name='user_profile_upload_avatar'),
     path('profile/generate-avatar/', generate_avatar, name='generate_avatar'),
-    path('profile/download-avatar/', download_avatar, name='download_avatar'),
+    path('profile/save-avatar/', save_avatar, name='save_avatar'),
     path('generate-image/', generate_image, name='generate_image'),
 ]
