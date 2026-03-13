@@ -1,4 +1,5 @@
 import logging
+import os
 
 from django.contrib.auth import get_user_model
 from drf_yasg import openapi
@@ -382,28 +383,55 @@ Final Style: {style} style with custom elements"""
         user_id = getattr(request.user, 'id', 'anonymous') if hasattr(request, 'user') and request.user.is_authenticated else 'anonymous'
         logger.info(f"Generating avatar for user {user_id}")
 
-        # Generate avatar image using g4f client directly
-        try:
-            from g4f.client import Client
-            client = Client()
+        # Generate avatar image using g4f with proper configuration
+        image_url = None
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                from g4f.client import Client
+                from g4f.Provider import Pollinations
+                
+                # Create client with Railway-optimized configuration
+                client = Client(
+                    image_provider=Pollinations,
+                    provider_args={
+                        'timeout': int(os.environ.get('G4F_TIMEOUT', '30')),
+                        'verify_ssl': os.environ.get('G4F_VERIFY_SSL', 'false').lower() == 'true'
+                    }
+                )
+                
+                # Generate image with proper parameters
+                response = client.images.generate(
+                    model=os.environ.get('G4F_MODEL', 'flux'),
+                    prompt=formatted_prompt,
+                    response_format="url",
+                    width=1024,
+                    height=1024,
+                    n=1
+                )
 
-            response = client.images.generate(
-                model="flux",
-                prompt=formatted_prompt,
-                response_format="url"
-            )
+                if response and hasattr(response, 'data') and response.data:
+                    image_url = response.data[0].url
+                    logger.info(f"✅ Avatar generated using g4f Pollinations for user {user_id} (attempt {attempt + 1})")
+                    break
+                else:
+                    logger.warning(f"g4f returned empty response for user {user_id} (attempt {attempt + 1})")
+                    if attempt == max_retries - 1:
+                        raise Exception("No image data in g4f response after all retries")
+                    continue
 
-            if response and hasattr(response, 'data') and response.data:
-                image_url = response.data[0].url
-            else:
-                image_url = None
+            except ImportError as e:
+                logger.error(f"g4f not available: {e}")
+                raise Exception("g4f library is not installed")
+            except Exception as e:
+                logger.error(f"g4f image generation failed (attempt {attempt + 1}): {e}")
+                if attempt == max_retries - 1:
+                    raise Exception(f"g4f failed after {max_retries} attempts: {str(e)}")
+                continue
 
-        except Exception as e:
-            logger.error(f"G4F image generation failed: {e}")
-            # Fallback to placeholder
-            import hashlib
-            prompt_hash = hashlib.md5(formatted_prompt.encode()).hexdigest()[:8]
-            image_url = f"https://picsum.photos/512/512?random={prompt_hash}"
+        if not image_url:
+            raise Exception("Failed to generate avatar image")
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")

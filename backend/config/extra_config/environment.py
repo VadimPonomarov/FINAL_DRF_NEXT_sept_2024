@@ -42,6 +42,18 @@ def load_environment():
 # Load environment variables when module is imported
 load_environment()
 
+# Configure g4f for Railway compatibility
+os.environ.setdefault('G4F_PROVIDER', 'pollinations')
+os.environ.setdefault('G4F_MODEL', 'flux')
+os.environ.setdefault('G4F_CAR_MODEL', 'dall-e-3')
+os.environ.setdefault('G4F_TIMEOUT', '30')
+os.environ.setdefault('G4F_VERIFY_SSL', 'false')
+os.environ.setdefault('G4F_RETRY_COUNT', '3')
+
+# Configure async HTTP clients for g4f
+os.environ.setdefault('AIOHTTP_TIMEOUT', '30')
+os.environ.setdefault('HTTPX_TIMEOUT', '30')
+
 # Export environment info
 __all__ = [
     'load_environment',
