@@ -330,7 +330,7 @@ export const generateMockSpecs = async (cachedModels?: any[]): Promise<any> => {
     // В серверном контексте используем BACKEND_URL для внутренних Docker запросов
     const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     console.log('[MockData] 🔗 Using backend URL:', backendUrl);
-    const randomModelResponse = await fetch(`${backendUrl}/api/ads/reference/models/random/?count=1`);
+    const randomModelResponse = await fetch(`${backendUrl}/api/ads/reference/models/random/?count=1&vehicle_type=1`);
 
     if (!randomModelResponse.ok) {
       throw new Error(`Failed to fetch random model: ${randomModelResponse.status}`);

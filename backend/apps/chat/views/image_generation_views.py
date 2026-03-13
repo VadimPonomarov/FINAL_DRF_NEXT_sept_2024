@@ -588,11 +588,13 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 encoded_prompt = urllib.parse.quote(translated_prompt)
                 seed = int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000
                 
-                # Use picsum.photos as fallback since Pollinations.ai is down
-                fallback_url = f"https://picsum.photos/seed/{session_id}_{angle}/1024/1024.jpg"
+                # Use car-specific placeholder service
+                # Create car-specific seed based on brand, model, and angle
+                car_seed = f"{brand.lower()}_{model.lower().replace(' ', '_')}_{angle}"
+                fallback_url = f"https://source.unsplash.com/1024x1024/?{car_seed},car,automobile"
                 
-                logger.info(f"🔄 [MOCK] Using picsum.photos placeholder for {angle}: {fallback_url}")
-                logger.info(f"🔄 [MOCK] Original prompt: {translated_prompt}")
+                logger.info(f"🔄 [MOCK] Using Unsplash car images for {angle}: {fallback_url}")
+                logger.info(f"🔄 [MOCK] Car seed: {car_seed}")
                 
                 generated_images.append({
                     'url': fallback_url,
@@ -610,14 +612,14 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 continue
 
         # Return success response with generated images
-        logger.info(f"[mock_algorithm] Generated {len(generated_images)} images using picsum.photos placeholders")
+        logger.info(f"[mock_algorithm] Generated {len(generated_images)} images using Unsplash car images")
         
         return Response({
             'success': True,
             'images': generated_images,
             'total_generated': len(generated_images),
             'session_id': session_id,
-            'method': 'picsum_placeholder',
+            'method': 'unsplash_car_images',
             'car_data': car_data,
             'angles': angles,
             'style': style
