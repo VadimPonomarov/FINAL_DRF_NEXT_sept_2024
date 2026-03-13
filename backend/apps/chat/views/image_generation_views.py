@@ -588,10 +588,11 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 encoded_prompt = urllib.parse.quote(translated_prompt)
                 seed = int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000
                 
-                fallback_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
+                # Use picsum.photos as fallback since Pollinations.ai is down
+                fallback_url = f"https://picsum.photos/seed/{session_id}_{angle}/1024/1024.jpg"
                 
-                logger.info(f"🔄 [MOCK] Using fallback URL for {angle}: {fallback_url}")
-                logger.info(f"🔄 [MOCK] Translated prompt: {translated_prompt}")
+                logger.info(f"🔄 [MOCK] Using picsum.photos placeholder for {angle}: {fallback_url}")
+                logger.info(f"🔄 [MOCK] Original prompt: {translated_prompt}")
                 
                 generated_images.append({
                     'url': fallback_url,
@@ -609,14 +610,14 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 continue
 
         # Return success response with generated images
-        logger.info(f"[mock_algorithm] Generated {len(generated_images)} images using translated Pollinations.ai URLs")
+        logger.info(f"[mock_algorithm] Generated {len(generated_images)} images using picsum.photos placeholders")
         
         return Response({
             'success': True,
             'images': generated_images,
             'total_generated': len(generated_images),
             'session_id': session_id,
-            'method': 'pollinations_translated',
+            'method': 'picsum_placeholder',
             'car_data': car_data,
             'angles': angles,
             'style': style
