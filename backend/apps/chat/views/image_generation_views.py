@@ -469,65 +469,23 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 prompt = create_car_image_prompt(car_data, angle, style, session_id)
 
                 # Use g4f Client with Pollinations provider for FREE FLUX model
-                max_retries = 3
-                image_url = None
-                
-                for attempt in range(max_retries):
-                    try:
-                        from g4f.client import Client
-                        from g4f.Provider import Pollinations, OpenaiChat
+                # TEMPORARY: Use direct Pollinations.ai until G4F Railway issue is resolved
+                # TODO: Re-enable G4F when Railway installation is fixed
+                logger.info(f"[g4f_algorithm] Using direct Pollinations.ai for {angle} (G4F Railway issue)")
+                try:
+                    import urllib.parse
+                    
+                    # URL encode the prompt for Pollinations.ai
+                    encoded_prompt = urllib.parse.quote(prompt)
+                    
+                    # Build Pollinations.ai URL directly
+                    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&model=flux&nologo=true&private=false&enhance=false&safe=false"
+                    
+                    logger.info(f"[g4f_algorithm] ✅ Direct Pollinations.ai image generated for {angle}: {image_url}")
                         
-                        # Use different providers based on model
-                        car_model = os.environ.get('G4F_CAR_MODEL', 'dall-e-3')
-                        if car_model.startswith('dall-e'):
-                            # Use OpenAI provider for DALL-E models
-                            client = Client(
-                                image_provider=OpenaiChat,
-                                provider_args={
-                                    'timeout': int(os.environ.get('G4F_TIMEOUT', '30')),
-                                    'verify_ssl': os.environ.get('G4F_VERIFY_SSL', 'false').lower() == 'true'
-                                }
-                            )
-                        else:
-                            # Use Pollinations for other models
-                            client = Client(
-                                image_provider=Pollinations,
-                                provider_args={
-                                    'timeout': int(os.environ.get('G4F_TIMEOUT', '30')),
-                                    'verify_ssl': os.environ.get('G4F_VERIFY_SSL', 'false').lower() == 'true'
-                                }
-                            )
-
-                        response = client.images.generate(
-                            model=os.environ.get('G4F_CAR_MODEL', 'dall-e-3'),
-                            prompt=prompt,
-                            response_format="url",
-                            width=1024,
-                            height=1024,
-                            n=1
-                        )
-
-                        if response and hasattr(response, 'data') and response.data:
-                            image_url = response.data[0].url
-                            logger.info(f"[g4f_algorithm] g4f Pollinations image generated for {angle} (attempt {attempt + 1}): {image_url}")
-                            break
-                        else:
-                            logger.warning(f"[g4f_algorithm] No image data in g4f response for {angle} (attempt {attempt + 1})")
-                            if attempt == max_retries - 1:
-                                raise Exception("No image data in g4f response after all retries")
-                            continue
-
-                    except ImportError as e:
-                        logger.error(f"[g4f_algorithm] g4f not available: {e}")
-                        raise Exception("g4f library is not installed")
-                    except Exception as g4f_error:
-                        logger.error(f"[g4f_algorithm] g4f generation failed for {angle} (attempt {attempt + 1}): {g4f_error}")
-                        if attempt == max_retries - 1:
-                            raise Exception(f"g4f failed after {max_retries} attempts: {str(g4f_error)}")
-                        continue
-                
-                if not image_url:
-                    raise Exception(f"Failed to generate image for {angle} after {max_retries} attempts")
+                except Exception as e:
+                    logger.error(f"[g4f_algorithm] Direct Pollinations.ai URL generation failed for {angle}: {e}")
+                    raise Exception(f"Failed to generate image for {angle}")
                         
                 generated_images.append({
                     'url': image_url,
