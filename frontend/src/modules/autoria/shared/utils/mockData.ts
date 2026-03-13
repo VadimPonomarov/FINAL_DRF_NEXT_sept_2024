@@ -330,37 +330,14 @@ export const generateMockSpecs = async (cachedModels?: any[]): Promise<any> => {
     // В серверном контексте используем BACKEND_URL для внутренних Docker запросов
     const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     console.log('[MockData] 🔗 Using backend URL:', backendUrl);
-    // Try multiple times to get a passenger car
-    let randomModelsData = [];
-    let attempts = 0;
-    const maxAttempts = 5;
+    // Get random model from any vehicle type
+    const randomModelResponse = await fetch(`${backendUrl}/api/ads/reference/models/random/?count=1`);
     
-    while (attempts < maxAttempts) {
-      attempts++;
-      console.log(`[MockData] 📡 Attempt ${attempts}/${maxAttempts} to fetch passenger car...`);
-      const randomModelResponse = await fetch(`${backendUrl}/api/ads/reference/models/random/?count=3&vehicle_type=1`);
-      
-      if (!randomModelResponse.ok) {
-        throw new Error(`Failed to fetch random model: ${randomModelResponse.status}`);
-      }
-      
-      const attemptData = await randomModelResponse.json();
-      
-      // Filter for passenger cars only
-      const passengerCars = attemptData.filter(item => item.vehicle_type_name === 'Легкові');
-      
-      if (passengerCars.length > 0) {
-        randomModelsData = passengerCars;
-        console.log(`[MockData] ✅ Got ${passengerCars.length} passenger cars on attempt ${attempts}`);
-        break;
-      }
-      
-      console.log(`[MockData] ⚠️ No passenger cars in attempt ${attempts}, got ${attemptData.length} other vehicles`);
+    if (!randomModelResponse.ok) {
+      throw new Error(`Failed to fetch random model: ${randomModelResponse.status}`);
     }
     
-    if (randomModelsData.length === 0) {
-      throw new Error(`No passenger cars found after ${maxAttempts} attempts`);
-    }
+    const randomModelsData = await randomModelResponse.json();
 
     if (!Array.isArray(randomModelsData) || randomModelsData.length === 0) {
       throw new Error('No random models returned from API');
