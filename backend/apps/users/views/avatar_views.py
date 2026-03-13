@@ -383,6 +383,7 @@ Final Style: {style} style with custom elements"""
         user_id = getattr(request.user, 'id', 'anonymous') if hasattr(request, 'user') and request.user.is_authenticated else 'anonymous'
         logger.info(f"Generating avatar for user {user_id}")
 
+        try:
         # Generate avatar image using pure G4F
         from g4f.client import Client
         client = Client()
@@ -419,6 +420,19 @@ Final Style: {style} style with custom elements"""
         else:
             logger.error(f"G4F returned empty response for user {user_id}")
             raise Exception("No image data in G4F response")
+            
+    except Exception as e:
+        logger.warning(f"G4F avatar generation failed: {e}")
+        # Fallback to direct Pollinations.ai URL
+        import urllib.parse
+        
+        simple_prompt = f"portrait of {first_name} {last_name}, professional avatar, high quality"
+        encoded_prompt = urllib.parse.quote(simple_prompt)
+        seed = int(hashlib.md5(f"avatar_{user_id}".encode()).hexdigest()[:8], 16) % 1000000
+        
+        image_url = f"https://image.pollinations.ai/prompt/flux_{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
+        
+        logger.info(f"🔄 Using fallback avatar URL for user {user_id}: {image_url}")
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")

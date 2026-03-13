@@ -468,6 +468,7 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 # Create prompt for g4f
                 prompt = create_car_image_prompt(car_data, angle, style, session_id)
 
+                try:
                 # Use g4f Client with Pollinations provider for FREE FLUX model
                 # Use pure G4F for car generation
                 from g4f.client import Client
@@ -516,6 +517,31 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 else:
                     logger.error(f"No image data in G4F response for {angle}")
                     raise Exception(f"G4F failed to generate image for {angle}")
+                        
+            except Exception as e:
+                logger.warning(f"G4F failed for {angle}: {e}")
+                # Fallback to direct Pollinations.ai URL
+                import urllib.parse
+                
+                # Create working Pollinations.ai URL directly
+                simple_prompt = f"{car_info} {angle} view, professional car photo, high quality"
+                encoded_prompt = urllib.parse.quote(simple_prompt)
+                seed = int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000
+                
+                fallback_url = f"https://image.pollinations.ai/prompt/flux_{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
+                
+                logger.info(f"🔄 Using fallback URL for {angle}: {fallback_url}")
+                
+                generated_images.append({
+                    'url': fallback_url,
+                    'angle': angle,
+                    'title': f"{car_info} - {angle.title()} View",
+                    'isMain': (i == 0),
+                    'prompt': simple_prompt,
+                    'seed': seed,
+                    'session_id': session_id,
+                    'success': True
+                })
                         
             except Exception as angle_error:
                 logger.error(f"[g4f_algorithm] Error generating image for angle {angle}: {angle_error}")
