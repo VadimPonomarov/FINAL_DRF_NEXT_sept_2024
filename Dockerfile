@@ -3,17 +3,23 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies for G4F
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    git \
+    curl \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Upgrade pip and install wheel
+RUN pip install --upgrade pip wheel setuptools
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy requirements first for better caching
+COPY backend/requirements.txt requirements.txt
+
+# Install Python dependencies with proper flags
+RUN pip install --no-cache-dir --prefer-binary --upgrade -r requirements.txt
 
 # Copy the rest of the application
 COPY . .

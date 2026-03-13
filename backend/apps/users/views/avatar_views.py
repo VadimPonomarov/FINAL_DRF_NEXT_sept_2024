@@ -423,33 +423,15 @@ Final Style: {style} style with custom elements"""
 
             except ImportError as e:
                 logger.error(f"g4f not available: {e}")
-                break  # Exit retry loop and use fallback
+                raise Exception("g4f library is not installed - check Railway deployment")
             except Exception as e:
                 logger.error(f"g4f image generation failed (attempt {attempt + 1}): {e}")
                 if attempt == max_retries - 1:
-                    break  # Exit retry loop and use fallback
+                    raise Exception(f"g4f failed after {max_retries} attempts: {str(e)}")
                 continue
 
-        # Fallback to direct Pollinations.ai URL if g4f fails
         if not image_url:
-            logger.info(f"Using fallback to direct Pollinations.ai for user {user_id}")
-            try:
-                import urllib.parse
-                
-                # URL encode the prompt for Pollinations.ai
-                encoded_prompt = urllib.parse.quote(formatted_prompt)
-                
-                # Build Pollinations.ai URL directly
-                image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&model=flux&nologo=true&private=false&enhance=false&safe=false"
-                
-                logger.info(f"✅ Fallback: Avatar URL generated using direct Pollinations.ai for user {user_id}")
-                
-            except Exception as e:
-                logger.error(f"Direct Pollinations.ai URL generation failed: {e}")
-                raise Exception("Failed to generate avatar image")
-
-        if not image_url:
-            raise Exception("Failed to generate avatar image")
+            raise Exception("Failed to generate avatar image - G4F not working")
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")
