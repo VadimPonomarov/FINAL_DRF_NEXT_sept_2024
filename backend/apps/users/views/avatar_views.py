@@ -388,8 +388,8 @@ Final Style: {style} style with custom elements"""
             from g4f.client import Client
             import g4f.Provider
             
-            # Create client with Pollinations provider
-            client = Client(provider=g4f.Provider.Pollinations)
+            # Create client with PollinationsAI provider
+            client = Client(provider=g4f.Provider.PollinationsAI)
             
             # Generate image with proper parameters
             response = client.images.generate(
@@ -401,7 +401,7 @@ Final Style: {style} style with custom elements"""
 
             if response and hasattr(response, 'data') and response.data:
                 image_url = response.data[0].url
-                logger.info(f"✅ Avatar generated using g4f Pollinations for user {user_id}")
+                logger.info(f"✅ Avatar generated using g4f PollinationsAI for user {user_id}")
                 logger.info(f"Provider used: {getattr(response, 'provider', 'unknown')}")
                 logger.info(f"Model: {getattr(response, 'model', 'flux')}")
             else:

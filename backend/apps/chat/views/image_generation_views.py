@@ -480,8 +480,8 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                         # Use OpenAI provider for DALL-E models
                         client = Client(provider=g4f.Provider.OpenaiChat)
                     else:
-                        # Use Pollinations for other models
-                        client = Client(provider=g4f.Provider.Pollinations)
+                        # Use PollinationsAI for other models
+                        client = Client(provider=g4f.Provider.PollinationsAI)
 
                     response = client.images.generate(
                         model=car_model,
