@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     wget \
+    build-essential \
+    libffi-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and install wheel
@@ -20,6 +23,9 @@ COPY backend/requirements.txt requirements.txt
 
 # Install Python dependencies with proper flags
 RUN pip install --no-cache-dir --prefer-binary --upgrade -r requirements.txt
+
+# Verify G4F installation
+RUN python -c "import g4f; print('G4F version:', g4f.__version__)" || echo "G4F installation failed"
 
 # Copy the rest of the application
 COPY . .

@@ -25,7 +25,7 @@ loguru==0.7.2
 gunicorn==21.2.0
 dj-database-url==2.1.0
 whitenoise==6.6.0
-g4f==0.4.5.1
+g4f==0.4.3.1
 langchain==0.3.21
 langchain-community==0.3.20
 langchain-openai==0.3.7
