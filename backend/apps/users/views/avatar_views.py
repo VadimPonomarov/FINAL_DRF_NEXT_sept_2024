@@ -1,5 +1,6 @@
 import logging
 import os
+import hashlib
 
 from django.contrib.auth import get_user_model
 from drf_yasg import openapi
@@ -384,55 +385,55 @@ Final Style: {style} style with custom elements"""
         logger.info(f"Generating avatar for user {user_id}")
 
         try:
-        # Generate avatar image using pure G4F
-        from g4f.client import Client
-        client = Client()
+            # Generate avatar image using pure G4F
+            from g4f import Client
+            client = Client()
 
-        response = client.images.generate(
-            model="flux",
-            prompt=formatted_prompt,
-            response_format="url"
-        )
+            response = client.images.generate(
+                model="flux",
+                prompt=formatted_prompt,
+                response_format="url"
+            )
 
-        if response and hasattr(response, 'data') and response.data:
-            image_url = response.data[0].url
-            logger.info(f"✅ Avatar generated using G4F for user {user_id}")
-            
-            # Fix Pollinations.ai URL encoding issues
-            if 'image.pollinations.ai' in image_url:
-                # Convert to proper URL format
-                import urllib.parse
-                image_url = urllib.parse.unquote(image_url)
+            if response and hasattr(response, 'data') and response.data:
+                image_url = response.data[0].url
+                logger.info(f"✅ Avatar generated using G4F for user {user_id}")
                 
-                # Create simple working URL with encoded prompt
-                if '?prompt=' in image_url:
-                    base_url = image_url.split('?prompt=')[0]
-                    # Extract seed from URL
-                    seed_match = image_url.find('?seed=')
-                    seed = image_url[seed_match:] if seed_match != -1 else ''
+                # Fix Pollinations.ai URL encoding issues
+                if 'image.pollinations.ai' in image_url:
+                    # Convert to proper URL format
+                    import urllib.parse
+                    image_url = urllib.parse.unquote(image_url)
                     
-                    # Create simple prompt that works
-                    simple_prompt = f"portrait of {first_name} {last_name}, professional avatar, high quality"
-                    encoded_prompt = urllib.parse.quote(simple_prompt)
-                    
-                    # Rebuild with simple format
-                    image_url = f"{base_url}?prompt={encoded_prompt}&{seed}&width=1024&height=1024&model=flux"
-        else:
-            logger.error(f"G4F returned empty response for user {user_id}")
-            raise Exception("No image data in G4F response")
+                    # Create simple working URL with encoded prompt
+                    if '?prompt=' in image_url:
+                        base_url = image_url.split('?prompt=')[0]
+                        # Extract seed from URL
+                        seed_match = image_url.find('?seed=')
+                        seed = image_url[seed_match:] if seed_match != -1 else ''
+                        
+                        # Create simple prompt that works
+                        simple_prompt = f"portrait of {first_name} {last_name}, professional avatar, high quality"
+                        encoded_prompt = urllib.parse.quote(simple_prompt)
+                        
+                        # Rebuild with simple format
+                        image_url = f"{base_url}?prompt={encoded_prompt}&{seed}&width=1024&height=1024&model=flux"
+            else:
+                logger.error(f"G4F returned empty response for user {user_id}")
+                raise Exception("No image data in G4F response")
+                
+        except Exception as e:
+            logger.warning(f"G4F avatar generation failed: {e}")
+            # Fallback to direct Pollinations.ai URL
+            import urllib.parse
             
-    except Exception as e:
-        logger.warning(f"G4F avatar generation failed: {e}")
-        # Fallback to direct Pollinations.ai URL
-        import urllib.parse
-        
-        simple_prompt = f"portrait of {first_name} {last_name}, professional avatar, high quality"
-        encoded_prompt = urllib.parse.quote(simple_prompt)
-        seed = int(hashlib.md5(f"avatar_{user_id}".encode()).hexdigest()[:8], 16) % 1000000
-        
-        image_url = f"https://image.pollinations.ai/prompt/flux_{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
-        
-        logger.info(f"🔄 Using fallback avatar URL for user {user_id}: {image_url}")
+            simple_prompt = f"portrait of {first_name} {last_name}, professional avatar, high quality"
+            encoded_prompt = urllib.parse.quote(simple_prompt)
+            seed = int(hashlib.md5(f"avatar_{user_id}".encode()).hexdigest()[:8], 16) % 1000000
+            
+            image_url = f"https://image.pollinations.ai/prompt/flux_{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
+            
+            logger.info(f"🔄 Using fallback avatar URL for user {user_id}: {image_url}")
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")
@@ -681,7 +682,7 @@ Final Style: {style} with enhanced details"""
 
         # Generate image using g4f client
         try:
-            from g4f.client import Client
+            from g4f import Client
             client = Client()
 
             response = client.images.generate(

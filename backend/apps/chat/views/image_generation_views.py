@@ -471,7 +471,6 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 try:
                 # Use g4f Client with Pollinations provider for FREE FLUX model
                 # Use pure G4F for car generation
-                from g4f.client import Client
                 client = Client()
 
                 response = client.images.generate(
