@@ -383,28 +383,22 @@ Final Style: {style} style with custom elements"""
         user_id = getattr(request.user, 'id', 'anonymous') if hasattr(request, 'user') and request.user.is_authenticated else 'anonymous'
         logger.info(f"Generating avatar for user {user_id}")
 
-        # Generate avatar image using g4f client directly
-        try:
-            from g4f.client import Client
-            client = Client()
+        # Generate avatar image using pure G4F
+        from g4f.client import Client
+        client = Client()
 
-            response = client.images.generate(
-                model="flux",
-                prompt=formatted_prompt,
-                response_format="url"
-            )
+        response = client.images.generate(
+            model="flux",
+            prompt=formatted_prompt,
+            response_format="url"
+        )
 
-            if response and hasattr(response, 'data') and response.data:
-                image_url = response.data[0].url
-            else:
-                image_url = None
-
-        except Exception as e:
-            logger.error(f"G4F image generation failed: {e}")
-            # Fallback to placeholder
-            import hashlib
-            prompt_hash = hashlib.md5(formatted_prompt.encode()).hexdigest()[:8]
-            image_url = f"https://picsum.photos/512/512?random={prompt_hash}"
+        if response and hasattr(response, 'data') and response.data:
+            image_url = response.data[0].url
+            logger.info(f"✅ Avatar generated using G4F for user {user_id}")
+        else:
+            logger.error(f"G4F returned empty response for user {user_id}")
+            raise Exception("No image data in G4F response")
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")
