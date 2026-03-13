@@ -19,6 +19,7 @@ class CarAdImageSerializer(serializers.ModelSerializer):
     """Serializer for car ad images"""
 
     image_display_url = serializers.SerializerMethodField(read_only=True)
+    url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = AddImageModel
@@ -27,11 +28,12 @@ class CarAdImageSerializer(serializers.ModelSerializer):
             "image",
             "image_url",
             "image_display_url",
+            "url",
             "order",
             "is_primary",
             "caption",
         ]
-        read_only_fields = ["id", "image_display_url"]
+        read_only_fields = ["id", "image_display_url", "url"]
 
     def get_image_display_url(self, obj):
         """Return image URL - prioritize image_url (generated) over image (uploaded file)"""
@@ -53,6 +55,10 @@ class CarAdImageSerializer(serializers.ModelSerializer):
         
         # For other relative paths, return as is (frontend will handle)
         return url
+    
+    def get_url(self, obj):
+        """Get URL for frontend gallery (same as image_display_url)"""
+        return self.get_image_display_url(obj)
 
 
 class CarAdSerializer(BaseModelSerializer):

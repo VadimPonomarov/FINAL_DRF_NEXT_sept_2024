@@ -8,10 +8,11 @@ class AdImageSerializer(BaseModelSerializer):
     Serializer for ad images with universal approach (file + URL support).
     """
     image_display_url = serializers.SerializerMethodField()
+    url = serializers.SerializerMethodField()
 
     class Meta(BaseModelSerializer.Meta):
         model = AddImageModel
-        fields = ["id", "image", "image_url", "image_display_url", "caption", "order", "is_primary", "created_at", "updated_at"]
+        fields = ["id", "image", "image_url", "image_display_url", "url", "caption", "order", "is_primary", "created_at", "updated_at"]
         extra_kwargs = {
             'image': {'required': False},  # Не обязательно, если есть image_url
             'image_url': {'required': False},  # Не обязательно, если есть image
@@ -23,6 +24,13 @@ class AdImageSerializer(BaseModelSerializer):
         Приоритет: image_url > image.url
         """
         return obj.image_display_url
+    
+    def get_url(self, obj):
+        """
+        Возвращает URL для использования в frontend (поле 'url').
+        Приоритет: image_url > image.url
+        """
+        return obj.get_image_url()
     
     def validate(self, data):
         """

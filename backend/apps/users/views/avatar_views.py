@@ -402,12 +402,20 @@ Final Style: {style} style with custom elements"""
                 # Convert to proper URL format
                 import urllib.parse
                 image_url = urllib.parse.unquote(image_url)
-                # Ensure proper format
+                
+                # Create simple working URL with encoded prompt
                 if '?prompt=' in image_url:
                     base_url = image_url.split('?prompt=')[0]
-                    params = image_url.split('?prompt=')[1]
-                    # Rebuild with proper encoding
-                    image_url = f"{base_url}?prompt={params}&width=1024&height=1024&model=flux&nologo=true"
+                    # Extract seed from URL
+                    seed_match = image_url.find('?seed=')
+                    seed = image_url[seed_match:] if seed_match != -1 else ''
+                    
+                    # Create simple prompt that works
+                    simple_prompt = f"portrait of {first_name} {last_name}, professional avatar, high quality"
+                    encoded_prompt = urllib.parse.quote(simple_prompt)
+                    
+                    # Rebuild with simple format
+                    image_url = f"{base_url}?prompt={encoded_prompt}&{seed}&width=1024&height=1024&model=flux"
         else:
             logger.error(f"G4F returned empty response for user {user_id}")
             raise Exception("No image data in G4F response")

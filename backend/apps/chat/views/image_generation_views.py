@@ -488,12 +488,20 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                         # Convert to proper URL format
                         import urllib.parse
                         image_url = urllib.parse.unquote(image_url)
-                        # Ensure proper format
+                        
+                        # Create simple working URL with encoded prompt
                         if '?prompt=' in image_url:
                             base_url = image_url.split('?prompt=')[0]
-                            params = image_url.split('?prompt=')[1]
-                            # Rebuild with proper encoding
-                            image_url = f"{base_url}?prompt={params}&width=1024&height=1024&model=flux&nologo=true"
+                            # Extract seed from URL
+                            seed_match = image_url.find('?seed=')
+                            seed = image_url[seed_match:] if seed_match != -1 else ''
+                            
+                            # Create simple prompt that works
+                            simple_prompt = f"{car_info} {angle} view, professional car photo, high quality"
+                            encoded_prompt = urllib.parse.quote(simple_prompt)
+                            
+                            # Rebuild with simple format
+                            image_url = f"{base_url}?prompt={encoded_prompt}&{seed}&width=1024&height=1024&model=flux"
                     
                     generated_images.append({
                         'url': image_url,

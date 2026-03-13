@@ -291,13 +291,14 @@ export function mapApiDataToFormData(apiData: CarAd): Partial<CarAdFormData> {
     images: ((apiData.images || []).map((img: any) => {
       const resolvedUrl = img?.image_display_url || img?.image_url || img?.url || img?.image;
       const imagePath = img?.image ?? (typeof resolvedUrl === 'string' && !resolvedUrl.startsWith('http') ? resolvedUrl : undefined);
-      const displayUrl = img?.image_display_url ?? (typeof resolvedUrl === 'string' && resolvedUrl.startsWith('http') ? resolvedUrl : undefined);
+      const displayUrl = img?.image_display_url ?? img?.image_url ?? (typeof resolvedUrl === 'string' && resolvedUrl.startsWith('http') ? resolvedUrl : undefined);
       return {
         id: img?.id,
         // сохраняем поля, которые ожидает ImagesForm
         image: imagePath,
         image_display_url: displayUrl,
-        url: resolvedUrl,
+        // IMPORTANT: url must always be set for gallery display
+        url: resolvedUrl || displayUrl || imagePath,
         caption: img?.caption,
         is_primary: img?.is_primary || img?.is_main,
         is_main: img?.is_main || img?.is_primary,

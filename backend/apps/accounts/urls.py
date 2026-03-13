@@ -19,7 +19,8 @@ from .views.profile_views import (
     get_profile_stats,
     get_personal_info_tab_data,
     get_account_settings_tab_data,
-    get_addresses_tab_data
+    get_addresses_tab_data,
+    generate_avatar
 )
 
 # Alias for backward compatibility
@@ -104,6 +105,9 @@ urlpatterns = [
     path('profile/personal-info/', get_personal_info_tab_data, name='personal-info-tab'),
     path('profile/account-settings/', get_account_settings_tab_data, name='account-settings-tab'),
     path('profile/addresses/', get_addresses_tab_data, name='addresses-tab'),
+
+    # Avatar generation
+    path('profile/generate-avatar/', generate_avatar, name='generate-avatar'),
 
     # Account type management (superuser only)
     path('admin/<int:account_id>/type/', change_account_type, name='change_account_type'),

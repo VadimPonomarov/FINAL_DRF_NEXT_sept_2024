@@ -53,11 +53,51 @@ function resolveMarkerPath(): string {
 export async function POST(request: NextRequest) {
   const markerPath = resolveMarkerPath();
   const marker = await readSeedMarker(markerPath);
-  return NextResponse.json({
-    success: true,
-    skipped: true,
-    autoSeedDisabled: true,
-    message: 'Automatic test-ad reseeding is disabled. Use manual generation instead.',
-    marker,
-  });
+
+  // If already seeded, return skip with marker info
+  if (marker?.firstSeedCompleted) {
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      alreadySeeded: true,
+      message: 'Test ads have already been seeded once. Use manual generation for additional ads.',
+      marker,
+    });
+  }
+
+  // Perform one-time seed
+  try {
+    console.log('[SeedOnce] Performing one-time seed...');
+    const seedResult = await createTestAdsServer(
+      request,        // Use the current request for authentication
+      5,              // Create 5 test ads for one-time seed
+      true,           // Include images
+      ['front', 'side', 'rear'] // Standard image angles
+    );
+    const newMarker: SeedMarker = {
+      firstSeedCompleted: true,
+      completed_at: new Date().toISOString(),
+      count: seedResult?.created || 1,
+    };
+    await writeSeedMarker(markerPath, newMarker);
+    console.log('[SeedOnce] One-time seed completed. Marker written.');
+    return NextResponse.json({
+      success: true,
+      skipped: false,
+      seeded: true,
+      message: 'One-time seed completed successfully.',
+      marker: newMarker,
+      result: seedResult,
+    });
+  } catch (error) {
+    console.error('[SeedOnce] Seed failed:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Seed failed',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
 }

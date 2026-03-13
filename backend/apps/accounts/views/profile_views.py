@@ -10,6 +10,8 @@ from django.db.models import Count, Q, Prefetch
 from django.db import transaction
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+import requests
+import urllib.parse
 
 from apps.users.serializers import UserSerializer
 from apps.accounts.serializers import AddsAccountSerializer
@@ -608,3 +610,115 @@ def calculate_profile_completion_optimized(user_with_relations):
         completed_fields += 1
 
     return int((completed_fields / total_fields) * 100) if total_fields > 0 else 0
+
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="🎨 Generate AI Avatar",
+    operation_description="Generate an AI avatar using Pollinations.ai based on user profile data",
+    tags=['👤 Users'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'first_name': openapi.Schema(type=openapi.TYPE_STRING, description='First name'),
+            'last_name': openapi.Schema(type=openapi.TYPE_STRING, description='Last name'),
+            'age': openapi.Schema(type=openapi.TYPE_INTEGER, description='Age'),
+            'gender': openapi.Schema(type=openapi.TYPE_STRING, description='Gender (male/female/neutral)'),
+            'style': openapi.Schema(type=openapi.TYPE_STRING, description='Avatar style (realistic/professional/cartoon/etc)'),
+            'custom_requirements': openapi.Schema(type=openapi.TYPE_STRING, description='Custom requirements'),
+        },
+        required=['first_name', 'age', 'gender']
+    ),
+    responses={
+        200: openapi.Response(
+            description='Avatar generated successfully',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'success': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    'avatar_url': openapi.Schema(type=openapi.TYPE_STRING, description='Generated avatar URL')
+                }
+            )
+        ),
+        401: openapi.Response(description='Authentication required'),
+        500: openapi.Response(description='Failed to generate avatar')
+    }
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def generate_avatar(request):
+    """
+    Generate AI avatar using Pollinations.ai
+    """
+    try:
+        data = request.data
+        
+        # Extract parameters
+        first_name = data.get('first_name', 'Person')
+        last_name = data.get('last_name', '')
+        age = data.get('age', 25)
+        gender = data.get('gender', 'neutral')
+        style = data.get('style', 'realistic')
+        custom_requirements = data.get('custom_requirements', '')
+        
+        # Build prompt for Pollinations.ai
+        base_prompt = f"""SYSTEM: Generate all prompts in English only. Translate any non-English custom requirements to English.
+
+Generate an avatar portrait for:
+
+Person Details:
+- Name: {first_name} {last_name}
+- Age: {age} years old
+- Gender: {gender}
+- Style: {style}
+- Custom Requirements: {custom_requirements}
+
+Gender-specific Requirements:
+{gender} appearance, balanced features, universal styling
+
+Style-specific Requirements:
+Photorealistic, natural lighting, professional photography
+
+Avatar Requirements:
+- High-quality portrait
+- Clean background
+- Friendly and approachable expression
+- Well-lit face
+- Sharp focus on eyes
+- Age-appropriate appearance
+- Incorporate custom requirements: {custom_requirements}
+
+Technical Specifications:
+- Square aspect ratio (1:1)
+- High resolution
+- Professional quality
+- Suitable for profile picture use
+
+Final Style: {style} style with custom elements"""
+        
+        # URL encode the prompt
+        encoded_prompt = urllib.parse.quote(base_prompt)
+        
+        # Build Pollinations.ai URL
+        avatar_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&model=flux&nologo=true&private=false&enhance=false&safe=false"
+        
+        # Test if the URL is accessible (optional verification)
+        try:
+            response = requests.head(avatar_url, timeout=10)
+            if response.status_code != 200:
+                # Still return the URL even if HEAD fails - Pollinations may require GET
+                pass
+        except requests.RequestException:
+            # Continue even if verification fails
+            pass
+        
+        return Response({
+            'success': True,
+            'avatar_url': avatar_url
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=500)

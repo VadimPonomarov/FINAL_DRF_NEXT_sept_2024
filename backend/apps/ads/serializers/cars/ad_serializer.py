@@ -12,10 +12,21 @@ logger = logging.getLogger(__name__)
 
 class CarAdImageSerializer(serializers.ModelSerializer):
     """Serializer for car ad images"""
+    image_display_url = serializers.SerializerMethodField(read_only=True)
+    url = serializers.SerializerMethodField(read_only=True)
+    
     class Meta:
         model = AddImageModel
-        fields = ['id', 'image', 'order', 'is_primary']
+        fields = ['id', 'image', 'image_url', 'image_display_url', 'url', 'order', 'is_primary', 'caption']
         read_only_fields = ['id']
+    
+    def get_image_display_url(self, obj):
+        """Get display URL with priority to image_url over uploaded file."""
+        return obj.get_image_url()
+    
+    def get_url(self, obj):
+        """Get URL for frontend gallery (alias for image_display_url)."""
+        return obj.get_image_url()
 
 
 class CarAdListSerializer(serializers.ModelSerializer):
