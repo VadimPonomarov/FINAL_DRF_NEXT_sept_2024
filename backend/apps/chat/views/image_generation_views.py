@@ -469,78 +469,78 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 prompt = create_car_image_prompt(car_data, angle, style, session_id)
 
                 try:
-                # Use g4f Client with Pollinations provider for FREE FLUX model
-                # Use pure G4F for car generation
-                client = Client()
+                    # Use g4f Client with Pollinations provider for FREE FLUX model
+                    # Use pure G4F for car generation
+                    client = Client()
 
-                response = client.images.generate(
-                    model="flux",
-                    prompt=prompt,
-                    response_format="url"
-                )
+                    response = client.images.generate(
+                        model="flux",
+                        prompt=prompt,
+                        response_format="url"
+                    )
 
-                if response and hasattr(response, 'data') and response.data:
-                    image_url = response.data[0].url
-                    logger.info(f"✅ G4F image generated: {image_url}")
-                    
-                    # Fix Pollinations.ai URL encoding issues
-                    if 'image.pollinations.ai' in image_url:
-                        # Convert to proper URL format
-                        import urllib.parse
-                        image_url = urllib.parse.unquote(image_url)
+                    if response and hasattr(response, 'data') and response.data:
+                        image_url = response.data[0].url
+                        logger.info(f"✅ G4F image generated: {image_url}")
                         
-                        # Create simple working URL with encoded prompt
-                        if '?prompt=' in image_url:
-                            base_url = image_url.split('?prompt=')[0]
-                            # Extract seed from URL
-                            seed_match = image_url.find('?seed=')
-                            seed = image_url[seed_match:] if seed_match != -1 else ''
+                        # Fix Pollinations.ai URL encoding issues
+                        if 'image.pollinations.ai' in image_url:
+                            # Convert to proper URL format
+                            import urllib.parse
+                            image_url = urllib.parse.unquote(image_url)
                             
-                            # Create simple prompt that works
-                            simple_prompt = f"{car_info} {angle} view, professional car photo, high quality"
-                            encoded_prompt = urllib.parse.quote(simple_prompt)
-                            
-                            # Rebuild with simple format
-                            image_url = f"{base_url}?prompt={encoded_prompt}&{seed}&width=1024&height=1024&model=flux"
+                            # Create simple working URL with encoded prompt
+                            if '?prompt=' in image_url:
+                                base_url = image_url.split('?prompt=')[0]
+                                # Extract seed from URL
+                                seed_match = image_url.find('?seed=')
+                                seed = image_url[seed_match:] if seed_match != -1 else ''
+                                
+                                # Create simple prompt that works
+                                simple_prompt = f"{car_info} {angle} view, professional car photo, high quality"
+                                encoded_prompt = urllib.parse.quote(simple_prompt)
+                                
+                                # Rebuild with simple format
+                                image_url = f"{base_url}?prompt={encoded_prompt}&{seed}&width=1024&height=1024&model=flux"
+                        
+                        generated_images.append({
+                            'url': image_url,
+                            'angle': angle,
+                            'title': f"{car_info} - {angle.title()} View",
+                            'isMain': (i == 0),
+                            'prompt': prompt,
+                            'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
+                            'session_id': session_id,
+                            'success': True
+                        })
+                    else:
+                        logger.error(f"No image data in G4F response for {angle}")
+                        raise Exception(f"G4F failed to generate image for {angle}")
+                        
+                except Exception as e:
+                    logger.warning(f"G4F failed for {angle}: {e}")
+                    # Fallback to direct Pollinations.ai URL
+                    import urllib.parse
+                    
+                    # Create working Pollinations.ai URL directly
+                    simple_prompt = f"{car_info} {angle} view, professional car photo, high quality"
+                    encoded_prompt = urllib.parse.quote(simple_prompt)
+                    seed = int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000
+                    
+                    fallback_url = f"https://image.pollinations.ai/prompt/flux_{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
+                    
+                    logger.info(f"🔄 Using fallback URL for {angle}: {fallback_url}")
                     
                     generated_images.append({
-                        'url': image_url,
+                        'url': fallback_url,
                         'angle': angle,
                         'title': f"{car_info} - {angle.title()} View",
                         'isMain': (i == 0),
-                        'prompt': prompt,
-                        'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
+                        'prompt': simple_prompt,
+                        'seed': seed,
                         'session_id': session_id,
                         'success': True
                     })
-                else:
-                    logger.error(f"No image data in G4F response for {angle}")
-                    raise Exception(f"G4F failed to generate image for {angle}")
-                        
-            except Exception as e:
-                logger.warning(f"G4F failed for {angle}: {e}")
-                # Fallback to direct Pollinations.ai URL
-                import urllib.parse
-                
-                # Create working Pollinations.ai URL directly
-                simple_prompt = f"{car_info} {angle} view, professional car photo, high quality"
-                encoded_prompt = urllib.parse.quote(simple_prompt)
-                seed = int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000
-                
-                fallback_url = f"https://image.pollinations.ai/prompt/flux_{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
-                
-                logger.info(f"🔄 Using fallback URL for {angle}: {fallback_url}")
-                
-                generated_images.append({
-                    'url': fallback_url,
-                    'angle': angle,
-                    'title': f"{car_info} - {angle.title()} View",
-                    'isMain': (i == 0),
-                    'prompt': simple_prompt,
-                    'seed': seed,
-                    'session_id': session_id,
-                    'success': True
-                })
                         
             except Exception as angle_error:
                 logger.error(f"[g4f_algorithm] Error generating image for angle {angle}: {angle_error}")
