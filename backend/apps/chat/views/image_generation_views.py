@@ -580,9 +580,11 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 
                 angle_en = angle_translations.get(angle, angle)
                 
-                # Create simple English prompt
-                simple_prompt = f"{brand} {model} {year} {color} {angle_en} professional car photo"
+                # Create ultra-simple English prompt with underscores instead of spaces
+                simple_prompt = f"{brand}_{model}_{year}_{color}_{angle_en}"
                 translated_prompt = translate_to_english(simple_prompt)
+                # Replace spaces with underscores for Pollinations.ai compatibility
+                translated_prompt = translated_prompt.replace(' ', '_')
                 encoded_prompt = urllib.parse.quote(translated_prompt)
                 seed = int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000
                 
