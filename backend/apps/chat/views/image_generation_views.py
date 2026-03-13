@@ -16,6 +16,96 @@ from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
+def translate_to_english(text):
+    """Simple translation dictionary for common car-related terms"""
+    translations = {
+        # Ukrainian to English
+        'вид спереду': 'front view',
+        'вид ззаду': 'rear view', 
+        'вид збоку': 'side view',
+        'вид зверху': 'top view',
+        'інтер\'єр': 'interior',
+        'панель приборів': 'dashboard',
+        'двигун': 'engine',
+        'багажник': 'trunk',
+        'колеса': 'wheels',
+        'деталі': 'details',
+        'передня частина': 'front',
+        'задня частина': 'rear',
+        'боковий профіль': 'side',
+        'салон': 'interior',
+        'приборна панель': 'dashboard',
+        'моторний відсік': 'engine',
+        'багажний відсік': 'trunk',
+        'диски та шини': 'wheels',
+        'додаткові деталі': 'details',
+        'автомобіль': 'car',
+        'професійне фото': 'professional photo',
+        'висока якість': 'high quality',
+        'студійне освітлення': 'studio lighting',
+        'нейтральний фон': 'neutral background',
+        'без людей': 'no people',
+        'без тексту': 'no text',
+        'без логотипів': 'no logos',
+        'фотореалістичний': 'photorealistic',
+        'висока роздільна здатність': 'high resolution',
+        'чіткий фокус': 'sharp focus',
+        'шоурум': 'showroom',
+        'ідеальна фарба': 'flawless paint',
+        'без подряпин': 'no scratches',
+        'продаж': 'sale',
+        'відмінний стан': 'excellent condition',
+        'пробег': 'mileage',
+        'км': 'km',
+        'року': 'year',
+        'буває': 'used',
+        'новий': 'new',
+        'сріблястий': 'silver',
+        'чорний': 'black',
+        'білий': 'white',
+        'червоний': 'red',
+        'синій': 'blue',
+        'зелений': 'green',
+        'жовтий': 'yellow',
+        'оранжевий': 'orange',
+        'фіолетовий': 'purple',
+        'коричневий': 'brown',
+        'сірий': 'gray',
+        'бежевий': 'beige',
+        'золотий': 'gold',
+        'металік': 'metallic',
+        'матовий': 'matte',
+        'блискучий': 'glossy',
+        'седан': 'sedan',
+        'хетчбек': 'hatchback',
+        'універсал': 'wagon',
+        'позашляховик': 'suv',
+        'купе': 'coupe',
+        'кабріолет': 'convertible',
+        'пікап': 'pickup',
+        'мінівен': 'minivan',
+        'фургон': 'van',
+        'міський автобус': 'city bus',
+        'автобус': 'bus',
+        'вантажівка': 'truck',
+        'мотоцикл': 'motorcycle',
+        'скутер': 'scooter',
+    }
+    
+    # Translate known words
+    translated = text.lower()
+    for ua, en in translations.items():
+        translated = translated.replace(ua, en)
+    
+    # Remove special characters that might cause issues
+    translated = translated.replace('—', '-')
+    translated = translated.replace('"', '')
+    translated = translated.replace("'", '')
+    translated = translated.replace('•', '')
+    translated = translated.replace('·', '')
+    
+    return translated.strip()
+
 # Safe imports with comprehensive fallbacks
 try:
     from g4f.client import Client
@@ -519,24 +609,48 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                         
                 except Exception as e:
                     logger.warning(f"G4F failed for {angle}: {e}")
-                    # Fallback to direct Pollinations.ai URL
+                    # Fallback to direct Pollinations.ai URL with translated prompt
                     import urllib.parse
                     
-                    # Create working Pollinations.ai URL directly
-                    simple_prompt = f"{car_info} {angle} view, professional car photo, high quality"
-                    encoded_prompt = urllib.parse.quote(simple_prompt)
+                    # Create simple English prompt with translation
+                    brand = car_data.get('brand', 'car')
+                    model = car_data.get('model', '')
+                    year = car_data.get('year', '')
+                    color = car_data.get('color', '')
+                    
+                    # Translate angle to English
+                    angle_translations = {
+                        'front': 'front view',
+                        'rear': 'rear view', 
+                        'side': 'side view',
+                        'top': 'top view',
+                        'interior': 'interior',
+                        'dashboard': 'dashboard',
+                        'engine': 'engine',
+                        'trunk': 'trunk',
+                        'wheels': 'wheels',
+                        'details': 'details'
+                    }
+                    
+                    angle_en = angle_translations.get(angle, angle)
+                    
+                    # Create simple English prompt
+                    simple_prompt = f"{brand} {model} {year} {color} {angle_en} professional car photo"
+                    translated_prompt = translate_to_english(simple_prompt)
+                    encoded_prompt = urllib.parse.quote(translated_prompt)
                     seed = int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000
                     
-                    fallback_url = f"https://image.pollinations.ai/prompt/flux_{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
+                    fallback_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
                     
                     logger.info(f"🔄 Using fallback URL for {angle}: {fallback_url}")
+                    logger.info(f"🔄 Translated prompt: {translated_prompt}")
                     
                     generated_images.append({
                         'url': fallback_url,
                         'angle': angle,
                         'title': f"{car_info} - {angle.title()} View",
                         'isMain': (i == 0),
-                        'prompt': simple_prompt,
+                        'prompt': translated_prompt,
                         'seed': seed,
                         'session_id': session_id,
                         'success': True

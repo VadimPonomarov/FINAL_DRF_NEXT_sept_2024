@@ -14,6 +14,55 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+def translate_to_english(text):
+    """Simple translation dictionary for common avatar-related terms"""
+    translations = {
+        # Ukrainian to English
+        'портрет': 'portrait',
+        'аватар': 'avatar',
+        'професійний': 'professional',
+        'висока якість': 'high quality',
+        'фотореалістичний': 'photorealistic',
+        'студійне освітлення': 'studio lighting',
+        'нейтральний фон': 'neutral background',
+        'без людей': 'no people',
+        'без тексту': 'no text',
+        'без логотипів': 'no logos',
+        'висока роздільна здатність': 'high resolution',
+        'чіткий фокус': 'sharp focus',
+        'обличчя': 'face',
+        'людина': 'person',
+        'чоловік': 'man',
+        'жінка': 'woman',
+        'дитина': 'child',
+        'молодий': 'young',
+        'старий': 'old',
+        'середнього віку': 'middle aged',
+        'щасливий': 'happy',
+        'серйозний': 'serious',
+        'дружелюбний': 'friendly',
+        'професійний': 'professional',
+        'діловий': 'business',
+        'креативний': 'creative',
+        'спортивний': 'sporty',
+        ' casual': 'casual',
+        'формальний': 'formal',
+    }
+    
+    # Translate known words
+    translated = text.lower()
+    for ua, en in translations.items():
+        translated = translated.replace(ua, en)
+    
+    # Remove special characters that might cause issues
+    translated = translated.replace('—', '-')
+    translated = translated.replace('"', '')
+    translated = translated.replace("'", '')
+    translated = translated.replace('•', '')
+    translated = translated.replace('·', '')
+    
+    return translated.strip()
+
 try:
     from langchain.prompts import PromptTemplate
     _LANGCHAIN_AVAILABLE = True
@@ -424,16 +473,19 @@ Final Style: {style} style with custom elements"""
                 
         except Exception as e:
             logger.warning(f"G4F avatar generation failed: {e}")
-            # Fallback to direct Pollinations.ai URL
+            # Fallback to direct Pollinations.ai URL with translated prompt
             import urllib.parse
             
-            simple_prompt = f"portrait of {first_name} {last_name}, professional avatar, high quality"
-            encoded_prompt = urllib.parse.quote(simple_prompt)
+            # Create simple English prompt with translation
+            simple_prompt = f"portrait {first_name} {last_name} professional avatar high quality"
+            translated_prompt = translate_to_english(simple_prompt)
+            encoded_prompt = urllib.parse.quote(translated_prompt)
             seed = int(hashlib.md5(f"avatar_{user_id}".encode()).hexdigest()[:8], 16) % 1000000
             
-            image_url = f"https://image.pollinations.ai/prompt/flux_{encoded_prompt}?seed={seed}&width=1024&height=1024&model=flux"
+            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?seed={seed}&width=512&height=512&model=flux"
             
             logger.info(f"🔄 Using fallback avatar URL for user {user_id}: {image_url}")
+            logger.info(f"🔄 Translated prompt: {translated_prompt}")
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")
