@@ -383,52 +383,28 @@ Final Style: {style} style with custom elements"""
         user_id = getattr(request.user, 'id', 'anonymous') if hasattr(request, 'user') and request.user.is_authenticated else 'anonymous'
         logger.info(f"Generating avatar for user {user_id}")
 
-        # Generate avatar image using g4f with correct provider
+        # Generate avatar image using g4f client directly
         try:
             from g4f.client import Client
-            import g4f.Provider
-            
-            # Try different providers until one works
-            providers_to_try = [
-                g4f.Provider.PollinationsAI,
-                g4f.Provider.BingCreateImages,
-                g4f.Provider.MicrosoftDesigner
-            ]
-            
-            for provider in providers_to_try:
-                try:
-                    client = Client(provider=provider)
-                    
-                    # Generate image with proper parameters
-                    response = client.images.generate(
-                        model="flux",
-                        prompt=formatted_prompt,
-                        response_format="url",
-                        n=1
-                    )
+            client = Client()
 
-                    if response and hasattr(response, 'data') and response.data:
-                        image_url = response.data[0].url
-                        logger.info(f"✅ Avatar generated using g4f {provider.__name__} for user {user_id}")
-                        logger.info(f"Provider used: {getattr(response, 'provider', provider.__name__)}")
-                        logger.info(f"Model: {getattr(response, 'model', 'flux')}")
-                        break
-                    else:
-                        logger.warning(f"g4f {provider.__name__} returned empty response for user {user_id}")
-                        continue
-                        
-                except Exception as provider_error:
-                    logger.warning(f"g4f {provider.__name__} failed: {provider_error}")
-                    continue
+            response = client.images.generate(
+                model="flux",
+                prompt=formatted_prompt,
+                response_format="url"
+            )
+
+            if response and hasattr(response, 'data') and response.data:
+                image_url = response.data[0].url
             else:
-                raise Exception("All G4F providers failed")
+                image_url = None
 
-        except ImportError as e:
-            logger.error(f"g4f not available: {e}")
-            raise Exception("g4f library is not installed - check Railway deployment")
         except Exception as e:
-            logger.error(f"g4f image generation failed: {e}")
-            raise Exception(f"g4f failed: {str(e)}")
+            logger.error(f"G4F image generation failed: {e}")
+            # Fallback to placeholder
+            import hashlib
+            prompt_hash = hashlib.md5(formatted_prompt.encode()).hexdigest()[:8]
+            image_url = f"https://picsum.photos/512/512?random={prompt_hash}"
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")

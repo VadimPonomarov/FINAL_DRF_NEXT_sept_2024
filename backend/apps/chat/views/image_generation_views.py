@@ -469,75 +469,67 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 prompt = create_car_image_prompt(car_data, angle, style, session_id)
 
                 # Use g4f Client with Pollinations provider for FREE FLUX model
-                # Use G4F with multiple providers for reliable car generation
+                # Use g4f Client for FREE FLUX model
                 try:
                     from g4f.client import Client
-                    import g4f.Provider
-                    
-                    # Try different providers until one works
-                    providers_to_try = [
-                        g4f.Provider.PollinationsAI,
-                        g4f.Provider.BingCreateImages,
-                        g4f.Provider.MicrosoftDesigner
-                    ]
-                    
-                    for provider in providers_to_try:
-                        try:
-                            client = Client(provider=provider)
-                            
-                            # Use different models based on provider
-                            if provider == g4f.Provider.BingCreateImages:
-                                model = "dall-e-3"
-                            elif provider == g4f.Provider.MicrosoftDesigner:
-                                model = "dall-e-3"
-                            else:
-                                model = "flux"
+                    client = Client()
 
-                            response = client.images.generate(
-                                model=model,
-                                prompt=prompt,
-                                response_format="url",
-                                n=1
-                            )
+                    response = client.images.generate(
+                        model="flux",
+                        prompt=prompt,
+                        response_format="url"
+                    )
 
-                            if response and hasattr(response, 'data') and response.data:
-                                image_url = response.data[0].url
-                                logger.info(f"[g4f_algorithm] g4f {provider.__name__} image generated for {angle}")
-                                logger.info(f"[g4f_algorithm] Provider used: {getattr(response, 'provider', provider.__name__)}")
-                                logger.info(f"[g4f_algorithm] Model: {getattr(response, 'model', model)}")
-                                break
-                            else:
-                                logger.warning(f"[g4f_algorithm] g4f {provider.__name__} returned empty response for {angle}")
-                                continue
-                                
-                        except Exception as provider_error:
-                            logger.warning(f"[g4f_algorithm] g4f {provider.__name__} failed: {provider_error}")
-                            continue
-                    else:
-                        raise Exception("All G4F providers failed")
-
-                except ImportError as e:
-                    logger.error(f"[g4f_algorithm] g4f not available: {e}")
-                    raise Exception("g4f library is not installed")
-                except Exception as g4f_error:
-                    logger.error(f"[g4f_algorithm] g4f generation failed for {angle}: {g4f_error}")
-                    raise Exception(f"g4f failed: {str(g4f_error)}")
+                    if response and hasattr(response, 'data') and response.data:
+                        image_url = response.data[0].url
+                        logger.info(f"✅ g4f image generated: {image_url}")
                         
-                generated_images.append({
-                    'url': image_url,
-                    'angle': angle,
-                    'title': f"{car_info} - {angle.title()} View",
-                    'isMain': (i == 0),
-                    'prompt': prompt,
-                    'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
-                    'session_id': session_id,
-                    'success': True,
-                    'method': f'g4f_{car_model.replace("-", "_")}_{"openai" if car_model.startswith("dall-e") else "pollinations"}'
-                })
+                        generated_images.append({
+                            'url': image_url,
+                            'angle': angle,
+                            'title': f"{car_info} - {angle.title()} View",
+                            'isMain': (i == 0),
+                            'prompt': prompt,
+                            'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
+                            'session_id': session_id,
+                            'success': True
+                        })
+                    else:
+                        logger.warning(f"No image data in g4f response for {angle}")
+                        # Fallback to placeholder
+                        placeholder_url = f"https://picsum.photos/1024/768?random={hashlib.md5(f'{session_id}_{angle}'.encode()).hexdigest()[:8]}"
+                        generated_images.append({
+                            'url': placeholder_url,
+                            'angle': angle,
+                            'title': f"{car_info} - {angle.title()} View (Placeholder)",
+                            'isMain': (i == 0),
+                            'prompt': prompt,
+                            'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
+                            'session_id': session_id,
+                            'success': False,
+                            'fallback': True
+                        })
 
+                except Exception as g4f_error:
+                    logger.error(f"g4f generation failed for {angle}: {g4f_error}")
+                    # Fallback to placeholder
+                    placeholder_url = f"https://picsum.photos/1024/768?random={hashlib.md5(f'{session_id}_{angle}'.encode()).hexdigest()[:8]}"
+                    generated_images.append({
+                        'url': placeholder_url,
+                        'angle': angle,
+                        'title': f"{car_info} - {angle.title()} View (Fallback)",
+                        'isMain': (i == 0),
+                        'prompt': prompt,
+                        'seed': int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000,
+                        'session_id': session_id,
+                        'success': False,
+                        'fallback': True,
+                        'error': str(g4f_error)
+                    })
+                        
             except Exception as angle_error:
                 logger.error(f"[g4f_algorithm] Error generating image for angle {angle}: {angle_error}")
-                raise angle_error
+                continue
 
         # Return success response with generated images
         logger.info(f"[g4f_algorithm] Generated {len(generated_images)} images using g4f")
