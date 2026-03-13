@@ -18,6 +18,13 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 ENV_CONFIG_DIR="$ROOT_DIR/env-config"
 ENV_LOCAL_PATH="$FRONTEND_DIR/.env.local"
+IS_DOCKER_ENV=false
+ENV_SPECIFIC_FILE="$ENV_CONFIG_DIR/.env.local"
+
+if [ "$IS_DOCKER" = "true" ] || [ -f "/.dockerenv" ]; then
+    IS_DOCKER_ENV=true
+    ENV_SPECIFIC_FILE="$ENV_CONFIG_DIR/.env.docker"
+fi
 
 # Create .env.local file
 cat > "$ENV_LOCAL_PATH" << 'EOF'
@@ -30,7 +37,7 @@ EOF
 # Read and write critical variables from env-config files
 FOUND_NEXTAUTH_SECRET=false
 
-for ENV_FILE in "$ENV_CONFIG_DIR/.env.base" "$ENV_CONFIG_DIR/.env.secrets" "$ENV_CONFIG_DIR/.env.local"; do
+for ENV_FILE in "$ENV_CONFIG_DIR/.env.base" "$ENV_CONFIG_DIR/.env.secrets" "$ENV_SPECIFIC_FILE"; do
     if [ -f "$ENV_FILE" ]; then
         echo "   Чтение $(basename "$ENV_FILE")..."
         while IFS='=' read -r key value; do
@@ -51,7 +58,11 @@ done
 
 # Add defaults if not present
 if ! grep -q "^NODE_ENV=" "$ENV_LOCAL_PATH"; then
-    echo "NODE_ENV=production" >> "$ENV_LOCAL_PATH"
+    if [ "$IS_DOCKER_ENV" = true ]; then
+        echo "NODE_ENV=production" >> "$ENV_LOCAL_PATH"
+    else
+        echo "NODE_ENV=development" >> "$ENV_LOCAL_PATH"
+    fi
 fi
 if ! grep -q "^NEXTAUTH_URL=" "$ENV_LOCAL_PATH"; then
     echo "NEXTAUTH_URL=http://localhost:3000" >> "$ENV_LOCAL_PATH"
@@ -63,10 +74,10 @@ if ! grep -q "^BACKEND_URL=" "$ENV_LOCAL_PATH"; then
     echo "BACKEND_URL=http://localhost:8000" >> "$ENV_LOCAL_PATH"
 fi
 if ! grep -q "^NEXT_PUBLIC_IS_DOCKER=" "$ENV_LOCAL_PATH"; then
-    echo "NEXT_PUBLIC_IS_DOCKER=false" >> "$ENV_LOCAL_PATH"
+    echo "NEXT_PUBLIC_IS_DOCKER=$IS_DOCKER_ENV" >> "$ENV_LOCAL_PATH"
 fi
 if ! grep -q "^IS_DOCKER=" "$ENV_LOCAL_PATH"; then
-    echo "IS_DOCKER=false" >> "$ENV_LOCAL_PATH"
+    echo "IS_DOCKER=$IS_DOCKER_ENV" >> "$ENV_LOCAL_PATH"
 fi
 
 echo -e "${GREEN}✅ Створено $ENV_LOCAL_PATH${NC}"

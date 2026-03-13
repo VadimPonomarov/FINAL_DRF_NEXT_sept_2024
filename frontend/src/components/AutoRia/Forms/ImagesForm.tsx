@@ -37,6 +37,41 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
   const { t } = useI18n();
   const { toast } = useToast();
 
+  const getSafeImageTranslation = (key: string, fallback: string) => {
+    const value = t(key);
+    if (!value || value === key) {
+      return fallback;
+    }
+
+    if (/\((uk|ru|en)\)\s*$/i.test(value)) {
+      return fallback;
+    }
+
+    if (/^(title|subtitle|description|help existing|help empty|fill basic|need brand model year|go to basic tab|when to use|tip no photos|tip pre ad|tip different city|tip angles|generate for|generate button|auto generation title|images title|images desc)$/i.test(value.trim())) {
+      return fallback;
+    }
+
+    return value;
+  };
+
+  const imageText = {
+    title: getSafeImageTranslation('autoria.images.title', '📸 Car Images'),
+    helpExisting: getSafeImageTranslation('autoria.images.helpExisting', 'Manage existing photos or add new ones'),
+    helpEmpty: getSafeImageTranslation('autoria.images.helpEmpty', 'Add car photos or generate them automatically'),
+    fillBasic: getSafeImageTranslation('autoria.images.fillBasic', 'Fill in the basic information'),
+    needBrandModelYear: getSafeImageTranslation('autoria.images.needBrandModelYear', 'To generate images, specify brand, model and year'),
+    goToBasicTab: getSafeImageTranslation('autoria.images.goToBasicTab', 'Go to the Basic Info tab and fill in the required fields'),
+    autoGenerationTitle: getSafeImageTranslation('autoria.images.autoGenerationTitle', 'Automatic image generation'),
+    whenToUse: getSafeImageTranslation('autoria.images.whenToUse', 'When to use the generator'),
+    tipNoPhotos: getSafeImageTranslation('autoria.images.tipNoPhotos', 'You have no car photos'),
+    tipPreAd: getSafeImageTranslation('autoria.images.tipPreAd', 'Need images for a draft ad'),
+    tipDifferentCity: getSafeImageTranslation('autoria.images.tipDifferentCity', 'Car is in another city'),
+    tipAngles: getSafeImageTranslation('autoria.images.tipAngles', 'Want to show different angles'),
+    generateFor: getSafeImageTranslation('autoria.images.generateFor', 'Generate car images for'),
+    generating: getSafeImageTranslation('autoria.images.generating', 'Generating images...'),
+    generateButton: getSafeImageTranslation('autoria.images.generateButton', 'Generate Images'),
+  };
+
   // Функция для получения названия ракурса
   const getAngleName = (angle: string) => {
     const angleNames: Record<string, string> = {
@@ -400,7 +435,9 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
   const allImages: any[] = [
     // Существующие изображения
     ...existingImages.map((img, index) => ({
-      id: `existing-${index}`,
+      id: `existing-${String((img as any)?.id ?? index)}`,
+      backendId: (img as any)?.id,
+      localIndex: index,
       url: (() => {
         const ai = img as any;
         const u = ai.image_display_url || ai.image || ai.image_url;
@@ -418,6 +455,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
     // Сгенерированные изображения
     ...[...localAiImages, ...aiImages].map((img: any, index: number) => ({
       id: `generated-${img.id || index}`,
+      localIndex: index,
       url: img.url,
       title: img.title || `Згенероване зображення ${index + 1}`,
       type: img.angle || img.type || 'generated',
@@ -501,7 +539,9 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
     const image = allImages.find(img => img.id === imageId);
 
     if (image?.source === 'existing') {
-      const index = parseInt(imageId.replace('existing-', ''));
+      const index = typeof image?.localIndex === 'number'
+        ? image.localIndex
+        : existingImages.findIndex((img: any) => String(img?.id) === String(image?.backendId));
       const targetImage = existingImages[index];
 
       if (!targetImage) return;
@@ -603,7 +643,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
 
     if (image?.source === 'generated') {
       // Удаляем сгенерированное изображение (работаем с локальной копией, чтобы не пропали все)
-      const index = parseInt(imageId.replace('generated-', ''));
+      const index = typeof image?.localIndex === 'number' ? image.localIndex : -1;
       const base = (localAiImages && localAiImages.length ? localAiImages : (aiImages as any[])) || [];
       const newAiImages = [...base];
       if (index >= 0 && index < newAiImages.length) {
@@ -621,7 +661,12 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
 
     if (image?.source === 'existing') {
       // Проксируем к удалению в БД по индексу
-      const index = parseInt(imageId.replace('existing-', ''));
+      const index = typeof image?.localIndex === 'number'
+        ? image.localIndex
+        : existingImages.findIndex((img: any) => String(img?.id) === String(image?.backendId));
+      if (index < 0) {
+        throw new Error('Не удалось определить индекс существующего изображения');
+      }
       await removeExistingImage(index);
       return;
     }
@@ -729,12 +774,7 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
       }
 
       // Запускаем генерацию через backend mock-алгоритм — ИДЕНТИЧНО тестовым объявлениям
-      console.log('[ImagesForm] 🎨 Calling backend /api/chat/generate-car-images-mock (same as test ads)');
-      // КРИТИЧНО: Используем правильный URL для production
-      const backendUrl = typeof window !== 'undefined' 
-        ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autoria-web-production.up.railway.app')
-        : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
-      console.log('[ImagesForm] 🌐 Using backend URL:', backendUrl);
+      console.log('[ImagesForm] 🎨 Calling internal /api/llm/generate-car-images proxy');
       
       // КРИТИЧНО: Используем ТОТ ЖЕ алгоритм, что и в тестовых объявлениях
       // НЕ используем buildCanonicalCarData - используем прямую обработку как в test-ads
@@ -776,22 +816,26 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
         vehicle_type_name: originalVehicleTypeName || normalizedVT || 'car'
       });
       
-      // Call backend directly to use pollinations-based mock algorithm - ИДЕНТИЧНО test-ads
-      console.log(`🌐 [ImagesForm] Calling image generation endpoint: ${backendUrl}/api/chat/generate-car-images-mock/`);
+      // Call internal proxy to preserve cookie auth and token refresh in browser flows
+      console.log(`🌐 [ImagesForm] Calling image generation endpoint: /api/llm/generate-car-images`);
       console.log(`📋 [ImagesForm] Sending vehicle_type_name: '${originalVehicleTypeName}' (original, not normalized)`);
       
-      fetch(`${backendUrl}/api/chat/generate-car-images-mock/`, {
+      fetch(`/api/llm/generate-car-images`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          car_data: {
-            brand: brandStr,
-            model: modelStr,
-            year: data.year,
+          formData: {
+            ...data,
+            brand: brandStr || (data as any).brand,
+            brand_name: brandStr || (data as any).brand_name,
+            model: modelStr || data.model,
+            model_name: modelStr || (data as any).model_name,
             color: colorStr,
+            color_name: colorStr,
             body_type: bodyTypeStr,
-            vehicle_type: vt, // Нормализованное значение для совместимости
-            vehicle_type_name: originalVehicleTypeName || normalizedVT || 'car', // ОРИГИНАЛЬНОЕ значение для промпта
+            vehicle_type: vt,
+            vehicle_type_name: originalVehicleTypeName || normalizedVT || 'car',
             condition: conditionStr,
             description: data.description || ''
           },
@@ -1012,12 +1056,12 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
       {/* Заголовок секции */}
       <div className="space-y-2">
         <h2 className="text-xl font-semibold text-slate-900">
-          {t('autoria.images.title', '📸 Car Images')}
+          {imageText.title}
         </h2>
         <p className="text-sm text-slate-600">
           {existingImages.length > 0
-            ? t('autoria.images.helpExisting', 'Manage existing photos or add new ones')
-            : t('autoria.images.helpEmpty', 'Add car photos or generate them automatically')
+            ? imageText.helpExisting
+            : imageText.helpEmpty
           }
         </p>
       </div>
@@ -1046,13 +1090,13 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
                 <div className="text-center">
                   <Camera className="h-12 w-12 text-amber-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-amber-900 mb-2">
-                    {t('autoria.images.fillBasic', 'Fill in the basic information')}
+                    {imageText.fillBasic}
                   </h3>
                   <p className="text-amber-800 mb-4">
-                    {(t as any)('autoria.images.needBrandModelYear', 'To generate images, specify brand, model and year')}
+                    {imageText.needBrandModelYear}
                   </p>
                   <p className="text-sm text-amber-700">
-                    {t('autoria.images.goToBasicTab', 'Go to the Basic Info tab and fill in the required fields')}
+                    {imageText.goToBasicTab}
                   </p>
                 </div>
               </CardContent>
@@ -1064,23 +1108,23 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Wand2 className="h-5 w-5" />
-                    {t('autoria.images.autoGenerationTitle', 'Automatic image generation')}
+                    {imageText.autoGenerationTitle}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                      <h4 className="font-medium text-amber-900 mb-2">💡 {t('autoria.images.whenToUse', 'When to use the generator')}</h4>
+                      <h4 className="font-medium text-amber-900 mb-2">💡 {imageText.whenToUse}</h4>
                       <ul className="text-sm text-amber-800 space-y-1">
-                        <li>• {t('autoria.images.tipNoPhotos', 'You have no car photos')}</li>
-                        <li>• {t('autoria.images.tipPreAd', 'Need images for a draft ad')}</li>
-                        <li>• {t('autoria.images.tipDifferentCity', 'Car is in another city')}</li>
-                        <li>• {t('autoria.images.tipAngles', 'Want to show different angles')}</li>
+                        <li>• {imageText.tipNoPhotos}</li>
+                        <li>• {imageText.tipPreAd}</li>
+                        <li>• {imageText.tipDifferentCity}</li>
+                        <li>• {imageText.tipAngles}</li>
                       </ul>
                     </div>
 
                     <p className="text-sm text-slate-600">
-                      {t('autoria.images.generateFor', 'Generate car images for')}
+                      {imageText.generateFor}
                       <span className="font-medium"> {data.brand} {data.model} {data.year}</span>
                       {data.color && <span className="font-medium"> • {data.color}</span>}
 
@@ -1104,12 +1148,12 @@ const ImagesForm: React.FC<ImagesFormProps> = ({ data, onChange, errors, adId })
                         {(aiLoading || localAiLoading) ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            {t('autoria.images.generating', 'Generating images...')}
+                            {imageText.generating}
                           </>
                         ) : (
                           <>
                             <Wand2 className="h-4 w-4 mr-2" />
-                            {t('autoria.images.generateButton', 'Generate Images')}
+                            {imageText.generateButton}
                           </>
                         )}
                       </Button>

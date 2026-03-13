@@ -77,13 +77,13 @@ class AddImageListCreateView(generics.ListCreateAPIView):
         """
         ad_id = self.kwargs.get('ad_pk')
         
-        logger.info(f"📸 [ImageCreate] Attempting to save image for ad #{ad_id}")
-        logger.info(f"👤 [ImageCreate] User: {self.request.user.email} (superuser={self.request.user.is_superuser})")
+        logger.info(f"[ImageCreate] Attempting to save image for ad #{ad_id}")
+        logger.info(f"[ImageCreate] User: {self.request.user.email} (superuser={self.request.user.is_superuser})")
         
         # Для суперпользователя - без проверки владельца
         if self.request.user.is_superuser:
             ad = get_object_or_404(CarAd, pk=ad_id)
-            logger.info(f"✅ [ImageCreate] Superuser access granted for ad #{ad_id}")
+            logger.info(f"[ImageCreate] Superuser access granted for ad #{ad_id}")
         else:
             # Для обычных пользователей - проверяем владельца
             ad = get_object_or_404(
@@ -91,7 +91,7 @@ class AddImageListCreateView(generics.ListCreateAPIView):
                 pk=ad_id,
                 account__user=self.request.user
             )
-            logger.info(f"✅ [ImageCreate] Owner access verified for ad #{ad_id}")
+            logger.info(f"[ImageCreate] Owner access verified for ad #{ad_id}")
         
         # Автоматически устанавливаем order, если не указан
         if 'order' not in serializer.validated_data:
@@ -105,11 +105,11 @@ class AddImageListCreateView(generics.ListCreateAPIView):
         # Сохраняем изображение
         image = serializer.save(ad=ad, order=order)
         
-        logger.info(f"✅ [ImageCreate] Successfully saved image #{image.id} for ad #{ad_id} (order={order})")
-        logger.info(f"📊 [ImageCreate] Image data: url={bool(image.image_url)}, file={bool(image.image)}, primary={image.is_primary}")
+        logger.info(f"[ImageCreate] Successfully saved image #{image.id} for ad #{ad_id} (order={order})")
+        logger.info(f"[ImageCreate] Image data: url={bool(image.image_url)}, file={bool(image.image)}, primary={image.is_primary}")
 
 
-class AddImageRetrieveDestroyView(generics.RetrieveDestroyAPIView):
+class AddImageRetrieveDestroyView(generics.RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update or delete a specific advertisement image.
     """
@@ -270,7 +270,7 @@ def upload_image_with_processing(request, ad_id):
         # Запускаем асинхронную обработку (создание миниатюр)
         process_image_async.delay(upload_result['file_path'])
 
-        logger.info(f"✅ Изображение загружено для объявления {ad_id}: {upload_result['filename']}")
+        logger.info(f"[ImageUpload] Image uploaded for ad {ad_id}: {upload_result['filename']}")
 
         return Response({
             'success': True,
@@ -283,7 +283,7 @@ def upload_image_with_processing(request, ad_id):
         }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        logger.error(f"❌ Ошибка загрузки изображения: {e}")
+        logger.error(f"[ImageUpload] Upload error: {e}")
         return Response({
             'error': 'Внутренняя ошибка сервера'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -320,7 +320,7 @@ def delete_image_with_cleanup(request, ad_id, image_id):
         # Удаляем запись из базы данных
         ad_image.delete()
 
-        logger.info(f"✅ Изображение удалено: {image_id}")
+        logger.info(f"[ImageDelete] Image deleted: {image_id}")
 
         return Response({
             'success': True,
@@ -328,7 +328,7 @@ def delete_image_with_cleanup(request, ad_id, image_id):
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"❌ Ошибка удаления изображения: {e}")
+        logger.error(f"[ImageDelete] Delete error: {e}")
         return Response({
             'error': 'Внутренняя ошибка сервера'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

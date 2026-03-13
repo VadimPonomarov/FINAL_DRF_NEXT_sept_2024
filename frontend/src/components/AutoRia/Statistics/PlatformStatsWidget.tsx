@@ -139,7 +139,7 @@ const PlatformStatsWidget: React.FC<PlatformStatsWidgetProps> = ({ className = "
           {lastUpdated && (
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-500">
-                {t('common.updated') || 'Оновлено'}: {lastUpdated.toLocaleTimeString()}
+                {(t('common.updated') !== 'common.updated' ? t('common.updated') : 'Оновлено')}: {lastUpdated.toLocaleTimeString()}
               </span>
               {sourceInfo && (
                 <TooltipProvider>

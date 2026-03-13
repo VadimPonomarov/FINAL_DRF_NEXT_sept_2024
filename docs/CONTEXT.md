@@ -2,32 +2,37 @@
 
 ## Последнее обновление
 **Дата:** 2026-03-12
-**Commit:** ae156b6
-**Session summary:** Remove all fallbacks from image generation — only real API values (Pollinations.ai via g4f). Fix wrong endpoint /api/users/generate-image/ → /api/chat/generate-image/. Deploy to Railway + Vercel confirmed working.
+**Commit:** working tree
+**Session summary:** Normalized local and Docker environment resolution so backend/frontend runtime now select `.env.local` vs `.env.docker` correctly, rewired local development away from Railway URLs back to `localhost`, and prepared the project for local/Docker verification of avatar saving plus image delete/set-main actions before redeploy.
 
 ## Текущий milestone
 **M1 — Foundation & MVP**
 
 ## Завершено в этой сессии
-- **Удалены все fallback-и из генерации изображений** — backend и frontend теперь возвращают только реальные значения от API (Pollinations.ai через g4f), при ошибке бросают исключение
-- **`image_generation_views.py`** — `generate_image`, `generate_car_images`, `generate_car_images_with_mock_algorithm`: fallback на placeholder удалён, `continue` → `raise`, g4f error → 500
-- **`generate-car-images/route.ts`** — удалён try/catch с placeholder fallback, удалена фильтрация validImages; ошибка бэкенда → 500
-- **`carImageGenerator.service.ts`** — `generateImagesForAd` больше не fallback на локальный mock; `generateSingleCarImage` бросает ошибку; добавлен `use_mock_algorithm: true` в тело запроса
-- **`image-generation.service.ts`** — исправлен неверный endpoint `/api/users/generate-image/` → `/api/chat/generate-image/`; все три метода бросают ошибку вместо placeholder
-- **`car-images/generate/route.ts`** — исправлен неверный endpoint, per-angle errors теперь propagate
-- **Commit:** ae156b6 → pushed → Railway auto-deploy + Vercel `--prod` выполнен
-- **Live тест подтверждён:** `POST /api/chat/generate-car-images/` → `200 OK` с реальными `https://image.pollinations.ai/prompt/...` URL
+- **`backend/config/extra_config/environment.py`** — backend env loader теперь выбирает `.env.local` или `.env.docker` по `IS_DOCKER` / `/.dockerenv`
+- **`frontend/next.config.js` и `frontend/src/lib/env-loader.ts`** — frontend build/runtime env selection синхронизирован с Docker/local режимом
+- **`env-config/.env.local`** — локальная разработка переведена на `localhost` URLs и локальную PostgreSQL-конфигурацию вместо Railway
+- **`backend/.env` и `frontend/.env.local`** — локальные service-specific env значения выровнены под dev verification
+- **`scripts/setup-frontend-env.py` и `scripts/setup-frontend-env.sh`** — генерация `frontend/.env.local` теперь учитывает активное окружение и корректно выставляет `NODE_ENV` / `IS_DOCKER`
+- **`docs/ENVIRONMENT_SETUP.md`** — документация обновлена под фактическую схему env priority и local/docker URL split
 
 ## В процессе
-- Нет
+- Подготовка к фактическому локальному и Docker прогону avatar/image actions после env-нормализации
 
 ## Заблокировано
-- Нет
+- Нет по коду и live-проверке
 
 ## Следующая задача
-**Генерация изображений полностью работает на реальных API.** Следующий шаг — тестирование avatar-генерации через UI и переход к M2 (Real-time чат, многоязычность).
+**Следующий шаг:**
+- Запустить локальный backend/frontend и проверить avatar saving, delete image, set-main image
+- Запустить Docker-сценарий и повторить те же проверки
+- После успешной проверки перейти к deploy на Railway/Vercel и live re-check
 
 ## Последние архитектурные решения (из DECISIONS.md)
+- **2026-03-12 — Local/Docker Environment Resolution Normalization**
+  - `env-config/` закреплен как источник истины для local/docker runtime
+  - backend/frontend loaders выбирают `.env.local` vs `.env.docker` автоматически
+  - локальный dev возвращен на `localhost`, без зависания на live Railway URLs
 - **2026-03-11 — Image Generation Fix: Safe Imports + Auto-Generation Prevention**
   - Добавлены безопасные импорты для g4f/OpenAI зависимостей
   - Отключена автоматическая генерация через RUN_SEEDS=false
@@ -43,7 +48,7 @@
 
 ## Текущий статус развертывания
 - **Frontend (Vercel):** ✅ Работает стабильно - https://autoria-clone.vercel.app
-- **Backend (Railway):** ✅ Основной API работает, 🔄 Chat endpoints в процессе развертывания с исправлениями
+- **Backend (Railway):** ✅ Основной API работает
 - **Database:** ✅ PostgreSQL работает
 - **Redis:** ✅ Кэш работает
 - **Email:** ✅ Сервис работает
@@ -51,6 +56,10 @@
 ## Критические проблемы
 - **Chat endpoints 404** - ✅ ИСПРАВЛЕНО (URL routing issue)
 - **Самопроизвольная генерация** - ✅ ИСПРАВЛЕНО
+- **Автопересоздание тестовых объявлений после delete через `seed-once`** - ✅ ИСПРАВЛЕНО
+- **Generated images терялись после create ad** - ✅ ИСПРАВЛЕНО
+- **Generated images отображались placeholder-ами из-за `ERR_BLOCKED_BY_ORB` на прямых `pollinations.ai` URL** - ✅ ИСПРАВЛЕНО
+- **Avatar UI показывал raw translation keys** - ✅ ИСПРАВЛЕНО
 - **Безопасные импорты** - ✅ ИСПРАВЛЕНО
 - **Отсутствующие файлы** - ✅ ИСПРАВЛЕНО
 
@@ -58,42 +67,40 @@
 - ✅ Frontend функционал - страницы загружаются, навигация работает
 - ✅ Backend API - основные endpoints работают (/api/users/public/list/, /api/ads/public/list/)
 - ✅ Аутентификация - вход/регистрация работают
-- 🔄 Генерация изображений - в процессе после исправления URL routing
+- ✅ MCP-аудит выявил direct backend call из `ImagesForm.tsx`, create-flow persistence gap и broken avatar translation key
+- ✅ Live MCP-проверка подтвердила: safe image-text fallback на вкладке `Зображення`, `POST /api/llm/generate-car-images` = 200, 10 generated items появились в галерее, `img.src` идут через `/api/image-proxy?...`
 
 ## Файлы изменены в этой сессии
-- `docs/SPEC.md` - Создан с нуля
-- `docs/ROADMAP.md` - Создан с нуля  
-- `docs/STRUCTURE.md` - Создан с нуля
-- `docs/DEPLOY.md` - Создан с нуля
-- `docs/CONTEXT.md` - Создан с нуля (обновлен)
-- `docs/DECISIONS.md` - Создан с нуля
-- `backend/apps/chat/apps.py` - Создан недостающий файл
-- `backend/apps/chat/views/__init__.py` - Создан недостающий файл
-- `backend/apps/chat/views/image_generation_views.py` - Добавлены безопасные импорты
-- `backend/config/urls.py` - Исправлен URL routing для chat
-- `backend/apps/ads/views/statistics_view.py` - Добавлен diagnostic_info view
-- `backend/apps/ads/urls.py` - Добавлен diagnostic endpoint
-- `railway.json` - Изменен start command
-- `test_chat_endpoints.py` - Создан для тестирования
+- `backend/config/extra_config/environment.py`
+- `frontend/next.config.js`
+- `frontend/src/lib/env-loader.ts`
+- `env-config/.env.local`
+- `backend/.env`
+- `frontend/.env.local`
+- `scripts/setup-frontend-env.py`
+- `scripts/setup-frontend-env.sh`
+- `docs/ENVIRONMENT_SETUP.md`
+- `docs/ROADMAP.md`
+- `docs/CONTEXT.md`
+- `docs/DECISIONS.md`
 
 ## Следующий сессии должен знать
-1. **Основная проблема решена:** Chat endpoints 404 были вызваны неправильным URL routing (include('apps.chat.urls') вместо include(chat_urls))
-2. **Исправления применены:** URL routing исправлен, добавлены безопасные импорты, созданы все недостающие файлы
-3. **Ожидание развертывания:** Railway применяет последние исправления (обычно 3-5 минут)
-4. **Следующая задача:** После развертывания - финальное тестирование генерации изображений и завершение M1
-5. **Диагностические инструменты:** Добавлен /api/ads/diagnostic/ endpoint для будущей отладки
-6. **PROJECT BOOTSTRAP:** Все фундаментальные документы созданы и соответствуют правилам
+1. **Local/Docker env selection исправлен:** loaders больше не тянут `.env.local` внутри Docker
+2. **Local verification теперь действительно локальный:** `env-config/.env.local` и service env files смотрят на `localhost`, а не на Railway
+3. **Следующий обязательный шаг:** поднять локальный и Docker сценарии и проверить avatar saving + image delete/set-main до deploy
+4. **Frontend generated env helpers синхронизированы:** оба setup-скрипта учитывают текущее окружение
+5. **PROJECT BOOTSTRAP:** Все фундаментальные документы созданы и соответствуют правилам
 
 ## Технический долг
-- ✅ Нет - все критические проблемы решены
-- 🔄 В процессе - ожидание финального тестирования после развертывания
+- ✅ Нет по env runtime selection
+- 🔄 В процессе - локальная и Docker верификация avatar/image actions
 - 📋 Планируется - оптимизация производительности генерации изображений в M2
 
 ## Готовность к продакшн
 - **Frontend:** ✅ Готов
-- **Backend:** 🔄 Почти готов (chat endpoints исправлены, ждет развертывания)
+- **Backend:** ✅ Готов для текущего image-generation flow
 - **Документация:** ✅ Полная
-- **Тестирование:** 🔄 В процессе
+- **Тестирование:** ✅ Критический image-generation/display regression set подтвержден live
 - **Развертывание:** ✅ Автоматизировано
 
 ## Коммиты в этой сессии
@@ -106,9 +113,9 @@
 - `fda5b11` - Fix image generation: ensure chat endpoints are properly configured for Pollinations.ai + FLUX
 
 ## Рекомендации для следующей сессии
-1. **Проверить развертывание Railway** - Подождать 2-3 минуты, затем протестировать chat endpoints
-2. **Финальное тестирование генерации изображений** - Использовать test_chat_endpoints.py и frontend API
-3. **Завершить M1** - Если изображения работают, отметить M1 как завершенный в ROADMAP.md
-4. **Начать планирование M2** - Подготовить задачи для Real-time чата и многоязычности
-5. **Обновить CONTEXT.md** - В конце следующей сессии обновить контекст
-6. **Сохранить диагностический endpoint** - Оставить /api/ads/diagnostic/ для будущей отладки
+1. **Довести `docs/SPEC.md`** - внести acceptance criteria для `/api/image-proxy` и safe image-tab fallback другим безопасным способом
+2. **Завершить M1** - если других production regressions нет, отметить image-generation/display set как полностью закрытый
+3. **Начать планирование M2** - подготовить задачи для Real-time чата и многоязычности
+4. **Сохранить evidence** - при необходимости использовать текущие MCP network/DOM подтверждения как доказательство live fix
+5. **Обновить CONTEXT.md** - в конце следующей сессии снова синхронизировать фактический статус
+6. **Сохранить диагностический endpoint** - оставить /api/ads/diagnostic/ для будущей отладки

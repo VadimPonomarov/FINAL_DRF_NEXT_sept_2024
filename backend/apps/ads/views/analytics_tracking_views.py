@@ -117,10 +117,10 @@ class TrackAdInteractionAPI(APIView):
         }
     )
     def post(self, request):
-        print(f"[Analytics] 🚀 TrackAdInteractionAPI POST called")
+        print(f"[Analytics] TrackAdInteractionAPI POST called")
         try:
             data = request.data
-            print(f"[Analytics] 📦 Request data: {data}")
+            print(f"[Analytics] Request data: {data}")
 
             # Получаем данные из запроса
             ad_id = data.get('ad_id')
@@ -128,7 +128,7 @@ class TrackAdInteractionAPI(APIView):
             source_page = data.get('source_page', '')
             metadata = data.get('metadata', {})
 
-            print(f"[Analytics] 🎯 Tracking ad interaction: ad_id={ad_id}, type={interaction_type}, source={source_page}")
+            print(f"[Analytics] Tracking ad interaction: ad_id={ad_id}, type={interaction_type}, source={source_page}")
             # Вытаскиваем пользователя из DRF request (в т.ч. при Session/Bearer)
             user = request.user if hasattr(request, 'user') and request.user and request.user.is_authenticated else None
 

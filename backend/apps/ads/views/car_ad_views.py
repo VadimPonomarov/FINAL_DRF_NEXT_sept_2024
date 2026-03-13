@@ -422,7 +422,7 @@ class CarAdListView(generics.ListAPIView):
                     where=["dynamic_fields->>'body_type' ILIKE %s"],
                     params=[f'%{body_type}%']
                 )
-                print(f"🚙 Applied body_type filter: {body_type}")
+                print(f"[CarAdFilters] Applied body_type filter: {body_type}")
 
             condition = params.get('condition')
             if condition:
@@ -430,19 +430,19 @@ class CarAdListView(generics.ListAPIView):
                     where=["dynamic_fields->>'condition' ILIKE %s"],
                     params=[f'%{condition}%']
                 )
-                print(f"🔧 Applied condition filter: {condition}")
+                print(f"[CarAdFilters] Applied condition filter: {condition}")
 
             # 🏪 Фильтр по типу продавца
             seller_type = params.get('seller_type')
             if seller_type:
                 queryset = queryset.filter(seller_type=seller_type)
-                print(f"🏪 Applied seller_type filter: {seller_type}")
+                print(f"[CarAdFilters] Applied seller_type filter: {seller_type}")
 
             # 🔄 Фильтр по возможности обмена
             exchange_status = params.get('exchange_status')
             if exchange_status:
                 queryset = queryset.filter(exchange_status=exchange_status)
-                print(f"🔄 Applied exchange_status filter: {exchange_status}")
+                print(f"[CarAdFilters] Applied exchange_status filter: {exchange_status}")
 
             # ✅ Булевы фильтры
             customs_cleared = params.get('customs_cleared')
@@ -452,7 +452,7 @@ class CarAdListView(generics.ListAPIView):
                     where=["(dynamic_fields->>'customs_cleared')::boolean = %s"],
                     params=[customs_cleared_bool]
                 )
-                print(f"✅ Applied customs_cleared filter: {customs_cleared_bool}")
+                print(f"[CarAdFilters] Applied customs_cleared filter: {customs_cleared_bool}")
 
             exchange_possible = params.get('exchange_possible')
             if exchange_possible is not None:
@@ -461,7 +461,7 @@ class CarAdListView(generics.ListAPIView):
                     where=["(dynamic_fields->>'exchange_possible')::boolean = %s"],
                     params=[exchange_possible_bool]
                 )
-                print(f"🔄 Applied exchange_possible filter: {exchange_possible_bool}")
+                print(f"[CarAdFilters] Applied exchange_possible filter: {exchange_possible_bool}")
 
             installment_possible = params.get('installment_possible')
             if installment_possible is not None:
@@ -470,16 +470,16 @@ class CarAdListView(generics.ListAPIView):
                     where=["(dynamic_fields->>'installment_possible')::boolean = %s"],
                     params=[installment_possible_bool]
                 )
-                print(f"💳 Applied installment_possible filter: {installment_possible_bool}")
+                print(f"[CarAdFilters] Applied installment_possible filter: {installment_possible_bool}")
 
             # Применяем CarAdFilter для быстрых фильтров
             if hasattr(self, 'filterset_class') and self.filterset_class:
                 filterset = self.filterset_class(self.request.GET, queryset=queryset, request=self.request)
                 if filterset.is_valid():
                     queryset = filterset.qs
-                    print(f"🔧 Applied CarAdFilter, count: {queryset.count()}")
+                    print(f"[CarAdFilters] Applied CarAdFilter, count: {queryset.count()}")
 
-            print(f"🎯 Final queryset count: {queryset.count()}")
+            print(f"[CarAdFilters] Final queryset count: {queryset.count()}")
 
         return queryset.order_by('-created_at')
 

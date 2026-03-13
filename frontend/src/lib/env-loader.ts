@@ -22,11 +22,12 @@ export function loadRuntimeEnv() {
   try {
     const rootDir = process.cwd();
     const envConfigDir = path.resolve(rootDir, 'env-config');
+    const envSpecificName = process.env.IS_DOCKER === 'true' || fs.existsSync('/.dockerenv') ? '.env.docker' : '.env.local';
     
     const envFiles = [
       path.join(envConfigDir, '.env.base'),
       path.join(envConfigDir, '.env.secrets'),
-      path.join(envConfigDir, '.env.local'),
+      path.join(envConfigDir, envSpecificName),
     ];
 
     for (const envFile of envFiles) {
@@ -41,7 +42,11 @@ export function loadRuntimeEnv() {
             const keyTrimmed = key.trim();
             
             // Загружаем только если переменная еще не установлена
-            if (keyTrimmed && !process.env[keyTrimmed]) {
+            const shouldRefreshInDevelopment =
+              process.env.NODE_ENV !== 'production' &&
+              ['BACKEND_URL', 'NEXT_PUBLIC_BACKEND_URL', 'IS_DOCKER', 'NEXT_PUBLIC_IS_DOCKER'].includes(keyTrimmed);
+
+            if (keyTrimmed && (!process.env[keyTrimmed] || shouldRefreshInDevelopment)) {
               process.env[keyTrimmed] = value;
             }
           }
@@ -54,7 +59,7 @@ export function loadRuntimeEnv() {
       const isDocker = process.env.IS_DOCKER === 'true';
       const isProduction = process.env.NODE_ENV === 'production';
       if (isDocker) {
-        process.env.NEXT_PUBLIC_BACKEND_URL = 'http://app:8000';
+        process.env.NEXT_PUBLIC_BACKEND_URL = 'http://localhost:8000';
       } else if (!isProduction) {
         process.env.NEXT_PUBLIC_BACKEND_URL = 'http://localhost:8000';
       }
@@ -70,6 +75,16 @@ export function loadRuntimeEnv() {
         process.env.BACKEND_URL = 'http://localhost:8000';
       }
       // In production without IS_DOCKER, BACKEND_URL MUST be set via platform env vars
+    }
+
+    if (process.env.NODE_ENV !== 'production' && process.env.IS_DOCKER !== 'true' && process.env.BACKEND_URL) {
+      try {
+        const backendUrl = new URL(process.env.BACKEND_URL);
+        if (backendUrl.hostname === 'localhost') {
+          backendUrl.hostname = '127.0.0.1';
+          process.env.BACKEND_URL = backendUrl.toString().replace(/\/+$/, '');
+        }
+      } catch {}
     }
 
     envLoaded = true;

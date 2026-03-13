@@ -133,6 +133,7 @@ export default {
     edit: "Редагувати",
     delete: "Видалити",
     loading: "Завантаження...",
+    updated: "Оновлено",
     select: "Обрати",
     search: "Пошук",
     none: "Нічого не знайдено",
@@ -3634,5 +3635,29 @@ export default {
     // Generic
     tryAgain: "Спробуйте ще раз",
     unknownError: "Невідома помилка"
-  }
+  },
+  "profile.avatar.upload": "Завантажити аватар",
+  "profile.avatar.generate": "Згенерувати аватар",
+  "profile.avatar.generating": "Генеруємо...",
+  "profile.avatar.generate_button": "Згенерувати аватар",
+  "profile.avatar.success": "Аватар успішно згенеровано",
+  "profile.avatar.failed": "Не вдалося згенерувати аватар",
+  "profile.avatar.title": "Налаштування аватара",
+  "profile.avatar.style": "Стиль",
+  "profile.avatar.selectStyle": "Оберіть стиль",
+  "profile.avatar.gender": "Стать",
+  "profile.avatar.selectGender": "Оберіть стать",
+  "profile.avatar.customRequirements": "Додаткові побажання",
+  "profile.avatar.customPlaceholder": "Опишіть бажаний вигляд і деталі",
+  "profile.avatar.cancel": "Скасувати",
+  "profile.avatar.fileInfo": "PNG, JPG або WEBP до 10 МБ",
+  "profile.avatar.styles.realistic": "Реалістичний",
+  "profile.avatar.styles.professional": "Професійний",
+  "profile.avatar.styles.cartoon": "Мультяшний",
+  "profile.avatar.styles.caricature": "Карикатурний",
+  "profile.avatar.styles.artistic": "Художній",
+  "profile.avatar.styles.anime": "Аніме",
+  "profile.avatar.genders.male": "Чоловіча",
+  "profile.avatar.genders.female": "Жіноча",
+  "profile.avatar.genders.neutral": "Нейтральна"
 };

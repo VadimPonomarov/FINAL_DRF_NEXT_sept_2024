@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
+import '@/lib/env-loader';
 
 // DELETE - удаление изображения
 export async function DELETE(
@@ -21,7 +22,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Ad ID and Image ID are required' }, { status: 400 });
     }
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = rawBase.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
 
     const response = await ServerAuthManager.authenticatedFetch(
       request,
@@ -65,7 +67,8 @@ export async function PATCH(
     }
 
     const requestData = await request.json();
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = rawBase.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
 
     const response = await ServerAuthManager.authenticatedFetch(
       request,

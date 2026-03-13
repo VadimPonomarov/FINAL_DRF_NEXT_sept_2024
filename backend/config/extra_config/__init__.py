@@ -5,6 +5,8 @@ All Django settings are organized into logical modules for better maintainabilit
 
 import os
 
+from .environment import BASE_DIR as _ENV_BASE_DIR, ROOT_DIR as _ENV_ROOT_DIR  # noqa: F401
+
 # Simple configuration from environment variables (backward compatibility)
 GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:8000')

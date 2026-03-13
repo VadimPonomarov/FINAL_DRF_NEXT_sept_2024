@@ -195,7 +195,7 @@ const AnimatedPlatformStatsWidget: React.FC<AnimatedPlatformStatsWidgetProps> = 
           <div className="flex items-center gap-2">
             {lastUpdated && (
               <span className="text-xs text-gray-500">
-                {t('common.updated') || 'Оновлено'}: {lastUpdated.toLocaleTimeString()}
+                {(t('common.updated') !== 'common.updated' ? t('common.updated') : 'Оновлено')}: {lastUpdated.toLocaleTimeString()}
               </span>
             )}
             <Button

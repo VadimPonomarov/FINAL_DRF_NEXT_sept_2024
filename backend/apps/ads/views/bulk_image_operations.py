@@ -89,7 +89,7 @@ def bulk_delete_images(request, ad_id):
         image_ids = data.get('image_ids', [])
         delete_all = data.get('delete_all', False)
         
-        logger.info(f"🗑️ Bulk delete request for ad {ad_id}: delete_all={delete_all}, image_ids={image_ids}")
+        logger.info(f"[BulkImageDelete] Request for ad {ad_id}: delete_all={delete_all}, image_ids={image_ids}")
         
         # Получаем изображения для удаления
         if delete_all:
@@ -122,7 +122,7 @@ def bulk_delete_images(request, ad_id):
         deleted_count, _ = images_to_delete.delete()
         remaining_count = AddImageModel.objects.filter(ad=car_ad).count()
         
-        logger.info(f"🗑️ Successfully deleted {deleted_count} images from ad {ad_id}")
+        logger.info(f"[BulkImageDelete] Successfully deleted {deleted_count} images from ad {ad_id}")
         
         return Response({
             'success': True,
@@ -133,7 +133,7 @@ def bulk_delete_images(request, ad_id):
         })
         
     except Exception as e:
-        logger.error(f"❌ Error in bulk_delete_images: {str(e)}")
+        logger.error(f"[BulkImageDelete] Error: {str(e)}")
         return Response({
             'success': False,
             'error': 'Internal server error'

@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Star, X } from 'lucide-react';
 import ImageLightbox from '@/components/AutoRia/Components/ImageLightbox';
+import { resolveMediaUrl } from '@/shared/utils/media-url';
 
 export type GalleryImage = {
   id: string;
@@ -73,7 +74,7 @@ const GalleryWithThumbnails: React.FC<GalleryWithThumbnailsProps> = ({
   }
 
   const img = safeImages[current] || safeImages[0];
-  const mainUrl = (img && (img as any).url) ? String((img as any).url) : '/api/placeholder/800/450?text=No+Image';
+  const mainUrl = resolveMediaUrl((img as any)?.url) || '/api/placeholder/800/450?text=No+Image';
 
   return (
     <div className={`w-full ${className}`}>
@@ -161,7 +162,7 @@ const GalleryWithThumbnails: React.FC<GalleryWithThumbnailsProps> = ({
                 title={it.title || ''}
               >
                 <img
-                  src={it?.url || '/api/placeholder/100/80?text=IMG'}
+                  src={resolveMediaUrl(it?.url) || '/api/placeholder/100/80?text=IMG'}
                   alt={it?.title || `thumb ${idx + 1}`}
                   className="w-full h-full object-cover"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/api/placeholder/100/80?text=IMG'; }}
@@ -179,7 +180,7 @@ const GalleryWithThumbnails: React.FC<GalleryWithThumbnailsProps> = ({
 
       {/* Zoom lightbox */}
       <ImageLightbox
-        images={safeImages.map(s => ({ url: s?.url || '/api/placeholder/800/450?text=No+Image', title: s?.title }))}
+        images={safeImages.map(s => ({ url: resolveMediaUrl(s?.url) || '/api/placeholder/800/450?text=No+Image', title: s?.title }))}
         currentIndex={current}
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}

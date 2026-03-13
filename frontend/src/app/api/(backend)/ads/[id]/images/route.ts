@@ -1,11 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
+import '@/lib/env-loader';
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = rawBase.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
+
+    const response = await ServerAuthManager.authenticatedFetch(
+      request,
+      `${backendUrl}/api/ads/${id}/images`,
+      { method: 'GET' }
+    );
+
+    const text = await response.text();
+    return new NextResponse(text, {
+      status: response.status,
+      headers: { 'Content-Type': response.headers.get('Content-Type') || 'application/json' }
+    });
+  } catch (e) {
+    console.error('[Ad Images API] ❌ List failed:', e);
+    return NextResponse.json({ error: 'Unexpected error' }, { status: 500 });
+  }
+}
 
 // POST multipart upload to backend: /api/ads/[id]/images
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = rawBase.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
 
     // If body is multipart/form-data, we must pass it through as-is, without setting Content-Type
     const contentType = request.headers.get('content-type') || '';

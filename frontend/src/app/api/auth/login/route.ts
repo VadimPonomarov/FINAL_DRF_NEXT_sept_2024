@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { setAccessTokenCookie, setRefreshTokenCookie, setAuthProviderCookie, COOKIE_NAMES } from '@/lib/cookie-utils';
+import '@/lib/env-loader';
 
 // Generate unique session ID
 function generateSessionId(): string {

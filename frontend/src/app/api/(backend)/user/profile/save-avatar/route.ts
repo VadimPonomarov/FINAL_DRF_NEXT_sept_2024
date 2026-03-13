@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
+import '@/lib/env-loader';
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -31,7 +32,8 @@ export async function PATCH(request: NextRequest) {
 
     try {
       // Get backend URL from environment
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = rawBase.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
 
       // Get request data
       const requestData = await request.json();
@@ -46,7 +48,32 @@ export async function PATCH(request: NextRequest) {
 
       // Store the original external URL directly — no download needed.
       // Railway filesystem is ephemeral (wiped on redeploy), and /api/image-proxy handles external URLs.
-      const avatarUrlToStore: string = requestData.avatar_url;
+      let avatarUrlToStore: string = requestData.avatar_url;
+
+      const downloadResponse = await ServerAuthManager.authenticatedFetch(
+        request,
+        `${backendUrl}/api/users/profile/download-avatar/`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            image_url: requestData.avatar_url,
+          }),
+        }
+      );
+
+      if (!downloadResponse.ok) {
+        const downloadErrorText = await downloadResponse.text();
+        console.error('[User Save Avatar API] ❌ Download avatar backend error:', downloadErrorText);
+        throw new Error(`Avatar download failed: ${downloadResponse.status} - ${downloadErrorText}`);
+      }
+
+      const downloadResult = await downloadResponse.json();
+      if (!downloadResult?.success || !downloadResult?.local_url) {
+        console.error('[User Save Avatar API] ❌ Invalid download avatar response:', downloadResult);
+        throw new Error('Avatar download did not return a local_url');
+      }
+
+      avatarUrlToStore = downloadResult.local_url;
       console.log('[Save Avatar API] ✅ Storing avatar URL:', avatarUrlToStore);
 
       // Add timeout for profile update request (30 seconds)

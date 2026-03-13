@@ -53,80 +53,11 @@ function resolveMarkerPath(): string {
 export async function POST(request: NextRequest) {
   const markerPath = resolveMarkerPath();
   const marker = await readSeedMarker(markerPath);
-  const backendUrl = BACKEND_URL;
-
-  try {
-    const url = new URL('/api/ads/statistics/quick/', backendUrl);
-    // Always force fresh statistics to avoid stale cached values during seeding
-    url.searchParams.set('force_refresh', 'true');
-    console.log('[SeedOnce] Fetching quick stats from', url.toString());
-    const statsResponse = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
-
-    if (!statsResponse.ok) {
-      const body = await statsResponse.text().catch(() => '');
-      throw new Error(`Stats request failed: ${statsResponse.status} ${body}`);
-    }
-
-    const statsJson = await statsResponse.json();
-    const data = statsJson?.data ?? statsJson;
-    const source = statsJson?.source;
-    let activeAds = Number(data?.active_ads ?? 0);
-    let totalAds = Number(data?.total_ads ?? 0);
-
-    // If QuickStats falls back to mock/error data, treat it as zero to force seeding
-    if (source === 'mock_fallback' || source === 'error_fallback') {
-      console.warn('[SeedOnce] QuickStats returned fallback source, forcing fresh seeding', { source, totalAds, activeAds });
-      activeAds = 0;
-      totalAds = 0;
-    }
-
-    const MIN_TOTAL_ADS = 10;
-
-    const markerCount = Number(marker?.count ?? 0);
-    const needsInitialSeed = !marker?.firstSeedCompleted;
-    const needsRefreshByMarker = marker?.firstSeedCompleted && markerCount < MIN_TOTAL_ADS;
-    const needsRefreshByStats = totalAds < MIN_TOTAL_ADS || activeAds < Math.max(1, Math.floor(MIN_TOTAL_ADS / 2));
-
-    if (!needsInitialSeed && !needsRefreshByMarker && !needsRefreshByStats) {
-      return NextResponse.json({
-        success: true,
-        skipped: true,
-        message: `Seed already completed previously (total=${totalAds}, active=${activeAds})`,
-        marker,
-      });
-    }
-
-    const seedCount = Math.max(0, MIN_TOTAL_ADS - totalAds);
-    const desiredCount = seedCount > 0 ? seedCount : MIN_TOTAL_ADS;
-
-    console.log(`[SeedOnce] Active ads = ${activeAds}. Generating ${desiredCount} test ads...`);
-
-    const result = await createTestAdsServer(request, desiredCount, true, ['front', 'side']);
-
-    await writeSeedMarker(markerPath, {
-      firstSeedCompleted: true,
-      completed_at: new Date().toISOString(),
-      count: totalAds + (result.created ?? desiredCount),
-    });
-
-    return NextResponse.json({
-      success: true,
-      created: result.created,
-      totalImages: result.totalImages,
-      details: result.details,
-      message: `Generated ${result.created} test ads with ${result.totalImages} images`,
-    });
-  } catch (error: any) {
-    console.error('[SeedOnce] Seeding failed:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
-  }
+  return NextResponse.json({
+    success: true,
+    skipped: true,
+    autoSeedDisabled: true,
+    message: 'Automatic test-ad reseeding is disabled. Use manual generation instead.',
+    marker,
+  });
 }

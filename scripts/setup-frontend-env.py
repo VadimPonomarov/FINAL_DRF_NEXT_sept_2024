@@ -15,6 +15,8 @@ def create_frontend_env():
     frontend_dir = root_dir / "frontend"
     env_config_dir = root_dir / "env-config"
     env_local_path = frontend_dir / ".env.local"
+    is_docker = os.getenv('IS_DOCKER', '').lower() == 'true' or Path('/.dockerenv').exists()
+    env_specific_name = '.env.docker' if is_docker else '.env.local'
     
     print("📝 Создание frontend/.env.local...")
     
@@ -23,7 +25,7 @@ def create_frontend_env():
     env_files = [
         env_config_dir / ".env.base",
         env_config_dir / ".env.secrets",
-        env_config_dir / ".env.local",
+        env_config_dir / env_specific_name,
     ]
     
     for env_file in env_files:
@@ -63,7 +65,7 @@ def create_frontend_env():
             if var in env_vars:
                 f.write(f"{var}={env_vars[var]}\n")
             elif var == 'NODE_ENV':
-                f.write(f"{var}=production\n")
+                f.write(f"{var}={'production' if is_docker else 'development'}\n")
             elif var == 'NEXTAUTH_URL':
                 f.write(f"{var}=http://localhost:3000\n")
             elif var == 'NEXT_PUBLIC_BACKEND_URL':
@@ -71,9 +73,9 @@ def create_frontend_env():
             elif var == 'BACKEND_URL':
                 f.write(f"{var}=http://localhost:8000\n")
             elif var == 'NEXT_PUBLIC_IS_DOCKER':
-                f.write(f"{var}=false\n")
+                f.write(f"{var}={'true' if is_docker else 'false'}\n")
             elif var == 'IS_DOCKER':
-                f.write(f"{var}=false\n")
+                f.write(f"{var}={'true' if is_docker else 'false'}\n")
     
     print(f"✅ Створено {env_local_path}")
     print(f"   Записано {len(critical_vars)} змінних")

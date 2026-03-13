@@ -36,21 +36,36 @@ UserModel = get_user_model()
 logger = logging.getLogger(__name__)
 
 
-def download_and_save_avatar(image_url, user_id=None):
+def download_and_save_avatar(image_url, user_id=None, media_base_url=None):
     """
     Download image from external URL and save it locally.
     Returns local URL or None if failed.
     """
     try:
         # Download image
-        response = requests.get(image_url, timeout=30)
+        response = requests.get(
+            image_url,
+            timeout=45,
+            allow_redirects=True,
+            headers={
+                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Referer': 'https://image.pollinations.ai/',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
+            },
+        )
         response.raise_for_status()
+
+        content_type = (response.headers.get('content-type') or '').lower()
+        if not content_type.startswith('image/'):
+            logger.error(f"❌ Avatar download returned non-image content for user {user_id}: {content_type}")
+            return None
 
         # Generate unique filename
         file_extension = 'jpg'  # Default to jpg
-        if 'image/png' in response.headers.get('content-type', ''):
+        if 'image/png' in content_type:
             file_extension = 'png'
-        elif 'image/webp' in response.headers.get('content-type', ''):
+        elif 'image/webp' in content_type:
             file_extension = 'webp'
 
         filename = f"avatar_{uuid.uuid4().hex[:12]}.{file_extension}"
@@ -62,7 +77,7 @@ def download_and_save_avatar(image_url, user_id=None):
 
         # Generate URL that works with Next.js media proxy
         # Use /api/media/ prefix so Next.js can proxy to Django
-        local_url = f"/api/media/{saved_path}"
+        local_url = f"{media_base_url.rstrip('/')}/{saved_path}" if media_base_url else f"/media/{saved_path}"
 
         logger.info(f"✅ Avatar saved locally: {saved_path} for user {user_id}")
         return local_url
@@ -465,8 +480,10 @@ def download_avatar(request):
 
         logger.info(f"📥 Downloading avatar from: {image_url[:100]}...")
 
+        media_base_url = request.build_absolute_uri(settings.MEDIA_URL)
+
         # Download and save image locally
-        local_avatar_url = download_and_save_avatar(image_url, user_id)
+        local_avatar_url = download_and_save_avatar(image_url, user_id, media_base_url)
 
         if local_avatar_url:
             logger.info(f"✅ Avatar downloaded and saved successfully for user {user_id}")

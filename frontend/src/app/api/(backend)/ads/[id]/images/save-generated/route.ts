@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
+import '@/lib/env-loader';
 
 export async function POST(
   request: NextRequest,
@@ -45,14 +46,15 @@ export async function POST(
 
     try {
       // Get backend URL from environment
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = rawBase.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
 
       console.log(`[Ad Images Save Generated API] 🔄 Saving generated image for ad ${adId} to backend...`);
 
       // Use ServerAuthManager to make authenticated request
       const response = await ServerAuthManager.authenticatedFetch(
         request,
-        `${backendUrl}/api/ads/${adId}/images/save-generated/`,
+        `${backendUrl}/api/ads/${adId}/images`,
         {
           method: 'POST',
           body: JSON.stringify({

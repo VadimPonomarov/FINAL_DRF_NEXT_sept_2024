@@ -151,15 +151,15 @@ class UserSerializer(BaseModelSerializer):
         import logging
         logger = logging.getLogger(__name__)
 
-        logger.info(f"🔧 UserEditSerializer.update called with validated_data: {validated_data}")
+        logger.info(f"[UserEdit] update called with validated_data: {validated_data}")
 
         profile_data = validated_data.pop("profile", None)
-        logger.info(f"🔧 Profile data extracted: {profile_data}")
+        logger.info(f"[UserEdit] Profile data extracted: {profile_data}")
 
         user = super().update(instance, validated_data)
 
         if profile_data:
-            logger.info(f"🔧 Processing profile data: {profile_data}")
+            logger.info(f"[UserEdit] Processing profile data: {profile_data}")
 
             if "avatar" in profile_data and profile_data["avatar"] is None:
                 profile_data.pop("avatar")
@@ -170,16 +170,16 @@ class UserSerializer(BaseModelSerializer):
                 avatar_url = profile_data.get("avatar_url")
                 if avatar_url:
                     profile_data["avatar_url"] = avatar_url
-                    logger.info(f"🔧 Setting avatar_url: {avatar_url}")
+                    logger.info(f"[UserEdit] Setting avatar_url: {avatar_url}")
                     # Не очищаем avatar файл, если он уже есть
                     # profile_data["avatar"] = None
 
-            logger.info(f"🔧 Final profile_data before update_or_create: {profile_data}")
+            logger.info(f"[UserEdit] Final profile_data before update_or_create: {profile_data}")
             profile, created = ProfileModel.objects.update_or_create(user=user, defaults=profile_data)
-            logger.info(f"🔧 Profile {'created' if created else 'updated'}: {profile.id}")
-            logger.info(f"🔧 Profile after save - avatar_url: {profile.avatar_url}, name: {profile.name}")
+            logger.info(f"[UserEdit] Profile {'created' if created else 'updated'}: {profile.id}")
+            logger.info(f"[UserEdit] Profile after save - avatar_url: {profile.avatar_url}, name: {profile.name}")
         else:
-            logger.warning("🔧 No profile data to update")
+            logger.warning("[UserEdit] No profile data to update")
 
         return user
 

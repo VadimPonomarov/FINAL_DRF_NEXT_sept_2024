@@ -28,14 +28,14 @@ class AllowIframeMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        print(f"🔧 AllowIframeMiddleware: Processing {request.path}")
-        logger.info(f"🔧 AllowIframeMiddleware: Processing {request.path}")
+        print(f"[Iframe] Processing {request.path}")
+        logger.info(f"[Iframe] Processing {request.path}")
 
         response = self.get_response(request)
 
         # Логируем исходные заголовки
         original_frame_options = response.get('X-Frame-Options', 'НЕТ')
-        logger.info(f"📋 Исходный X-Frame-Options: {original_frame_options}")
+        logger.info(f"[Iframe] Original X-Frame-Options: {original_frame_options}")
 
         # ПРИНУДИТЕЛЬНО удаляем все варианты X-Frame-Options заголовков
         headers_to_remove = [
@@ -52,7 +52,7 @@ class AllowIframeMiddleware:
                 removed_headers.append(header)
 
         if removed_headers:
-            logger.info(f"🗑️ Удалены заголовки: {removed_headers}")
+            logger.info(f"[Iframe] Removed headers: {removed_headers}")
 
         # Проверяем, разрешен ли путь для iframe
         path_allowed = any(
@@ -62,14 +62,14 @@ class AllowIframeMiddleware:
 
         if path_allowed:
             # Для разрешенных путей - полностью убираем ограничения iframe
-            logger.info(f"✅ Путь {request.path} разрешен для iframe - НЕ устанавливаем X-Frame-Options")
+            logger.info(f"[Iframe] Path {request.path} allowed for iframe - not setting X-Frame-Options")
         else:
             # Для остальных путей - устанавливаем SAMEORIGIN для безопасности
             response['X-Frame-Options'] = 'SAMEORIGIN'
-            logger.info(f"🔒 Путь {request.path} НЕ разрешен для iframe - устанавливаем SAMEORIGIN")
+            logger.info(f"[Iframe] Path {request.path} not allowed for iframe - setting SAMEORIGIN")
 
         # Финальная проверка
         final_frame_options = response.get('X-Frame-Options', 'НЕТ')
-        logger.info(f"🎯 Финальный X-Frame-Options: {final_frame_options}")
+        logger.info(f"[Iframe] Final X-Frame-Options: {final_frame_options}")
 
         return response

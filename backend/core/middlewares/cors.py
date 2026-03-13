@@ -12,11 +12,11 @@ class CORSMiddleware:
             'http://localhost:8000',
             'http://127.0.0.1:8000'
         ]
-        print(f"🔧 CORS Middleware initialized with allowed origins: {self.allowed_origins}")
+        print(f"[CORS] Middleware initialized with allowed origins: {self.allowed_origins}")
 
     def __call__(self, request):
         origin = request.META.get('HTTP_ORIGIN', '')
-        print(f"🔧 CORS: Processing request {request.method} {request.path} from origin: {origin}")
+        print(f"[CORS] Processing request {request.method} {request.path} from origin: {origin}")
 
         # Проверяем, является ли origin разрешенным
         is_allowed_origin = origin in self.allowed_origins
@@ -26,15 +26,15 @@ class CORSMiddleware:
         if is_allowed_origin:
             allow_origin = origin
             allow_credentials = 'true'
-            print(f"🔧 CORS: Allowing origin {origin} with credentials")
+            print(f"[CORS] Allowing origin {origin} with credentials")
         else:
             allow_origin = '*'
             allow_credentials = 'false'
-            print(f"🔧 CORS: Allowing ALL origins without credentials")
+            print(f"[CORS] Allowing ALL origins without credentials")
 
         # Обработка preflight запросов (OPTIONS)
         if request.method == "OPTIONS":
-            print(f"🔧 CORS: Handling OPTIONS preflight request")
+            print(f"[CORS] Handling OPTIONS preflight request")
             response = HttpResponse()
             response["Access-Control-Allow-Origin"] = allow_origin
             response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
@@ -43,7 +43,7 @@ class CORSMiddleware:
             response["Access-Control-Max-Age"] = "86400"  # 24 часа
             response["Access-Control-Expose-Headers"] = "X-Frame-Options, Content-Security-Policy"
             response.status_code = 200
-            print(f"🔧 CORS: OPTIONS response sent with status 200")
+            print(f"[CORS] OPTIONS response sent with status 200")
             return response
 
         # Обработка обычных запросов
@@ -56,5 +56,5 @@ class CORSMiddleware:
         response["Access-Control-Allow-Credentials"] = allow_credentials
         response["Access-Control-Expose-Headers"] = "X-Frame-Options, Content-Security-Policy"
 
-        print(f"🔧 CORS: Response sent with status {response.status_code}")
+        print(f"[CORS] Response sent with status {response.status_code}")
         return response

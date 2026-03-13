@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerAuthManager } from '@/shared/utils/auth/serverAuth';
+import '@/lib/env-loader';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +28,8 @@ export async function POST(request: NextRequest) {
 
     try {
       // Get backend URL from environment
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const rawBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = rawBase.replace(/\/+$/, '').replace(/\/(api)\/?$/i, '');
 
       // Get request data
       const requestData = await request.json();

@@ -16,12 +16,14 @@ def load_environment():
     Optimized environment loading without branching logic
     Uses file manipulation instead of complex conditionals
     """
+    environment_type = "docker" if os.getenv("IS_DOCKER", "").lower() == "true" or Path('/.dockerenv').exists() else "local"
+    env_specific = ".env.docker" if environment_type == "docker" else ".env.local"
     # Определяем последовательность файлов согласно ENV_SETUP.md
     # Порядок: base → secrets → local → service-specific
     env_files = [
         ROOT_DIR / "env-config" / ".env.base",      # 1. Базовые переменные
         ROOT_DIR / "env-config" / ".env.secrets",   # 2. Секреты
-        ROOT_DIR / "env-config" / ".env.local",     # 3. Локальные перевизначения
+        ROOT_DIR / "env-config" / env_specific,       # 3. Перевизначення середовища
         BASE_DIR / ".env"                           # 4. Backend-специфичные
     ]
 

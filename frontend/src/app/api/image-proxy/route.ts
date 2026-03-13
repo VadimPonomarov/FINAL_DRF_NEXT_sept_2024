@@ -15,13 +15,19 @@ export async function GET(request: NextRequest) {
   const PLACEHOLDER = new URL('/api/placeholder/400/300', request.url);
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
     const response = await fetch(url, {
       headers: {
         Accept: 'image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
         'User-Agent': 'Mozilla/5.0 (compatible; NextJS image proxy)',
       },
-      signal: AbortSignal.timeout(20000),
+      cache: 'no-store',
+      redirect: 'follow',
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       return NextResponse.redirect(PLACEHOLDER);

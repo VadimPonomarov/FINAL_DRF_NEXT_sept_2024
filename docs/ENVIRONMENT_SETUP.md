@@ -2,7 +2,7 @@
 
 ## Огляд
 
-Проект використовує модульну систему змінних середовища для підтримки різних конфігурацій розгортання. Для рантайм-завантаження значень використовується модуль [`env-loader.ts`](./design-system/ENV_LOADER.ts), що читає файли з `env-config/` і підставляє дефолтні значення за потреби.
+Проект використовує модульну систему змінних середовища для підтримки різних конфігурацій розгортання. Для рантайм-завантаження значень використовуються `backend/config/extra_config/environment.py`, `frontend/next.config.js` та `frontend/src/lib/env-loader.ts`, які читають файли з `env-config/` і автоматично вибирають `.env.local` або `.env.docker` залежно від `IS_DOCKER` / `/.dockerenv`.
 
 ## Структура конфігурації
 
@@ -23,6 +23,9 @@ env-config/
 
 **Використання**:
 ```bash
+# PostgreSQL для локальної розробки
+docker compose -f docker-compose.local.yml up -d
+
 # Backend
 cd backend
 python manage.py runserver
@@ -35,17 +38,27 @@ npm run dev
 **Ключові змінні**:
 ```bash
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/autoria_demo
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=autoria_demo
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
 
 # Backend
 DJANGO_SETTINGS_MODULE=config.settings
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
+DJANGO_DEBUG=true
+DEBUG=true
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
 # Frontend
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+BACKEND_URL=http://localhost:8000
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-secret-key
+NODE_ENV=development
+IS_DOCKER=false
 
 # Аутентифікація
 GOOGLE_CLIENT_ID=your-google-client-id
@@ -64,15 +77,22 @@ docker-compose up
 **Ключові змінні**:
 ```bash
 # Database (використовує service names)
-DATABASE_URL=postgresql://user:password@postgres:5432/dbname
+POSTGRES_HOST=pg
+POSTGRES_PORT=5432
+POSTGRES_DB=db
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
 
-# Backend (внутрішні Docker адреси)
+# Backend (внутрішні Docker адреси для server-side)
 DJANGO_SETTINGS_MODULE=config.settings
-ALLOWED_HOSTS=app,localhost,127.0.0.1
+BACKEND_URL=http://app:8000
+MEDIA_URL_BASE=http://localhost:8000
+IS_DOCKER=true
 
-# Frontend (використовує service names)
-NEXT_PUBLIC_BACKEND_URL=http://app:8000
-NEXTAUTH_URL=http://frontend:3000
+# Frontend
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL_INTERNAL=http://frontend:3000
 
 # RabbitMQ
 CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
@@ -136,10 +156,10 @@ IS_DOCKER=false
 
 ## Environment Variables Priority
 
-1. **`.env.secrets`** - найвищий пріоритет (секрети)
-2. **`.env.local`** - локальні налаштування
-3. **`.env.docker`** - Docker конфігурація
-4. **`.env.base`** - базові значення (найнижчий пріоритет)
+1. **`.env.base`** - базові значення
+2. **`.env.secrets`** - секрети поверх базових
+3. **`.env.local`** або **`.env.docker`** - перевизначення поточного середовища
+4. **`backend/.env`** - backend service-specific overrides
 
 ## Critical Variables
 

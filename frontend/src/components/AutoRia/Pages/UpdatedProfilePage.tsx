@@ -48,6 +48,41 @@ const UpdatedProfilePage = () => {
   const { handleAuthError } = useAuthErrorHandler();
   const { toast } = useToast();
 
+  const avatarText = useMemo(() => {
+    const getSafeTranslation = (key: string, fallback: string) => {
+      const value = t(key);
+      return value && value !== key ? value : fallback;
+    };
+
+    return {
+      title: getSafeTranslation('profile.avatar.title', 'Avatar settings'),
+      style: getSafeTranslation('profile.avatar.style', 'Style'),
+      selectStyle: getSafeTranslation('profile.avatar.selectStyle', 'Select style'),
+      styleRealistic: getSafeTranslation('profile.avatar.styles.realistic', 'Realistic'),
+      styleProfessional: getSafeTranslation('profile.avatar.styles.professional', 'Professional'),
+      styleCartoon: getSafeTranslation('profile.avatar.styles.cartoon', 'Cartoon'),
+      styleCaricature: getSafeTranslation('profile.avatar.styles.caricature', 'Caricature'),
+      styleArtistic: getSafeTranslation('profile.avatar.styles.artistic', 'Artistic'),
+      styleAnime: getSafeTranslation('profile.avatar.styles.anime', 'Anime'),
+      gender: getSafeTranslation('profile.avatar.gender', 'Gender'),
+      selectGender: getSafeTranslation('profile.avatar.selectGender', 'Select gender'),
+      genderMale: getSafeTranslation('profile.avatar.genders.male', 'Male'),
+      genderFemale: getSafeTranslation('profile.avatar.genders.female', 'Female'),
+      genderNeutral: getSafeTranslation('profile.avatar.genders.neutral', 'Neutral'),
+      customRequirements: getSafeTranslation('profile.avatar.customRequirements', 'Custom requirements'),
+      customPlaceholder: getSafeTranslation('profile.avatar.customPlaceholder', 'Describe the desired appearance and details'),
+      cancel: getSafeTranslation('profile.avatar.cancel', 'Cancel'),
+      upload: getSafeTranslation('profile.avatar.upload', 'Upload avatar'),
+      generate: getSafeTranslation('profile.avatar.generate', 'Generate avatar'),
+      generating: getSafeTranslation('profile.avatar.generating', 'Generating...'),
+      generateButton: getSafeTranslation('profile.avatar.generate_button', 'Generate avatar'),
+      fileInfo: getSafeTranslation('profile.avatar.fileInfo', 'PNG, JPG or WEBP up to 10 MB'),
+      success: getSafeTranslation('profile.avatar.success', 'Avatar generated successfully'),
+      failed: getSafeTranslation('profile.avatar.failed', 'Failed to generate avatar'),
+      saveWarning: getSafeTranslation('profile.avatar.saveWarning', 'saved locally only'),
+    };
+  }, [t]);
+
   const {
     data,
     loading,
@@ -638,7 +673,10 @@ const UpdatedProfilePage = () => {
             // console.debug('✅ Avatar downloaded and saved to profile successfully');
 
             // Update local state with the saved URL (backend returns avatar in profile.profile.avatar or profile.avatar)
-            const localAvatarUrl = saveResult.profile?.profile?.avatar || saveResult.profile?.avatar || result.avatar_url;
+            const localAvatarUrl = saveResult.profile?.profile?.avatar || saveResult.profile?.avatar;
+            if (!localAvatarUrl) {
+              throw new Error('Saved avatar URL missing in response');
+            }
             updateAvatarUrl(localAvatarUrl);
             // console.debug('📝 Updated avatar via updateAvatarUrl()');
 
@@ -646,31 +684,23 @@ const UpdatedProfilePage = () => {
             await mutate();
             // console.debug('🔄 Profile data refreshed');
 
-            toast({ title: '✅ ' + t('common.success'), description: t('profile.avatar.success') });
+            toast({ title: '✅ ' + t('common.success'), description: avatarText.success });
           } else {
             const saveError = await saveResponse.json();
             console.error('❌ Failed to save avatar to profile:', saveError);
-
-            // Still update local state with original URL
-            updateAvatarUrl(result.avatar_url);
-
-            toast({ title: '✅ ' + t('common.success'), description: `${t('profile.avatar.success')} (${t('profile.avatar.saveWarning')})` });
+            toast({ title: '❌ ' + t('common.error'), description: avatarText.failed, variant: 'destructive' });
           }
         } catch (saveError) {
           console.error('❌ Error saving avatar to profile:', saveError);
-
-          // Still update local state with original URL
-          updateAvatarUrl(result.avatar_url);
-
-          toast({ title: '✅ ' + t('common.success'), description: `${t('profile.avatar.success')} (${t('profile.avatar.saveWarning')})` });
+          toast({ title: '❌ ' + t('common.error'), description: avatarText.failed, variant: 'destructive' });
         }
       } else {
-        toast({ title: '❌ ' + t('common.error'), description: `${t('profile.avatar.failed')}: ${result.error}`, variant: 'destructive' });
+        toast({ title: '❌ ' + t('common.error'), description: `${avatarText.failed}: ${result.error}`, variant: 'destructive' });
       }
     } catch (error) {
       console.error('❌ Error generating avatar:', error);
       const errorMessage = error instanceof Error ? (error as any).message : 'Unknown error occurred';
-      toast({ title: '❌ ' + t('common.error'), description: `${t('profile.avatar.failed')}: ${errorMessage}`, variant: 'destructive' });
+      toast({ title: '❌ ' + t('common.error'), description: `${avatarText.failed}: ${errorMessage}`, variant: 'destructive' });
     } finally {
       setIsGeneratingAvatar(false);
     }
@@ -729,10 +759,10 @@ const UpdatedProfilePage = () => {
 
           <div className="flex items-center gap-2">
             <Badge variant={hasAccount ? "default" : "secondary"} className="text-xs">
-              {hasAccount ? "Account Active" : "No Account"}
+              {hasAccount ? 'Account Active' : 'No Account'}
             </Badge>
             <Badge variant="outline" className="text-xs">
-              {addressCount} Address{addressCount !== 1 ? 'es' : ''}
+              {addressCount} {addressCount === 1 ? 'Address' : 'Addresses'}
             </Badge>
           </div>
         </div>
@@ -873,7 +903,7 @@ const UpdatedProfilePage = () => {
                       disabled={updating}
                     >
                       <Upload className="h-4 w-4 mr-2" />
-                      {t('profile.avatar.upload')}
+                      {avatarText.upload}
                     </Button>
                     <Button
                       variant="outline"
@@ -885,7 +915,7 @@ const UpdatedProfilePage = () => {
                       ) : (
                         <Sparkles className="h-4 w-4 mr-2" />
                       )}
-                      {isGeneratingAvatar ? t('profile.avatar.generating') : t('profile.avatar.generate')}
+                      {isGeneratingAvatar ? avatarText.generating : avatarText.generate}
                     </Button>
                   </div>
                   <input
@@ -896,7 +926,7 @@ const UpdatedProfilePage = () => {
                     className="hidden"
                   />
                   <p className="text-sm text-muted-foreground">
-                    {t('profile.avatar.fileInfo')}
+                    {avatarText.fileInfo}
                   </p>
                 </div>
               </div>
@@ -1455,56 +1485,56 @@ const UpdatedProfilePage = () => {
             className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl border"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold mb-4">{t('profile.avatar.title')}</h3>
+            <h3 className="text-lg font-semibold mb-4">{avatarText.title}</h3>
 
             <div className="space-y-4">
               {/* Style Selection */}
               <div>
-                <Label htmlFor="avatar-style">{t('profile.avatar.style')}</Label>
+                <Label htmlFor="avatar-style">{avatarText.style}</Label>
                 <Select
                   value={avatarOptions.style}
                   onValueChange={(value) => setAvatarOptions(prev => ({ ...prev, style: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('profile.avatar.selectStyle')} />
+                    <SelectValue placeholder={avatarText.selectStyle} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="realistic">{t('profile.avatar.styles.realistic')}</SelectItem>
-                    <SelectItem value="professional">{t('profile.avatar.styles.professional')}</SelectItem>
-                    <SelectItem value="cartoon">{t('profile.avatar.styles.cartoon')}</SelectItem>
-                    <SelectItem value="caricature">{t('profile.avatar.styles.caricature')}</SelectItem>
-                    <SelectItem value="artistic">{t('profile.avatar.styles.artistic')}</SelectItem>
-                    <SelectItem value="anime">{t('profile.avatar.styles.anime')}</SelectItem>
+                    <SelectItem value="realistic">{avatarText.styleRealistic}</SelectItem>
+                    <SelectItem value="professional">{avatarText.styleProfessional}</SelectItem>
+                    <SelectItem value="cartoon">{avatarText.styleCartoon}</SelectItem>
+                    <SelectItem value="caricature">{avatarText.styleCaricature}</SelectItem>
+                    <SelectItem value="artistic">{avatarText.styleArtistic}</SelectItem>
+                    <SelectItem value="anime">{avatarText.styleAnime}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Gender Selection */}
               <div>
-                <Label htmlFor="avatar-gender">{t('profile.(avatar as any).gender')}</Label>
+                <Label htmlFor="avatar-gender">{avatarText.gender}</Label>
                 <Select
                   value={(avatarOptions as any).gender}
                   onValueChange={(value) => setAvatarOptions(prev => ({ ...prev, gender: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('profile.avatar.selectGender')} />
+                    <SelectValue placeholder={avatarText.selectGender} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">{t('profile.avatar.genders.male')}</SelectItem>
-                    <SelectItem value="female">{t('profile.avatar.genders.female')}</SelectItem>
-                    <SelectItem value="neutral">{t('profile.avatar.genders.neutral')}</SelectItem>
+                    <SelectItem value="male">{avatarText.genderMale}</SelectItem>
+                    <SelectItem value="female">{avatarText.genderFemale}</SelectItem>
+                    <SelectItem value="neutral">{avatarText.genderNeutral}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Custom Requirements */}
               <div>
-                <Label htmlFor="custom-requirements">{t('profile.avatar.customRequirements')}</Label>
+                <Label htmlFor="custom-requirements">{avatarText.customRequirements}</Label>
                 <textarea
                   id="custom-requirements"
                   className="w-full p-2 border rounded-md resize-none placeholder:text-gray-500"
                   rows={3}
-                  placeholder={t('profile.avatar.customPlaceholder')}
+                  placeholder={avatarText.customPlaceholder}
                   value={avatarOptions.customRequirements}
                   onChange={(e) => setAvatarOptions(prev => ({ ...prev, customRequirements: e.target.value }))}
                 />
@@ -1521,7 +1551,7 @@ const UpdatedProfilePage = () => {
                 onClick={() => setShowAvatarOptions(false)}
                 className="flex-1"
               >
-                {t('profile.avatar.cancel')}
+                {avatarText.cancel}
               </Button>
               <Button
                 onClick={() => {
@@ -1534,12 +1564,12 @@ const UpdatedProfilePage = () => {
                 {isGeneratingAvatar ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
+                    {avatarText.generating}
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
-                    {t('profile.avatar.generate_button')}
+                    {avatarText.generateButton}
                   </>
                 )}
               </Button>

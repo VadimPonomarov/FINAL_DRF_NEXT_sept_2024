@@ -20,6 +20,47 @@ const CreateAdPage: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const persistCreatedAdImages = async (adId: number, formData: Partial<CarAdFormData>) => {
+    const uploaded = ((formData as any).uploaded_images || []) as File[];
+    for (const file of uploaded) {
+      const fd = new FormData();
+      fd.append('image', file);
+      const res = await fetch(`/api/ads/${adId}/images`, {
+        method: 'POST',
+        body: fd,
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => '');
+        throw new Error(errorText || `Failed to upload image ${file.name}`);
+      }
+    }
+
+    const generated = ((formData as any).generated_images || []) as Array<{ url?: string; title?: string; isMain?: boolean }>;
+    for (let idx = 0; idx < generated.length; idx++) {
+      const image = generated[idx];
+      if (!image?.url) {
+        continue;
+      }
+
+      const res = await fetch(`/api/ads/${adId}/images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_url: image.url,
+          caption: image.title || `Generated image ${idx + 1}`,
+          is_primary: !!image.isMain,
+          order: idx,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => '');
+        throw new Error(errorText || `Failed to save generated image ${idx + 1}`);
+      }
+    }
+  };
+
   // Обработчик отправки формы
   const handleSubmit = async (formData: Partial<CarAdFormData>) => {
     setIsSubmitting(true);
@@ -33,6 +74,11 @@ const CreateAdPage: React.FC = () => {
 
       const response = await CarAdsService.createCarAd(apiData as any);
       console.log('[CreateAdPage] ✅ Ad created successfully:', response);
+
+      const createdAdId = Number((response as any)?.id);
+      if (Number.isFinite(createdAdId) && createdAdId > 0) {
+        await persistCreatedAdImages(createdAdId, formData);
+      }
 
       // Показываем уведомление об успехе
       toast({

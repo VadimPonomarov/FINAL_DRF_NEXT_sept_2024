@@ -101,23 +101,22 @@
 ### Активный этап: M1 - Foundation & MVP
 
 **Завершено в этой сессии:**
-- ✅ Исправлена самопроизвольная генерация объявлений
-- ✅ Созданы недостающие файлы для chat app (apps.py, __init__.py)
-- ✅ Добавлены безопасные импорты для image generation
-- ✅ Созданы фундаментальные документы проекта
+- ✅ Генерация фото в формах переведена на внутренний authenticated proxy `/api/llm/generate-car-images`
+- ✅ Отображение generated AI images в галерее переведено на `/api/image-proxy`, что убрало `ERR_BLOCKED_BY_ORB` и placeholder вместо реальных картинок на live create-ad flow
+- ✅ Create flow теперь сохраняет `uploaded_images` и `generated_images` в БД сразу после создания объявления
+- ✅ Автоматический route `test-ads/seed-once` отключен, чтобы удаленные объявления не появлялись снова
+- ✅ Avatar UI защищен от утечки translation keys через safe fallbacks и исправленный ключ `profile.avatar.gender`
 
 **В процессе:**
-- 🔄 Развертывание Railway с исправлениями
-- 🔄 Тестирование chat endpoints для генерации изображений
+- 🔄 Нормализация local/docker env-конфигурации для проверки avatar saving и image actions перед новым deploy
 
 **Заблокировано:**
-- Генерация изображений - ожидает завершения развертывания
+- Нет
 
 **Следующая задача:**
-- Дождаться развертывания Railway
-- Протестировать chat endpoints
-- Убедиться что генерация изображений работает
-- Завершить M1 и перейти к M2
+- Прогнать локальную и Docker-проверку avatar saving, delete image и set-main image
+- После успешной проверки выполнить новый deploy и live re-check
+- Зафиксировать evidence для local/docker и production сценариев
 
 ## Известные риски
 

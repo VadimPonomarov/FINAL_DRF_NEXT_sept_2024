@@ -377,9 +377,9 @@ class QuickStatsView(generics.GenericAPIView):
             if force_refresh:
                 try:
                     cache.delete('quick_stats')
-                    print('[QuickStats] 🗑️ Cache cleared due to force_refresh=true')
+                    print('[QuickStats] Cache cleared due to force_refresh=true')
                 except Exception as e:
-                    print(f'[QuickStats] ⚠️ Failed to clear cache: {e}')
+                    print(f'[QuickStats] Failed to clear cache: {e}')
 
             # Проверяем кеш (если не принудительное обновление)
             cached_stats = None
