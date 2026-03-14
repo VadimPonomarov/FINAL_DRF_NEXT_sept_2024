@@ -1,76 +1,23 @@
-import logging
-import os
-import hashlib
-
 from django.contrib.auth import get_user_model
-from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import NotAcceptable
 from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView, get_object_or_404, )
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-def translate_to_english(text):
-    """Simple translation dictionary for common avatar-related terms"""
-    translations = {
-        # Ukrainian to English
-        'портрет': 'portrait',
-        'аватар': 'avatar',
-        'професійний': 'professional',
-        'висока якість': 'high quality',
-        'фотореалістичний': 'photorealistic',
-        'студійне освітлення': 'studio lighting',
-        'нейтральний фон': 'neutral background',
-        'без людей': 'no people',
-        'без тексту': 'no text',
-        'без логотипів': 'no logos',
-        'висока роздільна здатність': 'high resolution',
-        'чіткий фокус': 'sharp focus',
-        'обличчя': 'face',
-        'людина': 'person',
-        'чоловік': 'man',
-        'жінка': 'woman',
-        'дитина': 'child',
-        'молодий': 'young',
-        'старий': 'old',
-        'середнього віку': 'middle aged',
-        'щасливий': 'happy',
-        'серйозний': 'serious',
-        'дружелюбний': 'friendly',
-        'професійний': 'professional',
-        'діловий': 'business',
-        'креативний': 'creative',
-        'спортивний': 'sporty',
-        ' casual': 'casual',
-        'формальний': 'formal',
-    }
-    
-    # Translate known words
-    translated = text.lower()
-    for ua, en in translations.items():
-        translated = translated.replace(ua, en)
-    
-    # Remove special characters that might cause issues
-    translated = translated.replace('—', '-')
-    translated = translated.replace('"', '')
-    translated = translated.replace("'", '')
-    translated = translated.replace('•', '')
-    translated = translated.replace('·', '')
-    
-    return translated.strip()
-
-try:
-    from langchain.prompts import PromptTemplate
-    _LANGCHAIN_AVAILABLE = True
-except ImportError:
-    PromptTemplate = None
-    _LANGCHAIN_AVAILABLE = False
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from langchain.prompts import PromptTemplate
+import logging
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from langchain.prompts import PromptTemplate
+import logging
 import requests
 import uuid
+from io import BytesIO
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.conf import settings
@@ -87,36 +34,21 @@ UserModel = get_user_model()
 logger = logging.getLogger(__name__)
 
 
-def download_and_save_avatar(image_url, user_id=None, media_base_url=None):
+def download_and_save_avatar(image_url, user_id=None):
     """
     Download image from external URL and save it locally.
     Returns local URL or None if failed.
     """
     try:
         # Download image
-        response = requests.get(
-            image_url,
-            timeout=45,
-            allow_redirects=True,
-            headers={
-                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Referer': 'https://image.pollinations.ai/',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
-            },
-        )
+        response = requests.get(image_url, timeout=30)
         response.raise_for_status()
-
-        content_type = (response.headers.get('content-type') or '').lower()
-        if not content_type.startswith('image/'):
-            logger.error(f"❌ Avatar download returned non-image content for user {user_id}: {content_type}")
-            return None
 
         # Generate unique filename
         file_extension = 'jpg'  # Default to jpg
-        if 'image/png' in content_type:
+        if 'image/png' in response.headers.get('content-type', ''):
             file_extension = 'png'
-        elif 'image/webp' in content_type:
+        elif 'image/webp' in response.headers.get('content-type', ''):
             file_extension = 'webp'
 
         filename = f"avatar_{uuid.uuid4().hex[:12]}.{file_extension}"
@@ -128,7 +60,7 @@ def download_and_save_avatar(image_url, user_id=None, media_base_url=None):
 
         # Generate URL that works with Next.js media proxy
         # Use /api/media/ prefix so Next.js can proxy to Django
-        local_url = f"{media_base_url.rstrip('/')}/{saved_path}" if media_base_url else f"/media/{saved_path}"
+        local_url = f"/api/media/{saved_path}"
 
         logger.info(f"✅ Avatar saved locally: {saved_path} for user {user_id}")
         return local_url
@@ -433,9 +365,9 @@ Final Style: {style} style with custom elements"""
         user_id = getattr(request.user, 'id', 'anonymous') if hasattr(request, 'user') and request.user.is_authenticated else 'anonymous'
         logger.info(f"Generating avatar for user {user_id}")
 
+        # Generate avatar image using g4f client directly
         try:
-            # Generate avatar image using pure G4F
-            from g4f import Client
+            from g4f.client import Client
             client = Client()
 
             response = client.images.generate(
@@ -446,48 +378,15 @@ Final Style: {style} style with custom elements"""
 
             if response and hasattr(response, 'data') and response.data:
                 image_url = response.data[0].url
-                logger.info(f"✅ Avatar generated using G4F for user {user_id}")
-                
-                # Fix Pollinations.ai URL encoding issues
-                if 'image.pollinations.ai' in image_url:
-                    # Convert to proper URL format
-                    import urllib.parse
-                    image_url = urllib.parse.unquote(image_url)
-                    
-                    # Create simple working URL with encoded prompt
-                    if '?prompt=' in image_url:
-                        base_url = image_url.split('?prompt=')[0]
-                        # Extract seed from URL
-                        seed_match = image_url.find('?seed=')
-                        seed = image_url[seed_match:] if seed_match != -1 else ''
-                        
-                        # Create simple prompt that works
-                        simple_prompt = f"portrait of {first_name} {last_name}, professional avatar, high quality"
-                        encoded_prompt = urllib.parse.quote(simple_prompt)
-                        
-                        # Rebuild with simple format
-                        image_url = f"{base_url}?prompt={encoded_prompt}&{seed}&width=1024&height=1024&model=flux"
             else:
-                logger.error(f"G4F returned empty response for user {user_id}")
-                raise Exception("No image data in G4F response")
-                
+                image_url = None
+
         except Exception as e:
-            logger.warning(f"G4F avatar generation failed: {e}")
-            # Fallback to direct Pollinations.ai URL with translated prompt
-            import urllib.parse
-            
-            # Create simple English prompt with translation
-            simple_prompt = f"portrait {first_name} {last_name} professional avatar high quality"
-            translated_prompt = translate_to_english(simple_prompt)
-            encoded_prompt = urllib.parse.quote(translated_prompt)
-            seed = int(hashlib.md5(f"avatar_{user_id}".encode()).hexdigest()[:8], 16) % 1000000
-            
-            # Use dummyimage.com for avatar images
-            avatar_text = f"Avatar: {first_name} {last_name}"
-            image_url = f"https://dummyimage.com/512x512/10b981/ffffff&text={avatar_text.replace(' ', '+')}"
-            
-            logger.info(f"🔄 Using dummyimage.com avatar images for user {user_id}: {image_url}")
-            logger.info(f"🔄 Avatar text: {avatar_text}")
+            logger.error(f"G4F image generation failed: {e}")
+            # Fallback to placeholder
+            import hashlib
+            prompt_hash = hashlib.md5(formatted_prompt.encode()).hexdigest()[:8]
+            image_url = f"https://picsum.photos/512/512?random={prompt_hash}"
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")
@@ -542,44 +441,46 @@ Final Style: {style} style with custom elements"""
         500: openapi.Response(description="Server error")
     }
 )
-@api_view(['PATCH'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def save_avatar(request):
+def download_avatar(request):
     """
-    Save avatar URL directly to user profile without downloading.
-    Returns success response with saved URL.
+    Download avatar image from external URL and save it locally.
+    Returns local URL for the saved image.
     """
     try:
         user_id = getattr(request.user, 'id', None)
-        logger.info(f"🔄 Save avatar URL request for user {user_id}")
+        logger.info(f"🔄 Download avatar request for user {user_id}")
 
-        # Get avatar URL from request
-        avatar_url = request.data.get('avatar_url')
-        if not avatar_url:
-            logger.error(f"❌ No avatar_url provided for user {user_id}")
+        # Get image URL from request
+        image_url = request.data.get('image_url')
+        if not image_url:
+            logger.error(f"❌ No image_url provided for user {user_id}")
             return Response({
                 'success': False,
-                'error': 'avatar_url is required'
+                'error': 'image_url is required'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        logger.info(f"💾 Saving avatar URL for user {user_id}: {avatar_url[:100]}...")
+        logger.info(f"📥 Downloading avatar from: {image_url[:100]}...")
 
-        # Save avatar URL directly to user profile
-        user = request.user
-        profile = user.profile
-        profile.avatar_url = avatar_url
-        profile.save(update_fields=['avatar_url'])
+        # Download and save image locally
+        local_avatar_url = download_and_save_avatar(image_url, user_id)
 
-        logger.info(f"✅ Avatar URL saved successfully for user {user_id}")
-        
-        return Response({
-            'success': True,
-            'avatar_url': avatar_url,
-            'message': 'Avatar URL saved successfully'
-        }, status=status.HTTP_200_OK)
+        if local_avatar_url:
+            logger.info(f"✅ Avatar downloaded and saved successfully for user {user_id}")
+            return Response({
+                'success': True,
+                'local_url': local_avatar_url
+            }, status=status.HTTP_200_OK)
+        else:
+            logger.error(f"❌ Failed to download and save avatar for user {user_id}")
+            return Response({
+                'success': False,
+                'error': 'Failed to download and save avatar'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     except Exception as e:
-        logger.error(f"❌ Error in save_avatar for user {user_id or 'anonymous'}: {e}")
+        logger.error(f"❌ Error in download_avatar for user {user_id or 'anonymous'}: {e}")
         return Response({
             'success': False,
             'error': str(e)
@@ -736,7 +637,7 @@ Final Style: {style} with enhanced details"""
 
         # Generate image using g4f client
         try:
-            from g4f import Client
+            from g4f.client import Client
             client = Client()
 
             response = client.images.generate(
@@ -755,7 +656,7 @@ Final Style: {style} with enhanced details"""
             # Fallback to placeholder
             import hashlib
             prompt_hash = hashlib.md5(enhanced_prompt.encode()).hexdigest()[:8]
-            image_url = f"https://picsum.photos/seed/{prompt_hash}/{width}/{height}"
+            image_url = f"https://picsum.photos/{width}/{height}?random={prompt_hash}"
 
         if image_url:
             logger.info(f"✅ Image generated successfully for user {user_id}")
