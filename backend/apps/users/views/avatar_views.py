@@ -482,11 +482,11 @@ Final Style: {style} style with custom elements"""
             encoded_prompt = urllib.parse.quote(translated_prompt)
             seed = int(hashlib.md5(f"avatar_{user_id}".encode()).hexdigest()[:8], 16) % 1000000
             
-            # Use placeholder.com for avatar images
+            # Use dummyimage.com for avatar images
             avatar_text = f"Avatar: {first_name} {last_name}"
-            image_url = f"https://via.placeholder.com/512x512/10b981/ffffff?text={avatar_text.replace(' ', '+')}"
+            image_url = f"https://dummyimage.com/512x512/10b981/ffffff&text={avatar_text.replace(' ', '+')}"
             
-            logger.info(f"🔄 Using placeholder.com avatar images for user {user_id}: {image_url}")
+            logger.info(f"🔄 Using dummyimage.com avatar images for user {user_id}: {image_url}")
             logger.info(f"🔄 Avatar text: {avatar_text}")
 
         if image_url:
