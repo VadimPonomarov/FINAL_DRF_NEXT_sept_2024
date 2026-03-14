@@ -588,13 +588,12 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 encoded_prompt = urllib.parse.quote(translated_prompt)
                 seed = int(hashlib.md5(f"{session_id}_{angle}".encode()).hexdigest()[:8], 16) % 1000000
                 
-                # Use car-specific placeholder service
-                # Create car-specific seed based on brand, model, and angle
-                car_seed = f"{brand.lower()}_{model.lower().replace(' ', '_')}_{angle}"
-                fallback_url = f"https://source.unsplash.com/1024x1024/?{car_seed},car,automobile"
+                # Use placeholder.com with car info text
+                car_text = f"{brand} {model} - {angle.title()} View"
+                fallback_url = f"https://via.placeholder.com/1024x1024/1e40af/ffffff?text={car_text.replace(' ', '+')}"
                 
-                logger.info(f"🔄 [MOCK] Using Unsplash car images for {angle}: {fallback_url}")
-                logger.info(f"🔄 [MOCK] Car seed: {car_seed}")
+                logger.info(f"🔄 [MOCK] Using placeholder.com car images for {angle}: {fallback_url}")
+                logger.info(f"🔄 [MOCK] Car text: {car_text}")
                 
                 generated_images.append({
                     'url': fallback_url,
@@ -612,14 +611,14 @@ def generate_car_images_with_mock_algorithm(request, car_data=None, angles=None,
                 continue
 
         # Return success response with generated images
-        logger.info(f"[mock_algorithm] Generated {len(generated_images)} images using Unsplash car images")
+        logger.info(f"[mock_algorithm] Generated {len(generated_images)} images using placeholder.com car images")
         
         return Response({
             'success': True,
             'images': generated_images,
             'total_generated': len(generated_images),
             'session_id': session_id,
-            'method': 'unsplash_car_images',
+            'method': 'placeholder_car_images',
             'car_data': car_data,
             'angles': angles,
             'style': style
