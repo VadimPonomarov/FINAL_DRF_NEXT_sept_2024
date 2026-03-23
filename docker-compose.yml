@@ -1,5 +1,10 @@
-services:
+# Common env files (DRY principle)
+x-env-files: &env-files
+  - ./env-config/.env.base       # Base configuration
+  - ./env-config/.env.secrets    # Secrets
+  - ./env-config/.env.docker     # Docker overrides
 
+services:
   app:
     build:
       context: ./backend
@@ -13,10 +18,7 @@ services:
       IS_DOCKER: true
       DISABLE_RATELIMIT: true
       DEBUG: true
-    env_file:
-      - ./env-config/.env.base       # Base configuration
-      - ./env-config/.env.secrets    # Secrets
-      - ./env-config/.env.docker     # Docker overrides
+    env_file: *env-files
     ports:
       - "8000:8000"
     restart: unless-stopped
@@ -50,10 +52,7 @@ services:
   pg:
     image: postgres:17-alpine
     container_name: pg
-    env_file:
-      - ./env-config/.env.base       # Base configuration
-      - ./env-config/.env.secrets    # Secrets
-      - ./env-config/.env.docker     # Docker overrides
+    env_file: *env-files
     ports:
       - "5432:5432"
     volumes:
@@ -61,19 +60,12 @@ services:
       # This allows you to see and manage database files directly
       - ./pg/data:/var/lib/postgresql/data
     restart: unless-stopped
-    command: >
-      sh -c "
-        apk add --no-cache musl-locales musl-locales-lang &&
-        export LANG=en_US.UTF-8 &&
-        export LC_ALL=en_US.UTF-8 &&
-        docker-entrypoint.sh postgres -c 'lc_messages=en_US.UTF-8' -c 'lc_monetary=en_US.UTF-8' -c 'lc_numeric=en_US.UTF-8' -c 'lc_time=en_US.UTF-8'
-      "
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-autoria_db} || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-db} || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 60s  # Даємо PostgreSQL 60 секунд на ініціалізацію
+      start_period: 60s
 
 
   # =============================================================================

@@ -43,16 +43,6 @@ Object.entries(allEnv).forEach(([key, value]) => {
   process.env[key] = value;
 });
 
-console.log('🔧 Loaded environment variables from env-config/');
-console.log(`📂 Loaded files: .env.base, .env.secrets, ${envSpecificName}`);
-console.log(`📁 NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT_SET'}`);
-console.log(`📁 GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? 'SET' : 'NOT_SET'}`);
-console.log(`📁 GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT_SET'}`);
-console.log(`📁 NEXT_PUBLIC_BACKEND_URL: ${process.env.NEXT_PUBLIC_BACKEND_URL || 'NOT_SET'}`);
-console.log(`📁 REDIS_HOST: ${process.env.REDIS_HOST || 'NOT_SET'}`);
-console.log(`📁 REDIS_URL: ${process.env.REDIS_URL || 'NOT_SET'}`);
-console.log(`📁 IS_DOCKER: ${process.env.IS_DOCKER || 'NOT_SET'}`);
-console.log(`📁 NEXT_PUBLIC_IS_DOCKER: ${process.env.NEXT_PUBLIC_IS_DOCKER || 'NOT_SET'}`);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -343,8 +333,7 @@ const nextConfig = {
     // Apply to BOTH server and client builds
     
     const adapterPath = path.resolve(__dirname, 'src/lib/react-page-tracker-adapter.ts');
-    console.log('[Webpack Config] Setting react-page-tracker alias to:', adapterPath);
-    
+
     // Ensure alias object exists and preserve existing aliases
     config.resolve.alias = {
       ...config.resolve.alias,

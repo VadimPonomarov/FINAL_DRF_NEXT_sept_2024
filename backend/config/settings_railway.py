@@ -122,10 +122,12 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 ADMIN_URL = os.environ.get('ADMIN_URL', 'admin/')
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = False
-CORS_ALLOWED_ORIGINS = [
-    o.strip()
-    for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
-    if o.strip()
+_cors_allow_all = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 'yes')
+CORS_ALLOW_ALL_ORIGINS = _cors_allow_all
+CORS_ALLOW_CREDENTIALS = not _cors_allow_all
+_env_origins = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()]
+CORS_ALLOWED_ORIGINS = _env_origins or [
+    'https://autoria-clone.vercel.app',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
 ]

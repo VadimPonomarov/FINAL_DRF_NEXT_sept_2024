@@ -10,7 +10,7 @@ from core.utils.environment_detector import env_detector
 def get_cors_config():
     """Get CORS configuration based on environment."""
     is_docker = env_detector.is_docker()
-    
+
     # Base allowed origins
     base_origins = [
         'http://localhost:3000',
@@ -18,7 +18,7 @@ def get_cors_config():
         'http://localhost:8000',
         'http://127.0.0.1:8000',
     ]
-    
+
     # Docker-specific origins
     if is_docker:
         docker_origins = [
@@ -27,18 +27,18 @@ def get_cors_config():
             'http://nginx:80',
         ]
         base_origins.extend(docker_origins)
-    
-    # Production origins from environment
-    production_origins = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
-    production_origins = [origin.strip() for origin in production_origins if origin.strip()]
-    
+
+    # Production origins from environment (comma-separated)
+    production_origins = [o.strip() for o in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()]
     if production_origins:
         base_origins.extend(production_origins)
-    
+
+    allow_all = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 'yes')
+
     return {
         'ALLOWED_ORIGINS': base_origins,
-        'ALLOW_CREDENTIALS': False,  # Отключаем credentials при ALLOW_ALL_ORIGINS = True
-        'ALLOW_ALL_ORIGINS': True,  # Временно разрешаем все источники для тестирования
+        'ALLOW_CREDENTIALS': not allow_all,
+        'ALLOW_ALL_ORIGINS': allow_all,
     }
 
 

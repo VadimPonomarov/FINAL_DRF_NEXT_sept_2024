@@ -10,10 +10,11 @@
  * Next.js has finished env loading — use BACKEND_URL directly there.
  */
 
-export const BACKEND_URL: string =
+export const BACKEND_URL: string = (
     process.env.NEXT_PUBLIC_BACKEND_URL ||
     process.env.BACKEND_URL ||
-    'http://localhost:8000';
+    'http://localhost:8000'
+).trim();
 
 /**
  * Build a full backend API URL from a path.

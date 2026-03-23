@@ -4,6 +4,7 @@ Views for AI image generation using g4f
 import logging
 import requests
 from typing import Optional, List, Dict
+from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response

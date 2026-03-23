@@ -11,10 +11,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from langchain.prompts import PromptTemplate
 import logging
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from langchain.prompts import PromptTemplate
-import logging
 import requests
 import uuid
 from io import BytesIO
@@ -32,6 +28,47 @@ from apps.users.serializers import (
 
 UserModel = get_user_model()
 logger = logging.getLogger(__name__)
+
+
+def _generate_avatar_svg(profile_data):
+    """
+    Generate a deterministic SVG avatar as ultimate fallback
+    """
+    import base64
+    
+    # Extract user data for avatar generation
+    first_name = profile_data.get('first_name', 'User')[0].upper()
+    last_name = profile_data.get('last_name', '')
+    gender = profile_data.get('gender', 'neutral')
+    style = profile_data.get('style', 'professional')
+    
+    # Generate initials
+    if last_name:
+        initials = f"{first_name}{last_name[0].upper()}"
+    else:
+        initials = first_name
+    
+    # Color based on user data for consistency
+    seed = f"{profile_data.get('first_name', '')}{profile_data.get('last_name', '')}{profile_data.get('age', 25)}"
+    colors = [
+        '#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', 
+        '#3B82F6', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'
+    ]
+    color_index = abs(hash(seed)) % len(colors)
+    bg_color = colors[color_index]
+    
+    # Generate SVG
+    svg_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <rect width="512" height="512" fill="{bg_color}"/>
+    <text x="256" y="280" font-family="Arial, sans-serif" font-size="120" font-weight="bold" 
+          text-anchor="middle" fill="white">{initials}</text>
+    <circle cx="256" cy="180" r="60" fill="white" opacity="0.9"/>
+    <circle cx="256" cy="180" r="40" fill="{bg_color}"/>
+    <path d="M 256 220 Q 200 260 180 320 L 332 320 Q 312 260 256 220" fill="white" opacity="0.9"/>
+</svg>'''
+    
+    return base64.b64encode(svg_content.encode()).decode()
 
 
 def download_and_save_avatar(image_url, user_id=None):
@@ -365,28 +402,148 @@ Final Style: {style} style with custom elements"""
         user_id = getattr(request.user, 'id', 'anonymous') if hasattr(request, 'user') and request.user.is_authenticated else 'anonymous'
         logger.info(f"Generating avatar for user {user_id}")
 
-        # Generate avatar image using g4f client directly
+        # Production-ready avatar generation with multiple fallback layers
         try:
-            from g4f.client import Client
-            client = Client()
-
-            response = client.images.generate(
-                model="flux",
-                prompt=formatted_prompt,
-                response_format="url"
-            )
-
-            if response and hasattr(response, 'data') and response.data:
-                image_url = response.data[0].url
-            else:
-                image_url = None
+            import urllib.parse
+            import hashlib
+            import requests
+            import time
+            
+            # Layer 1: Try G4F with multiple providers
+            g4f_providers = [
+                ('HuggingSpace', 'flux'),
+                ('PollinationsAI', None),  # Let provider choose model
+                ('OpenaiChat', 'dall-e-3'),
+            ]
+            
+            for provider_name, model in g4f_providers:
+                try:
+                    from g4f.client import Client
+                    from g4f.Provider import HuggingSpace, PollinationsAI, OpenaiChat
+                    
+                    # Map provider names to actual classes
+                    provider_map = {
+                        'HuggingSpace': HuggingSpace,
+                        'PollinationsAI': PollinationsAI,
+                        'OpenaiChat': OpenaiChat
+                    }
+                    
+                    provider_class = provider_map.get(provider_name)
+                    if not provider_class:
+                        continue
+                    
+                    client = Client(image_provider=provider_class)
+                    
+                    # Prepare generation parameters
+                    params = {
+                        'prompt': formatted_prompt,
+                        'response_format': 'url',
+                        'width': 512,
+                        'height': 512
+                    }
+                    
+                    if model:
+                        params['model'] = model
+                    
+                    response = client.images.generate(**params)
+                    
+                    if response and hasattr(response, 'data') and response.data:
+                        # Test the URL before returning
+                        test_url = response.data[0].url
+                        try:
+                            test_response = requests.head(test_url, timeout=5)
+                            if test_response.status_code == 200:
+                                image_url = test_url
+                                logger.info(f"✅ Avatar generated via G4F {provider_name} for user {user_id}")
+                                break
+                        except:
+                            logger.warning(f"⚠️ G4F {provider_name} URL not accessible, trying next...")
+                            continue
+                    else:
+                        raise ValueError("No image data in G4F response")
+                        
+                except Exception as g4f_error:
+                    logger.warning(f"⚠️ G4F {provider_name} failed: {g4f_error}")
+                    continue
+            
+            # Layer 2: Direct Pollinations.ai with retry logic
+            if not image_url:
+                try:
+                    # Create enhanced prompt with negative keywords
+                    negative_prompt = "cartoon, anime, drawing, sketch, low quality, blurry, distorted, multiple people, text, watermarks"
+                    enhanced_prompt = f"{formatted_prompt}. NEGATIVE: {negative_prompt}"
+                    encoded_prompt = urllib.parse.quote(enhanced_prompt)
+                    
+                    # Generate consistent seed based on user data
+                    seed_data = f"{profile_data['first_name']}_{profile_data['last_name']}_{profile_data['age']}_{profile_data['gender']}"
+                    seed = abs(hash(seed_data + str(user_id))) % 1000000
+                    
+                    # Try multiple Pollinations.ai endpoints
+                    pollinations_urls = [
+                        f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&model=flux&enhance=true&seed={seed}&nologo=true",
+                        f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&seed={seed}&nologo=true",
+                        f"https://image.pollinations.ai/prompt/{urllib.parse.quote(formatted_prompt)}?width=512&height=512&seed={seed}"
+                    ]
+                    
+                    for pollinations_url in pollinations_urls:
+                        try:
+                            # Test URL accessibility
+                            test_response = requests.head(pollinations_url, timeout=10)
+                            if test_response.status_code == 200:
+                                image_url = pollinations_url
+                                logger.info(f"✅ Avatar generated via direct Pollinations.ai for user {user_id}")
+                                break
+                        except Exception as pollinations_test_error:
+                            logger.warning(f"⚠️ Pollinations.ai URL test failed: {pollinations_test_error}")
+                            continue
+                            
+                    if not image_url:
+                        raise ValueError("All Pollinations.ai URLs failed")
+                        
+                except Exception as pollinations_error:
+                    logger.warning(f"⚠️ All Pollinations.ai attempts failed: {pollinations_error}")
+            
+            # Layer 3: High-quality placeholder with deterministic seed
+            if not image_url:
+                try:
+                    # Use deterministic seed based on user data for consistency
+                    seed_data = f"{profile_data['first_name']}_{profile_data['last_name']}_{profile_data['age']}_{profile_data['gender']}_{profile_data['style']}"
+                    deterministic_seed = abs(hash(seed_data + str(user_id))) % 1000
+                    
+                    # Try multiple placeholder services
+                    placeholder_services = [
+                        f"https://picsum.photos/512/512?random={deterministic_seed}",
+                        f"https://source.unsplash.com/512x512/?portrait,professional,face&sig={deterministic_seed}",
+                        f"https://api.dicebear.com/7.x/avataaars/svg?seed={seed_data}&backgroundColor=b6e3f4,c0aede,d1d4f9"
+                    ]
+                    
+                    for placeholder_url in placeholder_services:
+                        try:
+                            test_response = requests.head(placeholder_url, timeout=5)
+                            if test_response.status_code == 200:
+                                image_url = placeholder_url
+                                logger.info(f"✅ Using placeholder service for user {user_id}")
+                                break
+                        except:
+                            continue
+                    
+                    if not image_url:
+                        raise ValueError("All placeholder services failed")
+                        
+                except Exception as placeholder_error:
+                    logger.error(f"❌ All placeholder attempts failed: {placeholder_error}")
+                    # Final fallback - local data URL
+                    image_url = f"data:image/svg+xml;base64,{_generate_avatar_svg(profile_data)}"
+                    logger.info(f"✅ Using local SVG avatar for user {user_id}")
 
         except Exception as e:
-            logger.error(f"G4F image generation failed: {e}")
-            # Fallback to placeholder
-            import hashlib
-            prompt_hash = hashlib.md5(formatted_prompt.encode()).hexdigest()[:8]
-            image_url = f"https://picsum.photos/512/512?random={prompt_hash}"
+            logger.error(f"❌ All avatar generation methods failed: {e}")
+            # Ultimate fallback - generate simple SVG
+            try:
+                image_url = f"data:image/svg+xml;base64,{_generate_avatar_svg(profile_data)}"
+                logger.info(f"✅ Using emergency SVG avatar for user {user_id}")
+            except:
+                image_url = None
 
         if image_url:
             logger.info(f"✅ Avatar generated successfully for user {user_id}")
