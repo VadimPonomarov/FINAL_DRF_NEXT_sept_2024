@@ -79,6 +79,41 @@ This file records all important architectural decisions made during development.
 
 ---
 
+## 2026-03-23 — Production-Readiness Audit: CORS Fix + URL Trim + Cleanup
+**Decision:** Fix CORS security hole, trim env var URLs, remove debug/test code from production
+**Reason:**
+- `CORS_ALLOW_ALL_ORIGINS = True` (hardcoded) made any origin able to call the API
+- Vercel dashboard env vars had trailing `\r\n` causing malformed URLs in HTML and fetch calls
+- ~30 test/debug pages and API routes were exposed in production builds
+- Duplicate imports in avatar_views.py and users/urls.py caused Python warnings
+
+**Technical Changes:**
+1. `cors_config.py`: `CORS_ALLOW_ALL_ORIGINS` driven by `CORS_ALLOW_ALL_ORIGINS` env var (default `False`); `CORS_ALLOW_CREDENTIALS = not allow_all`
+2. `settings_railway.py`: CORS section reads env vars; fallback origins include `https://autoria-clone.vercel.app`
+3. `frontend/src/lib/backend-url.ts`: `.trim()` on env var value to strip `\r\n`
+4. `frontend/src/app/layout.tsx`: `.trim()` on `NEXT_PUBLIC_BACKEND_URL` before use in `<link>` tags
+5. `frontend/next.config.js`: removed build-time `console.log` debug calls
+6. Deleted 13 frontend test/debug routes and pages
+7. Deleted 20 non-whitelist docs/ files (content already covered by whitelist docs)
+8. Fixed duplicate imports in `avatar_views.py` and `users/urls.py`
+
+**Alternatives rejected:**
+- Keeping `CORS_ALLOW_ALL_ORIGINS=True` with `ALLOW_CREDENTIALS=False` (not safe for production APIs)
+- Trimming URL only in layout.tsx (trim must be in the single-source-of-truth `backend-url.ts`)
+
+**Affects:**
+- `backend/config/extra_config/cors_config.py`
+- `backend/config/settings_railway.py`
+- `frontend/src/lib/backend-url.ts`
+- `frontend/src/app/layout.tsx`
+- `frontend/next.config.js`
+- `backend/apps/users/views/avatar_views.py`
+- `backend/apps/users/urls.py`
+
+**Model:** Cascade
+
+---
+
 ## 2026-03-12 — Local/Docker Environment Resolution Normalization
 **Decision:** Make `env-config/` the authoritative source for local and Docker runtime values, with automatic selection of `.env.local` vs `.env.docker`, and keep local development pointed at `localhost` instead of Railway.
 **Reason:**
