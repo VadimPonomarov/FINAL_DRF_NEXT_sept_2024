@@ -3,41 +3,28 @@
 
 FROM python:3.12-slim
 
-# Set environment variables to avoid interactive prompts and locale issues
-ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_NO_CACHE=1
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies (minimal set for Celery)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* \
-    && rm -rf /var/tmp/*
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install Poetry
-RUN pip install --upgrade pip poetry poetry-plugin-export
+RUN uv pip install --system --no-cache \
+    "celery>=5.4.0" \
+    "redis>=5.2.0" \
+    "pika>=1.3.2" \
+    "psycopg2-binary>=2.9.10" \
+    "python-dotenv>=1.1.1" \
+    "loguru>=0.7.2" \
+    "httpx>=0.28.1" \
+    "requests>=2.32.3" \
+    "flower>=2.0.1" \
+    "orjson>=3.10.12"
 
-# Configure Poetry
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VENV_IN_PROJECT=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
-
-# Copy dependency files and required directories (required by pyproject.toml)
-COPY pyproject.toml poetry.lock* ./
 COPY config/ ./config/
 COPY tasks/ ./tasks/
-
-# Install dependencies with Poetry (default group only) and ensure in-project venv is created
-RUN poetry export -f requirements.txt --without dev --output requirements.txt \
-    && pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location -r requirements.txt \
-    && rm -rf $POETRY_CACHE_DIR
 
 # Copy remaining application code
 COPY . .

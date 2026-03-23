@@ -3,27 +3,25 @@ FROM python:3.11-slim
 LABEL maintainer="ME <pvs.versia@gmail.com>"
 LABEL description="Simple mailing service"
 
-# Set environment variables to avoid interactive prompts and locale issues
-ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    PYTHONUNBUFFERED=1 \
+ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    POETRY_VERSION=1.8.2 \
-    POETRY_NO_INTERACTION=1 \
+    UV_NO_CACHE=1 \
     IS_DOCKER=true
 
 WORKDIR /app
 
-# Install Poetry
-RUN pip install poetry==${POETRY_VERSION}
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy Docker-optimized dependency file
-COPY pyproject.docker.toml ./pyproject.toml
-
-# Install only production dependencies
-RUN poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi --only=main
+RUN uv pip install --system --no-cache \
+    "fastapi>=0.115.5" \
+    "uvicorn[standard]>=0.32.1" \
+    "pydantic[email]>=2.10.5" \
+    "pydantic-settings>=2.6.1" \
+    "celery>=5.3.6" \
+    "pika>=1.3.2" \
+    "jinja2>=3.1.3" \
+    "python-dotenv>=1.0.0" \
+    "cryptography>=42.0.0"
 
 # Copy source code
 COPY ./src /app/src

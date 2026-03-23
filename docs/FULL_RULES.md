@@ -1476,6 +1476,23 @@ USER nobody
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
+**PREFERRED: use `uv` instead of pip/poetry in Docker** — 10-100× faster, single static binary,
+no build-essential needed (uses pre-built manylinux wheels), eliminates poetry overhead entirely:
+```dockerfile
+FROM python:3.12-slim
+ENV UV_NO_CACHE=1
+WORKDIR /app
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY requirements.txt ./
+RUN uv pip install --system --no-cache -r requirements.txt
+COPY . .
+```
+
+Priority order for Python dependency management:
+1. **`uv`** — preferred for all Docker builds and local dev (fastest, no venv overhead with `--system`)
+2. **`pip` + `requirements.txt`** — acceptable fallback
+3. **`poetry`** — avoid in Docker (slow install, large overhead); only for local lock file generation
+
 **Docker image size targets:**
 ```
 Node.js API image:     < 150MB
