@@ -27,30 +27,41 @@
 - Коммит `1b92668` запушен на master → Railway redeploy инициирован автоматически
 
 ## В процессе
-- Ожидание завершения Railway redeploy (~2-3 мин после push)
+- Нет активных задач
 
 ## Заблокировано
-- **Vercel dashboard**: env vars `BACKEND_URL` и `NEXT_PUBLIC_BACKEND_URL` всё ещё указывают на `https://autoria-api.vercel.app` и содержат trailing `\r\n`. Требует ручного исправления пользователем.
+- Нет
 
 ## Следующая задача
-1. Проверить Railway backend после redeploy: `GET https://autoria-web-production.up.railway.app/health/`
-2. Пользователь должен исправить Vercel env vars вручную в dashboard (см. секцию "Действия пользователя")
-3. После Vercel env fix — сделать `vercel --prod` для redeploy frontend
-
-## Действия пользователя (обязательно)
+**Docker полный деплой:**
+```bash
+docker-compose up --build
 ```
-Vercel Dashboard → Project autoria-clone → Settings → Environment Variables:
-  BACKEND_URL          = https://autoria-web-production.up.railway.app
-  NEXT_PUBLIC_BACKEND_URL = https://autoria-web-production.up.railway.app
-  (убедиться что нет trailing spaces/\r\n)
-Затем: vercel --prod
-```
+Доступ после старта:
+- Frontend: http://localhost:3000 (прямо) или http://localhost (через nginx)
+- Backend API: http://localhost:8000
+- Admin: http://localhost/admin/
+- RabbitMQ UI: http://localhost:15672
+- Flower: http://localhost:5555
 
 ## Текущий статус развертывания
-- **Frontend (Vercel):** ✅ Работает — https://autoria-clone.vercel.app (но env vars требуют fix)
-- **Backend (Railway):** ⚠️ Redeploy в процессе — https://autoria-web-production.up.railway.app
-- **Database:** ✅ PostgreSQL (Railway managed)
-- **Redis:** ✅ Кэш (Railway managed)
+
+### Docker (основной — все сервисы)
+- **app** (Django/daphne): порт 8000, healthcheck `/health/`
+- **frontend** (Next.js): порт 3000, healthcheck `/api/health`
+- **nginx** (reverse proxy): порт 80, маршрутизирует всё
+- **pg** (PostgreSQL): порт 5432
+- **redis**: порт 6379
+- **rabbitmq**: порты 5672/15672
+- **celery-worker** / **celery-beat** / **flower**: фоновые задачи
+- **mailing**: FastAPI email consumer, порт 8001
+
+### Env vars для Docker
+- `BACKEND_URL=http://app:8000` — SSR-запросы Next.js → Django (внутри Docker)
+- `NEXT_PUBLIC_BACKEND_URL=http://localhost:8000` — браузер → Django напрямую
+- `NEXTAUTH_URL=http://localhost:3000`
+- `NEXTAUTH_URL_INTERNAL=http://frontend:3000`
+- Все secrets из `env-config/.env.secrets` (NEXTAUTH_SECRET, GOOGLE_CLIENT_SECRET и т.д.)
 
 ## Критические проблемы
 - **CORS_ALLOW_ALL_ORIGINS=True** — ✅ ИСПРАВЛЕНО (теперь env-контролируемый, default False)
